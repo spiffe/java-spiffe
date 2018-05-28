@@ -1,5 +1,7 @@
 package spiffe.api.svid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spiffe.api.svid.util.ExponentialBackOff;
 
 import java.util.Collections;
@@ -14,6 +16,8 @@ import static spiffe.api.svid.Workload.*;
  *
  */
 public final class WorkloadAPIClient {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(WorkloadAPIClient.class);
 
     private SpiffeWorkloadStub spiffeWorkloadStub;
 
@@ -41,7 +45,12 @@ public final class WorkloadAPIClient {
      * @return List of X509SVID or Empty List if none have been fetched
      */
     public List<X509SVID> fetchX509SVIDs() {
-        return ExponentialBackOff.execute(this::callWorkloadStub_fetchX509SVIDs);
+        try {
+            return ExponentialBackOff.execute(this::callWorkloadStub_fetchX509SVIDs);
+        } catch (Exception e) {
+            LOGGER.error("Couldn't get SVIDs from Workload API", e);
+            return Collections.emptyList();
+        }
     }
 
     private List<X509SVID> callWorkloadStub_fetchX509SVIDs() {

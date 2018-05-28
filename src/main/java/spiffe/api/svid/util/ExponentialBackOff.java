@@ -1,6 +1,9 @@
 package spiffe.api.svid.util;
 
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +15,8 @@ import java.util.function.Supplier;
  *
  */
 public class ExponentialBackOff {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(ExponentialBackOff.class);
 
     static int MAX_RETRIES = 5;
     static int BASE = 2;
@@ -31,8 +36,9 @@ public class ExponentialBackOff {
      * @return
      */
     public static <T> T execute(Supplier<T> fn) {
-        for (int attempt = 1; attempt < MAX_RETRIES; attempt++) {
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
+                LOGGER.info("Attempt no. " + attempt);
                 return fn.get();
             } catch (StatusRuntimeException e) {
                 handleError(e, attempt);
@@ -42,6 +48,7 @@ public class ExponentialBackOff {
     }
 
     private static void handleError(StatusRuntimeException e, int attempt) {
+        LOGGER.error("Error " + e.getMessage());
         if (isRetryableError(e)) {
             sleep(backoffSequenceGenerator(attempt));
         } else {
@@ -55,6 +62,7 @@ public class ExponentialBackOff {
 
     private static void sleep(long millis) {
         try {
+            LOGGER.info("Sleeping for " + millis + "ms");
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -44,6 +44,28 @@ BUILD SUCCESSFUL in 1s
 
 ```
 
+Output example when it fails in 4 attempts and succeeds on the 5 attempt after waiting following an exponential backoff policy:
+
+```
+$ ./gradlew run
+
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 1
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Error UNAVAILABLE: io exception
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Sleeping for 2000
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 2
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Error UNAVAILABLE: io exception
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Sleeping for 4000
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 3
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Error UNAVAILABLE: io exception
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Sleeping for 8000
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 4
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Error UNAVAILABLE: io exception
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Sleeping for 16000
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 5
+[main] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/host/workload
+
+```
+
 ### Generating the JAR 
 
 ```
