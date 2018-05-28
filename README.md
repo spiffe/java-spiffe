@@ -42,5 +42,12 @@ $ ./gradlew run
 
 BUILD SUCCESSFUL in 1s
 
+```
+
+### Generating the JAR 
 
 ```
+./gradlew build
+```
+
+The jar file `java-spiffe-0.1-SNAPSHOT.jar` is generated in folder `libs`.
