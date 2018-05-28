@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option java_package = "spiffe.api.svid";
+
+
+message X509SVIDRequest {  }
+
+// The X509SVIDResponse message carries a set of X.509 SVIDs and their
+// associated information. It also carries a set of global CRLs, and a
+// TTL to inform the svid when it should check back next.
+message X509SVIDResponse {
+    // A list of X509SVID messages, each of which includes a single
+    // SPIFFE Verifiable Identity Document, along with its private key
+    // and bundle.
+    repeated X509SVID svids = 1;
+
+    // ASN.1 DER encoded
+    repeated bytes crl = 2;
+
+    // CA certificate bundles belonging to foreign Trust Domains that the
+    // svid should trust, keyed by the SPIFFE ID of the foreign
+    // domain. Bundles are ASN.1 DER encoded.
+    map<string, bytes> federated_bundles = 3;
+}
+
+// The X509SVID message carries a single WorkloadAPIClient and all associated
+// information, including CA bundles.
+message X509SVID {
+    // The SPIFFE ID of the WorkloadAPIClient in this entry
+    string spiffe_id = 1;
+
+    // ASN.1 DER encoded certificate chain. MAY include intermediates,
+    // the leaf certificate (or WorkloadAPIClient itself) MUST come first.
+    bytes x509_svid = 2;
+
+    // ASN.1 DER encoded PKCS#8 private key. MUST be unencrypted.
+    bytes x509_svid_key = 3;
+
+    // CA certificates belonging to the Trust Domain
+    // ASN.1 DER encoded
+    bytes bundle = 4;
+
+}
+
+service SpiffeWorkloadAPI {
+    // X.509-WorkloadAPIClient Profile
+    // Fetch all SPIFFE identities the svid is entitled to, as
+    // well as related information like trust bundles and CRLs. As
+    // this information changes, subsequent messages will be sent.
+    rpc FetchX509SVID(X509SVIDRequest) returns (stream X509SVIDResponse);
+}
