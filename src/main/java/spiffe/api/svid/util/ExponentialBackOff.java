@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  */
 public class ExponentialBackOff {
 
-    static int MAX_RETRIES = 10;
+    static int MAX_RETRIES = 5;
     static int BASE = 2;
 
     /**

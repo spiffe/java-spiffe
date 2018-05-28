@@ -41,10 +41,10 @@ public final class WorkloadAPIClient {
      * @return List of X509SVID or Empty List if none have been fetched
      */
     public List<X509SVID> fetchX509SVIDs() {
-        return ExponentialBackOff.execute(this::callWorkloadApi);
+        return ExponentialBackOff.execute(this::callWorkloadStub_fetchX509SVIDs);
     }
 
-    private List<X509SVID> callWorkloadApi() {
+    private List<X509SVID> callWorkloadStub_fetchX509SVIDs() {
         Iterator<X509SVIDResponse> response = spiffeWorkloadStub.fetchX509SVIDs(newRequest());
         if (response.hasNext()) {
             return response.next().getSvidsList();
