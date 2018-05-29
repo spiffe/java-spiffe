@@ -23,8 +23,8 @@ for (X509SVID svid : svids) {
 ### Running the example
 
 Required:
-* A running Spire server. [HowTo](https://github.com/spiffe/spire#installing-spire-server-and-agent)
-* A Spire entry that matches this application.
+* A running Spire server and agent. [HowTo](https://github.com/spiffe/spire#installing-spire-server-and-agent)
+* An entry in the registry that matches this application:
 ```
 cmd/spire-server/spire-server entry create \
 -spiffeID spiffe://example.org/workload \
