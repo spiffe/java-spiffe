@@ -27,7 +27,7 @@ Required:
 * A Spire entry that matches this application.
 ```
 cmd/spire-server/spire-server entry create \
--spiffeID spiffe://example.org/host/workload \
+-spiffeID spiffe://example.org/workload \
 -parentID spiffe://example.org/host \
 -selector unix:uid:1000
 ```
@@ -38,7 +38,7 @@ To start the Java server you can run `./gradlew run`
 $ ./gradlew run
 
 > Task :run
-[main] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/host/workload
+[main] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/workload
 
 BUILD SUCCESSFUL in 1s
 
@@ -62,7 +62,7 @@ $ ./gradlew run
 [main] INFO spiffe.api.svid.util.ExponentialBackOff - Error UNAVAILABLE: io exception
 [main] INFO spiffe.api.svid.util.ExponentialBackOff - Sleeping for 16000ms
 [main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 5
-[main] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/host/workload
+[main] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/workload
 
 ```
 
