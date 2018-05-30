@@ -23,13 +23,7 @@ public class ClientExample {
 
         WorkloadAPIClient workloadAPIClient = new WorkloadAPIClient("/tmp/agent.sock");
 
-
-        LOGGER.info("Fetching the SVIDS synchronously");
-        List<X509SVID> svids = workloadAPIClient.fetchX509SVIDs();
-        svids.forEach(svid -> LOGGER.info("Spiffe ID fetched: " + svid.getSpiffeId()));
-
         AtomicBoolean completed = new AtomicBoolean(false);
-
 
         LOGGER.info("Fetching the SVIDs asynchronously");
         //A simple consumer of the SVIDs that just logs the SpiffeIDs received
