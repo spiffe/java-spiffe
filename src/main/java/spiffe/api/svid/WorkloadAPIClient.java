@@ -1,5 +1,6 @@
 package spiffe.api.svid;
 
+import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spiffe.api.svid.util.ExponentialBackOff;
@@ -7,6 +8,7 @@ import spiffe.api.svid.util.ExponentialBackOff;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static spiffe.api.svid.Workload.*;
@@ -39,7 +41,7 @@ public final class WorkloadAPIClient {
     }
 
     /**
-     * Fetch the SVIDs from the Workload API
+     * Fetch the SVIDs from the Workload API on a synchronous fashion
      * Use a Exponential Backoff to handle the errors and retries
      *
      * @return List of X509SVID or Empty List if none have been fetched
@@ -51,6 +53,32 @@ public final class WorkloadAPIClient {
             LOGGER.error("Couldn't get SVIDs from Workload API", e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Fetch the SVIDs from the Workload API on a asynchronous fashion
+     *
+     * TODO: Use a Exponential Backoff to handle the errors and retries
+     *
+     */
+    public void fetchX509SVIDs(Consumer<List<X509SVID>> listener) {
+
+        StreamObserver<X509SVIDResponse> observer = new StreamObserver<X509SVIDResponse>() {
+            @Override
+            public void onNext(X509SVIDResponse value) {
+                listener.accept(value.getSvidsList());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        };
+
+        spiffeWorkloadStub.fetchX509SVIDs(newRequest(), observer);
     }
 
     private List<X509SVID> callWorkloadStub_fetchX509SVIDs() {

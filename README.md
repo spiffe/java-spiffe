@@ -38,7 +38,16 @@ To start the Java server you can run `./gradlew run`
 $ ./gradlew run
 
 > Task :run
+[main] INFO ClientExample - Fetching the SVIDS synchronously
+[main] INFO spiffe.api.svid.util.ExponentialBackOff - Attempt no. 1
 [main] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/workload
+[main] INFO ClientExample - Fetching the SVIDs asynchronously
+[main] INFO ClientExample - Waiting for certificates...
+[main] INFO ClientExample - Doing other work...
+[main] INFO ClientExample - Doing other work...
+[main] INFO ClientExample - Doing other work...
+[grpc-default-executor-0] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/workload
+[main] INFO ClientExample - Exiting...
 
 BUILD SUCCESSFUL in 1s
 

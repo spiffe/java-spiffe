@@ -1,7 +1,9 @@
 package spiffe.api.svid;
 
 import io.grpc.*;
+import io.grpc.stub.StreamObserver;
 import spiffe.api.svid.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub;
+import spiffe.api.svid.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 
 import java.util.Iterator;
 
@@ -18,6 +20,8 @@ class SpiffeWorkloadStub {
 
     private SpiffeWorkloadAPIBlockingStub workloadAPIStub;
 
+    private SpiffeWorkloadAPIStub workloadAPIAsyncStub;
+
     /**
      * Constructor
      * @param spiffeEndpointAddress where the WorkloadAPI is listening
@@ -27,6 +31,11 @@ class SpiffeWorkloadStub {
         workloadAPIStub = SpiffeWorkloadAPIGrpc
                             .newBlockingStub(managedChannel)
                             .withInterceptors(new SecurityHeaderInterceptor());
+
+        workloadAPIAsyncStub= SpiffeWorkloadAPIGrpc
+                                        .newStub(managedChannel)
+                                        .withWaitForReady()
+                                        .withInterceptors(new SecurityHeaderInterceptor());
     }
 
     /**
@@ -45,6 +54,16 @@ class SpiffeWorkloadStub {
      */
     public Iterator<X509SVIDResponse> fetchX509SVIDs(X509SVIDRequest request) {
         return workloadAPIStub.fetchX509SVID(request);
+    }
+
+    /**
+     * Fetch all bundles running on an async mode
+     * @param request
+     * @param observer
+     *
+     */
+    public void fetchX509SVIDs(X509SVIDRequest request, StreamObserver<X509SVIDResponse> observer) {
+        workloadAPIAsyncStub.fetchX509SVID(request, observer);
     }
 
     /**
