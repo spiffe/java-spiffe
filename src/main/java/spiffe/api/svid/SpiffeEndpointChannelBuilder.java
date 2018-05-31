@@ -41,7 +41,8 @@ class SpiffeEndpointChannelBuilder {
         if (isTcp(parsedAddress)) {
             return createTcpChannel(parsedAddress);
         } else {
-            return createNativeSocketChannel(spiffeEndpointAddress);
+            validateUDSAddress(parsedAddress);
+            return createNativeSocketChannel(parsedAddress);
         }
     }
 
@@ -75,9 +76,9 @@ class SpiffeEndpointChannelBuilder {
      * @param spiffeEndpointAddress
      * @return
      */
-    private static ManagedChannel createNativeSocketChannel(String spiffeEndpointAddress) {
+    private static ManagedChannel createNativeSocketChannel(URI spiffeEndpointAddress) {
         NettyChannelBuilder channelBuilder = NettyChannelBuilder.
-                forAddress(new DomainSocketAddress(spiffeEndpointAddress));
+                forAddress(new DomainSocketAddress(spiffeEndpointAddress.getPath()));
         configureNativeSocketChannel(channelBuilder);
         return channelBuilder
                 .usePlaintext()
@@ -106,9 +107,21 @@ class SpiffeEndpointChannelBuilder {
         try {
             parsedAddress = new URI(spiffeEndpointAddress);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("The Spiffe Endopoint Address is not valid");
+            throw new IllegalArgumentException("The Spiffe Endpoint Address is not valid");
         }
         return parsedAddress;
+    }
+
+    private static void validateUDSAddress(URI address) {
+        if (!isBlank(address.getHost())) {
+            throw new IllegalArgumentException("Unexpected Authority component in Unix uri: " + address.getHost());
+        }
+        if (isBlank(address.getPath())) {
+            throw new IllegalArgumentException("No Path defined for Unix uri");
+        }
+        if (!address.getPath().startsWith("/")) {
+            throw new IllegalArgumentException("Unix Socket Path not absolute");
+        }
     }
 
     private static boolean isTcp(URI spiffeEndpointAddress) {
