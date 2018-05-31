@@ -26,7 +26,6 @@ class SpiffeWorkloadStub {
 
         workloadAPIAsyncStub= SpiffeWorkloadAPIGrpc
                                         .newStub(managedChannel)
-                                        .withWaitForReady()
                                         .withInterceptors(new SecurityHeaderInterceptor());
     }
 
@@ -35,7 +34,7 @@ class SpiffeWorkloadStub {
      * As no 'spiffeEndpointAddress' is provided, the channel builder will resolve it through the Environment
      */
     SpiffeWorkloadStub() {
-        this("");
+        this(null);
     }
 
     /**
