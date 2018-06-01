@@ -1,5 +1,6 @@
 package spiffe.api.svid;
 
+import com.google.common.base.Preconditions;
 import io.grpc.*;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
@@ -14,6 +15,9 @@ import org.apache.commons.lang3.SystemUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
@@ -40,10 +44,10 @@ class SpiffeEndpointChannelBuilder {
         URI parsedAddress = parseAddress(spiffeEndpointAddress);
         if (isTcp(parsedAddress)) {
             return createTcpChannel(parsedAddress);
-        } else {
-            validateUDSAddress(parsedAddress);
-            return createNativeSocketChannel(parsedAddress);
         }
+
+        validateUDSAddress(parsedAddress);
+        return createNativeSocketChannel(parsedAddress);
     }
 
     /**
@@ -54,7 +58,7 @@ class SpiffeEndpointChannelBuilder {
     private static String getAddressFromEnv() {
         String address = System.getenv(ENV_ADDRESS_VAR);
         if (isBlank(address)) {
-            throw new IllegalStateException(ENV_ADDRESS_VAR + " env var is not defined");
+            throw new IllegalStateException(format("%s env var is not defined", ENV_ADDRESS_VAR ));
         }
         return address;
     }
@@ -66,6 +70,7 @@ class SpiffeEndpointChannelBuilder {
      * @return
      */
     private static ManagedChannel createTcpChannel(URI parsedAddress) {
+        checkNotNull(parsedAddress, "UDS address is null" );
         return NettyChannelBuilder.forAddress(parsedAddress.getHost(), parsedAddress.getPort())
                 .negotiationType(NegotiationType.PLAINTEXT)
                 .build();
@@ -77,6 +82,7 @@ class SpiffeEndpointChannelBuilder {
      * @return
      */
     private static ManagedChannel createNativeSocketChannel(URI spiffeEndpointAddress) {
+        checkNotNull(spiffeEndpointAddress, "UDS address is null" );
         NettyChannelBuilder channelBuilder = NettyChannelBuilder.
                 forAddress(new DomainSocketAddress(spiffeEndpointAddress.getPath()));
         configureNativeSocketChannel(channelBuilder);
@@ -113,15 +119,11 @@ class SpiffeEndpointChannelBuilder {
     }
 
     private static void validateUDSAddress(URI address) {
-        if (!isBlank(address.getHost())) {
-            throw new IllegalArgumentException("Unexpected Authority component in Unix uri: " + address.getHost());
-        }
-        if (isBlank(address.getPath())) {
-            throw new IllegalArgumentException("No Path defined for Unix uri");
-        }
-        if (!address.getPath().startsWith("/")) {
-            throw new IllegalArgumentException("Unix Socket Path not absolute");
-        }
+        checkNotNull(address, "UDS address is null" );
+        checkState(isBlank(address.getHost()),
+                format("Unexpected Authority component in Unix uri: %s", address.getHost() ) );
+        checkState(!isBlank(address.getPath()), "No Path defined for Unix uri");
+        checkState(address.getPath().startsWith("/"), "Unix Socket Path not absolute");
     }
 
     private static boolean isTcp(URI spiffeEndpointAddress) {

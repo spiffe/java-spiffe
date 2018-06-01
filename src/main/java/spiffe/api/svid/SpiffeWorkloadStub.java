@@ -19,7 +19,8 @@ class SpiffeWorkloadStub {
 
     /**
      * Constructor
-     * @param spiffeEndpointAddress where the WorkloadAPI is listening
+     * @param spiffeEndpointAddress where the WorkloadAPI is listening. It's validated by
+     *                              the channel builder to ensure that it's a correct UDS or TCP address
      */
     SpiffeWorkloadStub(String spiffeEndpointAddress) {
         ManagedChannel managedChannel = SpiffeEndpointChannelBuilder.newChannel(spiffeEndpointAddress);
