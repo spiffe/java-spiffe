@@ -97,6 +97,7 @@ class SpiffeEndpointChannelBuilder {
      * @param channelBuilder
      */
     private static void configureNativeSocketChannel(NettyChannelBuilder channelBuilder) {
+        checkNotNull(channelBuilder, "Channel builder is Null");
         if (SystemUtils.IS_OS_LINUX) {
             channelBuilder.eventLoopGroup(new EpollEventLoopGroup())
                           .channelType(EpollDomainSocketChannel.class);
