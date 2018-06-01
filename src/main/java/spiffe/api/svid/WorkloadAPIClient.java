@@ -83,13 +83,13 @@ public final class WorkloadAPIClient {
     }
 
     /**
-     * Checks that the error is retryable. The only error that is not retryable is 'InvalidArgument',
+     * Checks that the error is retryable. The only error that is not retryable is 'INVALID_ARGUMENT',
      * that occurs when the security header is not present
      * @param t
      * @return
      */
     private boolean isRetryableError(Throwable t) {
-        return !"InvalidArgument".equalsIgnoreCase(Status.fromThrowable(t).getCode().name());
+        return !"INVALID_ARGUMENT".equalsIgnoreCase(Status.fromThrowable(t).getCode().name());
     }
 
     private X509SVIDRequest newRequest() {
