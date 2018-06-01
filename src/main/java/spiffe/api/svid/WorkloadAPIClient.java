@@ -4,13 +4,12 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spiffe.api.svid.retry.RetryHandler;
+import spiffe.api.svid.retry.RetryPolicy;
 
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static spiffe.api.svid.Workload.*;
 
@@ -24,8 +23,8 @@ public final class WorkloadAPIClient {
 
     private SpiffeWorkloadStub spiffeWorkloadStub;
 
-    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
-    private RetryState retryState = new RetryState(1, 60, TimeUnit.SECONDS);
+    private RetryHandler retryHandler;
+
 
     /**
      * Constructor
@@ -33,6 +32,16 @@ public final class WorkloadAPIClient {
      */
     public WorkloadAPIClient(String spiffeEndpointAddress) {
         spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
+        retryHandler = new RetryHandler(new RetryPolicy(1, 60, TimeUnit.SECONDS));
+    }
+
+    /**
+     * Constructor
+     * @param spiffeEndpointAddress
+     */
+    public WorkloadAPIClient(String spiffeEndpointAddress, RetryPolicy retryPolicy) {
+        spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
+        retryHandler = new RetryHandler(retryPolicy);
     }
 
     /**
@@ -40,7 +49,8 @@ public final class WorkloadAPIClient {
      *
      */
     public WorkloadAPIClient() {
-        spiffeWorkloadStub = new SpiffeWorkloadStub();
+        this(null);
+
     }
 
     /**
@@ -59,8 +69,7 @@ public final class WorkloadAPIClient {
             public void onError(Throwable t) {
                 LOGGER.error(t.getMessage());
                 if (isRetryableError(t)) {
-                    scheduledExecutorService.schedule(
-                            () -> fetchX509SVIDs(listener), retryState.delay(), retryState.timeUnit);
+                    retryHandler.scheduleRetry(() -> fetchX509SVIDs(listener));
                 }
             }
 
@@ -87,28 +96,4 @@ public final class WorkloadAPIClient {
         return X509SVIDRequest.newBuilder().build();
     }
 
-    static class RetryState  {
-        RetryState(long delay, long maxDelay, TimeUnit timeUnit) {
-            if (delay < 1) {
-                this.delay = 1;
-            } else {
-                this.delay = delay;
-            }
-            this.maxDelay = maxDelay;
-            this.timeUnit = timeUnit;
-        }
-
-        private long delay;
-        private long maxDelay;
-        private TimeUnit timeUnit;
-        private Function<Long, Long> calculateDelay = (d) -> d * 2;
-
-        long delay() {
-            delay = calculateDelay.apply(delay);
-            if (delay > maxDelay) {
-                delay = maxDelay;
-            }
-            return delay;
-        }
-    }
 }
