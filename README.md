@@ -6,18 +6,23 @@ The JAVA-SPIFFE library provides functionality to fetch SVIDs Bundles from a Wor
 
 ## SPIFFE Workload API ClientExample
 
-The `WorkloadAPIClient` provides the method `fetchX509SVIDs` that fetches SVIDs from the Workload API, on an asynchronous 
-fashion. 
+The `X509SvidFetcher` provides the method `registerListener` that allows a consumer to register a listener 
+to get the X509-SVIDS whenever the Workload API something new to send. 
 
 The channel is configured based on the Address (tcp or unix socket) and the OS detected.
 
 ## Use
 ```
-WorkloadAPIClient workloadAPIClient = new WorkloadAPIClient("/tmp/agent.sock");
-List<X509SVID> svids = workloadAPIClient.fetchX509SVIDs();
-for (X509SVID svid : svids) {
-    System.out.println("Spiffe ID fetched " + svid.getSpiffeId());
-}
+Fetcher<List<X509SVID>> svidFetcher = new X509SvidFetcher("/tmp/agent.sock");
+Consumer<List<X509SVID>> certificateUpdater;
+certificateUpdater = certs -> {
+    certs.forEach(svid -> {
+        System.out.println("Spiffe ID fetched: " + svid.getSpiffeId());
+    });
+};
+
+//Calling the WorkloadAPI to obtain the certificates
+svidFetcher.registerListener(certificateUpdater);
 ```
 
 ### Running the example
@@ -32,28 +37,36 @@ cmd/spire-server/spire-server entry create \
 -selector unix:uid:1000
 ```
 
-To start the Java server you can run `./gradlew run`
+To start the Java server you can run `./gradlew runExample`
 
 ```
-$ ./gradlew run
+$ ./gradlew runExample
 
 > Task :run
-[main] INFO ClientExample - Fetching the SVIDs asynchronously
-[main] INFO ClientExample - Waiting for certificates...
-[main] INFO ClientExample - Doing other work...
-[main] INFO ClientExample - Doing other work...
-[main] INFO ClientExample - Doing other work...
-[grpc-default-executor-0] INFO ClientExample - Spiffe ID fetched: spiffe://example.org/workload
-[main] INFO ClientExample - Exiting...
+[main] INFO spiffe.api.svid.examples.ClientExample - Fetching the SVIDs asynchronously
+[main] INFO spiffe.api.svid.examples.ClientExample - Waiting for certificates...
+[main] INFO spiffe.api.svid.examples.ClientExample - Doing other work...
+[main] INFO spiffe.api.svid.examples.ClientExample - Doing other work...
+[main] INFO spiffe.api.svid.examples.ClientExample - Doing other work...
+[grpc-default-executor-0] INFO spiffe.api.svid.examples.ClientExample - Spiffe ID fetched: spiffe://example.org/workload
+[main] INFO spiffe.api.svid.examples.ClientExample - Exiting...
 
 BUILD SUCCESSFUL in 1s
 
 ```
 
-### Generating the JAR 
+### Generating the JAR  
 
 ```
 ./gradlew build
 ```
 
 The jar file `java-spiffe-0.1-SNAPSHOT.jar` is generated in folder `libs`.
+
+### Generating the fat JAR with all the dependencies
+
+```
+./gradlew shadowJar
+```
+
+The jar file `java-spiffe-0.1-SNAPSHOT-all.jar` is generated in folder `libs`.

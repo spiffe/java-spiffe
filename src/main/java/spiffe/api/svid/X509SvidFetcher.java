@@ -17,9 +17,9 @@ import static spiffe.api.svid.Workload.*;
  * Provides functionality to interact with a Workload API
  *
  */
-public final class WorkloadAPIClient {
+public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(WorkloadAPIClient.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(X509SvidFetcher.class);
 
     private SpiffeWorkloadStub spiffeWorkloadStub;
 
@@ -30,7 +30,7 @@ public final class WorkloadAPIClient {
      * Constructor
      * @param spiffeEndpointAddress
      */
-    public WorkloadAPIClient(String spiffeEndpointAddress) {
+    public X509SvidFetcher(String spiffeEndpointAddress) {
         spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
         retryHandler = new RetryHandler(new RetryPolicy(1, 60, TimeUnit.SECONDS));
     }
@@ -39,7 +39,7 @@ public final class WorkloadAPIClient {
      * Constructor
      * @param spiffeEndpointAddress
      */
-    public WorkloadAPIClient(String spiffeEndpointAddress, RetryPolicy retryPolicy) {
+    public X509SvidFetcher(String spiffeEndpointAddress, RetryPolicy retryPolicy) {
         spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
         retryHandler = new RetryHandler(retryPolicy);
     }
@@ -48,16 +48,19 @@ public final class WorkloadAPIClient {
      * Default constructor
      *
      */
-    public WorkloadAPIClient() {
+    public X509SvidFetcher() {
         this(null);
 
     }
 
     /**
-     * Fetch the SVIDs from the Workload API on a asynchronous fashion
+     * Register the listener to receive the X509 SVIDS from the Workload API
+     * In case there's an error in the connection with the Workload API,
+     * it retries using a RetryHandler that implements a backoff policy
      *
      */
-    public void fetchX509SVIDs(Consumer<List<X509SVID>> listener) {
+    @Override
+    public void registerListener(Consumer<List<X509SVID>> listener) {
 
         StreamObserver<X509SVIDResponse> observer = new StreamObserver<X509SVIDResponse>() {
             @Override
@@ -69,7 +72,7 @@ public final class WorkloadAPIClient {
             public void onError(Throwable t) {
                 LOGGER.error(t.getMessage());
                 if (isRetryableError(t)) {
-                    retryHandler.scheduleRetry(() -> fetchX509SVIDs(listener));
+                    retryHandler.scheduleRetry(() -> registerListener(listener));
                 }
             }
 
@@ -78,7 +81,7 @@ public final class WorkloadAPIClient {
             }
         };
 
-        LOGGER.info("Calling fetchX509SVIDs");
+        LOGGER.info("Calling registerListener");
         spiffeWorkloadStub.fetchX509SVIDs(newRequest(), observer);
     }
 

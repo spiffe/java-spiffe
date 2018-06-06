@@ -1,6 +1,5 @@
 package spiffe.api.svid;
 
-import com.google.common.base.Preconditions;
 import io.grpc.*;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;

@@ -5,14 +5,17 @@ version '0.1-SNAPSHOT'
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
         classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.5"
+        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.4"
     }
 }
 
-apply plugin: 'java-library'
+apply plugin: 'java'
+apply plugin: "com.github.johnrengelman.shadow"
 apply plugin: "com.google.protobuf"
 
 ext {
@@ -53,17 +56,17 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    implementation "io.grpc:grpc-netty:${grpcVersion}"
-    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
-    implementation "io.grpc:grpc-stub:${grpcVersion}"
-    implementation "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
-    implementation "io.netty:netty-transport-native-kqueue:${nettyVersion}:osx-x86_64"
-    implementation "org.bouncycastle:bcprov-jdk15on:1.59"
-    implementation "org.apache.commons:commons-lang3:3.7"
-    implementation group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
-    implementation group: "org.slf4j", name: "slf4j-simple", version: "1.7.25"
+    compile "io.grpc:grpc-netty:${grpcVersion}"
+    compile "io.grpc:grpc-protobuf:${grpcVersion}"
+    compile "io.grpc:grpc-stub:${grpcVersion}"
+    compile "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
+    compile "io.netty:netty-transport-native-kqueue:${nettyVersion}:osx-x86_64"
+    compile "org.bouncycastle:bcprov-jdk15on:1.59"
+    compile "org.apache.commons:commons-lang3:3.7"
+    compile group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
 }
 
-//Application demo
-apply plugin:'application'
-mainClassName = "ClientExample"
+task runExample(type:JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = project.hasProperty("mainClass") ? project.getProperty("mainClass") : "spiffe.api.svid.examples.ClientExample"
+}
