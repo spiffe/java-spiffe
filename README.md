@@ -25,6 +25,18 @@ certificateUpdater = certs -> {
 svidFetcher.registerListener(certificateUpdater);
 ```
 
+The `X509SvidFetcher` can be configured with a custom `RetryPolicy`. 
+
+By default it uses a `RetryPolicy` with the following parameters:
+
+```
+initialDelay = 1;
+maxDelay = 300;
+timeUnit = SECONDS;
+backoffFunction = (d) -> d * 2;
+maxRetries = UNLIMITED_RETRIES;
+```
+
 ### Running the example
 
 Required:

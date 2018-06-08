@@ -32,7 +32,7 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
      */
     public X509SvidFetcher(String spiffeEndpointAddress) {
         spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
-        retryHandler = new RetryHandler(new RetryPolicy(1, 60, TimeUnit.SECONDS));
+        retryHandler = new RetryHandler(new RetryPolicy());
     }
 
     /**

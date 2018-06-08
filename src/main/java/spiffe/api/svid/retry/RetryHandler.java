@@ -1,5 +1,8 @@
 package spiffe.api.svid.retry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -8,10 +11,12 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class RetryHandler {
 
+    private static Logger LOGGER = LoggerFactory.getLogger(RetryHandler.class);
+
     private long nextDelay;
+    private long retryCount;
 
     private RetryPolicy retryPolicy;
-
     private ScheduledExecutorService scheduledExecutorService;
 
     /**
@@ -25,12 +30,16 @@ public class RetryHandler {
     }
 
     /**
-     * Schedule to execture a Runnable, based on the retry and backoff policy
-     * Updates the next delay
+     * Schedule to execute a Runnable, based on the retry and backoff policy
+     * Updates the next delay and retries count
      * @param callable
      */
     public void scheduleRetry(Runnable callable) {
-        scheduledExecutorService.schedule(callable, nextDelay, retryPolicy.timeUnit());
-        nextDelay = retryPolicy.nextDelay(nextDelay);
+        LOGGER.info("Scheduling Retry no. {} with delay {} ", retryCount, nextDelay);
+        if (retryPolicy.checkMaxRetries(retryCount)) {
+            scheduledExecutorService.schedule(callable, nextDelay, retryPolicy.timeUnit());
+            nextDelay = retryPolicy.nextDelay(nextDelay);
+            retryCount++;
+        }
     }
 }

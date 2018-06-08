@@ -12,43 +12,22 @@ public class RetryPolicy {
 
     private long initialDelay;
     private long maxDelay;
+    private long maxRetries;
     private TimeUnit timeUnit;
     private Function<Long, Long> backoffFunction;
 
+    private final static long UNLIMITED_RETRIES = 0;
+
     /**
-     * Constructor
+     * Default Constructor
      *
-     * Sets default backoff function to multiply by 2
-     * @param initialDelay
-     * @param maxDelay
-     * @param timeUnit
      */
-    public RetryPolicy(long initialDelay, long maxDelay, TimeUnit timeUnit) {
-        if (initialDelay < 1) {
-            this.initialDelay = 1;
-        } else {
-            this.initialDelay = initialDelay;
-        }
-        this.maxDelay = maxDelay;
-        this.timeUnit = timeUnit;
+    public RetryPolicy() {
+        this.initialDelay = 1;
+        this.maxDelay = 300;
+        this.timeUnit = TimeUnit.SECONDS;
         this.backoffFunction = (d) -> d * 2;
-
-    }
-
-    /**
-     * Constructor
-     *
-     * Allow to configure the backoff function
-     * @param initialDelay
-     * @param maxDelay
-     * @param timeUnit
-     * @param backoffFunction
-     */
-    public RetryPolicy(long initialDelay, long maxDelay, TimeUnit timeUnit, Function<Long, Long> backoffFunction) {
-        this.initialDelay = initialDelay;
-        this.maxDelay = maxDelay;
-        this.timeUnit = timeUnit;
-        this.backoffFunction = backoffFunction;
+        this.maxRetries = UNLIMITED_RETRIES;
     }
 
     public long initialDelay() {
@@ -68,5 +47,36 @@ public class RetryPolicy {
     public long nextDelay(long currentDelay) {
         long next = backoffFunction.apply(currentDelay);
         return next < maxDelay ? next : maxDelay;
+    }
+
+    /**
+     * Returns true if the RetryPolicy is configure with UNLIMITED_RETRIES
+     * or if the retries param is lower than the maxRetries
+     *
+     * @param retries
+     * @return
+     */
+    public boolean checkMaxRetries(long retries) {
+        return maxRetries == UNLIMITED_RETRIES || retries < maxRetries;
+    }
+
+    public void setInitialDelay(long initialDelay) {
+        this.initialDelay = initialDelay;
+    }
+
+    public void setMaxDelay(long maxDelay) {
+        this.maxDelay = maxDelay;
+    }
+
+    public void setMaxRetries(long maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+
+    public void setTimeUnit(TimeUnit timeUnit) {
+        this.timeUnit = timeUnit;
+    }
+
+    public void setBackoffFunction(Function<Long, Long> backoffFunction) {
+        this.backoffFunction = backoffFunction;
     }
 }
