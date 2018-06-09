@@ -61,7 +61,6 @@ dependencies {
     compile "io.grpc:grpc-stub:${grpcVersion}"
     compile "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
     compile "io.netty:netty-transport-native-kqueue:${nettyVersion}:osx-x86_64"
-    compile "org.bouncycastle:bcprov-jdk15on:1.59"
     compile "org.apache.commons:commons-lang3:3.7"
     compile group: "org.slf4j", name: "slf4j-api", version: "1.7.25"
 }

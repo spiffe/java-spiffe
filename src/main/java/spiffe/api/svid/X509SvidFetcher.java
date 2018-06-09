@@ -66,6 +66,7 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
             @Override
             public void onNext(X509SVIDResponse value) {
                 listener.accept(value.getSvidsList());
+                retryHandler.reset();
             }
 
             @Override

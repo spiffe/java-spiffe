@@ -42,4 +42,12 @@ public class RetryHandler {
             retryCount++;
         }
     }
+
+    /**
+     * Reset state of RetryHandle to initial values
+     */
+    public void reset() {
+        nextDelay = retryPolicy.initialDelay();
+        retryCount = 0;
+    }
 }
