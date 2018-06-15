@@ -33,7 +33,7 @@ By default it uses a `RetryPolicy` with the following parameters:
 initialDelay = 1;
 maxDelay = 300;
 timeUnit = SECONDS;
-backoffFunction = (d) -> d * 2;
+expBackoffBase = 2
 maxRetries = UNLIMITED_RETRIES;
 ```
 

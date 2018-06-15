@@ -29,6 +29,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 class SpiffeEndpointChannelBuilder {
 
     static final String ENV_ADDRESS_VAR = "SPIFFE_ENDPOINT_SOCKET";
+    static final String ADDRESS_PROPERTY = "spiffe.endpoint.socket";
 
     /**
      * Returns a configured ManagedChannel
@@ -50,12 +51,19 @@ class SpiffeEndpointChannelBuilder {
     }
 
     /**
-     * Try to resolve the Address from the Environment.
+     * Resolve the Address from the Environment.
+     * First it looks in the JVM Properties (can be passed as -Dspiffe.endpoint.socket)
+     * Then if looks if it's defined as a System Variable
+     *
      * @throws IllegalStateException if the Address is not found
      * @return the Address
      */
     private static String getAddressFromEnv() {
-        String address = System.getenv(ENV_ADDRESS_VAR);
+        String address = System.getProperty(ADDRESS_PROPERTY);
+        if (!isBlank(address)) {
+            return address;
+        }
+        address = System.getenv(ENV_ADDRESS_VAR);
         if (isBlank(address)) {
             throw new IllegalStateException(format("%s env var is not defined", ENV_ADDRESS_VAR ));
         }

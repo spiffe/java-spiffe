@@ -35,11 +35,11 @@ public class RetryHandler {
      * @param callable
      */
     public void scheduleRetry(Runnable callable) {
-        LOGGER.info("Scheduling Retry no. {} with delay {} ", retryCount, nextDelay);
         if (retryPolicy.checkMaxRetries(retryCount)) {
             scheduledExecutorService.schedule(callable, nextDelay, retryPolicy.timeUnit());
             nextDelay = retryPolicy.nextDelay(nextDelay);
             retryCount++;
+            LOGGER.info("Scheduled Retry no. {} with delay {} ", retryCount, nextDelay);
         }
     }
 

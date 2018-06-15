@@ -47,6 +47,10 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
     /**
      * Default constructor
      *
+     * The Spiffe Endpoint Address will be read from the system property 'spiffe.endpoint_socket'
+     * and then in second order of priority from the environment variable 'SPIFFE_ENDPOINT_SOCKET'
+     * If the endpoint address it's not found, an IllegalStateException will be thrown.
+     *
      */
     public X509SvidFetcher() {
         this(null);
@@ -82,7 +86,6 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
             }
         };
 
-        LOGGER.info("Calling registerListener");
         spiffeWorkloadStub.fetchX509SVIDs(newRequest(), observer);
     }
 

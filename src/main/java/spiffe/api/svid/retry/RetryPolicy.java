@@ -13,6 +13,7 @@ public class RetryPolicy {
     private long initialDelay;
     private long maxDelay;
     private long maxRetries;
+    private long expBackoffBase;
     private TimeUnit timeUnit;
     private Function<Long, Long> backoffFunction;
 
@@ -26,7 +27,8 @@ public class RetryPolicy {
         this.initialDelay = 1;
         this.maxDelay = 300;
         this.timeUnit = TimeUnit.SECONDS;
-        this.backoffFunction = (d) -> d * 2;
+        this.expBackoffBase = 2;
+        this.backoffFunction = (d) -> d * expBackoffBase;
         this.maxRetries = UNLIMITED_RETRIES;
     }
 
@@ -76,7 +78,7 @@ public class RetryPolicy {
         this.timeUnit = timeUnit;
     }
 
-    public void setBackoffFunction(Function<Long, Long> backoffFunction) {
-        this.backoffFunction = backoffFunction;
+    public void setExpBackoffBase(long expBackoffBase) {
+        this.expBackoffBase = expBackoffBase;
     }
 }
