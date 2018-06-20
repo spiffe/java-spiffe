@@ -40,6 +40,8 @@ maxRetries = UNLIMITED_RETRIES;
 ### Running the example
 
 Required:
+* Linux (the example was tested in Linux Mint 18.3)
+* Java 8 
 * A running Spire server and agent. [HowTo](https://github.com/spiffe/spire#installing-spire-server-and-agent)
 * An entry in the registry that matches this application:
 ```
