@@ -2,24 +2,24 @@ package spiffe.api.svid;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import spiffe.api.svid.retry.RetryHandler;
 import spiffe.api.svid.retry.RetryPolicy;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static spiffe.api.svid.Workload.*;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides functionality to interact with a Workload API
  *
  */
-public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
+public final class X509SVIDFetcher implements Fetcher<List<X509SVID>> {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(X509SvidFetcher.class);
+    private static final Logger LOGGER = Logger.getLogger(X509SVIDFetcher.class.getName());
 
     private SpiffeWorkloadStub spiffeWorkloadStub;
 
@@ -30,7 +30,7 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
      * Constructor
      * @param spiffeEndpointAddress
      */
-    public X509SvidFetcher(String spiffeEndpointAddress) {
+    public X509SVIDFetcher(String spiffeEndpointAddress) {
         spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
         retryHandler = new RetryHandler(new RetryPolicy());
     }
@@ -39,7 +39,7 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
      * Constructor
      * @param spiffeEndpointAddress
      */
-    public X509SvidFetcher(String spiffeEndpointAddress, RetryPolicy retryPolicy) {
+    public X509SVIDFetcher(String spiffeEndpointAddress, RetryPolicy retryPolicy) {
         spiffeWorkloadStub = new SpiffeWorkloadStub(spiffeEndpointAddress);
         retryHandler = new RetryHandler(retryPolicy);
     }
@@ -52,7 +52,7 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
      * If the endpoint address it's not found, an IllegalStateException will be thrown.
      *
      */
-    public X509SvidFetcher() {
+    public X509SVIDFetcher() {
         this(null);
 
     }
@@ -69,13 +69,14 @@ public final class X509SvidFetcher implements Fetcher<List<X509SVID>> {
         StreamObserver<X509SVIDResponse> observer = new StreamObserver<X509SVIDResponse>() {
             @Override
             public void onNext(X509SVIDResponse value) {
+                LOGGER.log(Level.INFO, "New SVID received ");
                 listener.accept(value.getSvidsList());
                 retryHandler.reset();
             }
 
             @Override
             public void onError(Throwable t) {
-                LOGGER.error(t.getMessage());
+                LOGGER.log(Level.SEVERE, "Could not get SVID \n" + t.getMessage());
                 if (isRetryableError(t)) {
                     retryHandler.scheduleRetry(() -> registerListener(listener));
                 }

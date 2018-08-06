@@ -2,18 +2,25 @@
 
 ## Overview
 
-The JAVA-SPIFFE library provides functionality to fetch SVIDs Bundles from a Workload API
+The JAVA-SPIFFE library provides two components: 
+ 
+ - a Client that implements the functionality to fetch SVIDs Bundles from a Workload API. 
 
-## SPIFFE Workload API ClientExample
+ - a SVID based KeyStore and TrustStore implementation that handles the certificates in memory
+and receives the updates asynchronously from the Workload API. Using the terminology of the Java Security API, 
+this library provides a custom Security Provider that can be installed in the JVM. 
 
-The `X509SvidFetcher` provides the method `registerListener` that allows a consumer to register a listener 
-to get the X509-SVIDS whenever the Workload API something new to send. 
+## SPIFFE Workload API Client Example
 
-The channel is configured based on the Address (tcp or unix socket) and the OS detected.
+The `X509SVIDFetcher` provides the method `registerListener` that allows a consumer to register a listener 
+to get the X509-SVIDS whenever the Workload API has a new SVID to push. 
 
-## Use
+The gRPC channel is configured based on the Address (tcp or unix socket) and the OS detected.
+
+### Use
+
 ```
-Fetcher<List<X509SVID>> svidFetcher = new X509SvidFetcher("/tmp/agent.sock");
+Fetcher<List<X509SVID>> svidFetcher = new X509SVIDFetcher("/tmp/agent.sock");
 Consumer<List<X509SVID>> certificateUpdater;
 certificateUpdater = certs -> {
     certs.forEach(svid -> {
@@ -21,11 +28,11 @@ certificateUpdater = certs -> {
     });
 };
 
-//Calling the WorkloadAPI to obtain the certificates
+//Registering the callback to receive the SVIDs from the Workload API
 svidFetcher.registerListener(certificateUpdater);
 ```
 
-The `X509SvidFetcher` can be configured with a custom `RetryPolicy`. 
+The `X509SVIDFetcher` can be configured with a custom `RetryPolicy`. 
 
 By default it uses a `RetryPolicy` with the following parameters:
 
@@ -37,50 +44,83 @@ expBackoffBase = 2
 maxRetries = UNLIMITED_RETRIES;
 ```
 
-### Running the example
+## SPIFFE SVID based KeyStore and TrustStore Provider
 
-Required:
-* Linux (the example was tested in Linux Mint 18.3)
-* Java 8 
-* A running Spire server and agent. [HowTo](https://github.com/spiffe/spire#installing-spire-server-and-agent)
-* An entry in the registry that matches this application:
-```
-cmd/spire-server/spire-server entry create \
--spiffeID spiffe://example.org/workload \
--parentID spiffe://example.org/host \
--selector unix:uid:1000
-```
+### Install the SPIFFE Provider JAR
 
-To start the Java server you can run `./gradlew runExample`
-
-```
-$ ./gradlew runExample
-
-> Task :run
-[main] INFO spiffe.api.svid.examples.ClientExample - Fetching the SVIDs asynchronously
-[main] INFO spiffe.api.svid.examples.ClientExample - Waiting for certificates...
-[main] INFO spiffe.api.svid.examples.ClientExample - Doing other work...
-[main] INFO spiffe.api.svid.examples.ClientExample - Doing other work...
-[main] INFO spiffe.api.svid.examples.ClientExample - Doing other work...
-[grpc-default-executor-0] INFO spiffe.api.svid.examples.ClientExample - Spiffe ID fetched: spiffe://example.org/workload
-[main] INFO spiffe.api.svid.examples.ClientExample - Exiting...
-
-BUILD SUCCESSFUL in 1s
-
-```
-
-### Generating the JAR  
+Generate the JAR: 
 
 ```
 ./gradlew build
 ```
 
-The jar file `java-spiffe-0.1-SNAPSHOT.jar` is generated in folder `libs`.
+For installing the JAR file containing the provider classes as a bundled extension in the java platform, copy 
+`build/libs/spiffe-provider-0.1.0.jar` to `<java-home>/jre/lib/ext`
 
-### Generating the fat JAR with all the dependencies
+### Configure `java.security` 
+
+Java Security Providers are configured in the the master security properties file `<java-home>/lib/security/java.security`. 
+You can extend and override that file. 
+
+Create a file `java.security` with the following content: 
 
 ```
-./gradlew shadowJar
+# Adding provider following the numeration of the List of Providers in the master file
+security.provider.10=spiffe.provider.SpiffeProvider
+
+# Determines the default key and trust manager factory algorithms for
+# the javax.net.ssl package.
+ssl.KeyManagerFactory.algorithm=Spiffe
+ssl.TrustManagerFactory.algorithm=Spiffe
+
+# The spiffeID that will be trusted
+ssl.spiffe.accept=spiffe://example.org/front-end
 ```
 
-The jar file `java-spiffe-0.1-SNAPSHOT-all.jar` is generated in folder `libs`.
+Replace the value of `ssl.spiffe.accept` with the Spiffe ID of the workload that is allowed to connect to your workload.
+
+Pass your custom security properties through the command line via system property: 
+
+```
+-Djava.security.properties=<path to java.security>
+```
+
+The properties defined in your custom properties file will override the properties in the master file. 
+
+### Configure Workload API Socket Endpoint
+
+The socket endpoint can be configured defining a environment variable named `SPIFFE_ENDPOINT_SOCKET`: 
+
+```
+export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
+``` 
+
+or it can be configured from the command line via system property: 
+
+```
+-Dspiffe.endpoint.socket=/tmp/agent.sock
+```
+
+### Configure a Tomcat connector
+
+A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as follows: 
+
+```
+<Connector
+            protocol="org.apache.coyote.http11.Http11NioProtocol"
+            port="8443" maxThreads="200"
+            scheme="https" secure="true" SSLEnabled="true"
+            keystoreFile="" keystorePass=""
+            keystoreType="Spiffe"
+            clientAuth="true" sslProtocol="TLS"/>
+```
+
+## Running Demo
+
+A running example using the SPIFFE Provider in Tomcat is available in [java-spiffe-example](https://github.com/spiffe/spiffe-example/tree/master/spiffe-keystore-tomcat)
+
+## References 
+
+[How to Implement a Provider in the Java Cryptography Architecture](https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider.html)
+
+[Java PKI Programmer's Guide](https://docs.oracle.com/javase/8/docs/technotes/guides/security/certpath/CertPathProgGuide.html)
