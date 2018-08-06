@@ -117,7 +117,7 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
 
 ## Running Demo
 
-A running example using the SPIFFE Provider in Tomcat is available in [java-spiffe-example](https://github.com/spiffe/spiffe-example/tree/master/spiffe-keystore-tomcat)
+A running example using the SPIFFE Provider in Tomcat is available in [java-spiffe-example](https://github.com/spiffe/spiffe-example/tree/master/java-keystore-tomcat-demo)
 
 ## References 
 
