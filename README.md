@@ -59,7 +59,7 @@ For installing the JAR file containing the provider classes as a bundled extensi
 
 ### Configure `java.security` 
 
-Java Security Providers are configured in the the master security properties file `<java-home>/lib/security/java.security`. 
+Java Security Providers are configured in the master security properties file `<java-home>/lib/security/java.security`. 
 You can extend and override that file. 
 
 Create a file `java.security` with the following content: 
@@ -89,7 +89,7 @@ The properties defined in your custom properties file will override the properti
 
 ### Configure Workload API Socket Endpoint
 
-The socket endpoint can be configured defining a environment variable named `SPIFFE_ENDPOINT_SOCKET`: 
+The socket endpoint can be configured defining an environment variable named `SPIFFE_ENDPOINT_SOCKET`: 
 
 ```
 export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
