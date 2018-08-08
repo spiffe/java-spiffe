@@ -27,6 +27,8 @@ import static spiffe.provider.SpiffeProviderConstants.ALIAS;
  */
 public class SpiffeKeyStore extends KeyStoreSpi {
 
+    private static final int NUMBER_OF_ENTRIES = 1;
+
     @Override
     public Key engineGetKey(String alias, char[] password) {
         return null;
@@ -79,7 +81,7 @@ public class SpiffeKeyStore extends KeyStoreSpi {
 
     @Override
     public int engineSize() {
-        return 1;
+        return NUMBER_OF_ENTRIES;
     }
 
     @Override

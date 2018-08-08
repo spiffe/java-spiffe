@@ -9,15 +9,11 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-import static java.lang.String.format;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -29,8 +25,12 @@ class CertificateUtils {
 
     private static final Logger LOGGER = Logger.getLogger(SpiffeTrustManager.class.getName());
 
-    private static final CertPathValidator certPathValidator = getCertPathValidator();
-    private static final CertificateFactory certificateFactory = getCertificateFactory();
+    private static final CertPathValidator CERT_PATH_VALIDATOR = getCertPathValidator();
+    private static final CertificateFactory CERTIFICATE_FACTORY = getCertificateFactory();
+    private static final String PRIVATE_KEY_ALGORITHM = "EC";
+    private static final String SSL_SPIFFE_ACCEPT_PROPERTY = "ssl.spiffe.accept";
+    private static final String SPIFFE_PREFIX = "spiffe://";
+    private static final int SAN_VALUE_INDEX = 1;
 
     /**
      * Generate the collection of X509Certificates
@@ -41,7 +41,9 @@ class CertificateUtils {
      */
     static Set<X509Certificate> generateCertificates(byte[] input) throws CertificateException {
         Collection<? extends Certificate> certificates =  getCertificateFactory().generateCertificates(new ByteArrayInputStream(input));
-        return certificates.stream().map(c -> (X509Certificate) c).collect(toSet());
+        return certificates.stream()
+                .map(X509Certificate.class::cast)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -66,7 +68,7 @@ class CertificateUtils {
      * @throws InvalidKeySpecException
      */
     static PrivateKey generatePrivateKey(byte[] input) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        KeyFactory keyFactory = KeyFactory.getInstance("EC", new BouncyCastleProvider());
+        KeyFactory keyFactory = KeyFactory.getInstance(PRIVATE_KEY_ALGORITHM, new BouncyCastleProvider());
         return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(input));
     }
 
@@ -79,9 +81,9 @@ class CertificateUtils {
      */
     static void validate(X509Certificate[] chain, Set<X509Certificate> trustedCerts) throws CertificateException {
         PKIXParameters pkixParameters = toPkixParameters(trustedCerts);
-        CertPath certPath = certificateFactory.generateCertPath(asList(chain));
+        CertPath certPath = CERTIFICATE_FACTORY.generateCertPath(Arrays.asList(chain));
         try {
-            certPathValidator.validate(certPath, pkixParameters);
+            CERT_PATH_VALIDATOR.validate(certPath, pkixParameters);
         } catch (CertPathValidatorException | InvalidAlgorithmParameterException e) {
             throw new CertificateException(e);
         }
@@ -96,16 +98,15 @@ class CertificateUtils {
      */
     static void checkSpiffeId(X509Certificate[] chain) throws CertificateException {
         Optional<String> spiffeId = getSpiffeId(chain[0]);
-        if (spiffeId.isPresent()) {
-            String acceptedSpiffeId = Security.getProperty("ssl.spiffe.accept");
-
-            if (!StringUtils.equals(spiffeId.get(), acceptedSpiffeId)) {
-                String errorMessage = format("SPIFFE ID %s is not a trusted", spiffeId.get());
-                LOGGER.log(Level.WARNING, errorMessage);
-                throw new CertificateException(errorMessage);
-            }
-        } else {
+        if (!spiffeId.isPresent()) {
             throw new CertificateException("SPIFFE ID not found in the certificate");
+        }
+
+        String acceptedSpiffeId = Security.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
+        if (!StringUtils.equals(spiffeId.get(), acceptedSpiffeId)) {
+            String errorMessage = String.format("SPIFFE ID %s is not a trusted", spiffeId.get());
+            LOGGER.log(Level.WARNING, errorMessage);
+            throw new CertificateException(errorMessage);
         }
     }
 
@@ -113,15 +114,22 @@ class CertificateUtils {
     /**
      * Extracts the SpiffeID from a SVID - X509Certificate
      *
+     * It iterates over the list of SubjectAlternativesNames, read each entry, takes the value from the index
+     * defined in SAN_VALUE_INDEX and filters the entries that starts with the SPIFFE_PREFIX and returns the first.
+     *
      * @param certificate
-     * @return
+     * @return Optional<String> with the SpiffeId
      * @throws CertificateParsingException
      */
     private static Optional<String> getSpiffeId(X509Certificate certificate) throws CertificateParsingException {
-        return certificate.getSubjectAlternativeNames().stream()
-                .map(san -> (String) san.get(1))
-                .filter(uri -> startsWith(uri, "spiffe://"))
-                .findFirst();
+        List<String> spiffeIds = certificate.getSubjectAlternativeNames().stream()
+                .map(san -> (String) san.get(SAN_VALUE_INDEX))
+                .filter(uri -> startsWith(uri, SPIFFE_PREFIX))
+                .collect(Collectors.toList());
+        if (spiffeIds.size() > 1) {
+            throw new IllegalArgumentException("Certificate contains multiple SpiffeID. Not Supported ");
+        }
+        return spiffeIds.stream().findFirst();
     }
 
 
@@ -140,7 +148,7 @@ class CertificateUtils {
 
             PKIXParameters pkixParameters = new PKIXParameters(trustedCerts.stream()
                     .map(c -> new TrustAnchor(c, null))
-                    .collect(toSet()));
+                    .collect(Collectors.toSet()));
             pkixParameters.setRevocationEnabled(false);
             return pkixParameters;
         } catch (InvalidAlgorithmParameterException e) {

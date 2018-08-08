@@ -6,12 +6,16 @@ import java.security.Security;
 import static spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
 
 /**
- * This class represents a Security Provider" for the Java Security API,
- * It uses a custom implementations of KeyStore and TrustStore Managers that support
- * Spiffe SVID retrieval and SpiffeID validation
+ * This class represents a Security Provider for the Java Security API.
+ * It uses a custom implementation of KeyStore and TrustStore Managers that support
+ * Spiffe SVID retrieval from the Workload API and Spiffe ID validation
  *
  */
 public class SpiffeProvider extends Provider {
+
+    private static final String SPIFFE_KEY_MANAGER_FACTORY = String.format("KeyManagerFactory.%s", SpiffeProviderConstants.ALGORITHM);
+    private static final String SPIFFE_TRUST_MANAGER_FACTORY = String.format("TrustManagerFactory.%s", SpiffeProviderConstants.ALGORITHM);
+    private static final String SPIFFE_KEYSTORE = String.format("KeyStore.%s", SpiffeProviderConstants.ALGORITHM);
 
     /**
      * Constructor
@@ -20,16 +24,9 @@ public class SpiffeProvider extends Provider {
      *
      */
     public SpiffeProvider() {
-        super(PROVIDER_NAME, 0.1, "");
-        super.put("KeyManagerFactory."+ SpiffeProviderConstants.ALGORITHM, SpiffeKeyManagerFactory.class.getName());
-        super.put("TrustManagerFactory." + SpiffeProviderConstants.ALGORITHM, SpiffeTrustManagerFactory.class.getName());
-        super.put("KeyStore." + SpiffeProviderConstants.ALGORITHM, SpiffeKeyStore.class.getName());
-    }
-
-    public static synchronized void install() {
-        Security.setProperty("ssl.KeyManagerFactory.algorithm", SpiffeProviderConstants.ALGORITHM);
-        Security.setProperty("ssl.TrustManagerFactory.algorithm", SpiffeProviderConstants.ALGORITHM);
-
-        Security.addProvider(new SpiffeProvider());
+        super(PROVIDER_NAME, 0.1, "SPIFFE based KeyStore and TrustStore");
+        super.put(SPIFFE_KEY_MANAGER_FACTORY, SpiffeKeyManagerFactory.class.getName());
+        super.put(SPIFFE_TRUST_MANAGER_FACTORY, SpiffeTrustManagerFactory.class.getName());
+        super.put(SPIFFE_KEYSTORE, SpiffeKeyStore.class.getName());
     }
 }

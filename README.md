@@ -60,13 +60,23 @@ For installing the JAR file containing the provider classes as a bundled extensi
 ### Configure `java.security` 
 
 Java Security Providers are configured in the master security properties file `<java-home>/lib/security/java.security`. 
-You can extend and override that file. 
 
-Create a file `java.security` with the following content: 
+The way to register a provider is to specify the Provider subclass name and priority in the format
 
 ```
-# Adding provider following the numeration of the List of Providers in the master file
-security.provider.10=spiffe.provider.SpiffeProvider
+security.provider.<n>=<className>
+```
+
+This declares a provider, and specifies its preference order n.
+
+#### Register the SPIFFE Provider
+
+You can extend and override the master security properties file. 
+
+Create a file `java.security` with the following content:
+
+```
+security.provider.<n>=spiffe.provider.SpiffeProvider
 
 # Determines the default key and trust manager factory algorithms for
 # the javax.net.ssl package.
@@ -74,15 +84,26 @@ ssl.KeyManagerFactory.algorithm=Spiffe
 ssl.TrustManagerFactory.algorithm=Spiffe
 
 # The spiffeID that will be trusted
-ssl.spiffe.accept=spiffe://example.org/front-end
+ssl.spiffe.accept=spiffe://example.org/workload
 ```
 
-Replace the value of `ssl.spiffe.accept` with the Spiffe ID of the workload that is allowed to connect to your workload.
+In your `java.security` file: 
 
-Pass your custom security properties through the command line via system property: 
+* replace `<n>` following the order of the `# List of Providers` in the master file. 
+
+* replace the value of the custom property `ssl.spiffe.accept` with the Spiffe ID of the workload that is allowed to connect.
+
+To pass your custom security properties file through the command line via system property when starting the JVM:
 
 ```
 -Djava.security.properties=<path to java.security>
+```
+
+For example, it can be passed in the `JAVA_OPTS` used by the Tomcat's startup script: 
+
+```
+$ export JAVA_OPTS="$JAVA_OPTS -Djava.security.properties=java.security"
+$ ./catalina.sh run
 ```
 
 The properties defined in your custom properties file will override the properties in the master file. 
@@ -100,6 +121,10 @@ or it can be configured from the command line via system property:
 ```
 -Dspiffe.endpoint.socket=/tmp/agent.sock
 ```
+
+If both are defined, system property overrules. 
+
+If the endpoint socket is not defined, there will be an error stating `SPIFFE_ENDPOINT_SOCKET is not defined`.
 
 ### Configure a Tomcat connector
 

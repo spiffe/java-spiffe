@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static spiffe.provider.SpiffeProviderConstants.ALIAS;
@@ -88,10 +89,8 @@ public class SpiffeKeyManager extends X509ExtendedKeyManager {
      */
     private String getAlias(String...keyTypes) {
         String privateKeyAlgorithm = spiffeIdManager.getPrivateKey().getAlgorithm();
-        for (String keyType : keyTypes) {
-            if (keyType.equals(privateKeyAlgorithm)) {
-                return ALIAS;
-            }
+        if (Arrays.asList(keyTypes).contains(privateKeyAlgorithm)) {
+            return ALIAS;
         }
         return null;
     }
