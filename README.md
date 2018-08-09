@@ -6,13 +6,13 @@ The JAVA-SPIFFE library provides two components:
  
  - a Client that implements the functionality to fetch SVIDs Bundles from a Workload API. 
 
- - a SVID based KeyStore and TrustStore implementation that handles the certificates in memory
+ - an SVID based KeyStore and TrustStore implementation that handles the certificates in memory
 and receives the updates asynchronously from the Workload API. Using the terminology of the Java Security API, 
 this library provides a custom Security Provider that can be installed in the JVM. 
 
 ## SPIFFE Workload API Client Example
 
-The `X509SVIDFetcher` provides the method `registerListener` that allows a consumer to register a listener 
+The `X509SVIDFetcher` provides the `registerListener` method that allows a consumer to register a listener 
 to get the X509-SVIDS whenever the Workload API has a new SVID to push. 
 
 The gRPC channel is configured based on the Address (tcp or unix socket) and the OS detected.

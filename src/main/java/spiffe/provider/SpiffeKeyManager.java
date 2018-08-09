@@ -82,7 +82,7 @@ public class SpiffeKeyManager extends X509ExtendedKeyManager {
     }
 
     /**
-     * If the algorithm is supported returns the ALIAS of the Provider, if it's not supported return null
+     * If the algorithm is supported returns the ALIAS of the Provider, if it's not supported returns null
      *
      * @param keyTypes
      * @return

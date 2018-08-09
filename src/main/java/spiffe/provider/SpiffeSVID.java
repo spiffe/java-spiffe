@@ -46,7 +46,7 @@ class SpiffeSVID {
             privateKey = CertificateUtils.generatePrivateKey(x509SVID.getX509SvidKey().toByteArray());
             spiffeID = x509SVID.getSpiffeId();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "SVID message could not processed", e);
+            LOGGER.log(Level.SEVERE, "SVID message could not be processed", e);
             throw new RuntimeException(e);
         }
     }
