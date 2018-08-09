@@ -104,7 +104,7 @@ class CertificateUtils {
 
         String acceptedSpiffeId = Security.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
         if (!StringUtils.equals(spiffeId.get(), acceptedSpiffeId)) {
-            String errorMessage = String.format("SPIFFE ID %s is not a trusted", spiffeId.get());
+            String errorMessage = String.format("SPIFFE ID %s is not trusted", spiffeId.get());
             LOGGER.log(Level.WARNING, errorMessage);
             throw new CertificateException(errorMessage);
         }
