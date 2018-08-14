@@ -94,7 +94,7 @@ class CertificateUtils {
      * the java.security property ssl.spiffe.accept
      *
      * @param chain an array of X509Certificate that contains the Peer's SVID to be validated
-     * @throws CertificateException when either the certificates doesn't have a SPIFFE ID or the SPIFFE ID is not trusted
+     * @throws CertificateException when either the certificates doesn't have a SPIFFE ID or the SPIFFE ID is not authorized
      */
     static void checkSpiffeId(X509Certificate[] chain) throws CertificateException {
         Optional<String> spiffeId = getSpiffeId(chain[0]);
@@ -104,7 +104,7 @@ class CertificateUtils {
 
         String acceptedSpiffeId = Security.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
         if (!StringUtils.equals(spiffeId.get(), acceptedSpiffeId)) {
-            String errorMessage = String.format("SPIFFE ID %s is not trusted", spiffeId.get());
+            String errorMessage = String.format("SPIFFE ID %s is not authorized", spiffeId.get());
             LOGGER.log(Level.WARNING, errorMessage);
             throw new CertificateException(errorMessage);
         }

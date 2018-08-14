@@ -85,7 +85,7 @@ public class SpiffeTrustManager extends X509ExtendedTrustManager {
      *
      * @param chain an array of X509Certificate that contains the Peer's SVID to be validated
      * @throws CertificateException when either the Peer's certificate doesn't chain to any Trusted CA
-     * or the SPIFFE ID is not trusted.
+     * or the SPIFFE ID is not authorized.
      */
     private void checkPeer(X509Certificate[] chain) throws CertificateException {
         validate(chain, spiffeIdManager.getTrustedCerts());
