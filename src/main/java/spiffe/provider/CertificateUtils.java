@@ -102,14 +102,35 @@ class CertificateUtils {
             throw new CertificateException("SPIFFE ID not found in the certificate");
         }
 
-        String acceptedSpiffeId = Security.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
-        if (!StringUtils.equals(spiffeId.get(), acceptedSpiffeId)) {
+        List<String> acceptedSpiffeIds = getAcceptedSpiffeIds();
+
+        if (!acceptedSpiffeIds.contains(spiffeId.get())) {
             String errorMessage = String.format("SPIFFE ID %s is not authorized", spiffeId.get());
             LOGGER.log(Level.WARNING, errorMessage);
             throw new CertificateException(errorMessage);
         }
     }
 
+    /**
+     * Returns the list of accepted spiffe id configured in the SSL_SPIFFE_ACCEPT_PROPERTY property in
+     * the java security properties file
+     *
+     */
+    private static List<String> getAcceptedSpiffeIds() {
+        String commaSeparatedSpiffeIds = Security.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
+        String [] array = commaSeparatedSpiffeIds.split(",");
+        return normalize(Arrays.asList(array));
+    }
+
+    /**
+     * Process the input list elements trimming leading and trailing blanks, returns a new list
+     *
+     * @param list
+     * @return
+     */
+    private static List<String> normalize(List<String> list) {
+        return list.stream().map(String::trim).collect(Collectors.toList());
+    }
 
     /**
      * Extracts the SpiffeID from a SVID - X509Certificate
