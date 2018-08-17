@@ -3,16 +3,26 @@ package spiffe.provider;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Supplier;
 
-public class FunctionalReadWriteLock {
+/**
+ * Functional Template for performing synchronized reads and writes
+ * Uses a StampedLock to handle locks
+ *
+ */
+class FunctionalReadWriteLock {
 
     private final StampedLock lock;
 
-    public FunctionalReadWriteLock() {
+    FunctionalReadWriteLock() {
         this.lock = new StampedLock();
     }
 
-    public <T> T read(Supplier<T> supplier) {
-        long stamp = lock.readLock();
+    <T> T read(Supplier<T> supplier) {
+        long stamp = lock.tryOptimisticRead();
+        T value = supplier.get();
+        if (lock.validate(stamp)) {
+            return value;
+        }
+        stamp = lock.readLock();
         try {
             return supplier.get();
         } finally {
@@ -20,7 +30,7 @@ public class FunctionalReadWriteLock {
         }
     }
 
-    public void write(Runnable runnable) {
+    void write(Runnable runnable) {
         long stamp = lock.writeLock();
         try {
             runnable.run();
