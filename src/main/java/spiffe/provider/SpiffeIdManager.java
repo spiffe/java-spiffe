@@ -8,7 +8,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import static java.util.Collections.EMPTY_SET;
 
@@ -26,7 +25,15 @@ class SpiffeIdManager {
         return INSTANCE;
     }
 
+    /**
+     * The Spiffe SVID handled by this manager
+     */
     private SpiffeSVID spiffeSVID;
+
+    /**
+     * Used to synchronize spiffeSVID writes and reads
+     */
+    private final FunctionalReadWriteLock guard;
 
     /**
      * Private Constructor
@@ -35,33 +42,30 @@ class SpiffeIdManager {
      *
      */
     private SpiffeIdManager() {
-        Consumer<List<X509SVID>> certificateUpdater = certs -> {
-            X509SVID svid  = certs.get(0);
-            spiffeSVID = new SpiffeSVID(svid);
-        };
+        guard = new FunctionalReadWriteLock();
         Fetcher<List<X509SVID>> svidFetcher = new X509SVIDFetcher();
-        svidFetcher.registerListener(certificateUpdater);
+        svidFetcher.registerListener(this::updateSVID);
+    }
+
+    /**
+     * Method used as callback that gets executed whenever an SVID update is pushed by the Workload API
+     * Uses a write lock to synchronize access to spiffeSVID
+     */
+    private void updateSVID(List<X509SVID> certs) {
+        X509SVID svid  = certs.get(0);
+        guard.write(() -> spiffeSVID = new SpiffeSVID(svid));
     }
 
     X509Certificate getCertificate() {
-        if (spiffeSVID != null) {
-            return spiffeSVID.getCertificate();
-        }
-        return null;
+        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getCertificate() : null);
     }
 
     PrivateKey getPrivateKey() {
-        if (spiffeSVID != null) {
-            return spiffeSVID.getPrivateKey();
-        }
-        return null;
+        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getPrivateKey() : null);
     }
 
     @SuppressWarnings("unchecked")
     Set<X509Certificate> getTrustedCerts() {
-        if (spiffeSVID != null) {
-            return spiffeSVID.getBundle();
-        }
-        return EMPTY_SET;
+        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getBundle() : EMPTY_SET);
     }
 }

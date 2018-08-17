@@ -69,7 +69,7 @@ public final class X509SVIDFetcher implements Fetcher<List<X509SVID>> {
         StreamObserver<X509SVIDResponse> observer = new StreamObserver<X509SVIDResponse>() {
             @Override
             public void onNext(X509SVIDResponse value) {
-                LOGGER.log(Level.INFO, "New SVID received ");
+                LOGGER.log(Level.FINE, "New SVID received ");
                 listener.accept(value.getSvidsList());
                 retryHandler.reset();
             }
