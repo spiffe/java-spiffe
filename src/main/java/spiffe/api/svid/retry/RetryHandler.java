@@ -1,17 +1,16 @@
 package spiffe.api.svid.retry;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handle the retries and backoffs.
  */
 public class RetryHandler {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(RetryHandler.class);
+    private static final Logger LOGGER = Logger.getLogger(RetryHandler.class.getName());
 
     private long nextDelay;
     private long retryCount;
@@ -39,7 +38,7 @@ public class RetryHandler {
             scheduledExecutorService.schedule(callable, nextDelay, retryPolicy.timeUnit());
             nextDelay = retryPolicy.nextDelay(nextDelay);
             retryCount++;
-            LOGGER.info("Scheduled Retry no. {} with delay {} ", retryCount, nextDelay);
+            LOGGER.log(Level.FINE, String.format("Scheduled Retry no. %s with delay %s ", retryCount, nextDelay));
         }
     }
 
