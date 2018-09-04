@@ -17,7 +17,7 @@ import static java.util.Collections.EMPTY_SET;
  * It gets SVID updates asynchronously from the Workload API
  *
  */
-class SpiffeIdManager {
+public class SpiffeIdManager {
 
     private static final SpiffeIdManager INSTANCE = new SpiffeIdManager();
 
@@ -45,6 +45,10 @@ class SpiffeIdManager {
         guard = new FunctionalReadWriteLock();
         Fetcher<List<X509SVID>> svidFetcher = new X509SVIDFetcher();
         svidFetcher.registerListener(this::updateSVID);
+    }
+
+    public SpiffeSVID getSpiffeSVID() {
+        return guard.read(() -> spiffeSVID);
     }
 
     /**
