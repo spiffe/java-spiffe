@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * Represents a SPIFFE Identity
  *
  */
-class SpiffeSVID {
+public class SpiffeSVID {
 
     private static final Logger LOGGER = Logger.getLogger(SpiffeSVID.class.getName());
 
@@ -51,19 +51,19 @@ class SpiffeSVID {
         }
     }
 
-    String getSpiffeID() {
+    public String getSpiffeID() {
         return spiffeID;
     }
 
-    X509Certificate getCertificate() {
+    public X509Certificate getCertificate() {
         return certificate;
     }
 
-    PrivateKey getPrivateKey() {
+    public PrivateKey getPrivateKey() {
         return privateKey;
     }
 
-    Set<X509Certificate> getBundle() {
+    public Set<X509Certificate> getBundle() {
         return bundle;
     }
 }
