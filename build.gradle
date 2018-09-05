@@ -68,8 +68,5 @@ dependencies {
     compile "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
     compile "io.netty:netty-transport-native-kqueue:${nettyVersion}:osx-x86_64"
     compile "org.apache.commons:commons-lang3:3.7"
-
-    compile "org.bouncycastle:bcprov-jdk15on:1.59"
-    compile "org.bouncycastle:bcpkix-jdk15on:1.59"
 }
 

@@ -1,8 +1,5 @@
 package spiffe.provider;
 
-import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import java.io.ByteArrayInputStream;
 import java.security.*;
 import java.security.cert.*;
@@ -68,7 +65,7 @@ class CertificateUtils {
      * @throws InvalidKeySpecException
      */
     static PrivateKey generatePrivateKey(byte[] input) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        KeyFactory keyFactory = KeyFactory.getInstance(PRIVATE_KEY_ALGORITHM, new BouncyCastleProvider());
+        KeyFactory keyFactory = KeyFactory.getInstance(PRIVATE_KEY_ALGORITHM);
         return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(input));
     }
 
