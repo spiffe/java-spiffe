@@ -1,6 +1,7 @@
 package spiffe.provider;
 
 import spiffe.api.svid.Fetcher;
+import spiffe.api.svid.Workload;
 import spiffe.api.svid.Workload.X509SVID;
 import spiffe.api.svid.X509SVIDFetcher;
 
@@ -43,7 +44,7 @@ public class SpiffeIdManager {
      */
     private SpiffeIdManager() {
         guard = new FunctionalReadWriteLock();
-        Fetcher<List<X509SVID>> svidFetcher = new X509SVIDFetcher();
+        Fetcher<Workload.X509SVIDResponse> svidFetcher = new X509SVIDFetcher();
         svidFetcher.registerListener(this::updateSVID);
     }
 
@@ -55,9 +56,8 @@ public class SpiffeIdManager {
      * Method used as callback that gets executed whenever an SVID update is pushed by the Workload API
      * Uses a write lock to synchronize access to spiffeSVID
      */
-    private void updateSVID(List<X509SVID> certs) {
-        X509SVID svid  = certs.get(0);
-        guard.write(() -> spiffeSVID = new SpiffeSVID(svid));
+    private void updateSVID(Workload.X509SVIDResponse x509SVIDResponse) {
+        guard.write(() -> spiffeSVID = new SpiffeSVID(x509SVIDResponse));
     }
 
     X509Certificate getCertificate() {
@@ -70,6 +70,6 @@ public class SpiffeIdManager {
 
     @SuppressWarnings("unchecked")
     Set<X509Certificate> getTrustedCerts() {
-        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getBundle() : EMPTY_SET);
+        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getTrustedCerts() : EMPTY_SET);
     }
 }

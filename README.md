@@ -10,6 +10,9 @@ The JAVA-SPIFFE library provides two components:
 and receives the updates asynchronously from the Workload API. Using the terminology of the Java Security API, 
 this library provides a custom Security Provider that can be installed in the JVM. 
 
+It supports Federation. The TrustStore validates the peer's SVID using a set of Trusted CAs that includes the 
+Federated TrustDomains CAs bundles. These Federates CAs bundles come from the Workload API in the X509SVIDResponse.
+
 ## SPIFFE Workload API Client Example
 
 The `X509SVIDFetcher` provides the `registerListener` method that allows a consumer to register a listener 
@@ -20,16 +23,18 @@ The gRPC channel is configured based on the Address (tcp or unix socket) and the
 ### Use
 
 ```
-Fetcher<List<X509SVID>> svidFetcher = new X509SVIDFetcher("/tmp/agent.sock");
-Consumer<List<X509SVID>> certificateUpdater;
-certificateUpdater = certs -> {
-    certs.forEach(svid -> {
-        System.out.println("Spiffe ID fetched: " + svid.getSpiffeId());
-    });
-};
+Fetcher<X509SVIDResponse> svidFetcher = new X509SVIDFetcher("/tmp/agent.sock");
+
+Consumer<X509SVIDResponse> xvidConsumer = x509SVIDResponse -> {
+            x509SVIDResponse.getSvidsList().forEach(svid -> {
+                System.out.println("Spiffe ID fetched: " + svid.getSpiffeId());
+                System.out.println("Federated with: " + svid.getFederatesWithList());
+            });
+            System.out.println(x509SVIDResponse.getFederatedBundlesMap());
+        };
 
 //Registering the callback to receive the SVIDs from the Workload API
-svidFetcher.registerListener(certificateUpdater);
+svidFetcher.registerListener(xvidConsumer);
 ```
 
 The `X509SVIDFetcher` can be configured with a custom `RetryPolicy`. 
@@ -84,7 +89,7 @@ ssl.KeyManagerFactory.algorithm=Spiffe
 ssl.TrustManagerFactory.algorithm=Spiffe
 
 # The list of spiffeIDs that will be authorized
-ssl.spiffe.accept=spiffe://example.org/workload, spiffe://example.org/workload2
+ssl.spiffe.accept=spiffe://example.org/workload, spiffe://example.org/workload2, spiffe://example2.org/workload
 ```
 
 In your `java.security` file: 
