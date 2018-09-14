@@ -11,7 +11,7 @@ and receives the updates asynchronously from the Workload API. Using the termino
 this library provides a custom Security Provider that can be installed in the JVM. 
 
 It supports Federation. The TrustStore validates the peer's SVID using a set of Trusted CAs that includes the 
-Federated TrustDomains CAs bundles. These Federates CAs bundles come from the Workload API in the X509SVIDResponse.
+Federated TrustDomains CAs bundles. These Federated CAs bundles come from the Workload API in the X509SVIDResponse.
 
 ## SPIFFE Workload API Client Example
 
