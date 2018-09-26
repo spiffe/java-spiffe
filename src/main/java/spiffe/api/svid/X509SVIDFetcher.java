@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Provides functionality to interact with a Workload API
  *
  */
-public final class X509SVIDFetcher implements Fetcher<List<X509SVID>> {
+public final class X509SVIDFetcher implements Fetcher<X509SVIDResponse> {
 
     private static final Logger LOGGER = Logger.getLogger(X509SVIDFetcher.class.getName());
 
@@ -58,19 +58,19 @@ public final class X509SVIDFetcher implements Fetcher<List<X509SVID>> {
     }
 
     /**
-     * Register the listener to receive the X509 SVIDS from the Workload API
+     * Register the listener to receive the X509SVIDResponse from the Workload API
      * In case there's an error in the connection with the Workload API,
      * it retries using a RetryHandler that implements a backoff policy
      *
      */
     @Override
-    public void registerListener(Consumer<List<X509SVID>> listener) {
+    public void registerListener(Consumer<X509SVIDResponse> listener) {
 
         StreamObserver<X509SVIDResponse> observer = new StreamObserver<X509SVIDResponse>() {
             @Override
             public void onNext(X509SVIDResponse value) {
                 LOGGER.log(Level.FINE, "New SVID received ");
-                listener.accept(value.getSvidsList());
+                listener.accept(value);
                 retryHandler.reset();
             }
 

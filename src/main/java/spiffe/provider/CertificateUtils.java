@@ -11,6 +11,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.EMPTY_LIST;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -90,6 +92,8 @@ class CertificateUtils {
      * Validates that the SPIFFE ID is present and matches the SPIFFE ID configured in
      * the java.security property ssl.spiffe.accept
      *
+     * If the authorized spiffe ids list is empty any spiffe id is authorized
+     *
      * @param chain an array of X509Certificate that contains the Peer's SVID to be validated
      * @throws CertificateException when either the certificates doesn't have a SPIFFE ID or the SPIFFE ID is not authorized
      */
@@ -99,9 +103,9 @@ class CertificateUtils {
             throw new CertificateException("SPIFFE ID not found in the certificate");
         }
 
-        List<String> acceptedSpiffeIds = getAcceptedSpiffeIds();
+        List<String> acceptedSpiffeIds = getAuthorizedSpiffeIDs();
 
-        if (!acceptedSpiffeIds.contains(spiffeId.get())) {
+        if (!acceptedSpiffeIds.isEmpty() && !acceptedSpiffeIds.contains(spiffeId.get())) {
             String errorMessage = String.format("SPIFFE ID %s is not authorized", spiffeId.get());
             LOGGER.log(Level.WARNING, errorMessage);
             throw new CertificateException(errorMessage);
@@ -109,12 +113,15 @@ class CertificateUtils {
     }
 
     /**
-     * Returns the list of accepted spiffe id configured in the SSL_SPIFFE_ACCEPT_PROPERTY property in
+     * Returns the list of authorized spiffe ids configured in the SSL_SPIFFE_ACCEPT_PROPERTY property in
      * the java security properties file
      *
      */
-    private static List<String> getAcceptedSpiffeIds() {
+    private static List<String> getAuthorizedSpiffeIDs() {
         String commaSeparatedSpiffeIds = Security.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
+        if (isBlank(commaSeparatedSpiffeIds)) {
+            return EMPTY_LIST;
+        }
         String [] array = commaSeparatedSpiffeIds.split(",");
         return normalize(Arrays.asList(array));
     }
