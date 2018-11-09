@@ -13,6 +13,8 @@ this library provides a custom Security Provider that can be installed in the JV
 It supports Federation. The TrustStore validates the peer's SVID using a set of Trusted CAs that includes the 
 Federated TrustDomains CAs bundles. These Federated CAs bundles come from the Workload API in the X509SVIDResponse.
 
+Besides, this library provides a SocketFactory implementation to support TCP connections.
+
 ## SPIFFE Workload API Client Example
 
 The `X509SVIDFetcher` provides the `registerListener` method that allows a consumer to register a listener 
@@ -146,9 +148,11 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
             clientAuth="true" sslProtocol="TLS"/>
 ```
 
-## Running Demo
+## Running Demos
 
-A running example using the SPIFFE Provider in Tomcat is available in [java-spiffe-example](https://github.com/spiffe/spiffe-example/tree/master/java-keystore-tomcat-demo)
+A running example using the SPIFFE Provider in Tomcat is available on [java-spiffe-example](https://github.com/spiffe/spiffe-example/tree/master/java-keystore-tomcat-demo)
+
+A demo that shows Federation and TCP support is available on [java-spiffe-federation-jboss](https://github.com/spiffe/spiffe-example/tree/master/java-spiffe-federation-jboss)
 
 ## References 
 
