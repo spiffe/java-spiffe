@@ -13,7 +13,7 @@ public class SpiffeContextFactory {
 
     private static String SSL_PROTOCOL = "TLSv1.2";
 
-    static SSLContext getSSLContext() {
+    public static SSLContext getSSLContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance(SSL_PROTOCOL);
             sslContext.init(

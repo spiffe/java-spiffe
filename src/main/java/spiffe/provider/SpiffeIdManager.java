@@ -24,7 +24,7 @@ public class SpiffeIdManager {
     private static final SpiffeIdManager INSTANCE = new SpiffeIdManager();
     private static final Logger LOGGER = Logger.getLogger(SpiffeIdManager.class.getName());
 
-    static SpiffeIdManager getInstance() {
+    public static SpiffeIdManager getInstance() {
         return INSTANCE;
     }
 
