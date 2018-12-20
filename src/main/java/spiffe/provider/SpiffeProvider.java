@@ -24,9 +24,20 @@ public class SpiffeProvider extends Provider {
      *
      */
     public SpiffeProvider() {
-        super(PROVIDER_NAME, 0.1, "SPIFFE based KeyStore and TrustStore");
+        super(PROVIDER_NAME, 0.4, "SPIFFE based KeyStore and TrustStore");
         super.put(SPIFFE_KEY_MANAGER_FACTORY, SpiffeKeyManagerFactory.class.getName());
         super.put(SPIFFE_TRUST_MANAGER_FACTORY, SpiffeTrustManagerFactory.class.getName());
         super.put(SPIFFE_KEYSTORE, SpiffeKeyStore.class.getName());
+    }
+
+
+    /**
+     *  Install this provider
+     *
+     */
+    public static void install() {
+        if (Security.getProvider(PROVIDER_NAME) == null) {
+            Security.addProvider(new SpiffeProvider());
+        }
     }
 }

@@ -1,6 +1,5 @@
 group 'spiffe'
-version '0.3.0'
-
+version '0.4.0'
 
 buildscript {
     repositories {
@@ -8,39 +7,44 @@ buildscript {
         jcenter()
     }
 
+    ext.protobufPluginVersion = '0.8.7'
+    ext.shadowPluginVersion = '4.0.3'
+
     dependencies {
-        classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.5"
-        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.4"
+        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: "${protobufPluginVersion}"
+        classpath group: 'com.github.jengelman.gradle.plugins', name: 'shadow', version: "${shadowPluginVersion}"
     }
 }
 
-apply plugin: 'java'
-apply plugin: "com.github.johnrengelman.shadow"
-apply plugin: "com.google.protobuf"
+ext {
+    grpcVersion = '1.17.1'
+    nettyVersion = '4.1.32.Final'
+    protobufProtocVersion = '3.6.1'
+    apacheCommonsVersion = '3.8.1'
+}
+
+apply plugin: 'java-library'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.google.protobuf'
 
 assemble.dependsOn shadowJar
 
 shadowJar {
-    classifier = null
-}
-
-ext {
-    grpcVersion = "1.12.0"
-    nettyVersion = "4.1.25.Final"
+    classifier = "all"
 }
 
 sourceSets {
     main {
         java {
-            srcDirs "build/generated/source/proto/main/grpc"
-            srcDirs "build/generated/source/proto/main/java"
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
         }
     }
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.5.1"
+        artifact = "com.google.protobuf:protoc:${protobufProtocVersion}"
     }
     plugins {
         grpc {
@@ -62,11 +66,11 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile "io.grpc:grpc-netty:${grpcVersion}"
-    compile "io.grpc:grpc-protobuf:${grpcVersion}"
-    compile "io.grpc:grpc-stub:${grpcVersion}"
-    compile "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
-    compile "io.netty:netty-transport-native-kqueue:${nettyVersion}:osx-x86_64"
-    compile "org.apache.commons:commons-lang3:3.7"
+    implementation group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
+    implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
+    implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
+    implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: "${nettyVersion}", classifier: 'linux-x86_64'
+    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: "${nettyVersion}", classifier: 'osx-x86_64'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: "${apacheCommonsVersion}"
 }
 

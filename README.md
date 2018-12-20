@@ -22,7 +22,52 @@ to get the X509-SVIDS whenever the Workload API has a new SVID to push.
 
 The gRPC channel is configured based on the Address (tcp or unix socket) and the OS detected.
 
+### Build the JAR
+
+To create a fat JAR file that includes all the dependencies: 
+
+```
+ $ ./gradlew build
+ 
+ BUILD SUCCESSFUL in 2s
+```
+
+In folder `build/libs` there will be a file `spiffe-provider-<version>-all.jar`.  
+
+
+To create a slim JAR file:
+
+```
+ $ ./gradle jar
+ BUILD SUCCESSFUL in 1s
+```
+
+In folder `build/libs` there will be a file `spiffe-provider-<version>.jar`. 
+
+
 ### Use
+
+The library provides a `SpiffeIdManager` that abstracts low level details related to the interaction with the WorkloadAPI and exposes
+getter methods to obtain the SVID, Bundle and Key:
+
+```
+SpiffeIdManager spiffeIdManager = SpiffeIdManager.getInstance();
+
+PrivateKey privateKey = spiffeIdManager.getPrivateKey();
+X509Certificate svid = spiffeIdManager.getCertificate();
+Set<X509Certificate> bundle = spiffeIdManager.TrustedCerts();    
+```
+
+The `SpiffeIdManager` gets the certificate updates automatically from the WorkloadAPI. 
+
+It uses a `X509SVIDFetcher` that handles the interaction with the WorkloadAPI. 
+
+The path to the Socket where the Workload API is listening needs to configured either by setting the system property `-Dspiffe.endpoint.socket` or
+or an the environment variable `SPIFFE_ENDPOINT_SOCKET`.
+
+
+Another way to use the library is by directly instantiating the `X509SVIDFetcher` and registering a callback (aka Consumer) 
+that will be invoked whenever there is an update pushed by the Workload API: 
 
 ```
 Fetcher<X509SVIDResponse> svidFetcher = new X509SVIDFetcher("/tmp/agent.sock");
@@ -38,6 +83,9 @@ Consumer<X509SVIDResponse> xvidConsumer = x509SVIDResponse -> {
 //Registering the callback to receive the SVIDs from the Workload API
 svidFetcher.registerListener(xvidConsumer);
 ```
+
+In this case the path to the Socket is passed through a parameter in the constructor. If the parameter is not provided, it will
+use the system property, if it is defined, or the environment variable. If neither is defined, it will throw an Exception. 
 
 The `X509SVIDFetcher` can be configured with a custom `RetryPolicy`. 
 
@@ -55,18 +103,18 @@ maxRetries = UNLIMITED_RETRIES;
 
 ### Install the SPIFFE Provider JAR
 
-Generate the JAR: 
+Generate the JAR that includes all dependencies: 
 
 ```
 ./gradlew build
 ```
 
 For installing the JAR file containing the provider classes as a bundled extension in the java platform, copy 
-`build/libs/spiffe-provider-0.1.0.jar` to `<java-home>/jre/lib/ext`
+`build/libs/spiffe-provider-0.4.0-all.jar` to `<java-home>/jre/lib/ext`
 
 ### Configure `java.security` 
 
-Java Security Providers are configured in the master security properties file `<java-home>/lib/security/java.security`. 
+Java Security Providers are configured in the master security properties file `<java-home>/jre/lib/security/java.security`. 
 
 The way to register a provider is to specify the Provider subclass name and priority in the format
 
