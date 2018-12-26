@@ -110,7 +110,7 @@ Generate the JAR that includes all dependencies:
 ```
 
 For installing the JAR file containing the provider classes as a bundled extension in the java platform, copy 
-`build/libs/spiffe-provider-0.4.0-all.jar` to `<java-home>/jre/lib/ext`
+`build/libs/spiffe-provider-<version>-all.jar` to `<java-home>/jre/lib/ext`
 
 ### Configure `java.security` 
 
