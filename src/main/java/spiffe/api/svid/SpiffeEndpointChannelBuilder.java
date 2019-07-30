@@ -5,8 +5,8 @@ import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.kqueue.KQueueDomainSocketChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueServerDomainSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.unix.DomainSocketAddress;
 import org.apache.commons.lang3.SystemUtils;
@@ -110,7 +110,7 @@ class SpiffeEndpointChannelBuilder {
                           .channelType(EpollDomainSocketChannel.class);
         } else if (SystemUtils.IS_OS_MAC) {
             channelBuilder.eventLoopGroup(new KQueueEventLoopGroup())
-                          .channelType(KQueueServerDomainSocketChannel.class);
+                          .channelType(KQueueDomainSocketChannel.class);
         } else {
             channelBuilder.eventLoopGroup(new NioEventLoopGroup());
         }
