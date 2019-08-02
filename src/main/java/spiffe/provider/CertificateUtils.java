@@ -38,11 +38,11 @@ class CertificateUtils {
      * @return a Set of X509Certificate
      * @throws CertificateException
      */
-    static Set<X509Certificate> generateCertificates(byte[] input) throws CertificateException {
+    static List<X509Certificate> generateCertificates(byte[] input) throws CertificateException {
         Collection<? extends Certificate> certificates =  getCertificateFactory().generateCertificates(new ByteArrayInputStream(input));
         return certificates.stream()
                 .map(X509Certificate.class::cast)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     /**

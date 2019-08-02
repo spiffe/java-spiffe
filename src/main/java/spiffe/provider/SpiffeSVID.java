@@ -8,6 +8,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -27,9 +28,9 @@ public class SpiffeSVID {
     private String spiffeID;
 
     /**
-     * The SPIFFE Verifiable Identity Document
+     * The SPIFFE Verifiable Identity Document and chain
      */
-    private X509Certificate certificate;
+    private List<X509Certificate> certificateChain;
 
     /**
      * The Private Key associated to the Public Key of the certificate
@@ -62,8 +63,8 @@ public class SpiffeSVID {
 
             Workload.X509SVID svid  = x509SVIDResponse.getSvidsList().get(0);
 
-            certificate = CertificateUtils.generateCertificate(svid.getX509Svid().toByteArray());
-            bundle = CertificateUtils.generateCertificates(svid.getBundle().toByteArray());
+            certificateChain = CertificateUtils.generateCertificates(svid.getX509Svid().toByteArray());
+            bundle = new HashSet<>(CertificateUtils.generateCertificates(svid.getBundle().toByteArray()));
             privateKey = CertificateUtils.generatePrivateKey(svid.getX509SvidKey().toByteArray());
             spiffeID = svid.getSpiffeId();
             federatedBundles = buildFederatedX509CertificatesMap(x509SVIDResponse.getFederatedBundlesMap());
@@ -81,7 +82,7 @@ public class SpiffeSVID {
         Map<String, Set<X509Certificate>> federatedCertificates = new HashMap<>();
         federatedBundlesMap.forEach((trustDomain, cert) -> {
             try {
-                federatedCertificates.put(trustDomain, CertificateUtils.generateCertificates(cert.toByteArray()));
+                federatedCertificates.put(trustDomain, new HashSet<>(CertificateUtils.generateCertificates(cert.toByteArray())));
             } catch (CertificateException e) {
                 LOGGER.log(Level.SEVERE, "Federated Bundles couldn't be processed ", e);
                 throw new RuntimeException(e);
@@ -94,8 +95,8 @@ public class SpiffeSVID {
         return spiffeID;
     }
 
-    public X509Certificate getCertificate() {
-        return certificate;
+    public List<X509Certificate> getCertificateChain() {
+        return certificateChain;
     }
 
     public PrivateKey getPrivateKey() {

@@ -7,6 +7,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import static spiffe.provider.SpiffeProviderConstants.ALIAS;
@@ -27,14 +28,13 @@ public class SpiffeKeyManager extends X509ExtendedKeyManager {
     }
 
     /**
-     * The Certificate Chain that the workload presents to the other peer,
-     * it consists only of the SpiffeSVID leaf certificate
+     * The Certificate Chain that the workload presents to the other peer.
      *
-     * @return the X.509 SVID Certificate
+     * @return the X.509 SVID Certificates
      */
     @Override
     public X509Certificate[] getCertificateChain(String s) {
-        return new X509Certificate[]{spiffeIdManager.getCertificate()};
+        return spiffeIdManager.getCertificateChain().toArray(new X509Certificate[0]);
     }
 
     /**
