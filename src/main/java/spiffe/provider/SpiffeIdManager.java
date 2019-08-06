@@ -6,6 +6,7 @@ import spiffe.api.svid.X509SVIDFetcher;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
@@ -70,9 +71,9 @@ public class SpiffeIdManager {
         LOGGER.log(Level.FINE, "Spiffe SVID has been updated ");
     }
 
-    public X509Certificate getCertificate() {
+    public List<X509Certificate> getCertificateChain() {
         awaitSpiffeSVID();
-        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getCertificate() : null);
+        return guard.read(() -> spiffeSVID != null ? spiffeSVID.getCertificateChain() : null);
     }
 
     public PrivateKey getPrivateKey() {
