@@ -22,7 +22,7 @@ import static org.apache.commons.lang3.StringUtils.startsWith;
  */
 class CertificateUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(SpiffeTrustManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CertificateUtils.class.getName());
 
     private static final CertPathValidator CERT_PATH_VALIDATOR = getCertPathValidator();
     private static final CertificateFactory CERTIFICATE_FACTORY = getCertificateFactory();
