@@ -76,7 +76,7 @@ public final class X509SVIDFetcher implements Fetcher<X509SVIDResponse> {
 
             @Override
             public void onError(Throwable t) {
-                LOGGER.log(Level.SEVERE, String.format("Could not get SVID \n %s", t.getMessage()));
+                LOGGER.log(Level.SEVERE, String.format("Could not get SVID \n %s", t.getMessage()), t);
                 if (isRetryableError(t)) {
                     retryHandler.scheduleRetry(() -> registerListener(listener));
                 }
