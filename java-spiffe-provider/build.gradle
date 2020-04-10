@@ -1,0 +1,23 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    ext.shadowPluginVersion = '5.2.0'
+
+    dependencies {
+        classpath group: 'com.github.jengelman.gradle.plugins', name: 'shadow', version: "${shadowPluginVersion}"
+    }
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+assemble.dependsOn shadowJar
+
+shadowJar {
+    classifier = "all"
+}
+dependencies {
+    compile(project(":java-spiffe-core"))
+}
+

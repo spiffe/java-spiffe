@@ -1,2 +1,5 @@
-rootProject.name = 'spiffe-provider'
+rootProject.name = 'java-spiffe'
+include 'java-spiffe-core'
+include 'java-spiffe-provider'
+include 'java-spiffe-helper'
 
