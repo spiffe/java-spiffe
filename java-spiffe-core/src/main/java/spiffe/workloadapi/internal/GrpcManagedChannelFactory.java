@@ -78,7 +78,7 @@ public class GrpcManagedChannelFactory {
         try {
             parsedAddress = new URI(spiffeSocketPath);
         } catch (URISyntaxException e) {
-            return Result.error(new IllegalArgumentException("The Spiffe Endpoint Address is not valid"));
+            return Result.error(new IllegalArgumentException("The Spiffe Endpoint Address is not valid", e));
         }
         return Result.ok(parsedAddress);
     }
