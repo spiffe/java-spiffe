@@ -5,7 +5,7 @@ import lombok.Value;
 import java.util.NoSuchElementException;
 
 /**
- * An {@code Ok} represents a Result that conveys a value of type T.
+ * An {@link spiffe.result.Ok} represents a Result that conveys a value of type T.
  *
  * @param <V> the type the value wrapped in the Ok result
  * @param <E> the type of the error

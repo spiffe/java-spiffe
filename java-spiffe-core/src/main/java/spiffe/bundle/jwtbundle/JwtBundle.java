@@ -63,12 +63,19 @@ public class JwtBundle implements JwtBundleSource {
         throw new NotImplementedException("Not implemented");
     }
 
+    /**
+     * Returns the JwtBundle for a TrustDomain.
+     *
+     * @param trustDomain an instance of a TrustDomain
+     * @return a {@link spiffe.result.Ok} containing the JwtBundle for the TrustDomain, or
+     * an {@link spiffe.result.Error} if there is no bundle for the TrustDomain
+     */
     @Override
-    public Optional<JwtBundle> getJwtBundleForTrustDomain(TrustDomain trustDomain) {
+    public Result<JwtBundle, String> getJwtBundleForTrustDomain(TrustDomain trustDomain) {
         if (this.trustDomain.equals(trustDomain)) {
-            return Optional.of(this);
+            return Result.ok(this);
         }
-        return Optional.empty();
+        return Result.error(String.format("no JWT bundle for trust domain %s", trustDomain));
     }
 
     /**
@@ -77,7 +84,7 @@ public class JwtBundle implements JwtBundleSource {
      * it returns an Optional.empty().
      *
      * @param keyId the Key ID
-     * @return an Optional containing a PublicKey.
+     * @return an {@link Optional} containing a PublicKey.
      */
     public Optional<PublicKey> findJwtKey(String keyId) {
         throw new NotImplementedException("Not implemented");

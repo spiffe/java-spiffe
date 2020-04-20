@@ -19,7 +19,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -74,7 +73,7 @@ public class SpiffeTrustManagerTest {
 
         val chain = x509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Optional.of(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Result.ok(x509Bundle));
 
         try {
             trustManager.checkClientTrusted(chain, "");
@@ -97,7 +96,7 @@ public class SpiffeTrustManagerTest {
         when(bundleSource
                 .getX509BundleForTrustDomain(
                         TrustDomain.of("example.org").getValue()))
-                .thenReturn(Optional.of(x509Bundle));
+                .thenReturn(Result.ok(x509Bundle));
 
         try {
             trustManager.checkClientTrusted(chain, "");
@@ -117,7 +116,7 @@ public class SpiffeTrustManagerTest {
 
         val chain = otherX509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org").getValue())).thenReturn(Optional.of(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org").getValue())).thenReturn(Result.ok(x509Bundle));
 
         try {
             trustManager.checkClientTrusted(chain, "");
@@ -137,7 +136,7 @@ public class SpiffeTrustManagerTest {
 
         val chain = x509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Optional.of(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Result.ok(x509Bundle));
 
         try {
             trustManager.checkServerTrusted(chain, "");
@@ -157,7 +156,7 @@ public class SpiffeTrustManagerTest {
 
         val chain = x509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Optional.of(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Result.ok(x509Bundle));
 
         try {
             trustManager.checkServerTrusted(chain, "");
@@ -177,7 +176,7 @@ public class SpiffeTrustManagerTest {
 
         val chain = otherX509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org").getValue())).thenReturn(Optional.of(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org").getValue())).thenReturn(Result.ok(x509Bundle));
 
         try {
             trustManager.checkServerTrusted(chain, "");

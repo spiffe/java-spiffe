@@ -35,8 +35,8 @@ public class SpiffeId {
      * @param trustDomain an instance of a TrustDomain
      * @param segments a list of string path segments
      *
-     * @return a {@code Resul}, either an {@code Ok} wrapping a SpiffeId
-     * or an {@code Error} wrapping the error message.
+     * @return a {@code Resul}, either an {@link spiffe.result.Ok} wrapping a {@link SpiffeId}
+     * or an {@link spiffe.result.Error} wrapping the error message.
      */
     public static Result<SpiffeId, String> of(final TrustDomain trustDomain, final String... segments) {
         if (trustDomain == null) {
@@ -56,8 +56,8 @@ public class SpiffeId {
      * Parses a SpiffeId from a string (e.g. spiffe://example.org/test).
      *
      * @param spiffeIdAsString a String representing a spiffeId
-     * @return A {@code Result}, either an {@code Ok} wrapping a {@code SpiffeId}
-     * or an {@code Error} wrapping the error message.
+     * @return A {@link Result}, either an {@link spiffe.result.Ok} wrapping a {@link SpiffeId}
+     * or an {@link spiffe.result.Error} wrapping the error message.
      */
     public static Result<SpiffeId, String> parse(final String spiffeIdAsString) {
 

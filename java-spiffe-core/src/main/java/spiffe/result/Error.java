@@ -5,7 +5,7 @@ import lombok.Value;
 import java.util.NoSuchElementException;
 
 /**
- * An {@code Error} represents a Result that conveys an error of type E.
+ * An {@link spiffe.result.Error} represents a Result that conveys an error of type E.
  *
  * @param <V> the type of the value conveyed by the Result
  * @param <E> the type of the error wrapped in the Error

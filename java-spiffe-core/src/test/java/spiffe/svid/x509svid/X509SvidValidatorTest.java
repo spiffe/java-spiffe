@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -46,7 +45,7 @@ public class X509SvidValidatorTest {
         when(bundleSourceMock
                 .getX509BundleForTrustDomain(
                         TrustDomain.of("example.org").getValue()))
-                .thenReturn(Optional.ofNullable(x509Bundle));
+                .thenReturn(Result.ok(x509Bundle));
 
         val result = X509SvidValidator.verifyChain(chain, bundleSourceMock);
 

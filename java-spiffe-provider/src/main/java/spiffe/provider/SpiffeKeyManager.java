@@ -1,6 +1,8 @@
 package spiffe.provider;
 
 import lombok.val;
+import spiffe.result.Result;
+import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
 import javax.net.ssl.SSLEngine;
@@ -11,7 +13,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 
 import static spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
 
@@ -38,7 +39,11 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
         if (!Objects.equals(alias, DEFAULT_ALIAS)) {
             return null;
         }
-        return x509SvidSource.getX509Svid().getChainArray();
+        Result<X509Svid, String> x509Svid = x509SvidSource.getX509Svid();
+        if (x509Svid.isError()) {
+            throw new IllegalStateException(x509Svid.getError());
+        }
+        return x509Svid.getValue().getChainArray();
     }
 
     /**
@@ -56,9 +61,12 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
             return null;
         }
 
-        return x509SvidSource
-                .getX509Svid()
-                .getPrivateKey();
+        Result<X509Svid, String> x509Svid = x509SvidSource.getX509Svid();
+        if (x509Svid.isError()) {
+            throw new IllegalStateException(x509Svid.getError());
+        }
+
+        return x509Svid.getValue().getPrivateKey();
     }
 
 
@@ -95,12 +103,12 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     // If the algorithm of the PrivateKey is supported (is in the list of keyTypes), then returns
     // the ALIAS handled by the current KeyManager, if it's not supported returns null
     private String getAlias(String... keyTypes) {
-        val x509Svid = Optional.ofNullable(x509SvidSource.getX509Svid());
-        if (!x509Svid.isPresent()) {
+        val x509Svid = x509SvidSource.getX509Svid();
+        if (x509Svid.isError()) {
             return null;
         }
 
-        val privateKeyAlgorithm = x509Svid.get().getPrivateKey().getAlgorithm();
+        val privateKeyAlgorithm = x509Svid.getValue().getPrivateKey().getAlgorithm();
         if (Arrays.asList(keyTypes).contains(privateKeyAlgorithm)) {
             return DEFAULT_ALIAS;
         }

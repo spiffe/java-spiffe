@@ -134,8 +134,8 @@ public class KeyStoreHelper {
         val privateKeyEntry = PrivateKeyEntry.builder()
                 .alias(privateKeyAlias)
                 .password(privateKeyPassword)
-                .privateKey(update.getX509Svid().getPrivateKey())
-                .certificateChain(update.getX509Svid().getChainArray())
+                .privateKey(update.getDefaultSvid().getPrivateKey())
+                .certificateChain(update.getDefaultSvid().getChainArray())
                 .build();
 
         val storeKeyResult = keyStore.storePrivateKey(privateKeyEntry);

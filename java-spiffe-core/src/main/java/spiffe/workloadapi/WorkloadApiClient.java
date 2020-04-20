@@ -15,6 +15,7 @@ import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc;
 import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub;
 import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 
+import java.io.Closeable;
 import java.nio.file.Path;
 import java.util.Iterator;
 
@@ -28,14 +29,16 @@ import static spiffe.workloadapi.internal.Workload.X509SVIDResponse;
  * Multiple WorkloadApiClients can be created for the same SPIFFE Socket Path,
  * they will share a common ManagedChannel.
  */
-public class WorkloadApiClient {
+public class WorkloadApiClient implements Closeable {
 
     private final SpiffeWorkloadAPIStub workloadApiAsyncStub;
     private final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub;
+    private final ManagedChannel managedChannel;
 
-    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub, SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub) {
+    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub, SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub, ManagedChannel managedChannel) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
+        this.managedChannel = managedChannel;
     }
 
     /**
@@ -58,7 +61,7 @@ public class WorkloadApiClient {
                 .withInterceptors(new SecurityHeaderInterceptor());
 
         return Result.ok(
-                new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub));
+                new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel.getValue()));
     }
 
     /**
@@ -125,7 +128,8 @@ public class WorkloadApiClient {
      * @param subject a SPIFFE ID
      * @param audience the audience of the JWT-SVID
      * @param extraAudience the extra audience for the JWT_SVID
-     * @return an Optional containing the JWT SVID.
+     * @return an {@link spiffe.result.Ok} containing the JWT SVID, or an {@link spiffe.result.Error}
+     * if the JwtSvid could not be fetched.
      */
     public Result<JwtSvid, Throwable> fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) {
        throw new NotImplementedException("Not implemented");
@@ -135,7 +139,7 @@ public class WorkloadApiClient {
      * Fetches the JWT bundles for JWT-SVID validation, keyed
      * by a SPIFFE ID of the trust domain to which they belong.
      *
-     * @return an Optional containing the JwtBundleSet.
+     * @return an {@link spiffe.result.Ok} containing the JwtBundleSet.
      */
     public Result<JwtBundleSet, Throwable> fetchJwtBundles() {
         throw new NotImplementedException("Not implemented");
@@ -165,5 +169,10 @@ public class WorkloadApiClient {
 
     private X509SVIDRequest newX509SvidRequest() {
         return X509SVIDRequest.newBuilder().build();
+    }
+
+    @Override
+    public void close() {
+        managedChannel.shutdown();
     }
 }

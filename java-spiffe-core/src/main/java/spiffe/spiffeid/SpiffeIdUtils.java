@@ -25,9 +25,9 @@ public class SpiffeIdUtils {
      * @param systemProperty name of the System Property that should contain a list of
      * SPIFFE IDs separated by a comma.
      *
-     * @return a <code>Result</code>:
-     * {@code Ok} containing a List of SpiffeId instances. If no value is found, returns an empty list.
-     * {@code Error} in case the param systemProperty is blank.
+     * @return a {@link Result}
+     * {@link spiffe.result.Ok} containing a List of SpiffeId instances. If no value is found, returns an empty list.
+     * {@link spiffe.result.Error} in case the param systemProperty is blank.
      */
     public static Result<List<SpiffeId>, String> getSpiffeIdsFromSystemProperty(final String systemProperty) {
         if (isBlank(systemProperty)) {
@@ -46,8 +46,8 @@ public class SpiffeIdUtils {
      * SPIFFE IDs separated by a comma.
      *
      * @return a Result:
-     * {@code Ok} containing a List of SpiffeId instances. If no value is found, returns an empty list.
-     * {@code Error} in case the param systemProperty is blank.
+     * {@link spiffe.result.Ok} containing a List of SpiffeId instances. If no value is found, returns an empty list.
+     * {@link spiffe.result.Error} in case the param systemProperty is blank.
      */
     public static Result<List<SpiffeId>, String> getSpiffeIdsFromSecurityProperty(final String securityProperty) {
         if (isBlank(securityProperty)) {

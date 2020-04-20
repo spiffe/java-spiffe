@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
 import spiffe.bundle.x509bundle.X509Bundle;
+import spiffe.bundle.x509bundle.X509BundleSet;
 import spiffe.bundle.x509bundle.X509BundleSource;
 import spiffe.result.Error;
 import spiffe.result.Result;
@@ -12,8 +13,8 @@ import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
+import java.io.Closeable;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
@@ -25,10 +26,13 @@ import java.util.logging.Level;
  * on this client it is registered a Watcher for consuming the updates from the Workload API.
  */
 @Log
-public class X509Source implements X509SvidSource, X509BundleSource {
+public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
 
-    private X509Context x509Context;
-    private WorkloadApiClient workloadApiClient;
+    private X509Svid svid;
+    private X509BundleSet bundles;
+
+    private final WorkloadApiClient workloadApiClient;
+    private volatile boolean closed;
 
     /**
      * Creates a new X509Source. It blocks until the initial update
@@ -78,7 +82,7 @@ public class X509Source implements X509SvidSource, X509BundleSource {
             @Override
             public void OnUpdate(X509Context update) {
                 log.log(Level.INFO, "Received X509Context update");
-                handleX509ContextUpdate(update);
+                setX509Context(update);
                 countDownLatch.countDown();
             }
 
@@ -90,22 +94,50 @@ public class X509Source implements X509SvidSource, X509BundleSource {
     }
 
     private X509Source(@NonNull WorkloadApiClient workloadApiClient) {
-        this.workloadApiClient= workloadApiClient;
+        this.workloadApiClient = workloadApiClient;
     }
 
-    private void handleX509ContextUpdate(@NonNull final X509Context update) {
-        this.x509Context = update;
-    }
-
-    @Override
-    public X509Svid getX509Svid() {
-        return x509Context.getX509Svid();
+    private void setX509Context(@NonNull final X509Context update) {
+        this.svid = update.getDefaultSvid();
+        this.bundles = update.getX509BundleSet();
     }
 
     @Override
-    public Optional<X509Bundle> getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) {
-        return x509Context
-                .getX509BundleSet()
-                .getX509BundleForTrustDomain(trustDomain);
+    public Result<X509Svid, String> getX509Svid() {
+        val checkClosed = checkClosed();
+        if (checkClosed.isError()) {
+            return Result.error(checkClosed.getError());
+        }
+        return Result.ok(svid);
+    }
+
+    @Override
+    public Result<X509Bundle, String> getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) {
+        val checkClosed = checkClosed();
+        if (checkClosed.isError()) {
+            return Result.error(checkClosed.getError());
+        }
+        return bundles.getX509BundleForTrustDomain(trustDomain);
+    }
+
+    @Override
+    public void close() {
+        if (!closed) {
+            synchronized (this) {
+                if (!closed) {
+                    workloadApiClient.close();
+                    closed = true;
+                }
+            }
+        }
+    }
+
+    private Result<Boolean, String> checkClosed() {
+        synchronized (this) {
+            if (closed) {
+                return Result.error("source is closed");
+            }
+            return Result.ok(true);
+        }
     }
 }

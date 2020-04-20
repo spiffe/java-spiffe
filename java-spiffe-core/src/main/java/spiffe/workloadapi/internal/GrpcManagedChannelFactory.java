@@ -16,19 +16,11 @@ import spiffe.result.Result;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Factory for creating and handling ManagedChannel instances
- * keyed by Spiffe Socket Paths.
- * If a ManagedChannel exists for a SpiffeSocketPath, returns that instance,
- * otherwise create a new instance and cache it.
- *
+ * Factory for creating ManagedChannel instances.
  */
 public class GrpcManagedChannelFactory {
-
-    private static final Map<Path, ManagedChannel> managedChannels = new HashMap<>();
 
     /**
      * Return a ManagedChannel to the Spiffe Socket Endpoint provided.
@@ -37,17 +29,11 @@ public class GrpcManagedChannelFactory {
      * @return a instance of a ManagedChannel.
      */
     public static Result<ManagedChannel, Throwable> getManagedChannel(Path spiffeSocketPath) {
-        synchronized (GrpcManagedChannelFactory.class) {
-            if (managedChannels.containsKey(spiffeSocketPath)) {
-                return Result.ok(managedChannels.get(spiffeSocketPath));
-            }
-            val channel = newChannel(spiffeSocketPath);
-            if (channel.isError()) {
-                return Result.error(channel.getError());
-            }
-            managedChannels.put(spiffeSocketPath, channel.getValue());
-            return channel;
+        val channel = newChannel(spiffeSocketPath);
+        if (channel.isError()) {
+            return Result.error(channel.getError());
         }
+        return channel;
     }
 
     private static Result<ManagedChannel, Throwable> newChannel(Path spiffeSocketPath) {

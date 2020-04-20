@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import spiffe.internal.CertificateUtils;
+import spiffe.result.Result;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
@@ -37,7 +38,7 @@ public class SpiffeKeyManagerTest {
 
     @Test
     void getCertificateChain_returnsAnArrayOfX509Certificates() {
-        when(x509SvidSource.getX509Svid()).thenReturn(x509Svid);
+        when(x509SvidSource.getX509Svid()).thenReturn(Result.ok(x509Svid));
 
         val certificateChain = keyManager.getCertificateChain(DEFAULT_ALIAS);
         val spiffeId = CertificateUtils.getSpiffeId(certificateChain[0]);
@@ -50,7 +51,7 @@ public class SpiffeKeyManagerTest {
 
     @Test
     void getPrivateKey_aliasIsSpiffe_returnAPrivateKey() {
-        when(x509SvidSource.getX509Svid()).thenReturn(x509Svid);
+        when(x509SvidSource.getX509Svid()).thenReturn(Result.ok(x509Svid));
 
         val privateKey = keyManager.getPrivateKey(DEFAULT_ALIAS);
 

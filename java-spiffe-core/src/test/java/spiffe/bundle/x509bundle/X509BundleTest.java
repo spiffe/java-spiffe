@@ -22,7 +22,7 @@ public class X509BundleTest {
         Result<X509Bundle, Throwable> x509Bundle = X509Bundle.parse(trustDomain, bundlePem);
 
         assertAll(
-                () -> assertEquals(2, x509Bundle.getValue().getX509Roots().size()),
+                () -> assertEquals(1, x509Bundle.getValue().getX509Roots().size()),
                 () -> assertEquals("example.org", x509Bundle.getValue().getTrustDomain().toString())
         );
     }
@@ -35,7 +35,7 @@ public class X509BundleTest {
         Result<X509Bundle, Throwable> x509Bundle = X509Bundle.load(trustDomain, bundlePath);
 
         assertAll(
-                () -> assertEquals(2, x509Bundle.getValue().getX509Roots().size()),
+                () -> assertEquals(1, x509Bundle.getValue().getX509Roots().size()),
                 () -> assertEquals("example.org", x509Bundle.getValue().getTrustDomain().toString())
         );
     }

@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A <code>X509Bundle</code> represents a collection of trusted public key materials for a trust domain.
@@ -21,9 +21,9 @@ import java.util.Optional;
 public class X509Bundle implements X509BundleSource {
 
     TrustDomain trustDomain;
-    List<X509Certificate> x509Roots;
+    Set<X509Certificate> x509Roots;
 
-    private X509Bundle(final TrustDomain trustDomain, final List<X509Certificate> x509Roots) {
+    private X509Bundle(final TrustDomain trustDomain, final Set<X509Certificate> x509Roots) {
         this.trustDomain = trustDomain;
         this.x509Roots = x509Roots;
     }
@@ -45,7 +45,8 @@ public class X509Bundle implements X509BundleSource {
                 return Result.error(x509Certificates.getError());
             }
 
-            val x509Bundle = new X509Bundle(trustDomain, x509Certificates.getValue());
+            val x509CertificateSet = new HashSet<>(x509Certificates.getValue());
+            val x509Bundle = new X509Bundle(trustDomain, x509CertificateSet);
             return Result.ok(x509Bundle);
         } catch (IOException e) {
             return Result.error(e);
@@ -66,15 +67,16 @@ public class X509Bundle implements X509BundleSource {
             return Result.error(x509Certificates.getError());
         }
 
-        val x509Bundle = new X509Bundle(trustDomain, x509Certificates.getValue());
+        val x509CertificateSet = new HashSet<>(x509Certificates.getValue());
+        val x509Bundle = new X509Bundle(trustDomain, x509CertificateSet);
         return Result.ok(x509Bundle);
     }
 
     @Override
-    public Optional<X509Bundle> getX509BundleForTrustDomain(TrustDomain trustDomain) {
+    public Result<X509Bundle, String> getX509BundleForTrustDomain(TrustDomain trustDomain) {
         if (this.trustDomain.equals(trustDomain)) {
-            return Optional.of(this);
+            return Result.ok(this);
         }
-        return Optional.empty();
+        return Result.error(String.format("no X.509 bundle for trust domain %s", trustDomain));
     }
 }

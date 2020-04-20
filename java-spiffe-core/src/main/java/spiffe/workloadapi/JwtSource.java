@@ -10,7 +10,6 @@ import spiffe.svid.jwtsvid.JwtSvid;
 import spiffe.svid.jwtsvid.JwtSvidSource;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
 /**
  * A <code>JwtSource</code> represents a source of SPIFFE JWT-SVID and JWT bundles
@@ -31,7 +30,7 @@ public class JwtSource implements JwtSvidSource, JwtBundleSource {
     }
 
     @Override
-    public Optional<JwtBundle> getJwtBundleForTrustDomain(TrustDomain trustDomain) {
+    public Result<JwtBundle, String> getJwtBundleForTrustDomain(TrustDomain trustDomain) {
         throw new NotImplementedException("Not implemented");
     }
 

@@ -3,9 +3,12 @@ package spiffe.bundle.jwtbundle;
 import lombok.NonNull;
 import lombok.Value;
 import org.apache.commons.lang3.NotImplementedException;
+import spiffe.result.Result;
 import spiffe.spiffeid.TrustDomain;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A <code>JwtBundleSet</code> represents a set of X509Bundles keyed by TrustDomain.
@@ -13,21 +16,19 @@ import java.util.*;
 @Value
 public class JwtBundleSet implements JwtBundleSource {
 
-    Map<TrustDomain, JwtBundle> bundles;
+    ConcurrentHashMap<TrustDomain, JwtBundle> bundles;
 
-    private JwtBundleSet(Map<TrustDomain, JwtBundle> bundles) {
+    private JwtBundleSet(ConcurrentHashMap<TrustDomain, JwtBundle> bundles) {
         this.bundles = bundles;
     }
 
-    public static JwtBundleSet of(@NonNull final Map<TrustDomain, JwtBundle> bundles) {
-        return new JwtBundleSet(bundles);
+    public static JwtBundleSet of(@NonNull final List<JwtBundle> bundles) {
+        throw new NotImplementedException("Not implemented");
     }
 
     public static JwtBundleSet of(@NonNull final TrustDomain trustDomain,
                                   @NonNull final JwtBundle jwtBundle) {
-        Map<TrustDomain, JwtBundle> bundleMap = new HashMap<>();
-        bundleMap.put(trustDomain, jwtBundle);
-        return new JwtBundleSet(bundleMap);
+        throw new NotImplementedException("Not implemented");
     }
 
     public List<JwtBundle> getJwtBundles() {
@@ -35,8 +36,11 @@ public class JwtBundleSet implements JwtBundleSource {
     }
 
     @Override
-    public Optional<JwtBundle> getJwtBundleForTrustDomain(final TrustDomain trustDomain) {
-        return Optional.ofNullable(bundles.get(trustDomain));
+    public Result<JwtBundle, String> getJwtBundleForTrustDomain(final TrustDomain trustDomain) {
+        if (bundles.containsKey(trustDomain)) {
+            return Result.ok(bundles.get(trustDomain));
+        }
+        return Result.error(String.format("no JWT bundle for trust domain %s", trustDomain));
     }
 
     /**

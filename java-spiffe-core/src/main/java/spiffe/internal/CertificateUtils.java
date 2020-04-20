@@ -125,7 +125,7 @@ public class CertificateUtils {
      * defined in SAN_VALUE_INDEX and filters the entries that starts with the SPIFFE_PREFIX and returns the first.
      *
      * @param certificate a X509Certificate
-     * @return Optional<String> with the SpiffeId
+     * @return spiffe.result.Result with the SpiffeId
      * @throws RuntimeException         when the certificate subjectAlternatives names cannot be read
      * @throws IllegalArgumentException when the certificate contains multiple SpiffeId.
      */

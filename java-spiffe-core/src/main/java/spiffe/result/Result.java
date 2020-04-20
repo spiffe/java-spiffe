@@ -4,7 +4,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A <code>Result</code> represents the result of an operation, that can be {@code Ok} or {@code Error}.
+ * A <code>Result</code> represents the result of an operation, that can be {@link spiffe.result.Ok} or {@link spiffe.result.Error}.
  * <p>
  * This is a very simple implementation that accomplishes its purpose on this library,
  * doesn't contain all the functionality that is required to be a fully monadic type.
