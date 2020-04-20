@@ -22,8 +22,12 @@ import java.util.logging.Level;
  * A <code>X509Source</code> represents a source of X509-SVID and X509 Bundles maintained via the
  * Workload API.
  * <p>
- * It handles an instance of a {@link X509Context} that is updated using a {@link WorkloadApiClient},
- * on this client it is registered a Watcher for consuming the updates from the Workload API.
+ * It handles a {@link X509Svid} and a {@link X509BundleSet} that are updated automatically
+ * whenever there is an update from the Workload API.
+ * <p>
+ * It implements the Closeable interface. The {@link #close()} method closes the source,
+ * dropping the connection to the Workload API. Other source methods will return an error
+ * after close has been called.
  */
 @Log
 public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
@@ -37,14 +41,10 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     /**
      * Creates a new X509Source. It blocks until the initial update
      * has been received from the Workload API.
-     * <p>
-     * When it gets the response, it updates the x509Context instance.
-     * <p>
-     * Then registers a Watcher on the @param x509ContextFetcher to watch and act on
-     * the x509Context updates.
      *
      * @param spiffeSocketPath a Path to a Spiffe Socket Endpoint.
-     * @throws RuntimeException in case of failing the first X509Context fetch.
+     * @return an initialized an {@link spiffe.result.Ok} with X509Source, or an {@link Error} in
+     * case the X509Source could not be initialized.
      */
     public static Result<X509Source, Throwable> newSource(@NonNull Path spiffeSocketPath) {
         Result<WorkloadApiClient, Throwable> workloadApiClient = WorkloadApiClient.newClient(spiffeSocketPath);
@@ -54,6 +54,14 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
         return newSource(workloadApiClient.getValue());
     }
 
+    /**
+     * Creates a new X509Source using the {@link WorkloadApiClient} provided. It blocks until the initial update
+     * has been received from the Workload API.
+     *
+     * @param workloadApiClient a {@link WorkloadApiClient}
+     * @return an initialized an {@link spiffe.result.Ok} with X509Source, or an {@link Error} in
+     * case the X509Source could not be initialized.
+     */
     public static Result<X509Source, Throwable> newSource(@NonNull WorkloadApiClient workloadApiClient) {
         val x509Source = new X509Source(workloadApiClient);
 
@@ -67,6 +75,52 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
         }
 
         return Result.ok(x509Source);
+    }
+
+    /**
+     * Returns the X509-SVID handled by this source, returns an Error in case
+     * the source is already closed.
+     *
+     * @return an {@link spiffe.result.Ok} containing the {@link X509Svid}
+     */
+    @Override
+    public Result<X509Svid, String> getX509Svid() {
+        val checkClosed = checkClosed();
+        if (checkClosed.isError()) {
+            return Result.error(checkClosed.getError());
+        }
+        return Result.ok(svid);
+    }
+
+    /**
+     * Returns the X509-Bundle for a given trust domain, returns an Error in case
+     * there is no bundle for the trust domain, or the source is already closed.
+     *
+     * @return an {@link spiffe.result.Ok} containing the {@link X509Bundle}.
+     */
+    @Override
+    public Result<X509Bundle, String> getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) {
+        val checkClosed = checkClosed();
+        if (checkClosed.isError()) {
+            return Result.error(checkClosed.getError());
+        }
+        return bundles.getX509BundleForTrustDomain(trustDomain);
+    }
+
+    /**
+     * Closes this source, dropping the connection to the Workload API.
+     * Other source methods will return an error after close has been called.
+     */
+    @Override
+    public void close() {
+        if (!closed) {
+            synchronized (this) {
+                if (!closed) {
+                    workloadApiClient.close();
+                    closed = true;
+                }
+            }
+        }
     }
 
     @SneakyThrows
@@ -100,36 +154,6 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     private void setX509Context(@NonNull final X509Context update) {
         this.svid = update.getDefaultSvid();
         this.bundles = update.getX509BundleSet();
-    }
-
-    @Override
-    public Result<X509Svid, String> getX509Svid() {
-        val checkClosed = checkClosed();
-        if (checkClosed.isError()) {
-            return Result.error(checkClosed.getError());
-        }
-        return Result.ok(svid);
-    }
-
-    @Override
-    public Result<X509Bundle, String> getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) {
-        val checkClosed = checkClosed();
-        if (checkClosed.isError()) {
-            return Result.error(checkClosed.getError());
-        }
-        return bundles.getX509BundleForTrustDomain(trustDomain);
-    }
-
-    @Override
-    public void close() {
-        if (!closed) {
-            synchronized (this) {
-                if (!closed) {
-                    workloadApiClient.close();
-                    closed = true;
-                }
-            }
-        }
     }
 
     private Result<Boolean, String> checkClosed() {
