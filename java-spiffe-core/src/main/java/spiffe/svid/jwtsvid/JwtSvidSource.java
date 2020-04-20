@@ -1,5 +1,6 @@
 package spiffe.svid.jwtsvid;
 
+import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 
 /**
@@ -15,6 +16,5 @@ public interface JwtSvidSource {
      * @param extraAudiences an array of Strings
      * @return a JwtSvid
      */
-    JwtSvid FetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
-
+    Result<JwtSvid, String> FetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
 }
