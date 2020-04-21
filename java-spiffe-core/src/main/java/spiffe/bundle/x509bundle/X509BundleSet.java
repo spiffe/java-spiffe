@@ -76,6 +76,6 @@ public class X509BundleSet implements X509BundleSource {
         if (bundles.containsKey(trustDomain)) {
             return Result.ok(bundles.get(trustDomain));
         }
-        return Result.error(String.format("no X.509 bundle for trust domain %s", trustDomain));
+        return Result.error("No X509 bundle for trust domain %s", trustDomain);
     }
 }

@@ -11,5 +11,5 @@ public interface Watcher<T> {
 
     void OnUpdate(final T update);
 
-    void OnError(final Error<T, Throwable> t);
+    void OnError(final Error<T, String> t);
 }

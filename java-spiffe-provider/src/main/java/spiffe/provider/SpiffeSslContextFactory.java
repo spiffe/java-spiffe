@@ -1,16 +1,14 @@
 package spiffe.provider;
 
 import lombok.val;
-import spiffe.SpiffeConstants;
 import spiffe.bundle.x509bundle.X509BundleSource;
 import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.x509svid.X509SvidSource;
+import spiffe.workloadapi.Address;
 import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.SSLContext;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -59,7 +57,7 @@ public final class SpiffeSslContextFactory {
      * @return an SSLContext initialized with a SpiffeKeyManager and a SpiffeTrustManager.
      */
     public static SSLContext getSslContext(Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier) {
-        val spiffeSocketPath = Paths.get(System.getenv(SpiffeConstants.SOCKET_ENV_VARIABLE));
+        val spiffeSocketPath = System.getenv(Address.SOCKET_ENV_VARIABLE);
         return getSslContext(spiffeSocketPath, acceptedSpiffeIdsSupplier);
 
     }
@@ -74,11 +72,11 @@ public final class SpiffeSslContextFactory {
      * @return an SSLContext initialized with a SpiffeKeyManager and a SpiffeTrustManager.
      */
     public static SSLContext getSslContext(
-            Path spiffeSocketPath,
+            String spiffeSocketPath,
             Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier) {
         try {
             val sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
-            Result<X509Source, Throwable> x509Source = X509Source.newSource(spiffeSocketPath);
+            Result<X509Source, String> x509Source = X509Source.newSource(spiffeSocketPath);
             if (x509Source.isError()) {
                 throw new RuntimeException(x509Source.getError());
             }

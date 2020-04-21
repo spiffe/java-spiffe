@@ -1,9 +1,8 @@
 package spiffe.workloadapi;
 
-import lombok.NonNull;
-import lombok.SneakyThrows;
+import lombok.*;
 import lombok.extern.java.Log;
-import lombok.val;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSet;
 import spiffe.bundle.x509bundle.X509BundleSource;
@@ -14,8 +13,10 @@ import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
 import java.io.Closeable;
-import java.nio.file.Path;
+import java.net.URI;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
@@ -35,23 +36,63 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     private X509Svid svid;
     private X509BundleSet bundles;
 
-    private final WorkloadApiClient workloadApiClient;
+    private Function<List<X509Svid>, X509Svid> picker;
+    private WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
 
     /**
      * Creates a new X509Source. It blocks until the initial update
      * has been received from the Workload API.
+     * <p>
+     * It uses the default Address Env variable to get the Workload API endpoint address.
      *
-     * @param spiffeSocketPath a Path to a Spiffe Socket Endpoint.
      * @return an initialized an {@link spiffe.result.Ok} with X509Source, or an {@link Error} in
      * case the X509Source could not be initialized.
      */
-    public static Result<X509Source, Throwable> newSource(@NonNull Path spiffeSocketPath) {
-        Result<WorkloadApiClient, Throwable> workloadApiClient = WorkloadApiClient.newClient(spiffeSocketPath);
-        if (workloadApiClient.isError()) {
-            return Result.error(workloadApiClient.getError());
+    public static Result<X509Source, String> newSource() {
+        X509SourceOptions x509SourceOptions = new X509SourceOptions();
+        return newSource(x509SourceOptions);
+    }
+
+    public static Result<X509Source, String> newSource(@NonNull String spiffeSocketPath) {
+        X509SourceOptions options = X509SourceOptions
+                .builder()
+                .spiffeSocketPath(spiffeSocketPath)
+                .build();
+        return newSource(options);
+    }
+
+    public static Result<X509Source, String> newSource(@NonNull X509SourceOptions options) {
+
+        WorkloadApiClient workloadApiClient;
+        String address;
+        URI parsedAddress;
+
+        if (options.spiffeSocketPath != null) {
+            address = options.spiffeSocketPath;
+        } else {
+            address = Address.getDefaultAddress();
         }
-        return newSource(workloadApiClient.getValue());
+
+        val parseResult = Address.parseAddress(address);
+        if (parseResult.isError()) {
+            return Result.error(parseResult.getError());
+        }
+
+        parsedAddress = parseResult.getValue();
+        workloadApiClient = WorkloadApiClient.newClient(parsedAddress);
+
+        val x509Source = new X509Source();
+        x509Source.picker = options.picker;
+        x509Source.workloadApiClient = workloadApiClient;
+
+        try {
+            x509Source.init();
+        } catch (RuntimeException e) {
+            return Result.error("Error creating X509 Source: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+        }
+
+        return Result.ok(x509Source);
     }
 
     /**
@@ -62,19 +103,24 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      * @return an initialized an {@link spiffe.result.Ok} with X509Source, or an {@link Error} in
      * case the X509Source could not be initialized.
      */
-    public static Result<X509Source, Throwable> newSource(@NonNull WorkloadApiClient workloadApiClient) {
+    public static Result<X509Source, String> newSource(@NonNull WorkloadApiClient workloadApiClient) {
         val x509Source = new X509Source(workloadApiClient);
 
         try {
-            val initResult = x509Source.init();
-            if (initResult.isError()) {
-                return Result.error(initResult.getError());
-            }
+            x509Source.init();
         } catch (RuntimeException e) {
-            return Result.error(e);
+            return Result.error("Error creating X509 Source: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
         }
 
         return Result.ok(x509Source);
+    }
+
+    private X509Source(@NonNull WorkloadApiClient workloadApiClient) {
+        this.workloadApiClient = workloadApiClient;
+    }
+
+    private X509Source() {
+
     }
 
     /**
@@ -121,14 +167,13 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
                 }
             }
         }
-    }
 
+    }
     @SneakyThrows
-    private Result<Boolean, Throwable> init() {
+    private void init() {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         setX509ContextWatcher(countDownLatch);
         countDownLatch.await();
-        return Result.ok(true);
     }
 
     private void setX509ContextWatcher(CountDownLatch countDownLatch) {
@@ -141,19 +186,23 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
             }
 
             @Override
-            public void OnError(Error<X509Context, Throwable> error) {
+            public void OnError(Error<X509Context, String> error) {
                 throw new RuntimeException(error.getError());
             }
         });
     }
 
-    private X509Source(@NonNull WorkloadApiClient workloadApiClient) {
-        this.workloadApiClient = workloadApiClient;
-    }
-
     private void setX509Context(@NonNull final X509Context update) {
-        this.svid = update.getDefaultSvid();
-        this.bundles = update.getX509BundleSet();
+        X509Svid svid;
+        if (picker == null) {
+            svid = update.getDefaultSvid();
+        } else {
+            svid = picker.apply(update.getX509Svid());
+        }
+        synchronized (this) {
+            this.svid = svid;
+            this.bundles = update.getX509BundleSet();
+        }
     }
 
     private Result<Boolean, String> checkClosed() {
@@ -162,6 +211,23 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
                 return Result.error("source is closed");
             }
             return Result.ok(true);
+        }
+    }
+
+    @Value
+    public static class X509SourceOptions {
+        String spiffeSocketPath;
+        Function<List<X509Svid>, X509Svid> picker;
+
+        @Builder
+        public X509SourceOptions(String spiffeSocketPath, Function<List<X509Svid>, X509Svid> picker) {
+            this.spiffeSocketPath = spiffeSocketPath;
+            this.picker = picker;
+        }
+
+        public X509SourceOptions() {
+            this.spiffeSocketPath = null;
+            this.picker = null;
         }
     }
 }

@@ -82,8 +82,7 @@ public class SpiffeId {
             return Result.ok(new SpiffeId(trustDomainResult.getValue(), path));
 
         } catch (IllegalArgumentException e) {
-            String error = String.format("Could not parse SPIFFE ID %s %n %s", spiffeIdAsString, Arrays.toString(e.getStackTrace()));
-            return Result.error(error);
+            return Result.error("Could not parse SPIFFE ID %s: %s", spiffeIdAsString, e.getMessage());
         }
     }
 

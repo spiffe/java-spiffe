@@ -19,7 +19,7 @@ public class X509BundleTest {
         byte[] bundlePem = Files.readAllBytes(Paths.get("../testdata/bundle.pem"));
         TrustDomain trustDomain = TrustDomain.of("example.org").getValue();
 
-        Result<X509Bundle, Throwable> x509Bundle = X509Bundle.parse(trustDomain, bundlePem);
+        Result<X509Bundle, String> x509Bundle = X509Bundle.parse(trustDomain, bundlePem);
 
         assertAll(
                 () -> assertEquals(1, x509Bundle.getValue().getX509Roots().size()),
@@ -32,7 +32,7 @@ public class X509BundleTest {
         Path bundlePath = Paths.get("../testdata/bundle.pem");
         TrustDomain trustDomain = TrustDomain.of("example.org").getValue();
 
-        Result<X509Bundle, Throwable> x509Bundle = X509Bundle.load(trustDomain, bundlePath);
+        Result<X509Bundle, String> x509Bundle = X509Bundle.load(trustDomain, bundlePath);
 
         assertAll(
                 () -> assertEquals(1, x509Bundle.getValue().getX509Roots().size()),

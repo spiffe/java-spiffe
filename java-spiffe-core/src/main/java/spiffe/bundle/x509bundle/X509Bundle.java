@@ -36,7 +36,7 @@ public class X509Bundle implements X509BundleSource {
      * @return an instance of X509Bundle with the x509Roots
      * associated to the TrustDomain.
      */
-    public static Result<X509Bundle, Throwable> load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) {
+    public static Result<X509Bundle, String> load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) {
         try {
             val bundleBytes = Files.readAllBytes(bundlePath);
 
@@ -49,7 +49,7 @@ public class X509Bundle implements X509BundleSource {
             val x509Bundle = new X509Bundle(trustDomain, x509CertificateSet);
             return Result.ok(x509Bundle);
         } catch (IOException e) {
-            return Result.error(e);
+            return Result.error("Error loading X509Bundle from path %s: %s", bundlePath, e.getMessage());
         }
     }
 
@@ -61,7 +61,7 @@ public class X509Bundle implements X509BundleSource {
      * @return an instance of X509Bundle with the x509Roots
      * associated to the TrustDomain.
      */
-    public static Result<X509Bundle, Throwable> parse(@NonNull final TrustDomain trustDomain, @NonNull final byte[] bundleBytes) {
+    public static Result<X509Bundle, String> parse(@NonNull final TrustDomain trustDomain, @NonNull final byte[] bundleBytes) {
         val x509Certificates = CertificateUtils.generateCertificates(bundleBytes);
         if (x509Certificates.isError()) {
             return Result.error(x509Certificates.getError());
@@ -77,6 +77,6 @@ public class X509Bundle implements X509BundleSource {
         if (this.trustDomain.equals(trustDomain)) {
             return Result.ok(this);
         }
-        return Result.error(String.format("no X.509 bundle for trust domain %s", trustDomain));
+        return Result.error("No X509 bundle for trust domain %s", trustDomain);
     }
 }

@@ -8,8 +8,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -25,18 +23,18 @@ import java.util.function.Supplier;
  */
 public class HttpsClient {
 
-    Path spiffeSocket;
+    String spiffeSocket;
     Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsListSupplier;
     int serverPort;
 
     public static void main(String[] args) throws IOException {
-        Path spiffeSocket = Paths.get("/tmp/agent.sock");
+        String spiffeSocket = "unix:/tmp/agent.sock";
         HttpsClient httpsClient =
                 new HttpsClient(4000, spiffeSocket, HttpsClient::listOfSpiffeIds);
         httpsClient.run();
     }
 
-    HttpsClient(int serverPort, Path spiffeSocket, Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsListSupplier) {
+    HttpsClient(int serverPort, String spiffeSocket, Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsListSupplier) {
         this.serverPort = serverPort;
         this.spiffeSocket = spiffeSocket;
         this.acceptedSpiffeIdsListSupplier = acceptedSpiffeIdsListSupplier;

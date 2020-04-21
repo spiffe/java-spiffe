@@ -6,15 +6,14 @@ import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.NotImplementedException;
-import spiffe.SpiffeConstants;
+import org.apache.commons.lang3.StringUtils;
 import spiffe.result.Error;
-import spiffe.result.Result;
+import spiffe.workloadapi.Address;
 import spiffe.workloadapi.Watcher;
 import spiffe.workloadapi.WorkloadApiClient;
 import spiffe.workloadapi.X509Context;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
@@ -30,7 +29,7 @@ public class KeyStoreHelper {
     private final char[] privateKeyPassword;
     private final String privateKeyAlias;
 
-    private final Path spiffeSocketPath;
+    private final String spiffeSocketPath;
 
     /**
      * Create an instance of a KeyStoreHelper for fetching X509-SVIDs and Bundles
@@ -58,17 +57,12 @@ public class KeyStoreHelper {
             @NonNull final char[] keyStorePassword,
             @NonNull final char[] privateKeyPassword,
             @NonNull final String privateKeyAlias,
-            Path spiffeSocketPath) {
+            @NonNull String spiffeSocketPath) {
 
 
         this.privateKeyPassword = privateKeyPassword.clone();
         this.privateKeyAlias = privateKeyAlias;
-
-        if (spiffeSocketPath != null) {
-            this.spiffeSocketPath = spiffeSocketPath;
-        } else {
-            this.spiffeSocketPath = Paths.get(System.getenv(SpiffeConstants.SOCKET_ENV_VARIABLE));
-        }
+        this.spiffeSocketPath = spiffeSocketPath;
 
         this.keyStore =
                 spiffe.helper.KeyStore
@@ -79,17 +73,6 @@ public class KeyStoreHelper {
                         .build();
 
         setupX509ContextFetcher();
-    }
-
-    // Use spiffeSocketPath from Env Variable
-    public KeyStoreHelper(
-            @NonNull final Path keyStoreFilePath,
-            @NonNull final KeyStoreType keyStoreType,
-            @NonNull final char[] keyStorePassword,
-            @NonNull final char[] privateKeyPassword,
-            @NonNull final String privateKeyAlias) {
-
-        this(keyStoreFilePath, keyStoreType, keyStorePassword, privateKeyPassword, privateKeyAlias, null);
     }
 
     // Use spiffeSocketPath from Env Variable and KeyStoreType.PKCS12 as default
@@ -104,18 +87,28 @@ public class KeyStoreHelper {
 
     @SneakyThrows
     private void setupX509ContextFetcher() {
-        Result<WorkloadApiClient, Throwable> workloadApiClient = WorkloadApiClient.newClient(spiffeSocketPath);
-        if (workloadApiClient.isError()) {
-            throw new RuntimeException(workloadApiClient.getError());
+
+        String address;
+        if (StringUtils.isNotBlank(spiffeSocketPath)) {
+            address = spiffeSocketPath;
+        } else  {
+            address = Address.getDefaultAddress();
         }
 
+        val parseResult = Address.parseAddress(address);
+        if (parseResult.isError()) {
+            // panic
+            throw new RuntimeException(parseResult.getError());
+        }
+
+        val workloadApiClient = WorkloadApiClient.newClient(parseResult.getValue());
         CountDownLatch countDownLatch = new CountDownLatch(1);
         setX509ContextWatcher(workloadApiClient, countDownLatch);
         countDownLatch.await();
     }
 
-    private void setX509ContextWatcher(Result<WorkloadApiClient, Throwable> workloadApiClient, CountDownLatch countDownLatch) {
-        workloadApiClient.getValue().watchX509Context(new Watcher<X509Context>() {
+    private void setX509ContextWatcher(WorkloadApiClient workloadApiClient, CountDownLatch countDownLatch) {
+        workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
             public void OnUpdate(X509Context update) {
                 log.log(Level.INFO, "Received X509Context update");
@@ -124,7 +117,7 @@ public class KeyStoreHelper {
             }
 
             @Override
-            public void OnError(Error<X509Context, Throwable> error) {
+            public void OnError(Error<X509Context, String> error) {
                 throw new RuntimeException(error.getError());
             }
         });

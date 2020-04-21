@@ -33,6 +33,6 @@ public class CertificateUtilsTest {
         val result = CertificateUtils.validate(chain.getValue(), trustedCert.getValue());
 
         assertTrue(result.isError());
-        assertEquals("validity check failed", result.getError().getMessage());
+        assertTrue(result.getError().contains("Error validating certificate chain: validity check failed"));
     }
 }

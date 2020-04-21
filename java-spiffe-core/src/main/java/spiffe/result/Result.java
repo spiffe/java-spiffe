@@ -5,9 +5,6 @@ import java.util.function.Function;
 
 /**
  * A <code>Result</code> represents the result of an operation, that can be {@link spiffe.result.Ok} or {@link spiffe.result.Error}.
- * <p>
- * This is a very simple implementation that accomplishes its purpose on this library,
- * doesn't contain all the functionality that is required to be a fully monadic type.
  *
  * @param <V> type of the value conveyed by the Result
  * @param <E> type of the error conveyed by the Result.
@@ -33,6 +30,9 @@ public interface Result<V, E> {
         return new Error<>(error);
     }
 
+    static <V> Result<V, String> error(String format, Object ...args) {
+        return Result.error(String.format(format, args));
+    }
 
     /**
      * Applies the Function if the actual Result is an Ok.

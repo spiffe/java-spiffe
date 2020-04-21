@@ -102,7 +102,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted.", e.getMessage());
+            assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted", e.getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("CertPathValidatorException: Path does not chain with any of the trust anchors", e.getMessage());
+            assertTrue(e.getMessage().contains("CertPathValidatorException: Path does not chain with any of the trust anchors"));
         }
     }
 
@@ -162,7 +162,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted.", e.getMessage());
+            assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted", e.getMessage());
         }
     }
 
@@ -182,7 +182,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("CertPathValidatorException: Path does not chain with any of the trust anchors", e.getMessage());
+            assertTrue(e.getMessage().contains("CertPathValidatorException: Path does not chain with any of the trust anchors"));
         }
     }
 }

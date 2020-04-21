@@ -44,7 +44,7 @@ public class JwtBundle implements JwtBundleSource {
      * @param bundlePath  a path to a file containing the JwtBundle.
      * @return a <code>Result.ok(jwtBundle)</code>, or a <code>Result.error(errorMessage)</code>
      */
-    public static Result<JwtBundle, Throwable> load(
+    public static Result<JwtBundle, String > load(
             @NonNull final TrustDomain trustDomain,
             @NonNull final Path bundlePath) {
         throw new NotImplementedException("Not implemented");
@@ -57,7 +57,7 @@ public class JwtBundle implements JwtBundleSource {
      * @param bundleBytes an array of bytes representing the bundle.
      * @return
      */
-    public static Result<JwtBundle, Throwable> parse(
+    public static Result<JwtBundle, String> parse(
             @NonNull final TrustDomain trustDomain,
             @NonNull final byte[] bundleBytes) {
         throw new NotImplementedException("Not implemented");
@@ -75,7 +75,7 @@ public class JwtBundle implements JwtBundleSource {
         if (this.trustDomain.equals(trustDomain)) {
             return Result.ok(this);
         }
-        return Result.error(String.format("no JWT bundle for trust domain %s", trustDomain));
+        return Result.error("No JWT bundle for trust domain %s", trustDomain);
     }
 
     /**

@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
@@ -49,13 +48,13 @@ public class X509Svid {
      * @param privateKeyFile path to PrivateKey file
      * @return an instance of X509Svid
      */
-    public static Result<X509Svid, Throwable> load(@NonNull Path certsFile, @NonNull Path privateKeyFile) {
+    public static Result<X509Svid, String> load(@NonNull Path certsFile, @NonNull Path privateKeyFile) {
         try {
             val certsBytes = Files.readAllBytes(certsFile);
             byte[] privateKeyBytes = Files.readAllBytes(privateKeyFile);
             return createX509Svid(certsBytes, privateKeyBytes);
         } catch (IOException e) {
-            return Result.error(e);
+            return Result.error("Error loading X509-SVID from certsFile %s and privateKeyFile %s: %s", certsFile, privateKeyFile, e.getMessage());
         }
     }
 
@@ -67,7 +66,7 @@ public class X509Svid {
      * @param privateKeyBytes private key byte array
      * @return a Result(Success) object containing the X509-SVID, or a Error containing the Exception cause
      */
-    public static Result<X509Svid, Throwable> parse(@NonNull byte[] certsBytes, @NonNull byte[] privateKeyBytes) {
+    public static Result<X509Svid, String> parse(@NonNull byte[] certsBytes, @NonNull byte[] privateKeyBytes) {
         return createX509Svid(certsBytes, privateKeyBytes);
     }
 
@@ -76,7 +75,7 @@ public class X509Svid {
         return chain.toArray(new X509Certificate[0]);
     }
 
-    private static Result<X509Svid, Throwable> createX509Svid(byte[] certsBytes, byte[] privateKeyBytes) {
+    private static Result<X509Svid, String> createX509Svid(byte[] certsBytes, byte[] privateKeyBytes) {
         val x509Certificates = CertificateUtils.generateCertificates(certsBytes);
         if (x509Certificates.isError()) {
             return Result.error(x509Certificates.getError());
@@ -91,7 +90,7 @@ public class X509Svid {
                 CertificateUtils
                         .getSpiffeId(x509Certificates.getValue().get(0));
         if (spiffeId.isError()) {
-            return Result.error(new CertificateException(spiffeId.getError()));
+            return Result.error("Error creating X509-SVID: %s", spiffeId.getError());
         }
 
         val x509Svid = new X509Svid(

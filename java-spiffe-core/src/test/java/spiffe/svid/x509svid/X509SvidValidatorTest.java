@@ -35,17 +35,16 @@ public class X509SvidValidatorTest {
     void verifyChain_certificateExpired_returnsError() throws IOException {
         val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
         val chain = CertificateUtils.generateCertificates(certBytes).getValue();
-        val x509BundleResult =
+        Result<X509Bundle, String> x509Bundle=
                 X509Bundle.load(
                         TrustDomain.of("example.org").getValue(),
                         Paths.get("../testdata/bundle.pem")
                 );
-        val x509Bundle = x509BundleResult.getValue();
 
         when(bundleSourceMock
                 .getX509BundleForTrustDomain(
                         TrustDomain.of("example.org").getValue()))
-                .thenReturn(Result.ok(x509Bundle));
+                .thenReturn(x509Bundle);
 
         val result = X509SvidValidator.verifyChain(chain, bundleSourceMock);
 
@@ -76,7 +75,7 @@ public class X509SvidValidatorTest {
 
         assertAll(
                 () -> assertTrue(result.isError()),
-                () -> assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted.",result.getError())
+                () -> assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted",result.getError())
         );
     }
 }

@@ -1,6 +1,7 @@
 package spiffe.internal;
 
 import lombok.val;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
@@ -37,10 +38,10 @@ public class CertificateUtils {
      * @param input as byte array representing a list of X509Certificates, as a DER or PEM
      * @return a List of X509Certificate
      */
-    public static Result<List<X509Certificate>, Throwable> generateCertificates(byte[] input) {
+    public static Result<List<X509Certificate>, String> generateCertificates(byte[] input) {
         val certificateFactory = getCertificateFactory();
         if (certificateFactory.isError()) {
-            return Result.error(certificateFactory.getError());
+            return Result.error("Error parsing certificates: could not create certificate factory %s", certificateFactory.getError());
         }
 
         try {
@@ -54,7 +55,7 @@ public class CertificateUtils {
 
             return Result.ok(x509CertificateList);
         } catch (CertificateException e) {
-            return Result.error(e);
+            return Result.error("Error parsing certificates: %s", e.getMessage());
         }
     }
 
@@ -62,24 +63,23 @@ public class CertificateUtils {
      * Generates a PrivateKey from an array of bytes.
      *
      * @param privateKeyBytes is a PEM or DER PKCS#8 Private Key.
-     * @return a Result Ok containing a PrivateKey or an Error(Throwable) containing the
-     * a Throwable.
+     * @return a Result {@link spiffe.result.Ok} containing a {@link PrivateKey} or an {@link spiffe.result.Error}.
      */
-    public static Result<PrivateKey, Throwable> generatePrivateKey(byte[] privateKeyBytes) {
+    public static Result<PrivateKey, String> generatePrivateKey(byte[] privateKeyBytes) {
         PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(privateKeyBytes);
-        Result<PrivateKey, Throwable> privateKey = generatePrivateKeyWithSpec(kspec);
+        Result<PrivateKey, Throwable> privateKeyResult = generatePrivateKeyWithSpec(kspec);
 
-        if (privateKey.isOk()) {
-            return privateKey;
+        if (privateKeyResult.isOk()) {
+            return Result.ok(privateKeyResult.getValue());
         }
 
         // PrivateKey is in PEM format, not supported, need to convert to DER and try again
-        if (privateKey.getError() instanceof InvalidKeySpecException) {
+        if (privateKeyResult.getError() instanceof InvalidKeySpecException) {
             byte[] keyDer = toDerFormat(privateKeyBytes);
             kspec= new PKCS8EncodedKeySpec(keyDer);
-            privateKey = generatePrivateKeyWithSpec(kspec);
+            privateKeyResult = generatePrivateKeyWithSpec(kspec);
         }
-        return privateKey;
+        return Result.ok(privateKeyResult.getValue());
     }
 
     private static Result<PrivateKey, Throwable> generatePrivateKeyWithSpec(PKCS8EncodedKeySpec kspec) {
@@ -97,11 +97,11 @@ public class CertificateUtils {
      *
      * @param chain the certificate chain
      * @param trustedCerts to validate the certificate chain
-     * @return a Result Ok(true) if the chain can be chained to any of the trustedCerts, or
-     * an Error(Throwable) if there was an error.
+     * @return a Result {@link spiffe.result.Ok} if the chain can be chained to any of the trustedCerts, or
+     * an {@link spiffe.result.Error}.
      *
      */
-    public static Result<Boolean, Throwable> validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) {
+    public static Result<Boolean, String> validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) {
         val certificateFactory = getCertificateFactory();
         if (certificateFactory.isError()) {
             return Result.error(certificateFactory.getError());
@@ -112,7 +112,7 @@ public class CertificateUtils {
             val certPath = certificateFactory.getValue().generateCertPath(chain);
             getCertPathValidator().validate(certPath, pkixParameters);
         } catch (CertificateException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | CertPathValidatorException e) {
-            return Result.error(e);
+            return Result.error("Error validating certificate chain: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
         }
 
         return Result.ok(true);
@@ -187,11 +187,11 @@ public class CertificateUtils {
     }
 
     // Get the X509 Certificate Factory
-    private static Result<CertificateFactory, Throwable> getCertificateFactory() {
+    private static Result<CertificateFactory, String> getCertificateFactory() {
         try {
             return Result.ok(CertificateFactory.getInstance(X509_CERTIFICATE_TYPE));
         } catch (CertificateException e) {
-            return Result.error(e);
+            return Result.error("Error creating certificate factory: %s", e.getMessage());
         }
     }
 

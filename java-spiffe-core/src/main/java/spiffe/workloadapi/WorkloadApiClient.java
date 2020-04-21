@@ -4,6 +4,7 @@ import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.jwtbundle.JwtBundleSet;
 import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
@@ -16,7 +17,7 @@ import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlocki
 import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 
 import java.io.Closeable;
-import java.nio.file.Path;
+import java.net.URI;
 import java.util.Iterator;
 
 import static spiffe.workloadapi.internal.Workload.X509SVIDRequest;
@@ -46,51 +47,47 @@ public class WorkloadApiClient implements Closeable {
      *
      * @param spiffeSocketPath where the WorkloadAPI is listening.
      */
-    public static Result<WorkloadApiClient, Throwable> newClient(Path spiffeSocketPath) {
-        Result<ManagedChannel, Throwable> managedChannel = GrpcManagedChannelFactory.getManagedChannel(spiffeSocketPath);
-        if (managedChannel.isError()) {
-            return Result.error(managedChannel.getError());
-        }
+    public static WorkloadApiClient newClient(URI spiffeSocketPath) {
+        ManagedChannel managedChannel = GrpcManagedChannelFactory.newChannel(spiffeSocketPath);
 
         SpiffeWorkloadAPIStub workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
-                                        .newStub(managedChannel.getValue())
+                                        .newStub(managedChannel)
                                         .withInterceptors(new SecurityHeaderInterceptor());
 
         SpiffeWorkloadAPIBlockingStub workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
-                .newBlockingStub(managedChannel.getValue())
+                .newBlockingStub(managedChannel)
                 .withInterceptors(new SecurityHeaderInterceptor());
 
-        return Result.ok(
-                new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel.getValue()));
+        return new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel);
     }
 
     /**
      * One-shot fetch call to get an X509 Context (SPIFFE X509-SVID and Bundles).
      */
-    public Result<X509Context, Throwable> fetchX509Context() {
+    public Result<X509Context, String> fetchX509Context() {
         Context.CancellableContext cancellableContext;
         cancellableContext = Context.current().withCancellation();
-        Result<X509Context, Throwable> result;
+        Result<X509Context, String> result;
         try {
             result = cancellableContext.call(this::processX509Context);
         } catch (Exception e) {
-            return Result.error(e);
+            return Result.error("Error fetching X509Context: %s", e.getMessage());
         }
         // close connection
         cancellableContext.close();
         return result;
     }
 
-    private Result<X509Context, Throwable> processX509Context() {
+    private Result<X509Context, String> processX509Context() {
         try {
             Iterator<X509SVIDResponse> x509SVIDResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
             if (x509SVIDResponse.hasNext()) {
                 return GrpcConversionUtils.toX509Context(x509SVIDResponse.next());
             }
         } catch (Exception e) {
-            return Result.error(e);
+            return Result.error("Error processing X509Context: %s", e.getMessage());
         }
-        return Result.error(new RuntimeException("Could not get X509Context"));
+        return Result.error("Could not get X509Context");
     }
 
     /**
@@ -102,7 +99,7 @@ public class WorkloadApiClient implements Closeable {
         StreamObserver<X509SVIDResponse> streamObserver = new StreamObserver<X509SVIDResponse>() {
             @Override
             public void onNext(X509SVIDResponse value) {
-                Result<X509Context, Throwable> x509Context = GrpcConversionUtils.toX509Context(value);
+                Result<X509Context, String> x509Context = GrpcConversionUtils.toX509Context(value);
                 if (x509Context.isError()) {
                     watcher.OnError(Result.error(x509Context.getError()));
                 }
@@ -111,12 +108,13 @@ public class WorkloadApiClient implements Closeable {
 
             @Override
             public void onError(Throwable t) {
-                watcher.OnError(Result.error(t));
+                String error = String.format("Error getting X509Context update: %s", ExceptionUtils.getStackTrace(t));
+                watcher.OnError(Result.error(error));
             }
 
             @Override
             public void onCompleted() {
-                watcher.OnError(Result.error(new RuntimeException("Unexpected completed stream.")));
+                watcher.OnError(Result.error("Unexpected completed stream."));
             }
         };
         workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver);
@@ -131,7 +129,7 @@ public class WorkloadApiClient implements Closeable {
      * @return an {@link spiffe.result.Ok} containing the JWT SVID, or an {@link spiffe.result.Error}
      * if the JwtSvid could not be fetched.
      */
-    public Result<JwtSvid, Throwable> fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) {
+    public Result<JwtSvid, String> fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) {
        throw new NotImplementedException("Not implemented");
     }
 
@@ -141,7 +139,7 @@ public class WorkloadApiClient implements Closeable {
      *
      * @return an {@link spiffe.result.Ok} containing the JwtBundleSet.
      */
-    public Result<JwtBundleSet, Throwable> fetchJwtBundles() {
+    public Result<JwtBundleSet, String> fetchJwtBundles() {
         throw new NotImplementedException("Not implemented");
     }
 
@@ -154,7 +152,7 @@ public class WorkloadApiClient implements Closeable {
      *
      * @return the JwtSvid if the token and audience could be validated.
      */
-    public Result<JwtSvid, Throwable> validateJwtSvid(String token, String audience) {
+    public Result<JwtSvid, String> validateJwtSvid(String token, String audience) {
         throw new NotImplementedException("Not implemented");
     }
 

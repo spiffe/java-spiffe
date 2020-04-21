@@ -12,13 +12,13 @@ import java.util.List;
 
 public class GrpcConversionUtils {
 
-    public static Result<X509Context, Throwable> toX509Context(Workload.X509SVIDResponse x509SVIDResponse) {
-        Result<List<X509Svid>, Throwable> x509SvidListResult = getListOfX509Svid(x509SVIDResponse);
+    public static Result<X509Context, String> toX509Context(Workload.X509SVIDResponse x509SVIDResponse) {
+        Result<List<X509Svid>, String> x509SvidListResult = getListOfX509Svid(x509SVIDResponse);
         if (x509SvidListResult.isError()) {
             return Result.error(x509SvidListResult.getError());
         }
 
-        Result<List<X509Bundle>, Throwable> x509BundleListResult = getListOfX509Bundles(x509SVIDResponse);
+        Result<List<X509Bundle>, String> x509BundleListResult = getListOfX509Bundles(x509SVIDResponse);
         if (x509BundleListResult.isError()) {
             return Result.error(x509BundleListResult.getError());
         }
@@ -28,15 +28,15 @@ public class GrpcConversionUtils {
         return Result.ok(result);
     }
 
-    private static Result<List<X509Bundle>, Throwable> getListOfX509Bundles(Workload.X509SVIDResponse x509SVIDResponse) {
+    private static Result<List<X509Bundle>, String> getListOfX509Bundles(Workload.X509SVIDResponse x509SVIDResponse) {
         List<X509Bundle> x509BundleList = new ArrayList<>();
         for (Workload.X509SVID x509SVID : x509SVIDResponse.getSvidsList()) {
             Result<SpiffeId, String> spiffeId = SpiffeId.parse(x509SVID.getSpiffeId());
             if (spiffeId.isError()) {
-                return Result.error(new RuntimeException(spiffeId.getError()));
+                return Result.error(spiffeId.getError());
             }
 
-            Result<X509Bundle, Throwable> bundle = X509Bundle.parse(
+            Result<X509Bundle, String> bundle = X509Bundle.parse(
                     spiffeId.getValue().getTrustDomain(),
                     x509SVID.getBundle().toByteArray());
             if (bundle.isError()) {
@@ -47,10 +47,10 @@ public class GrpcConversionUtils {
         return Result.ok(x509BundleList);
     }
 
-    private static Result<List<X509Svid>, Throwable> getListOfX509Svid(Workload.X509SVIDResponse x509SVIDResponse) {
+    private static Result<List<X509Svid>, String> getListOfX509Svid(Workload.X509SVIDResponse x509SVIDResponse) {
         List<X509Svid> x509SvidList = new ArrayList<>();
         for (Workload.X509SVID x509SVID : x509SVIDResponse.getSvidsList()) {
-            Result<X509Svid, Throwable> svid = X509Svid.parse(
+            Result<X509Svid, String> svid = X509Svid.parse(
                     x509SVID.getX509Svid().toByteArray(),
                     x509SVID.getX509SvidKey().toByteArray());
             if (svid.isError()){

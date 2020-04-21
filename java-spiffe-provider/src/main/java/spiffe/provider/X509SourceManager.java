@@ -1,11 +1,7 @@
 package spiffe.provider;
 
 import lombok.val;
-import org.apache.commons.lang3.StringUtils;
-import spiffe.SpiffeConstants;
 import spiffe.workloadapi.X509Source;
-
-import java.nio.file.Paths;
 
 /**
  * A <code>X509SourceManager</code> is a Singleton that handles an instance of a X509Source.
@@ -26,13 +22,8 @@ public enum X509SourceManager {
     private final X509Source x509Source;
 
     X509SourceManager() {
-        val spiffeSocketEnvVariable = System.getenv(SpiffeConstants.SOCKET_ENV_VARIABLE);
-        if (StringUtils.isBlank(spiffeSocketEnvVariable)) {
-            throw new IllegalStateException("SPIFFE SOCKET ENV VARIABLE IS NOT SET");
-        }
-
         val x509SourceResult =
-                X509Source.newSource(Paths.get(spiffeSocketEnvVariable));
+                X509Source.newSource();
         if (x509SourceResult.isError()) {
             // panic in case of error creating the X509Source
             throw new RuntimeException(x509SourceResult.getError());

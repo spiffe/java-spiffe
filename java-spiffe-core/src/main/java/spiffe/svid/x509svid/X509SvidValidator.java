@@ -2,7 +2,6 @@ package spiffe.svid.x509svid;
 
 import lombok.NonNull;
 import lombok.val;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.x509bundle.X509BundleSource;
 import spiffe.internal.CertificateUtils;
 import spiffe.result.Result;
@@ -39,15 +38,10 @@ public class X509SvidValidator {
         val x509Bundle = x509BundleSource.getX509BundleForTrustDomain(trustDomain.getValue());
 
         if (x509Bundle.isError()) {
-            return Result.error(String.format("No X509 Bundle found for the Trust Domain %s", trustDomain.getValue()));
+            return Result.error("No X509 Bundle found for the Trust Domain %s", trustDomain.getValue());
         }
 
-        val result = CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getValue().getX509Roots()));
-        if (result.isError()) {
-            return Result.error(ExceptionUtils.getRootCauseMessage(result.getError()));
-        }
-
-        return Result.ok(true);
+        return CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getValue().getX509Roots()));
     }
 
     /**
@@ -74,6 +68,6 @@ public class X509SvidValidator {
             return Result.ok(true);
         }
 
-        return Result.error(String.format("SPIFFE ID '%s' is not accepted.", spiffeId));
+        return Result.error("SPIFFE ID '%s' is not accepted", spiffeId);
     }
 }

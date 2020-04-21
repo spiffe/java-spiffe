@@ -9,8 +9,6 @@ import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.jwtsvid.JwtSvid;
 import spiffe.svid.jwtsvid.JwtSvidSource;
 
-import java.nio.file.Path;
-
 /**
  * A <code>JwtSource</code> represents a source of SPIFFE JWT-SVID and JWT bundles
  * maintained via the Workload API.
@@ -25,7 +23,7 @@ public class JwtSource implements JwtSvidSource, JwtBundleSource {
      * @return a Result containing an instance of a JwtSource, or an Error with an
      * Exception.
      */
-    public static Result<JwtSource, Throwable> newSource(Path spiffeSocketPath) {
+    public static Result<JwtSource, String> newSource(String spiffeSocketPath) {
         throw new NotImplementedException("Not implemented");
     }
 

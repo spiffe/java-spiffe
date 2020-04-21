@@ -40,7 +40,7 @@ public class JwtBundleSet implements JwtBundleSource {
         if (bundles.containsKey(trustDomain)) {
             return Result.ok(bundles.get(trustDomain));
         }
-        return Result.error(String.format("no JWT bundle for trust domain %s", trustDomain));
+        return Result.error("No JWT bundle for trust domain %s", trustDomain);
     }
 
     /**
