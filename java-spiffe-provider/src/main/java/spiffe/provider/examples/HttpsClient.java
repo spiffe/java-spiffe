@@ -12,9 +12,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Example of a simple HTTPS Client backed by the Workload API to get the X509 Certificates
@@ -74,11 +78,17 @@ public class HttpsClient {
     }
 
     static Result<List<SpiffeId>, String> listOfSpiffeIds() {
-        List<SpiffeId> acceptedSpiffeIds = new ArrayList<>();
-        acceptedSpiffeIds.add(
-                SpiffeId.parse("spiffe://example.org/workload-server").getValue());
-        return Result.ok(acceptedSpiffeIds);
+        try {
+            Path path = Paths.get("java-spiffe-provider/src/main/java/spiffe/provider/examples/spiffeIds.txt");
+            Stream<String> lines = Files.lines(path);
+            List<SpiffeId> list = lines
+                    .map(SpiffeId::parse)
+                    .map(Result::getValue)
+                    .collect(Collectors.toList());
+            return Result.ok(list);
+        } catch (Exception e) {
+           return Result.error("Error getting list of accepted SPIFFE IDs: %s", e.getMessage());
+        }
     }
-
 }
 

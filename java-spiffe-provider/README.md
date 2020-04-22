@@ -1,8 +1,59 @@
-# JAVA-SPIFFE Provider
+# Java SPIFFE Provider
 
-Java Security Provider implementation supporting X509-SVIDs.
+This module provides a Java Security Provider implementation supporting X509-SVIDs and methods for
+creating SSLContexts that are backed by the Workload API.
 
-## Add provider to Java Security
+## Create an SSL Context backed by the Workload API
+
+To create an SSL Context that uses a X509Source backed by the WorkloadAPI, having the environment variable
+` SPIFFE_ENDPOINT_SOCKET` defined with the WorkloadAPI endpoint address, and the `ssl.spiffe.accept` 
+Security property defined in the `java.security` containing the list of SPIFFE IDs that the current workload
+will trust for TLS connections. 
+
+```
+    val sslContextOptions = SslContextOptions
+            .builder()
+            .x509Source(x509Source.newSource().getValue())
+            .build();
+    Result<SSLContext, String> sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
+    if (sslContext.isError()) {
+        // handle sslContext.getError();
+    }
+
+ ```
+
+See [HttpsServer example](src/main/java/spiffe/provider/examples/HttpsServer.java).
+
+Alternatively, a different Workload API address can be used by passing it to the X509Source creation method, and the
+Supplier of accepted SPIFFE IDs list can be provided as part of the `SslContextOptions`:
+
+```
+    val sourceOptions = X509SourceOptions
+            .builder()
+            .spiffeSocketPath(spiffeSocket)
+            .build();
+    val x509Source = X509Source.newSource(sourceOptions);
+    if (x509Source.isError()) {
+        // handle x509source.getError()
+    }
+
+    SslContextOptions sslContextOptions = SslContextOptions
+            .builder()
+            .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
+            .x509Source(x509Source.getValue())
+            .build();
+    Result<SSLContext, String> sslContext = SpiffeSslContextFactory
+            .getSslContext(sslContextOptions);
+
+    if (sslContext.isError()) {
+        // handle sslContext.getError()
+    }
+```
+
+See [HttpsClient example](src/main/java/spiffe/provider/examples/HttpsClient.java) that defines a Supplier for providing
+the list of SPIFFE IDs from a file.
+
+## Plug Java SPIFFE Provider into Java Security
 
 Java Security Providers are configured in the master security properties file `<java-home>/jre/lib/security/java.security`. 
 
@@ -62,7 +113,6 @@ The socket endpoint can be configured defining an environment variable named `SP
 export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
 ``` 
 
-
 ## Use Cases
 
 ### Configure a Tomcat connector
@@ -78,11 +128,6 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
             keystoreType="Spiffe"
             clientAuth="true" sslProtocol="TLS"/>
 ```
-
-
-### Create a SSL Context backed by the Workload API
-
-TBD
 
 ## References 
 
