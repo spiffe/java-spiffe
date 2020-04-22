@@ -8,9 +8,10 @@ import lombok.val;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import spiffe.result.Error;
-import spiffe.workloadapi.Address;
+import spiffe.result.Result;
 import spiffe.workloadapi.Watcher;
 import spiffe.workloadapi.WorkloadApiClient;
+import spiffe.workloadapi.WorkloadApiClient.ClientOptions;
 import spiffe.workloadapi.X509Context;
 
 import java.nio.file.Path;
@@ -75,35 +76,19 @@ public class KeyStoreHelper {
         setupX509ContextFetcher();
     }
 
-    // Use spiffeSocketPath from Env Variable and KeyStoreType.PKCS12 as default
-    public KeyStoreHelper(
-            @NonNull final Path keyStoreFilePath,
-            @NonNull final char[] keyStorePassword,
-            @NonNull final char[] privateKeyPassword,
-            @NonNull final String privateKeyAlias) {
-
-        this(keyStoreFilePath, KeyStoreType.PKCS12, keyStorePassword, privateKeyPassword, privateKeyAlias, null);
-    }
-
     @SneakyThrows
     private void setupX509ContextFetcher() {
+        Result<WorkloadApiClient, String> workloadApiClient;
 
-        String address;
         if (StringUtils.isNotBlank(spiffeSocketPath)) {
-            address = spiffeSocketPath;
-        } else  {
-            address = Address.getDefaultAddress();
+            ClientOptions clientOptions = ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
+            workloadApiClient = WorkloadApiClient.newClient(clientOptions);
+        } else {
+            workloadApiClient = WorkloadApiClient.newClient();
         }
 
-        val parseResult = Address.parseAddress(address);
-        if (parseResult.isError()) {
-            // panic
-            throw new RuntimeException(parseResult.getError());
-        }
-
-        val workloadApiClient = WorkloadApiClient.newClient(parseResult.getValue());
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        setX509ContextWatcher(workloadApiClient, countDownLatch);
+        setX509ContextWatcher(workloadApiClient.getValue(), countDownLatch);
         countDownLatch.await();
     }
 

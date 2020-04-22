@@ -32,9 +32,11 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     private static final String SSL_SPIFFE_ACCEPT_PROPERTY = "ssl.spiffe.accept";
 
     /**
-     * Default method for creating a TrustManager initializing it with the X509BundleSource instance
-     * and with and a supplier of accepted SPIFFE IDs. that reads the list
-     * from the System Property defined in {@link spiffe.SpiffeConstants}.SSL_SPIFFE_ACCEPT_PROPERTY.
+     * Default method for creating a TrustManager initializing it with
+     * the {@link spiffe.workloadapi.X509Source} instance
+     * that is handled by the {@link X509SourceManager}, and
+     * with and a supplier of accepted SPIFFE IDs. that reads the list
+     * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
      *
      * @return a TrustManager array with an initialized TrustManager.
      */
@@ -43,6 +45,22 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
         val spiffeTrustManager =
                 new SpiffeTrustManager(
                         X509SourceManager.INSTANCE.getX509Source(),
+                        this::getAcceptedSpiffeIds
+                );
+        return new TrustManager[]{spiffeTrustManager};
+    }
+
+    /**
+     * Creates a TrustManager initializing it with the X509BundleSource instance
+     * and with and a supplier of accepted SPIFFE IDs. that reads the list
+     * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
+     *
+     * @return a TrustManager array with an initialized TrustManager.
+     */
+    public TrustManager[] engineGetTrustManagers(X509BundleSource x509BundleSource) {
+        val spiffeTrustManager =
+                new SpiffeTrustManager(
+                        x509BundleSource,
                         this::getAcceptedSpiffeIds
                 );
         return new TrustManager[]{spiffeTrustManager};
@@ -61,10 +79,16 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
             X509BundleSource x509BundleSource,
             Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier) {
 
+        Supplier<Result<List<SpiffeId>, String>> spiffeIdsSupplier;
+        if (acceptedSpiffeIdsSupplier != null) {
+            spiffeIdsSupplier = acceptedSpiffeIdsSupplier;
+        } else {
+            spiffeIdsSupplier = this::getAcceptedSpiffeIds;
+        }
         val spiffeTrustManager =
                 new SpiffeTrustManager(
                         x509BundleSource,
-                        acceptedSpiffeIdsSupplier
+                        spiffeIdsSupplier
                 );
         return new TrustManager[]{spiffeTrustManager};
     }

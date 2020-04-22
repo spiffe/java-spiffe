@@ -1,6 +1,10 @@
 package spiffe.provider.examples;
 
+import lombok.val;
 import spiffe.provider.SpiffeSslContextFactory;
+import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
+import spiffe.result.Result;
+import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -34,17 +38,28 @@ public class HttpsServer {
     }
 
     void run() throws IOException {
+        val x509Source = X509Source.newSource();
+        if (x509Source.isError()) {
+            throw new RuntimeException(x509Source.getError());
+        }
 
-        SSLContext sslContext = SpiffeSslContextFactory.getSslContext();
+        val sslContextOptions = SslContextOptions
+                .builder()
+                .x509Source(x509Source.getValue())
+                .build();
+        Result<SSLContext, String> sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
+        if (sslContext.isError()) {
+            throw new RuntimeException(sslContext.getError());
+        }
 
-        SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
+        SSLServerSocketFactory sslServerSocketFactory = sslContext.getValue().getServerSocketFactory();
         SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(port);
 
         // Server will validate Client chain and SPIFFE ID
         sslServerSocket.setNeedClientAuth(true);
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        new WorkloadThread(sslSocket).start();
+        new WorkloadThread(sslSocket, x509Source.getValue()).start();
     }
 }
 

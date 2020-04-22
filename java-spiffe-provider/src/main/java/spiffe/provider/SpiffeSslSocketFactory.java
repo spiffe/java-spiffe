@@ -1,5 +1,8 @@
 package spiffe.provider;
 
+import lombok.val;
+import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
+
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -12,7 +15,15 @@ import java.net.Socket;
  */
 public class SpiffeSslSocketFactory extends SSLSocketFactory {
 
-    private final SSLSocketFactory delegate = SpiffeSslContextFactory.getSslContext().getSocketFactory();
+    private final SSLSocketFactory delegate;
+
+    public SpiffeSslSocketFactory(SslContextOptions contextOptions) {
+        val sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
+        if (sslContext.isError()) {
+            throw new RuntimeException(sslContext.getError());
+        }
+        delegate = sslContext.getValue().getSocketFactory();
+    }
 
     @Override
     public String[] getDefaultCipherSuites() {

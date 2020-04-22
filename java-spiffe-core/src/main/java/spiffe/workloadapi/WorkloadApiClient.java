@@ -3,7 +3,10 @@ package spiffe.workloadapi;
 import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
+import lombok.*;
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.jwtbundle.JwtBundleSet;
 import spiffe.result.Result;
@@ -18,7 +21,10 @@ import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 
 import java.io.Closeable;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import static spiffe.workloadapi.internal.Workload.X509SVIDRequest;
 import static spiffe.workloadapi.internal.Workload.X509SVIDResponse;
@@ -30,35 +36,67 @@ import static spiffe.workloadapi.internal.Workload.X509SVIDResponse;
  * Multiple WorkloadApiClients can be created for the same SPIFFE Socket Path,
  * they will share a common ManagedChannel.
  */
+@Log
 public class WorkloadApiClient implements Closeable {
 
     private final SpiffeWorkloadAPIStub workloadApiAsyncStub;
     private final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub;
     private final ManagedChannel managedChannel;
+    private final List<Context.CancellableContext> cancellableContexts;
 
     private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub, SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub, ManagedChannel managedChannel) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
         this.managedChannel = managedChannel;
+        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
+    }
+
+    /**
+     * Creates a new WorkloadAPI client using the Default Address from the Environment Variable
+     *
+     * @return a Result containing a WorklaodAPI client
+     */
+    public static Result<WorkloadApiClient, String> newClient() {
+        val options = ClientOptions.builder().build();
+        return newClient(options);
     }
 
     /**
      * Creates a new Workload API Client.
+     * <p>
+     * If the SPIFFE Socket Path is not provided, it uses the Default Address from
+     * the Environment variable for creating the client.
      *
-     * @param spiffeSocketPath where the WorkloadAPI is listening.
+     * @param options {@link ClientOptions}
+     * @return a Result containing a WorklaodAPI client
      */
-    public static WorkloadApiClient newClient(URI spiffeSocketPath) {
-        ManagedChannel managedChannel = GrpcManagedChannelFactory.newChannel(spiffeSocketPath);
+    public static Result<WorkloadApiClient, String> newClient(@NonNull ClientOptions options) {
 
-        SpiffeWorkloadAPIStub workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
-                                        .newStub(managedChannel)
-                                        .withInterceptors(new SecurityHeaderInterceptor());
+        String spiffeSocketPath;
+        if (StringUtils.isNotBlank(options.spiffeSocketPath)) {
+            spiffeSocketPath = options.spiffeSocketPath;
+        } else {
+            spiffeSocketPath = Address.getDefaultAddress();
+        }
 
-        SpiffeWorkloadAPIBlockingStub workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
+        val parseResult = Address.parseAddress(spiffeSocketPath);
+        if (parseResult.isError()) {
+            return Result.error(parseResult.getError());
+        }
+
+        URI parsedAddress = parseResult.getValue();
+        val managedChannel = GrpcManagedChannelFactory.newChannel(parsedAddress);
+
+        val workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
+                .newStub(managedChannel)
+                .withInterceptors(new SecurityHeaderInterceptor());
+
+        val workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
                 .newBlockingStub(managedChannel)
                 .withInterceptors(new SecurityHeaderInterceptor());
 
-        return new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel);
+        val workloadApiClient = new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel);
+        return Result.ok(workloadApiClient);
     }
 
     /**
@@ -71,7 +109,7 @@ public class WorkloadApiClient implements Closeable {
         try {
             result = cancellableContext.call(this::processX509Context);
         } catch (Exception e) {
-            return Result.error("Error fetching X509Context: %s", e.getMessage());
+            return Result.error("Error fetching X509Context: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
         }
         // close connection
         cancellableContext.close();
@@ -85,7 +123,7 @@ public class WorkloadApiClient implements Closeable {
                 return GrpcConversionUtils.toX509Context(x509SVIDResponse.next());
             }
         } catch (Exception e) {
-            return Result.error("Error processing X509Context: %s", e.getMessage());
+            return Result.error("Error processing X509Context: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
         }
         return Result.error("Could not get X509Context");
     }
@@ -108,7 +146,7 @@ public class WorkloadApiClient implements Closeable {
 
             @Override
             public void onError(Throwable t) {
-                String error = String.format("Error getting X509Context update: %s", ExceptionUtils.getStackTrace(t));
+                String error = String.format("Error getting X509Context update: %s %n %s", t.getMessage(), ExceptionUtils.getStackTrace(t));
                 watcher.OnError(Result.error(error));
             }
 
@@ -117,20 +155,23 @@ public class WorkloadApiClient implements Closeable {
                 watcher.OnError(Result.error("Unexpected completed stream."));
             }
         };
-        workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver);
+        Context.CancellableContext cancellableContext;
+        cancellableContext = Context.current().withCancellation();
+        cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver));
+        this.cancellableContexts.add(cancellableContext);
     }
 
     /**
      * One-shot fetch call to get a SPIFFE JWT-SVID.
      *
-     * @param subject a SPIFFE ID
-     * @param audience the audience of the JWT-SVID
+     * @param subject       a SPIFFE ID
+     * @param audience      the audience of the JWT-SVID
      * @param extraAudience the extra audience for the JWT_SVID
      * @return an {@link spiffe.result.Ok} containing the JWT SVID, or an {@link spiffe.result.Error}
      * if the JwtSvid could not be fetched.
      */
     public Result<JwtSvid, String> fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) {
-       throw new NotImplementedException("Not implemented");
+        throw new NotImplementedException("Not implemented");
     }
 
     /**
@@ -147,9 +188,8 @@ public class WorkloadApiClient implements Closeable {
      * Validates the JWT-SVID token. The parsed and validated
      * JWT-SVID is returned.
      *
-     * @param token JWT token
+     * @param token    JWT token
      * @param audience audience of the JWT
-     *
      * @return the JwtSvid if the token and audience could be validated.
      */
     public Result<JwtSvid, String> validateJwtSvid(String token, String audience) {
@@ -171,6 +211,26 @@ public class WorkloadApiClient implements Closeable {
 
     @Override
     public void close() {
-        managedChannel.shutdown();
+        log.info("Closing WorkloadAPI client");
+        synchronized (this) {
+            for (val context : cancellableContexts) {
+                context.close();
+            }
+            log.info("Shutting down Managed Channel");
+            managedChannel.shutdown();
+        }
+    }
+
+    /**
+     * Options for creating a new {@link WorkloadApiClient}.
+     */
+    @Data
+    public static class ClientOptions {
+        String spiffeSocketPath;
+
+        @Builder
+        public ClientOptions(String spiffeSocketPath) {
+            this.spiffeSocketPath = spiffeSocketPath;
+        }
     }
 }

@@ -2,6 +2,7 @@ package spiffe.provider.examples;
 
 import spiffe.internal.CertificateUtils;
 import spiffe.spiffeid.SpiffeId;
+import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -10,10 +11,12 @@ import java.security.cert.X509Certificate;
 
 class WorkloadThread extends Thread {
 
+    private final X509Source x509Source;
     private SSLSocket sslSocket;
 
-    WorkloadThread(SSLSocket sslSocket) {
+    WorkloadThread(SSLSocket sslSocket, X509Source x509Source) {
         this.sslSocket = sslSocket;
+        this.x509Source = x509Source;
     }
 
     public void run() {
@@ -48,8 +51,10 @@ class WorkloadThread extends Thread {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 System.out.println("Message received: " + line);
+                break;
             }
 
+            x509Source.close();
             sslSocket.close();
         } catch (Exception ex) {
             ex.printStackTrace();

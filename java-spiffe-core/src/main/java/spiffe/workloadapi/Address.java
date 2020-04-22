@@ -105,7 +105,6 @@ public class Address {
     private static String parseIp(String host) {
         try {
             InetAddress ip = InetAddress.getByName(host);
-            System.out.println(ip);
             return ip.getHostAddress();
         } catch (UnknownHostException e) {
             return null;

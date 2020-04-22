@@ -1,8 +1,12 @@
 package spiffe.provider.examples;
 
+import lombok.val;
 import spiffe.provider.SpiffeSslContextFactory;
+import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
 import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
+import spiffe.workloadapi.X509Source;
+import spiffe.workloadapi.X509Source.X509SourceOptions;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -41,12 +45,32 @@ public class HttpsClient {
     }
 
     void run() throws IOException {
-        SSLContext sslContext = SpiffeSslContextFactory
-                .getSslContext(spiffeSocket, acceptedSpiffeIdsListSupplier);
 
-        SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+        val sourceOptions = X509SourceOptions
+                .builder()
+                .spiffeSocketPath(spiffeSocket)
+                .build();
+        val x509Source = X509Source.newSource(sourceOptions);
+        if (x509Source.isError()) {
+            throw new RuntimeException(x509Source.getError());
+        }
+
+        SslContextOptions sslContextOptions = SslContextOptions
+                .builder()
+                .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
+                .x509Source(x509Source.getValue())
+                .build();
+        Result<SSLContext, String> sslContext = SpiffeSslContextFactory
+                .getSslContext(sslContextOptions);
+
+        if (sslContext.isError()) {
+            throw new RuntimeException(sslContext.getError());
+        }
+
+        SSLSocketFactory sslSocketFactory = sslContext.getValue().getSocketFactory();
         SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket("localhost", serverPort);
-        new WorkloadThread(sslSocket).start();
+
+        new WorkloadThread(sslSocket, x509Source.getValue()).start();
     }
 
     static Result<List<SpiffeId>, String> listOfSpiffeIds() {

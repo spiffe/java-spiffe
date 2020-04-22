@@ -26,7 +26,7 @@ public class GrpcManagedChannelFactory {
      * @return a instance of a ManagedChannel.
      */
     public static ManagedChannel newChannel(@NonNull URI address) {
-        if (address.getScheme().equals("unix")) {
+        if ("unix".equals(address.getScheme())) {
             return createNativeSocketChannel(address);
         } else {
             return createTcpChannel(address);
