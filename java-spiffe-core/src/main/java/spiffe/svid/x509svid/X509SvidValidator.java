@@ -41,7 +41,7 @@ public class X509SvidValidator {
             return Result.error("No X509 Bundle found for the Trust Domain %s", trustDomain.getValue());
         }
 
-        return CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getValue().getX509Roots()));
+        return CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getValue().getX509Authorities()));
     }
 
     /**

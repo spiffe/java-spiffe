@@ -15,25 +15,25 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A <code>X509Bundle</code> represents a collection of trusted public key materials for a trust domain.
+ * A <code>X509Bundle</code> represents a collection of trusted X.509 authorities for a trust domain.
  */
 @Value
 public class X509Bundle implements X509BundleSource {
 
     TrustDomain trustDomain;
-    Set<X509Certificate> x509Roots;
+    Set<X509Certificate> x509Authorities;
 
-    private X509Bundle(final TrustDomain trustDomain, final Set<X509Certificate> x509Roots) {
+    private X509Bundle(final TrustDomain trustDomain, final Set<X509Certificate> x509Authorities) {
         this.trustDomain = trustDomain;
-        this.x509Roots = x509Roots;
+        this.x509Authorities = x509Authorities;
     }
 
     /**
      * Load loads a Bundle from a file on disk.
      *
      * @param trustDomain a TrustDomain to associate to the bundle
-     * @param bundlePath a Path to the file that has the x509Roots
-     * @return an instance of X509Bundle with the x509Roots
+     * @param bundlePath a Path to the file that has the X509 Authorities
+     * @return an instance of X509Bundle with the X509 Authorities
      * associated to the TrustDomain.
      */
     public static Result<X509Bundle, String> load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) {
@@ -57,8 +57,8 @@ public class X509Bundle implements X509BundleSource {
      * Parses a bundle from a byte array.
      *
      * @param trustDomain a TrustDomain to associate to the bundle
-     * @param bundleBytes an array of bytes that represents the x509Roots
-     * @return an instance of X509Bundle with the x509Roots
+     * @param bundleBytes an array of bytes that represents the X509 Authorities
+     * @return an instance of X509Bundle with the X509 Authorities
      * associated to the TrustDomain.
      */
     public static Result<X509Bundle, String> parse(@NonNull final TrustDomain trustDomain, @NonNull final byte[] bundleBytes) {

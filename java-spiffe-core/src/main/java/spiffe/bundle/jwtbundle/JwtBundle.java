@@ -12,18 +12,18 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A <code>JwtBundle</code> represents a collection of trusted JWT public keys for a trust domain.
+ * A <code>JwtBundle</code> represents a collection of trusted JWT authorities for a trust domain.
  */
 @Value
 public class JwtBundle implements JwtBundleSource {
 
     TrustDomain trustDomain;
 
-    Map<String, PublicKey> jwtKeys;
+    Map<String, PublicKey> jwtAuthorities;
 
-    private JwtBundle(TrustDomain trustDomain, Map<String, PublicKey> jwtKeys) {
+    private JwtBundle(TrustDomain trustDomain, Map<String, PublicKey> jwtAuthorities) {
         this.trustDomain = trustDomain;
-        this.jwtKeys = jwtKeys;
+        this.jwtAuthorities = jwtAuthorities;
     }
 
     /**
