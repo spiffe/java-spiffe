@@ -17,6 +17,8 @@ This library is composed of three modules:
 
 [java-spiffe-helper](java-spiffe-helper/README.md): Helper to store X509-SVID Certificates in a Java Keystore in disk.
 
+**Supports Java 8+**
+
 ### Build the JARs
 
 ```

@@ -16,7 +16,6 @@ ext {
     grpcVersion = '1.28.0'
     nettyVersion = '4.1.33.Final'
     protobufProtocVersion = '3.11.4'
-    apacheCommonsVersion = '3.8.1'
 }
 
 apply plugin: 'com.google.protobuf'
@@ -47,13 +46,11 @@ protobuf {
 }
 
 dependencies {
-    compile group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
-    compile group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
-    compile group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
-    compile group: 'io.netty', name: 'netty-transport-native-epoll', version: "${nettyVersion}", classifier: 'linux-x86_64'
-    compile group: 'io.netty', name: 'netty-transport-native-kqueue', version: "${nettyVersion}", classifier: 'osx-x86_64'
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: "${apacheCommonsVersion}"
-    compile group: 'commons-validator', name: 'commons-validator', version: "1.6"
+    implementation group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
+    implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
+    implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
+    implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: "${nettyVersion}", classifier: 'linux-x86_64'
+    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: "${nettyVersion}", classifier: 'osx-x86_64'
     compileOnly group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
 }
 

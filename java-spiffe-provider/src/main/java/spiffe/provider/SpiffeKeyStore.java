@@ -1,13 +1,12 @@
 package spiffe.provider;
 
-import com.google.common.collect.ImmutableList;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Key;
 import java.security.KeyStoreSpi;
 import java.security.cert.Certificate;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Objects;
@@ -66,7 +65,7 @@ public final class SpiffeKeyStore extends KeyStoreSpi {
 
     @Override
     public Enumeration<String> engineAliases() {
-        return enumeration(ImmutableList.of(DEFAULT_ALIAS));
+        return enumeration(Collections.singletonList(DEFAULT_ALIAS));
     }
 
     @Override
