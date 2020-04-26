@@ -1,16 +1,19 @@
 package spiffe.workloadapi.internal;
 
+import com.google.protobuf.ByteString;
 import lombok.val;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSet;
 import spiffe.exception.X509SvidException;
 import spiffe.spiffeid.SpiffeId;
+import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.workloadapi.X509Context;
 
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility methods for converting GRPC objects to JAVA-SPIFFE domain objects.
@@ -34,6 +37,15 @@ public class GrpcConversionUtils {
                     x509SVID.getBundle().toByteArray());
             x509BundleList.add(bundle);
         }
+
+        // Process federated bundles
+        for (Map.Entry<String, ByteString> bundleEntry : x509SVIDResponse.getFederatedBundlesMap().entrySet()) {
+            val bundle = X509Bundle.parse(
+                    TrustDomain.of(bundleEntry.getKey()),
+                    bundleEntry.getValue().toByteArray());
+            x509BundleList.add(bundle);
+        }
+
         return x509BundleList;
     }
 
