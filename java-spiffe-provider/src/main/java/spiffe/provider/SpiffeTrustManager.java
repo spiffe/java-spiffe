@@ -1,9 +1,6 @@
 package spiffe.provider;
 
-import lombok.val;
 import spiffe.bundle.x509bundle.X509BundleSource;
-import spiffe.internal.CertificateUtils;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.x509svid.X509SvidValidator;
 
@@ -25,17 +22,17 @@ import java.util.function.Supplier;
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
     private final X509BundleSource x509BundleSource;
-    private final Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier;
+    private final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
 
     /**
      * Creates a SpiffeTrustManager with a X509BundleSource used to provide the trusted
      * bundles, and a Supplier of a List of accepted SpiffeIds to be used during peer SVID validation.
      *
-     * @param X509BundleSource an implementation of a {@link X509BundleSource}
+     * @param X509BundleSource          an implementation of a {@link X509BundleSource}
      * @param acceptedSpiffeIdsSupplier a Supplier of a list of accepted SPIFFE IDs.
      */
     public SpiffeTrustManager(X509BundleSource X509BundleSource,
-                              Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier) {
+                              Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
         this.x509BundleSource = X509BundleSource;
         this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
     }
@@ -54,10 +51,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        val result = validatePeerChain(chain);
-        if (result.isError()) {
-            throw new CertificateException(result.getError());
-        }
+        validatePeerChain(chain);
     }
 
     /**
@@ -74,10 +68,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      */
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        val result = validatePeerChain(chain);
-        if (result.isError()) {
-            throw new CertificateException(result.getError());
-        }
+        validatePeerChain(chain);
     }
 
     @Override
@@ -85,7 +76,9 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
         return new X509Certificate[0];
     }
 
-    /** {@link #checkClientTrusted(X509Certificate[], String)} */
+    /**
+     * {@link #checkClientTrusted(X509Certificate[], String)}
+     */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         checkClientTrusted(chain, authType);
@@ -96,33 +89,25 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
         checkServerTrusted(chain, authType);
     }
 
-    /** {@link #checkClientTrusted(X509Certificate[], String)} */
+    /**
+     * {@link #checkClientTrusted(X509Certificate[], String)}
+     */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         checkClientTrusted(chain, authType);
     }
 
-    /** {@link #checkServerTrusted(X509Certificate[], String)} */
+    /**
+     * {@link #checkServerTrusted(X509Certificate[], String)}
+     */
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         checkServerTrusted(chain, authType);
     }
 
     // Check the spiffeId using the checkSpiffeId function and the chain using the bundleSource and a Validator
-    private Result<Boolean, String> validatePeerChain(X509Certificate[] chain) {
-        val spiffeId = CertificateUtils.getSpiffeId(chain[0]);
-        if (spiffeId.isError()) {
-            return Result.error(spiffeId.getError());
-        }
-
-        return X509SvidValidator
-                .verifySpiffeId(
-                        spiffeId.getValue(),
-                        acceptedSpiffeIdsSupplier)
-                .thenApply(
-                        X509SvidValidator::verifyChain,
-                        Arrays.asList(chain),
-                        x509BundleSource
-                );
+    private void validatePeerChain(X509Certificate[] chain) throws CertificateException {
+        X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
+        X509SvidValidator.verifyChain(Arrays.asList(chain), x509BundleSource);
     }
 }

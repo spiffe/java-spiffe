@@ -4,8 +4,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.workloadapi.X509Source;
 
@@ -32,31 +30,29 @@ public final class SpiffeSslContextFactory {
      *                If the option acceptedSpiffeIdsSupplier is not provided, the list of accepted SPIFFE IDs
      *                is read from the Security Property ssl.spiffe.accept.
      *                If the sslProcotol is not provided, the default TLSv1.2 is used.
-     *
-     * @return a Result containing a SSLContext
+     * @return a {@link SSLContext}
+     * @throws IllegalArgumentException if the X509Source is not provided in the options
+     * @throws NoSuchAlgorithmException at initializing the SSL context
+     * @throws KeyManagementException at initializing the SSL context
      */
-    public static Result<SSLContext, String> getSslContext(@NonNull SslContextOptions options) {
-        try {
-            SSLContext sslContext;
-            if (StringUtils.isNotBlank(options.sslProtocol)) {
-                sslContext = SSLContext.getInstance(options.sslProtocol);
-            } else {
-                sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
-            }
-
-            if (options.x509Source == null) {
-                return Result.error("x509Source option cannot be null, a X509 Source must be provided");
-            }
-
-            sslContext.init(
-                    new SpiffeKeyManagerFactory().engineGetKeyManagers(options.x509Source),
-                    new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier),
-                    null);
-
-            return Result.ok(sslContext);
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            return Result.error("Error creating SSL Context: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+    public static SSLContext getSslContext(@NonNull SslContextOptions options) throws NoSuchAlgorithmException, KeyManagementException {
+        SSLContext sslContext;
+        if (StringUtils.isNotBlank(options.sslProtocol)) {
+            sslContext = SSLContext.getInstance(options.sslProtocol);
+        } else {
+            sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
         }
+
+        if (options.x509Source == null) {
+            throw new IllegalArgumentException("x509Source option cannot be null, a X509 Source must be provided");
+        }
+
+        sslContext.init(
+                new SpiffeKeyManagerFactory().engineGetKeyManagers(options.x509Source),
+                new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier),
+                null);
+
+        return sslContext;
     }
 
     /**
@@ -66,13 +62,13 @@ public final class SpiffeSslContextFactory {
     public static class SslContextOptions {
         String sslProtocol;
         X509Source x509Source;
-        Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier;
+        Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
 
         @Builder
         public SslContextOptions(
                 String sslProtocol,
                 X509Source x509Source,
-                Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier) {
+                Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
             this.x509Source = x509Source;
             this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
             this.sslProtocol = sslProtocol;

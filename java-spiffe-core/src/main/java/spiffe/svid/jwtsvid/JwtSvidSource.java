@@ -1,6 +1,5 @@
 package spiffe.svid.jwtsvid;
 
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 
 /**
@@ -11,10 +10,12 @@ public interface JwtSvidSource {
     /**
      * Fetches a JWT-SVID from the source with the given parameters
      *
-     * @param subject a SpiffeId
+     * @param subject a {@link SpiffeId}
      * @param audience the audience
      * @param extraAudiences an array of Strings
-     * @return a JwtSvid
+     * @return a {@link JwtSvid}
+     *
+     * @throws //TODO: declare thrown exceptions
      */
-    Result<JwtSvid, String> FetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
+    JwtSvid FetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
 }

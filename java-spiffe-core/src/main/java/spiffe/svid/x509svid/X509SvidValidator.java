@@ -3,10 +3,14 @@ package spiffe.svid.x509svid;
 import lombok.NonNull;
 import lombok.val;
 import spiffe.bundle.x509bundle.X509BundleSource;
+import spiffe.exception.BundleNotFoundException;
 import spiffe.internal.CertificateUtils;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,60 +18,48 @@ import java.util.function.Supplier;
 
 /**
  * A <code>X509SvidValidator</code> provides methods to validate
- * a chain of X509 Certificates using an X509BundleSource.
+ * a chain of X509 certificates using an X509 bundle source.
  */
 public class X509SvidValidator {
 
     /**
-     * Verifies that a chain of certificate can be chained to one trustedCert in the x509BundleSource.
+     * Verifies that a chain of certificates can be chained to one authority in the given X509 bundle source.
      *
-     * @param chain a chain of X509 Certificates to be validated
-     * @param x509BundleSource a {@link X509BundleSource }to provide the trusted bundle certs
+     * @param chain a list representing the chain of X509 certificates to be validated
+     * @param x509BundleSource a {@link X509BundleSource } to provide the authorities
      *
-     * @return a Result object conveying the result of the verification. If the chain can be verified with
-     * a trusted bundle, it returns an Ok(true), otherwise returns an Error with a String message.
+     * @throws CertificateException is the chain cannot be verified with an authority from the X509 bundle source
+     * @throws NullPointerException if the given chain or 509BundleSource are null
      */
-    public static Result<Boolean, String> verifyChain(
+    public static void verifyChain(
             @NonNull List<X509Certificate> chain,
-            @NonNull X509BundleSource x509BundleSource) {
-        val trustDomain = CertificateUtils.getTrustDomain(chain);
-        if (trustDomain.isError()) {
-            return Result.error(trustDomain.getError());
+            @NonNull X509BundleSource x509BundleSource) throws CertificateException {
+        try {
+            val trustDomain = CertificateUtils.getTrustDomain(chain);
+            val x509Bundle = x509BundleSource.getX509BundleForTrustDomain(trustDomain);
+            CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getX509Authorities()));
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertPathValidatorException | BundleNotFoundException e) {
+            throw new CertificateException(e);
         }
-
-        val x509Bundle = x509BundleSource.getX509BundleForTrustDomain(trustDomain.getValue());
-
-        if (x509Bundle.isError()) {
-            return Result.error("No X509 Bundle found for the Trust Domain %s", trustDomain.getValue());
-        }
-
-        return CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getValue().getX509Authorities()));
     }
 
     /**
-     * Checks that the Certificate provided has a SPIFFE ID that is in the list of acceptedSpiffeIds supplied.
+     * Checks that the X509 SVID provided has a SPIFFE ID that is in the list of accepted SPIFFE IDs supplied.
      *
-     * @param spiffeId a SPIFFE ID to be verified
-     * @param acceptedSpiffedIdsSupplier a Supplier of a List os SPIFFE IDs that are accepted
+     * @param x509Certificate a {@link X509Svid} with a SPIFFE ID to be verified
+     * @param acceptedSpiffedIdsSupplier a {@link Supplier} of a list os SPIFFE IDs that are accepted
      *
-     * @return an {@link spiffe.result.Ok} with true if the SPIFFE ID is in the list,
-     * an {@link spiffe.result.Error} containing en error message if the SPIFFE ID is not in the list
-     * or if there's en error getting the list.
+     * @throws CertificateException is the SPIFFE ID in x509Certificate is not in the list supplied by acceptedSpiffedIdsSupplier,
+     * or if the SPIFFE ID cannot be parsed from the x509Certificate
+     * @throws NullPointerException if the given x509Certificate or acceptedSpiffedIdsSupplier are null
      */
-    public static Result<Boolean, String> verifySpiffeId(SpiffeId spiffeId, Supplier<Result<List<SpiffeId>, String>> acceptedSpiffedIdsSupplier) {
-        if (acceptedSpiffedIdsSupplier.get().isError()) {
-            return Result.error("Error getting list of accepted SPIFFE IDs");
-        }
-
+    public static void verifySpiffeId(@NonNull X509Certificate x509Certificate,
+                                      @NonNull Supplier<List<SpiffeId>> acceptedSpiffedIdsSupplier)
+            throws CertificateException {
         val spiffeIdList = acceptedSpiffedIdsSupplier.get();
-        if (spiffeIdList.isError()) {
-            return Result.error(spiffeIdList.getError());
+        val spiffeId = CertificateUtils.getSpiffeId(x509Certificate);
+        if (!spiffeIdList.contains(spiffeId)) {
+            throw new CertificateException(String.format("SPIFFE ID %s in x509Certificate is not accepted", spiffeId));
         }
-
-        if (spiffeIdList.getValue().contains(spiffeId)) {
-            return Result.ok(true);
-        }
-
-        return Result.error("SPIFFE ID '%s' is not accepted", spiffeId);
     }
 }

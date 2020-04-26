@@ -8,12 +8,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSource;
-import spiffe.result.Result;
+import spiffe.exception.BundleNotFoundException;
+import spiffe.exception.X509SvidException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
 
 import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -35,22 +37,19 @@ public class SpiffeTrustManagerTest {
     X509TrustManager trustManager;
 
     @BeforeAll
-    static void setupClass() {
+    static void setupClass() throws IOException, CertificateException, X509SvidException {
         x509Svid = X509Svid
                 .load(
                         Paths.get("../testdata/x509cert.pem"),
-                        Paths.get("../testdata/pkcs8key.pem"))
-                .getValue();
+                        Paths.get("../testdata/pkcs8key.pem"));
         otherX509Svid = X509Svid
                 .load(
                         Paths.get("../testdata/x509cert_other.pem"),
-                        Paths.get("../testdata/key_other.pem"))
-                .getValue();
+                        Paths.get("../testdata/key_other.pem"));
         x509Bundle = X509Bundle
                 .load(
-                        TrustDomain.of("example.org").getValue(),
-                        Paths.get("../testdata/bundle.pem"))
-                .getValue();
+                        TrustDomain.of("example.org"),
+                        Paths.get("../testdata/bundle.pem"));
     }
 
     @BeforeEach
@@ -60,63 +59,61 @@ public class SpiffeTrustManagerTest {
                 new SpiffeTrustManagerFactory()
                         .engineGetTrustManagers(
                                 bundleSource,
-                                () -> Result.ok(acceptedSpiffeIds))[0];
+                                () -> acceptedSpiffeIds)[0];
     }
 
     @Test
-    void checkClientTrusted_passAExpiredCertificate_throwsException() {
+    void checkClientTrusted_passAExpiredCertificate_throwsException() throws BundleNotFoundException {
         acceptedSpiffeIds =
                 Collections
                         .singletonList(
-                                SpiffeId.parse("spiffe://example.org/test").getValue()
+                                SpiffeId.parse("spiffe://example.org/test")
                         );
 
         val chain = x509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Result.ok(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(x509Bundle);
 
         try {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertTrue(e.getMessage().contains("CertificateExpiredException: NotAfter"));
+            assertEquals("java.security.cert.CertPathValidatorException: validity check failed", e.getMessage());
         }
     }
 
     @Test
-    void checkClientTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() {
+    void checkClientTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds =
                 Collections
                         .singletonList(
-                                SpiffeId.parse("spiffe://example.org/other").getValue()
+                                SpiffeId.parse("spiffe://example.org/other")
                         );
 
         X509Certificate[] chain = x509Svid.getChainArray();
 
-        when(bundleSource
-                .getX509BundleForTrustDomain(
-                        TrustDomain.of("example.org").getValue()))
-                .thenReturn(Result.ok(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org")))
+                .thenReturn(x509Bundle);
 
         try {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted", e.getMessage());
+            assertEquals("SPIFFE ID spiffe://example.org/test in x509Certificate is not accepted", e.getMessage());
         }
     }
 
     @Test
-    void checkClientTrusted_passCertificateThatDoesntChainToBundle_ThrowCertificateException() {
+    void checkClientTrusted_passCertificateThatDoesntChainToBundle_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds =
                 Collections
                         .singletonList(
-                                SpiffeId.parse("spiffe://other.org/test").getValue()
+                                SpiffeId.parse("spiffe://other.org/test")
                         );
 
         val chain = otherX509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org").getValue())).thenReturn(Result.ok(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org"))).thenReturn(x509Bundle);
 
         try {
             trustManager.checkClientTrusted(chain, "");
@@ -127,56 +124,56 @@ public class SpiffeTrustManagerTest {
     }
 
     @Test
-    void checkServerTrusted_passAnExpiredCertificate_ThrowsException() {
+    void checkServerTrusted_passAnExpiredCertificate_ThrowsException() throws BundleNotFoundException {
         acceptedSpiffeIds =
                 Collections
                         .singletonList(
-                                SpiffeId.parse("spiffe://example.org/test").getValue()
+                                SpiffeId.parse("spiffe://example.org/test")
                         );
 
         val chain = x509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Result.ok(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(x509Bundle);
 
         try {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertTrue(e.getMessage().contains("CertificateExpiredException: NotAfter"));
+            assertEquals("java.security.cert.CertPathValidatorException: validity check failed", e.getMessage());
         }
     }
 
     @Test
-    void checkServerTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() {
+    void checkServerTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds =
                 Collections
                         .singletonList(
-                                SpiffeId.parse("spiffe://example.org/other").getValue()
+                                SpiffeId.parse("spiffe://example.org/other")
                         );
 
         val chain = x509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org").getValue())).thenReturn(Result.ok(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(x509Bundle);
 
         try {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted", e.getMessage());
+            assertEquals("SPIFFE ID spiffe://example.org/test in x509Certificate is not accepted", e.getMessage());
         }
     }
 
     @Test
-    void checkServerTrusted_passCertificateThatDoesntChainToBundle_ThrowCertificateException() {
+    void checkServerTrusted_passCertificateThatDoesntChainToBundle_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds =
                 Collections
                         .singletonList(
-                                SpiffeId.parse("spiffe://other.org/test").getValue()
+                                SpiffeId.parse("spiffe://other.org/test")
                         );
 
         val chain = otherX509Svid.getChainArray();
 
-        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org").getValue())).thenReturn(Result.ok(x509Bundle));
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("other.org"))).thenReturn(x509Bundle);
 
         try {
             trustManager.checkServerTrusted(chain, "");

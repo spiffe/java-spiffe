@@ -2,21 +2,20 @@ package spiffe.bundle.x509bundle;
 
 
 import lombok.NonNull;
-import spiffe.result.Result;
+import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
 /**
- * A <code>X509BundleSource</code> represents a source of X509-Bundles keyed by TrustDomain.
+ * A <code>X509BundleSource</code> represents a source of X509 bundles keyed by trust domain.
  */
 public interface X509BundleSource {
 
     /**
-     * Returns the bundle associated to a trustDomain.
+     * Returns the X509 bundle associated to the given trust domain.
      *
-     * @param trustDomain an instance of a TrustDomain
-     * @return a {@link spiffe.result.Ok} containing a {@link X509Bundle}, or a {@link spiffe.result.Error} if
-     * no bundle is found for the given trust domain.
+     * @param trustDomain an instance of a {@link TrustDomain}
+     * @return the {@link X509Bundle} for the given trust domain
+     * @throws BundleNotFoundException if no bundle is found for the given trust domain
      */
-    Result<X509Bundle, String> getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain);
-
+    X509Bundle getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException;
 }

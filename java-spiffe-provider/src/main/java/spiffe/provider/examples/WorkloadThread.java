@@ -37,10 +37,10 @@ class WorkloadThread extends Thread {
             PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(outputStream));
 
             SpiffeId peerSpiffeId = CertificateUtils
-                    .getSpiffeId((X509Certificate) sslSession.getPeerCertificates()[0]).getValue();
+                    .getSpiffeId((X509Certificate) sslSession.getPeerCertificates()[0]);
 
             SpiffeId mySpiffeId = CertificateUtils
-                    .getSpiffeId((X509Certificate) sslSession.getLocalCertificates()[0]).getValue();
+                    .getSpiffeId((X509Certificate) sslSession.getLocalCertificates()[0]);
 
             // Send message to peer
             printWriter.printf("Hello %s, I'm %s", peerSpiffeId, mySpiffeId);

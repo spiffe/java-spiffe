@@ -7,14 +7,15 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSource;
+import spiffe.exception.BundleNotFoundException;
 import spiffe.internal.CertificateUtils;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,50 +33,55 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void verifyChain_certificateExpired_returnsError() throws IOException {
+    void verifyChain_certificateExpired_throwsCertificateException() throws IOException, CertificateException, BundleNotFoundException {
         val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
-        val chain = CertificateUtils.generateCertificates(certBytes).getValue();
-        Result<X509Bundle, String> x509Bundle=
+        val chain = CertificateUtils.generateCertificates(certBytes);
+        X509Bundle x509Bundle=
                 X509Bundle.load(
-                        TrustDomain.of("example.org").getValue(),
+                        TrustDomain.of("example.org"),
                         Paths.get("../testdata/bundle.pem")
                 );
 
         when(bundleSourceMock
                 .getX509BundleForTrustDomain(
-                        TrustDomain.of("example.org").getValue()))
+                        TrustDomain.of("example.org")))
                 .thenReturn(x509Bundle);
 
-        val result = X509SvidValidator.verifyChain(chain, bundleSourceMock);
-
-        assertTrue(result.isError());
-        assertTrue(result.getError().contains("CertificateExpiredException: NotAfter"));
+        try {
+            X509SvidValidator.verifyChain(chain, bundleSourceMock);
+            fail("Verify chain should have thrown validation exception");
+        } catch (CertificateException e) {
+            assertEquals("java.security.cert.CertPathValidatorException: validity check failed", e.getMessage());
+        }
     }
     
     @Test
-    void checkSpiffeId_givenASpiffeIdInTheListOfAcceptedIds_returnsValid() {
-        val spiffeId1 = SpiffeId.parse("spiffe://example.org/test").getValue();
-        val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2").getValue();
+    void checkSpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException {
+        val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
+        val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
-        Result<List<SpiffeId>, String> spiffeIdList = Result.ok(Arrays.asList(spiffeId1, spiffeId2));
+        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
+        val x509Certificate = CertificateUtils.generateCertificates(certBytes);
 
-        val result = X509SvidValidator
-                .verifySpiffeId(SpiffeId.parse("spiffe://example.org/test").getValue(), () -> spiffeIdList);
+        val spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
 
-        assertTrue(result.isOk());
+        X509SvidValidator.verifySpiffeId(x509Certificate.get(0), () -> spiffeIdList);
     }
 
     @Test
-    void checkSpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_returnsValid() {
-        val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1").getValue();
-        val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2").getValue();
-        Result<List<SpiffeId>, String> spiffeIdList = Result.ok(Arrays.asList(spiffeId1, spiffeId2));
+    void checkSpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException {
+        val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
+        val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
+        List<SpiffeId> spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
 
-        val result = X509SvidValidator.verifySpiffeId(SpiffeId.parse("spiffe://example.org/test").getValue(), () -> spiffeIdList);
+        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
+        val x509Certificate = CertificateUtils.generateCertificates(certBytes);
 
-        assertAll(
-                () -> assertTrue(result.isError()),
-                () -> assertEquals("SPIFFE ID 'spiffe://example.org/test' is not accepted",result.getError())
-        );
+        try {
+            X509SvidValidator.verifySpiffeId(x509Certificate.get(0), () -> spiffeIdList);
+            fail("Should have thrown CertificateException");
+        } catch (CertificateException e) {
+            assertEquals("SPIFFE ID spiffe://example.org/test in x509Certificate is not accepted", e.getMessage());
+        }
     }
 }

@@ -1,8 +1,7 @@
 package spiffe.internal;
 
 import lombok.val;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import spiffe.result.Result;
+import lombok.var;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 
@@ -14,7 +13,6 @@ import java.security.PrivateKey;
 import java.security.cert.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,139 +31,108 @@ public class CertificateUtils {
     private static final String X509_CERTIFICATE_TYPE = "X.509";
 
     /**
-     * Generate a List of X509Certificates from a byte array.
+     * Generate a list of X509 certificates from a byte array.
      *
-     * @param input as byte array representing a list of X509Certificates, as a DER or PEM
-     * @return a List of X509Certificate
+     * @param input as byte array representing a list of X509 certificates, as a DER or PEM
+     * @return a List of {@link X509Certificate}
      */
-    public static Result<List<X509Certificate>, String> generateCertificates(byte[] input) {
+    public static List<X509Certificate> generateCertificates(byte[] input) throws CertificateException {
         val certificateFactory = getCertificateFactory();
-        if (certificateFactory.isError()) {
-            return Result.error("Error parsing certificates: could not create certificate factory %s", certificateFactory.getError());
-        }
 
-        try {
-            val certificates = certificateFactory
-                    .getValue()
-                    .generateCertificates(new ByteArrayInputStream(input));
+        val certificates = certificateFactory
+                .generateCertificates(new ByteArrayInputStream(input));
 
-            val x509CertificateList = certificates.stream()
-                    .map(X509Certificate.class::cast)
-                    .collect(Collectors.toList());
-
-            return Result.ok(x509CertificateList);
-        } catch (CertificateException e) {
-            return Result.error("Error parsing certificates: %s", e.getMessage());
-        }
+        return certificates.stream()
+                .map(X509Certificate.class::cast)
+                .collect(Collectors.toList());
     }
 
     /**
-     * Generates a PrivateKey from an array of bytes.
+     * Generates a private key from an array of bytes.
      *
-     * @param privateKeyBytes is a PEM or DER PKCS#8 Private Key.
-     * @return a Result {@link spiffe.result.Ok} containing a {@link PrivateKey} or an {@link spiffe.result.Error}.
+     * @param privateKeyBytes is a PEM or DER PKCS#8 private key.
+     * @return a instance of {@link PrivateKey}
+     * @throws InvalidKeySpecException
+     * @throws NoSuchAlgorithmException
      */
-    public static Result<PrivateKey, String> generatePrivateKey(byte[] privateKeyBytes) {
+    public static PrivateKey generatePrivateKey(byte[] privateKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException {
         PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(privateKeyBytes);
-        Result<PrivateKey, Throwable> privateKeyResult = generatePrivateKeyWithSpec(kspec);
-
-        if (privateKeyResult.isOk()) {
-            return Result.ok(privateKeyResult.getValue());
-        }
-
-        // PrivateKey is in PEM format, not supported, need to convert to DER and try again
-        if (privateKeyResult.getError() instanceof InvalidKeySpecException) {
+        PrivateKey privateKey = null;
+        try {
+            privateKey = generatePrivateKeyWithSpec(kspec);
+        } catch (InvalidKeySpecException e) {
             byte[] keyDer = toDerFormat(privateKeyBytes);
-            kspec= new PKCS8EncodedKeySpec(keyDer);
-            privateKeyResult = generatePrivateKeyWithSpec(kspec);
+            kspec = new PKCS8EncodedKeySpec(keyDer);
+            privateKey = generatePrivateKeyWithSpec(kspec);
         }
-        return Result.ok(privateKeyResult.getValue());
-    }
-
-    private static Result<PrivateKey, Throwable> generatePrivateKeyWithSpec(PKCS8EncodedKeySpec kspec) {
-        try {
-            val keyFactory = KeyFactory.getInstance(PRIVATE_KEY_ALGORITHM);
-            val privateKey = keyFactory.generatePrivate(kspec);
-            return Result.ok(privateKey);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            return Result.error(e);
-        }
+        return privateKey;
     }
 
     /**
-     * Validate a certificate chain against a set of trusted certificates.
+     * Validate a certificate chain with a set of trusted certificates.
      *
-     * @param chain the certificate chain
+     * @param chain        the certificate chain
      * @param trustedCerts to validate the certificate chain
-     * @return a Result {@link spiffe.result.Ok} if the chain can be chained to any of the trustedCerts, or
-     * an {@link spiffe.result.Error}.
-     *
+     * @throws CertificateException
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchAlgorithmException
+     * @throws CertPathValidatorException
      */
-    public static Result<Boolean, String> validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) {
+    public static void validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertPathValidatorException {
         val certificateFactory = getCertificateFactory();
-        if (certificateFactory.isError()) {
-            return Result.error(certificateFactory.getError());
-        }
-
-        try {
-            PKIXParameters pkixParameters = toPkixParameters(trustedCerts);
-            val certPath = certificateFactory.getValue().generateCertPath(chain);
-            getCertPathValidator().validate(certPath, pkixParameters);
-        } catch (CertificateException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | CertPathValidatorException e) {
-            return Result.error("Error validating certificate chain: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
-        }
-
-        return Result.ok(true);
+        val pkixParameters = toPkixParameters(trustedCerts);
+        val certPath = certificateFactory.generateCertPath(chain);
+        getCertPathValidator().validate(certPath, pkixParameters);
     }
 
     /**
-     * Extracts the SpiffeID from a SVID - X509Certificate.
+     * Extracts the SPIFE ID from a X509 certificate.
      * <p>
      * It iterates over the list of SubjectAlternativesNames, read each entry, takes the value from the index
      * defined in SAN_VALUE_INDEX and filters the entries that starts with the SPIFFE_PREFIX and returns the first.
      *
-     * @param certificate a X509Certificate
-     * @return spiffe.result.Result with the SpiffeId
-     * @throws RuntimeException         when the certificate subjectAlternatives names cannot be read
-     * @throws IllegalArgumentException when the certificate contains multiple SpiffeId.
+     * @param certificate a {@link X509Certificate}
+     * @return an instance of a {@link SpiffeId}
+     * @throws CertificateException if the certificate contains multiple SPIFFE IDs, or does not contain any, or
+     *                              the SAN extension cannot be decoded
      */
-    public static Result<SpiffeId, String> getSpiffeId(X509Certificate certificate) {
+    public static SpiffeId getSpiffeId(X509Certificate certificate) throws CertificateException {
         val spiffeIds = getSpiffeIds(certificate);
 
         if (spiffeIds.size() > 1) {
-            return Result.error("Certificate contains multiple SPIFFE IDs.");
+            throw new CertificateException("Certificate contains multiple SPIFFE IDs");
         }
 
         if (spiffeIds.size() < 1) {
-            return Result.error("No SPIFFE ID found in the certificate.");
+            throw new CertificateException("No SPIFFE ID found in the certificate");
         }
 
-        val spiffeId = SpiffeId.parse(spiffeIds.get(0));
-        if (spiffeId.isError()) {
-            return Result.error(spiffeId.getError());
-        }
-        return spiffeId;
+        return SpiffeId.parse(spiffeIds.get(0));
     }
 
-    // Extracts the trustDomain of a chain of certificates
-    public static Result<TrustDomain, String> getTrustDomain(List<X509Certificate> chain) {
+    /**
+     * Extracts the trust domain of a chain of certificates.
+     *
+     * @param chain a list of {@link X509Certificate}
+     * @return a {@link TrustDomain}
+     *
+     * @throws CertificateException
+     */
+    public static TrustDomain getTrustDomain(List<X509Certificate> chain) throws CertificateException {
         val spiffeId = getSpiffeId(chain.get(0));
-        if (spiffeId.isError()) {
-            return Result.error(spiffeId.getError());
-        }
-        return Result.ok(spiffeId.getValue().getTrustDomain());
+        return spiffeId.getTrustDomain();
     }
 
-    private static List<String> getSpiffeIds(X509Certificate certificate) {
-        try {
-            return certificate.getSubjectAlternativeNames()
-                    .stream()
-                    .map(san -> (String) san.get(SAN_VALUE_INDEX))
-                    .filter(uri -> startsWith(uri, SPIFFE_PREFIX))
-                    .collect(Collectors.toList());
-        } catch (CertificateParsingException e) {
-            return new ArrayList<>();
-        }
+    private static List<String> getSpiffeIds(X509Certificate certificate) throws CertificateParsingException {
+        return certificate.getSubjectAlternativeNames()
+                .stream()
+                .map(san -> (String) san.get(SAN_VALUE_INDEX))
+                .filter(uri -> startsWith(uri, SPIFFE_PREFIX))
+                .collect(Collectors.toList());
+    }
+
+    private static PrivateKey generatePrivateKeyWithSpec(PKCS8EncodedKeySpec kspec) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        return KeyFactory.getInstance(PRIVATE_KEY_ALGORITHM).generatePrivate(kspec);
     }
 
     // Create an instance of PKIXParameters used as input for the PKIX CertPathValidator
@@ -187,17 +154,13 @@ public class CertificateUtils {
     }
 
     // Get the X509 Certificate Factory
-    private static Result<CertificateFactory, String> getCertificateFactory() {
-        try {
-            return Result.ok(CertificateFactory.getInstance(X509_CERTIFICATE_TYPE));
-        } catch (CertificateException e) {
-            return Result.error("Error creating certificate factory: %s", e.getMessage());
-        }
+    private static CertificateFactory getCertificateFactory() throws CertificateException {
+        return CertificateFactory.getInstance(X509_CERTIFICATE_TYPE);
     }
 
     // Given a private key in PEM format, encode it as DER
     private static byte[] toDerFormat(byte[] privateKeyPem) {
-        String privateKey = new String(privateKeyPem);
+        var privateKey = new String(privateKeyPem);
         privateKey = privateKey.replaceAll("(-+BEGIN PRIVATE KEY-+\\r?\\n|-+END PRIVATE KEY-+\\r?\\n?)", "");
         privateKey = privateKey.replaceAll("\n", "");
         val decoder = Base64.getDecoder();

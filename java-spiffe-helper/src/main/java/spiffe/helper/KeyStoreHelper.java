@@ -2,25 +2,24 @@ package spiffe.helper;
 
 import lombok.Builder;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import spiffe.result.Error;
-import spiffe.result.Result;
+import spiffe.exception.SocketEndpointAddressException;
 import spiffe.workloadapi.Watcher;
 import spiffe.workloadapi.WorkloadApiClient;
 import spiffe.workloadapi.WorkloadApiClient.ClientOptions;
 import spiffe.workloadapi.X509Context;
 
 import java.nio.file.Path;
+import java.security.KeyStoreException;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
 /**
- * A <code>KeyStoreHelper</code> represents a helper for storing X095-SVIDs and Bundles,
- * that are automatically rotated via the Worklaod API, in a Java KeyStore in a file in disk.
+ * A <code>KeyStoreHelper</code> represents a helper for storing X509 SVIDs and bundles,
+ * that are automatically rotated via the Workload API, in a Java KeyStore in a file in disk.
  */
 @Log
 public class KeyStoreHelper {
@@ -33,23 +32,25 @@ public class KeyStoreHelper {
     private final String spiffeSocketPath;
 
     /**
-     * Create an instance of a KeyStoreHelper for fetching X509-SVIDs and Bundles
-     * from a Workload API and store them in a Java binary KeyStore in disk.
+     * Create an instance of a KeyStoreHelper for fetching X509 SVIDs and bundles
+     * from a Workload API and store them in a binary Java KeyStore in disk.
      * <p>
      * It blocks until the initial update has been received from the Workload API.
      *
      * @param keyStoreFilePath   path to File storing the KeyStore.
      * @param keyStoreType       the type of keystore. Only JKS and PKCS12 are supported. If it's not provided, PKCS12 is used
-     *  See the KeyStore section in the <a href=
-     *  "https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore">
-     *  Java Cryptography Architecture Standard Algorithm Name Documentation</a>
-     *  for information about standard keystore types.
+     *                           See the KeyStore section in the <a href=
+     *                           "https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore">
+     *                           Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *                           for information about standard keystore types.
      * @param keyStorePassword   the password to generate the keystore integrity check
      * @param privateKeyPassword the password to protect the key
      * @param privateKeyAlias    the alias name
      * @param spiffeSocketPath   optional spiffeSocketPath, if absent uses SPIFFE_ENDPOINT_SOCKET env variable
-     * @throws RuntimeException if this first update cannot be fetched.
-     * @throws RuntimeException if the KeyStore cannot be setup.
+     *
+     * @throws SocketEndpointAddressException is the socket endpoint address is not valid
+     * @throws KeyStoreException is the entry cannot be stored in the KeyStore
+     * @throws RuntimeException if there is an error fetching the certificates from the Workload API
      */
     @Builder
     public KeyStoreHelper(
@@ -58,7 +59,8 @@ public class KeyStoreHelper {
             @NonNull final char[] keyStorePassword,
             @NonNull final char[] privateKeyPassword,
             @NonNull final String privateKeyAlias,
-            @NonNull String spiffeSocketPath) {
+            @NonNull String spiffeSocketPath)
+            throws SocketEndpointAddressException, KeyStoreException {
 
 
         this.privateKeyPassword = privateKeyPassword.clone();
@@ -66,7 +68,7 @@ public class KeyStoreHelper {
         this.spiffeSocketPath = spiffeSocketPath;
 
         this.keyStore =
-                spiffe.helper.KeyStore
+                KeyStore
                         .builder()
                         .keyStoreFilePath(keyStoreFilePath)
                         .keyStoreType(keyStoreType)
@@ -76,9 +78,8 @@ public class KeyStoreHelper {
         setupX509ContextFetcher();
     }
 
-    @SneakyThrows
-    private void setupX509ContextFetcher() {
-        Result<WorkloadApiClient, String> workloadApiClient;
+    private void setupX509ContextFetcher() throws SocketEndpointAddressException {
+        WorkloadApiClient workloadApiClient;
 
         if (StringUtils.isNotBlank(spiffeSocketPath)) {
             ClientOptions clientOptions = ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
@@ -88,8 +89,8 @@ public class KeyStoreHelper {
         }
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        setX509ContextWatcher(workloadApiClient.getValue(), countDownLatch);
-        countDownLatch.await();
+        setX509ContextWatcher(workloadApiClient, countDownLatch);
+        await(countDownLatch);
     }
 
     private void setX509ContextWatcher(WorkloadApiClient workloadApiClient, CountDownLatch countDownLatch) {
@@ -97,18 +98,22 @@ public class KeyStoreHelper {
             @Override
             public void OnUpdate(X509Context update) {
                 log.log(Level.INFO, "Received X509Context update");
-                storeX509ContextUpdate(update);
+                try {
+                    storeX509ContextUpdate(update);
+                } catch (KeyStoreException e) {
+                    this.OnError(e);
+                }
                 countDownLatch.countDown();
             }
 
             @Override
-            public void OnError(Error<X509Context, String> error) {
-                throw new RuntimeException(error.getError());
+            public void OnError(Throwable t) {
+                throw new RuntimeException(t);
             }
         });
     }
 
-    private void storeX509ContextUpdate(final X509Context update) {
+    private void storeX509ContextUpdate(final X509Context update) throws KeyStoreException {
         val privateKeyEntry = PrivateKeyEntry.builder()
                 .alias(privateKeyAlias)
                 .password(privateKeyPassword)
@@ -116,14 +121,19 @@ public class KeyStoreHelper {
                 .certificateChain(update.getDefaultSvid().getChainArray())
                 .build();
 
-        val storeKeyResult = keyStore.storePrivateKey(privateKeyEntry);
-        if (storeKeyResult.isError()) {
-            throw new RuntimeException(storeKeyResult.getError());
-        }
+        keyStore.storePrivateKey(privateKeyEntry);
 
         log.log(Level.INFO, "Stored X509Context update");
 
         // TODO: Store all the Bundles
         throw new NotImplementedException("Bundle Storing is not implemented");
+    }
+
+    private void await(CountDownLatch countDownLatch) {
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

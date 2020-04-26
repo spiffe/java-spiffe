@@ -4,7 +4,6 @@ import lombok.NonNull;
 import lombok.Value;
 import org.apache.commons.lang3.NotImplementedException;
 import spiffe.bundle.jwtbundle.JwtBundleSource;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 
 import java.time.LocalDateTime;
@@ -47,20 +46,22 @@ public class JwtSvid {
      * Parses and validates a JWT-SVID token and returns the
      * JWT-SVID. The JWT-SVID signature is verified using the JWT bundle source.
      *
-     * @param token a token as a String
-     * @param jwtBundleSource an implementation of a JwtBundleSource
+     * @param token a token as a string
+     * @param jwtBundleSource an implementation of a {@link JwtBundleSource}
      * @param audience the audience as a String
-     * @return a JwtSvid or Error
+     * @return an instance of a {@link JwtSvid}
+     *
+     * @throws //TODO: declare thrown exceptions
      */
-    public Result<JwtSvid, String> parseAndValidate(@NonNull final String token, @NonNull final JwtBundleSource jwtBundleSource, String... audience) {
+    public JwtSvid parseAndValidate(@NonNull final String token, @NonNull final JwtBundleSource jwtBundleSource, String... audience) {
         throw new NotImplementedException("Not implemented");
     }
 
     /**
      * Returns the JWT-SVID marshaled to a string. The returned value is
-     * the same token value originally passed to ParseAndValidate.
+     * the same token value originally passed to parseAndValidate.
      *
-     * @return
+     * @return the token
      */
     public String marshall() {
         return token;

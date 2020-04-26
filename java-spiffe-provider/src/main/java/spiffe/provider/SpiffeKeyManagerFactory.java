@@ -33,10 +33,10 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
     }
 
     /**
-     * This method creates a KeyManager and initializes with a x509SvidSource passed as parameter.
+     * This method creates a KeyManager and initializes with the given X509 SVID source.
      *
-     * @param x509SvidSource implementation of a {@link spiffe.bundle.x509bundle.X509BundleSource}
-     * @return a {@link KeyManager}
+     * @param x509SvidSource an instance of a {@link X509SvidSource}
+     * @return an array with an instance of a {@link KeyManager}
      */
     public KeyManager[] engineGetKeyManagers(X509SvidSource x509SvidSource) {
         val spiffeKeyManager = new SpiffeKeyManager(x509SvidSource);

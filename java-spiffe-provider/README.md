@@ -13,13 +13,9 @@ will trust for TLS connections.
 ```
     val sslContextOptions = SslContextOptions
             .builder()
-            .x509Source(x509Source.newSource().getValue())
+            .x509Source(x509Source.newSource()())
             .build();
-    Result<SSLContext, String> sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
-    if (sslContext.isError()) {
-        // handle sslContext.getError();
-    }
-
+    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
  ```
 
 See [HttpsServer example](src/main/java/spiffe/provider/examples/HttpsServer.java).
@@ -33,21 +29,13 @@ Supplier of accepted SPIFFE IDs list can be provided as part of the `SslContextO
             .spiffeSocketPath(spiffeSocket)
             .build();
     val x509Source = X509Source.newSource(sourceOptions);
-    if (x509Source.isError()) {
-        // handle x509source.getError()
-    }
 
     SslContextOptions sslContextOptions = SslContextOptions
             .builder()
             .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
-            .x509Source(x509Source.getValue())
+            .x509Source(x509Source())
             .build();
-    Result<SSLContext, String> sslContext = SpiffeSslContextFactory
-            .getSslContext(sslContextOptions);
-
-    if (sslContext.isError()) {
-        // handle sslContext.getError()
-    }
+    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
 ```
 
 See [HttpsClient example](src/main/java/spiffe/provider/examples/HttpsClient.java) that defines a Supplier for providing

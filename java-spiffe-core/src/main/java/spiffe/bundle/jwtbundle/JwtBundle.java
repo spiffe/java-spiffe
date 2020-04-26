@@ -3,7 +3,7 @@ package spiffe.bundle.jwtbundle;
 import lombok.NonNull;
 import lombok.Value;
 import org.apache.commons.lang3.NotImplementedException;
-import spiffe.result.Result;
+import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
 import java.nio.file.Path;
@@ -29,9 +29,9 @@ public class JwtBundle implements JwtBundleSource {
     /**
      * Creates a new bundle from JWT public keys.
      *
-     * @param trustDomain a TrustDomain to associate to the JwtBundle
-     * @param jwtKeys     a Map of Public Keys
-     * @return a new JwtBundle.
+     * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
+     * @param jwtKeys     a Map of public Keys
+     * @return a new {@link JwtBundle}.
      */
     public static JwtBundle fromJWTKeys(@NonNull TrustDomain trustDomain, Map<String, PublicKey> jwtKeys) {
         throw new NotImplementedException("Not implemented");
@@ -40,11 +40,11 @@ public class JwtBundle implements JwtBundleSource {
     /**
      * Loads a bundle from a file on disk.
      *
-     * @param trustDomain a TrustDomain to associate to the JwtBundle.
-     * @param bundlePath  a path to a file containing the JwtBundle.
-     * @return a <code>Result.ok(jwtBundle)</code>, or a <code>Result.error(errorMessage)</code>
+     * @param trustDomain a {@link TrustDomain} to associate to the JWT bundle.
+     * @param bundlePath  a path to a file containing the JWT bundle.
+     * @return a instance of a {@link JwtBundle}
      */
-    public static Result<JwtBundle, String > load(
+    public static JwtBundle load(
             @NonNull final TrustDomain trustDomain,
             @NonNull final Path bundlePath) {
         throw new NotImplementedException("Not implemented");
@@ -53,29 +53,30 @@ public class JwtBundle implements JwtBundleSource {
     /**
      * Parses a bundle from a byte array.
      *
-     * @param trustDomain a TrustDomain
-     * @param bundleBytes an array of bytes representing the bundle.
-     * @return
+     * @param trustDomain a {@link TrustDomain}
+     * @param bundleBytes an array of bytes representing the JWT bundle.
+     * @return an instance of a {@link JwtBundle}
      */
-    public static Result<JwtBundle, String> parse(
+    public static JwtBundle parse(
             @NonNull final TrustDomain trustDomain,
             @NonNull final byte[] bundleBytes) {
         throw new NotImplementedException("Not implemented");
     }
 
     /**
-     * Returns the JwtBundle for a TrustDomain.
+     * Returns the JWT bundle for a trust domain.
      *
-     * @param trustDomain an instance of a TrustDomain
-     * @return a {@link spiffe.result.Ok} containing the JwtBundle for the TrustDomain, or
-     * an {@link spiffe.result.Error} if there is no bundle for the TrustDomain
+     * @param trustDomain a {@link TrustDomain}
+     * @return a {@link JwtBundle} for the trust domain
+     *
+     * @throws BundleNotFoundException if there is no bundle for the given trust domain
      */
     @Override
-    public Result<JwtBundle, String> getJwtBundleForTrustDomain(TrustDomain trustDomain) {
+    public JwtBundle getJwtBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (this.trustDomain.equals(trustDomain)) {
-            return Result.ok(this);
+            return this;
         }
-        return Result.error("No JWT bundle for trust domain %s", trustDomain);
+        throw new BundleNotFoundException(String.format("No JWT bundle found for trust domain %s", trustDomain));
     }
 
     /**
@@ -84,9 +85,9 @@ public class JwtBundle implements JwtBundleSource {
      * it returns an Optional.empty().
      *
      * @param keyId the Key ID
-     * @return an {@link Optional} containing a PublicKey.
+     * @return an {@link Optional} containing a {@link PublicKey}.
      */
-    public Optional<PublicKey> findJwtKey(String keyId) {
+    public Optional<PublicKey> findJwtKey(String keyId)  {
         throw new NotImplementedException("Not implemented");
     }
 

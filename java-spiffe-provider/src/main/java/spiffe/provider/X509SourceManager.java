@@ -1,19 +1,20 @@
 package spiffe.provider;
 
-import lombok.val;
+import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509SourceException;
 import spiffe.workloadapi.X509Source;
 
 /**
  * A <code>X509SourceManager</code> is a Singleton that handles an instance of a X509Source.
- * Uses the environment variable 'SPIFFE_ENDPOINT_SOCKET' to create a X509Source backed by the
+ * <p>
+ * The default SPIFFE socket enpoint address is used to create a X509Source backed by the
  * Workload API.
  * If the environment variable is not defined, it will throw an <code>IllegalStateException</code>.
  * If the X509Source cannot be initialized, it will throw a <code>RuntimeException</code>.
  * <p>
- * @implNote The reason to have this Singleton is because we need to have
- * a single X509Source instance to be used by the {@link SpiffeKeyManagerFactory}
- * and {@link SpiffeTrustManagerFactory} to inject it in the {@link SpiffeKeyManager} and {@link SpiffeTrustManager}
- * instances.
+ * @implNote This Singleton needed to be able to handle a single {@link X509Source} instance
+ * to be used by the {@link SpiffeKeyManagerFactory} and {@link SpiffeTrustManagerFactory} to inject it
+ * in the {@link SpiffeKeyManager} and {@link SpiffeTrustManager} instances.
  */
 public enum X509SourceManager {
 
@@ -22,15 +23,11 @@ public enum X509SourceManager {
     private final X509Source x509Source;
 
     X509SourceManager() {
-        val x509SourceResult =
-                X509Source.newSource();
-        if (x509SourceResult.isError()) {
-            // panic in case of error creating the X509Source
-            throw new RuntimeException(x509SourceResult.getError());
+        try {
+            x509Source = X509Source.newSource();
+        } catch (SocketEndpointAddressException e) {
+            throw new X509SourceException("Could not create X509 Source. Socket endpoint address is not valid", e);
         }
-
-        // set the singleton instance
-        x509Source = x509SourceResult.getValue();
     }
 
     public X509Source getX509Source() {

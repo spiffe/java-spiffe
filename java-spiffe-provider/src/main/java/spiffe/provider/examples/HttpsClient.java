@@ -1,9 +1,9 @@
 package spiffe.provider.examples;
 
 import lombok.val;
+import spiffe.exception.SocketEndpointAddressException;
 import spiffe.provider.SpiffeSslContextFactory;
 import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.workloadapi.X509Source;
 import spiffe.workloadapi.X509Source.X509SourceOptions;
@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,62 +34,55 @@ import java.util.stream.Stream;
 public class HttpsClient {
 
     String spiffeSocket;
-    Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsListSupplier;
+    Supplier<List<SpiffeId>> acceptedSpiffeIdsListSupplier;
     int serverPort;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         String spiffeSocket = "unix:/tmp/agent.sock";
-        HttpsClient httpsClient =
-                new HttpsClient(4000, spiffeSocket, HttpsClient::listOfSpiffeIds);
-        httpsClient.run();
+        HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, HttpsClient::listOfSpiffeIds);
+        try {
+            httpsClient.run();
+        } catch (KeyManagementException | NoSuchAlgorithmException | IOException | SocketEndpointAddressException e) {
+            throw new RuntimeException("Error starting Https Client", e);
+        }
     }
 
-    HttpsClient(int serverPort, String spiffeSocket, Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsListSupplier) {
+    HttpsClient(int serverPort, String spiffeSocket, Supplier<List<SpiffeId>> acceptedSpiffeIdsListSupplier) {
         this.serverPort = serverPort;
         this.spiffeSocket = spiffeSocket;
         this.acceptedSpiffeIdsListSupplier = acceptedSpiffeIdsListSupplier;
     }
 
-    void run() throws IOException {
+    void run() throws IOException, SocketEndpointAddressException, KeyManagementException, NoSuchAlgorithmException {
 
         val sourceOptions = X509SourceOptions
                 .builder()
                 .spiffeSocketPath(spiffeSocket)
                 .build();
         val x509Source = X509Source.newSource(sourceOptions);
-        if (x509Source.isError()) {
-            throw new RuntimeException(x509Source.getError());
-        }
 
         SslContextOptions sslContextOptions = SslContextOptions
                 .builder()
                 .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
-                .x509Source(x509Source.getValue())
+                .x509Source(x509Source)
                 .build();
-        Result<SSLContext, String> sslContext = SpiffeSslContextFactory
-                .getSslContext(sslContextOptions);
+        SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
 
-        if (sslContext.isError()) {
-            throw new RuntimeException(sslContext.getError());
-        }
-
-        SSLSocketFactory sslSocketFactory = sslContext.getValue().getSocketFactory();
+        SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
         SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket("localhost", serverPort);
 
-        new WorkloadThread(sslSocket, x509Source.getValue()).start();
+        new WorkloadThread(sslSocket, x509Source).start();
     }
 
-    static Result<List<SpiffeId>, String> listOfSpiffeIds() {
+    static List<SpiffeId> listOfSpiffeIds() {
         try {
             Path path = Paths.get("java-spiffe-provider/src/main/java/spiffe/provider/examples/spiffeIds.txt");
             Stream<String> lines = Files.lines(path);
-            List<SpiffeId> list = lines
+            return lines
                     .map(SpiffeId::parse)
-                    .map(Result::getValue)
                     .collect(Collectors.toList());
-            return Result.ok(list);
         } catch (Exception e) {
-           return Result.error("Error getting list of accepted SPIFFE IDs: %s", e.getMessage());
+            throw new RuntimeException("Error getting list of spiffeIds", e);
         }
     }
 }

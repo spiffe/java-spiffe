@@ -3,7 +3,6 @@ package spiffe.helper;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.val;
-import spiffe.result.Result;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +16,7 @@ import java.security.cert.CertificateException;
 
 /**
  * Represents a Java KeyStore, provides some functions
- * to store a PrivateKey, Certificate chain and Bundles.
+ * to store a private key, a X509 certificate chain, and X509 bundles.
  * Package private, to be used by the KeyStoreHelper.
  */
 class KeyStore {
@@ -33,25 +32,20 @@ class KeyStore {
     KeyStore(
             @NonNull final Path keyStoreFilePath,
             @NonNull final KeyStoreType keyStoreType,
-            @NonNull final char[] keyStorePassword) {
+            @NonNull final char[] keyStorePassword) throws KeyStoreException {
         this.keyStoreFilePath = keyStoreFilePath;
         this.keyStoreType = keyStoreType;
         this.keyStorePassword = keyStorePassword;
         setupKeyStore();
     }
 
-    private void setupKeyStore() {
+    private void setupKeyStore() throws KeyStoreException {
         this.keyStoreFile = new File(keyStoreFilePath.toUri());
-
-        val keyStore = loadKeyStore(keyStoreFile);
-        if (keyStore.isError()) {
-            throw new RuntimeException(keyStore.getError());
-        }
-        this.keyStore = keyStore.getValue();
+        this.keyStore = loadKeyStore(keyStoreFile);
     }
 
 
-    private Result<java.security.KeyStore, Throwable> loadKeyStore(final File keyStoreFile) {
+    private java.security.KeyStore loadKeyStore(final File keyStoreFile) throws KeyStoreException {
         try {
             val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
@@ -62,58 +56,48 @@ class KeyStore {
                 //create new keyStore
                 keyStore.load(null, keyStorePassword);
             }
-            return Result.ok(keyStore);
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
-            return Result.error(e);
+            return keyStore;
+        } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
+            throw new KeyStoreException(e);
         }
     }
 
 
     /**
-     * Store a PrivateKey and Certificate chain in a Java KeyStore
+     * Store a private key and X509 certificate chain in a Java KeyStore
      *
      * @param privateKeyEntry contains the alias, privateKey, chain, privateKey password
-     * @return Result of Boolean indicating if it was successful or an Error wrapping an Exception
      */
-    Result<Boolean, Throwable> storePrivateKey(final PrivateKeyEntry privateKeyEntry) {
-        try {
-            // Store PrivateKey Entry in KeyStore
-            keyStore.setKeyEntry(
-                    privateKeyEntry.getAlias(),
-                    privateKeyEntry.getPrivateKey(),
-                    privateKeyEntry.getPassword(),
-                    privateKeyEntry.getCertificateChain()
-            );
+    void storePrivateKey(final PrivateKeyEntry privateKeyEntry) throws KeyStoreException {
+        // Store PrivateKey Entry in KeyStore
+        keyStore.setKeyEntry(
+                privateKeyEntry.getAlias(),
+                privateKeyEntry.getPrivateKey(),
+                privateKeyEntry.getPassword(),
+                privateKeyEntry.getCertificateChain()
+        );
 
-            return this.flush();
-        } catch (KeyStoreException e) {
-            return Result.error(e);
-        }
+        this.flush();
     }
 
     /**
      * Store a Bundle Entry in the KeyStore
      */
-    Result<Boolean, Throwable> storeBundleEntry(BundleEntry bundleEntry) {
-        try {
-            // Store Bundle Entry in KeyStore
-            this.keyStore.setCertificateEntry(
-                    bundleEntry.getAlias(),
-                    bundleEntry.getCertificate()
-            );
-            return this.flush();
-        } catch (KeyStoreException e) {
-            return Result.error(e);
-        }
+    void storeBundleEntry(BundleEntry bundleEntry) throws KeyStoreException {
+        // Store Bundle Entry in KeyStore
+        this.keyStore.setCertificateEntry(
+                bundleEntry.getAlias(),
+                bundleEntry.getCertificate()
+        );
+        this.flush();
     }
 
     // Flush KeyStore to disk, to the configured (@see keyStoreFilePath)
-    private Result<Boolean, Throwable> flush() {
+    private void flush() throws KeyStoreException {
         try {
             keyStore.store(new FileOutputStream(keyStoreFile), keyStorePassword);
-            return Result.ok(true);
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
-            return Result.error(e);
+        } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
+            throw new KeyStoreException(e);
         }
     }
 }

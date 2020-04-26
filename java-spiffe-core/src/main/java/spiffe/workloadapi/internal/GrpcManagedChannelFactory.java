@@ -23,7 +23,7 @@ public class GrpcManagedChannelFactory {
      * Return a ManagedChannel to the Spiffe Socket Endpoint provided.
      *
      * @param address URI representing the Workload API endpoint.
-     * @return a instance of a ManagedChannel.
+     * @return a instance of a {@link ManagedChannel}
      */
     public static ManagedChannel newChannel(@NonNull URI address) {
         if ("unix".equals(address.getScheme())) {

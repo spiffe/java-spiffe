@@ -3,31 +3,35 @@ package spiffe.svid.x509svid;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
+import spiffe.exception.X509SvidException;
 import spiffe.internal.CertificateUtils;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 /**
- * A <code>X509Svid</code> represents a SPIFFE X509-SVID.
+ * A <code>X509Svid</code> represents a SPIFFE X509 SVID.
  * <p>
- * Contains a SPIFFE ID, a PrivateKey and a chain of X509Certificate.
+ * Contains a SPIFFE ID, a private key and a chain of X509 certificates.
  */
 @Value
 public class X509Svid {
 
     SpiffeId spiffeId;
 
-    // The X.509 certificates of the X509-SVID. The leaf certificate is
-    // the X509-SVID certificate. Any remaining certificates (if any)
-    // chain the X509-SVID certificate back to a X509 root
-    // for the trust domain.
+    /**
+     * The X.509 certificates of the X509-SVID. The leaf certificate is
+     * the X509-SVID certificate. Any remaining certificates (if any) chain
+     * the X509-SVID certificate back to a X509 root for the trust domain.
+     */
     List<X509Certificate> chain;
 
     PrivateKey privateKey;
@@ -42,63 +46,58 @@ public class X509Svid {
     }
 
     /**
-     * Loads the X509-SVID from PEM encoded files on disk.
+     * Loads the X509 SVID from PEM encoded files on disk.
      *
-     * @param certsFile      path to x509 certificate chain file
-     * @param privateKeyFile path to PrivateKey file
-     * @return an instance of X509Svid
+     * @param certsFilePath      path to X509 certificate chain file
+     * @param privateKeyFilePath path to private key file
+     * @return an instance of {@link X509Svid}
+     *
+     * @throws X509SvidException if there is an error parsing the given certsFilePath or the privateKeyFilePath
      */
-    public static Result<X509Svid, String> load(@NonNull Path certsFile, @NonNull Path privateKeyFile) {
+    public static X509Svid load(@NonNull Path certsFilePath, @NonNull Path privateKeyFilePath) throws X509SvidException {
+        byte[] certsBytes;
+        byte[] privateKeyBytes;
         try {
-            val certsBytes = Files.readAllBytes(certsFile);
-            byte[] privateKeyBytes = Files.readAllBytes(privateKeyFile);
-            return createX509Svid(certsBytes, privateKeyBytes);
+            certsBytes = Files.readAllBytes(certsFilePath);
+            privateKeyBytes = Files.readAllBytes(privateKeyFilePath);
         } catch (IOException e) {
-            return Result.error("Error loading X509-SVID from certsFile %s and privateKeyFile %s: %s", certsFile, privateKeyFile, e.getMessage());
+            throw new X509SvidException(String.format("Could not load X509Svid from certsFilePath %s and privateKeyFilePath %s", certsFilePath, privateKeyFilePath), e);
         }
-    }
-
-    /**
-     * Parses the X509-SVID from PEM or DER blocks containing certificate chain and key
-     * bytes. The key must be a PEM or DER block with PKCS#8.
-     *
-     * @param certsBytes      chain of certificates as a byte array
-     * @param privateKeyBytes private key byte array
-     * @return a Result(Success) object containing the X509-SVID, or a Error containing the Exception cause
-     */
-    public static Result<X509Svid, String> parse(@NonNull byte[] certsBytes, @NonNull byte[] privateKeyBytes) {
         return createX509Svid(certsBytes, privateKeyBytes);
     }
 
-    /** Return the chain of certificates as an array. */
+    /**
+     * Parses the X509 SVID from PEM or DER blocks containing certificate chain and key
+     * bytes. The key must be a PEM or DER block with PKCS#8.
+     *
+     * @param certsBytes      chain of certificates as a byte array
+     * @param privateKeyBytes private key as byte array
+     * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
+     *
+     * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
+     */
+    public static X509Svid parse(@NonNull byte[] certsBytes, @NonNull byte[] privateKeyBytes) throws X509SvidException {
+        return createX509Svid(certsBytes, privateKeyBytes);
+    }
+
+    /**
+     * Return the chain of certificates as an array.
+     */
     public X509Certificate[] getChainArray() {
         return chain.toArray(new X509Certificate[0]);
     }
 
-    private static Result<X509Svid, String> createX509Svid(byte[] certsBytes, byte[] privateKeyBytes) {
-        val x509Certificates = CertificateUtils.generateCertificates(certsBytes);
-        if (x509Certificates.isError()) {
-            return Result.error(x509Certificates.getError());
+    private static X509Svid createX509Svid(byte[] certsBytes, byte[] privateKeyBytes) throws X509SvidException {
+        List<X509Certificate> x509Certificates = null;
+        try {
+            x509Certificates = CertificateUtils.generateCertificates(certsBytes);
+            val privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes);
+            val spiffeId = CertificateUtils.getSpiffeId(x509Certificates.get(0));
+            return new X509Svid(spiffeId, x509Certificates, privateKey);
+        } catch (CertificateException e) {
+            throw new X509SvidException("X509 SVID could not be parsed from cert bytes", e);
+        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+            throw new X509SvidException("X509 SVID Private Key could not be parsed from privateKeyBytes", e);
         }
-
-        val privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes);
-        if (privateKey.isError()) {
-            return Result.error(privateKey.getError());
-        }
-
-        val spiffeId =
-                CertificateUtils
-                        .getSpiffeId(x509Certificates.getValue().get(0));
-        if (spiffeId.isError()) {
-            return Result.error("Error creating X509-SVID: %s", spiffeId.getError());
-        }
-
-        val x509Svid = new X509Svid(
-                spiffeId.getValue(),
-                x509Certificates.getValue(),
-                privateKey.getValue());
-
-        return Result.ok(x509Svid);
     }
-
 }

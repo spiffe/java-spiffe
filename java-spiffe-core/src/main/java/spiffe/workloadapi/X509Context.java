@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * A <code>X509Context</code> represents the X509 materials that are fetched from the Workload API.
  * <p>
- * Contains a List of {@link X509Svid} and a {@link X509BundleSet}.
+ * Contains a list of {@link X509Svid} and a {@link X509BundleSet}.
  */
 @Value
 public class X509Context {

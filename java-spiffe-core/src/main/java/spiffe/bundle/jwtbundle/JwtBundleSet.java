@@ -3,15 +3,14 @@ package spiffe.bundle.jwtbundle;
 import lombok.NonNull;
 import lombok.Value;
 import org.apache.commons.lang3.NotImplementedException;
-import spiffe.result.Result;
+import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A <code>JwtBundleSet</code> represents a set of X509Bundles keyed by TrustDomain.
+ * A <code>JwtBundleSet</code> represents a set of JWT bundles keyed by trust domain.
  */
 @Value
 public class JwtBundleSet implements JwtBundleSource {
@@ -22,29 +21,33 @@ public class JwtBundleSet implements JwtBundleSource {
         this.bundles = bundles;
     }
 
+    /**
+     * Creates a JWT bundle set from the list of JWT bundles.
+     *
+     * @param bundles List of {@link JwtBundle}
+     * @return a {@link JwtBundleSet}
+     */
     public static JwtBundleSet of(@NonNull final List<JwtBundle> bundles) {
         throw new NotImplementedException("Not implemented");
     }
 
-    public static JwtBundleSet of(@NonNull final TrustDomain trustDomain,
-                                  @NonNull final JwtBundle jwtBundle) {
-        throw new NotImplementedException("Not implemented");
-    }
-
-    public List<JwtBundle> getJwtBundles() {
-        return new ArrayList<>(bundles.values());
-    }
-
+    /**
+     * Gets the JWT bundle associated to a trust domain.
+     *
+     * @param trustDomain an instance of a {@link TrustDomain}
+     * @return a {@link JwtBundle} associated to the given trust domain
+     * @throws BundleNotFoundException if no bundle could be found for the given trust domain
+     */
     @Override
-    public Result<JwtBundle, String> getJwtBundleForTrustDomain(final TrustDomain trustDomain) {
+    public JwtBundle getJwtBundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
         if (bundles.containsKey(trustDomain)) {
-            return Result.ok(bundles.get(trustDomain));
+            return bundles.get(trustDomain);
         }
-        return Result.error("No JWT bundle for trust domain %s", trustDomain);
+        throw new BundleNotFoundException(String.format("No JWT bundle for trust domain %s", trustDomain));
     }
 
     /**
-     * Add bundle to set, if the trustDomain already exists
+     * Add JWT bundle to this set, if the trust domain already exists
      * replace the bundle.
      *
      * @param jwtBundle an instance of a JwtBundle.

@@ -5,13 +5,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import spiffe.exception.X509SvidException;
 import spiffe.internal.CertificateUtils;
-import spiffe.result.Result;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
 import javax.net.ssl.X509KeyManager;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -26,32 +27,31 @@ public class SpiffeKeyManagerTest {
     X509Svid x509Svid;
 
     @BeforeEach
-    void setup() {
+    void setup() throws X509SvidException {
         MockitoAnnotations.initMocks(this);
         keyManager = (X509KeyManager) new SpiffeKeyManagerFactory().engineGetKeyManagers(x509SvidSource)[0];
         x509Svid = X509Svid
                 .load(
                         Paths.get("../testdata/x509cert.pem"),
-                        Paths.get("../testdata/pkcs8key.pem"))
-                .getValue();
+                        Paths.get("../testdata/pkcs8key.pem"));
     }
 
     @Test
-    void getCertificateChain_returnsAnArrayOfX509Certificates() {
-        when(x509SvidSource.getX509Svid()).thenReturn(Result.ok(x509Svid));
+    void getCertificateChain_returnsAnArrayOfX509Certificates() throws CertificateException {
+        when(x509SvidSource.getX509Svid()).thenReturn(x509Svid);
 
         val certificateChain = keyManager.getCertificateChain(DEFAULT_ALIAS);
         val spiffeId = CertificateUtils.getSpiffeId(certificateChain[0]);
 
         assertAll(
                 () -> assertEquals(1, certificateChain.length),
-                () -> assertEquals("spiffe://example.org/test", spiffeId.getValue().toString())
+                () -> assertEquals("spiffe://example.org/test", spiffeId.toString())
         );
     }
 
     @Test
     void getPrivateKey_aliasIsSpiffe_returnAPrivateKey() {
-        when(x509SvidSource.getX509Svid()).thenReturn(Result.ok(x509Svid));
+        when(x509SvidSource.getX509Svid()).thenReturn(x509Svid);
 
         val privateKey = keyManager.getPrivateKey(DEFAULT_ALIAS);
 

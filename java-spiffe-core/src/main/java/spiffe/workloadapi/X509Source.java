@@ -5,11 +5,13 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.java.Log;
 import lombok.val;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSet;
 import spiffe.bundle.x509bundle.X509BundleSource;
-import spiffe.result.Error;
-import spiffe.result.Result;
+import spiffe.exception.BundleNotFoundException;
+import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509SourceException;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
@@ -20,13 +22,15 @@ import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
- * A <code>X509Source</code> represents a source of X509-SVID and X509 Bundles maintained via the
+ * A <code>X509Source</code> represents a source of X509 SVIDs and X509 bundles maintained via the
  * Workload API.
  * <p>
  * It handles a {@link X509Svid} and a {@link X509BundleSet} that are updated automatically
  * whenever there is an update from the Workload API.
  * <p>
- * It implements the Closeable interface. The {@link #close()} method closes the source,
+ * Implements {@link X509SvidSource} and {@link X509BundleSource}.
+ * <p>
+ * Implements the {@link Closeable} interface. The {@link #close()} method closes the source,
  * dropping the connection to the Workload API. Other source methods will return an error
  * after close has been called.
  */
@@ -41,94 +45,81 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     private volatile boolean closed;
 
     /**
-     * Creates a new X509Source. It blocks until the initial update
+     * Creates a new X509 source. It blocks until the initial update
      * has been received from the Workload API.
      * <p>
-     * It uses the Default Address from the Environment variable to get the Workload API endpoint address.
+     * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      * <p>
-     * It uses the default X509-SVID.
+     * It uses the default X509 SVID.
      *
-     * @return an initialized an {@link spiffe.result.Ok} with X509Source, or an {@link Error} in
-     * case the X509Source could not be initialized.
+     * @return an instance of {@link X509Source}, with the svid and bundles initialized
+     *
+     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
+     * @throws X509SourceException if the source could not be initialized
      */
-    public static Result<X509Source, String> newSource() {
+    public static X509Source newSource() throws SocketEndpointAddressException {
         X509SourceOptions x509SourceOptions = X509SourceOptions.builder().build();
         return newSource(x509SourceOptions);
     }
 
     /**
-     * Creates a new X509Source. It blocks until the initial update
+     * Creates a new X509 source. It blocks until the initial update
      * has been received from the Workload API.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
      *
      * @param options {@link X509SourceOptions}
-     * @return an initialized an {@link spiffe.result.Ok} with X509Source, or an {@link Error} in
-     * case the X509Source could not be initialized.
+     * @return an instance of {@link X509Source}, with the svid and bundles initialized
+     *
+     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
+     * @throws X509SourceException if the source could not be initialized
      */
-    public static Result<X509Source, String> newSource(@NonNull X509SourceOptions options) {
-
+    public static X509Source newSource(@NonNull X509SourceOptions options) throws SocketEndpointAddressException {
         if (options.workloadApiClient == null) {
-            Result<WorkloadApiClient, String> workloadApiClient = createClient(options);
-            if (workloadApiClient.isError()) {
-                return Result.error(workloadApiClient.getError());
-            }
-            options.workloadApiClient = workloadApiClient.getValue();
+            options.workloadApiClient = createClient(options);
         }
 
         val x509Source = new X509Source();
         x509Source.picker = options.picker;
         x509Source.workloadApiClient = options.workloadApiClient;
 
-        Result<Boolean, String> init = x509Source.init();
-        if (init.isError()) {
+        try {
+            x509Source.init();
+        } catch (Exception e) {
             x509Source.close();
-            return Result.error("Error creating X509 Source: %s", init.getError());
+            throw new X509SourceException("Error creating X509 source", e);
         }
 
-        return Result.ok(x509Source);
-    }
-
-    private static Result<WorkloadApiClient, String> createClient(@NonNull X509Source.@NonNull X509SourceOptions options) {
-        Result<WorkloadApiClient, String> workloadApiClient;
-        val clientOptions= WorkloadApiClient.ClientOptions
-                .builder()
-                .spiffeSocketPath(options.spiffeSocketPath)
-                .build();
-        workloadApiClient = WorkloadApiClient.newClient(clientOptions);
-        return workloadApiClient;
-    }
-
-    private X509Source() {
+        return x509Source;
     }
 
     /**
-     * Returns the X509-SVID handled by this source, returns an Error in case
-     * the source is already closed.
+     * Returns the X509 SVID handled by this source.
      *
-     * @return an {@link spiffe.result.Ok} containing the {@link X509Svid}
+     * @return a {@link X509Svid}
+     * @throws IllegalStateException if the source is closed
      */
     @Override
-    public Result<X509Svid, String> getX509Svid() {
-        val checkClosed = checkClosed();
-        if (checkClosed.isError()) {
-            return Result.error(checkClosed.getError());
+    public X509Svid getX509Svid() {
+        if (isClosed()) {
+            throw new IllegalStateException("X509 SVID source is closed");
         }
-        return Result.ok(svid);
+        return svid;
     }
 
     /**
-     * Returns the X509-Bundle for a given trust domain, returns an Error in case
-     * there is no bundle for the trust domain, or the source is already closed.
+     * Returns the X509 bundle for a given trust domain.
      *
-     * @return an {@link spiffe.result.Ok} containing the {@link X509Bundle}.
+     * @return an instance of a {@link X509Bundle}
+     *
+     * @throws BundleNotFoundException is there is no bundle for the trust domain provided
+     * @throws IllegalStateException if the source is closed
      */
     @Override
-    public Result<X509Bundle, String> getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) {
-        val checkClosed = checkClosed();
-        if (checkClosed.isError()) {
-            return Result.error(checkClosed.getError());
+    public X509Bundle getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+        if (isClosed()) {
+            throw new IllegalStateException("X509 bundle source is closed");
         }
         return bundles.getX509BundleForTrustDomain(trustDomain);
     }
@@ -150,14 +141,18 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
 
     }
 
-    private Result<Boolean, String> init() {
-        Result<X509Context, String> x509Context = workloadApiClient.fetchX509Context();
-        if (x509Context.isError()) {
-            return Result.error(x509Context.getError());
-        }
-        setX509Context(x509Context.getValue());
+    private static WorkloadApiClient createClient(@NonNull X509Source.@NonNull X509SourceOptions options) throws SocketEndpointAddressException {
+        val clientOptions= WorkloadApiClient.ClientOptions
+                .builder()
+                .spiffeSocketPath(options.spiffeSocketPath)
+                .build();
+        return WorkloadApiClient.newClient(clientOptions);
+    }
+
+    private void init() {
+        X509Context x509Context = workloadApiClient.fetchX509Context();
+        setX509Context(x509Context);
         setX509ContextWatcher();
-        return Result.ok(true);
     }
 
     private void setX509ContextWatcher() {
@@ -169,8 +164,8 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
             }
 
             @Override
-            public void OnError(Error<X509Context, String> error) {
-                log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s", error.getError()));
+            public void OnError(Throwable error) {
+                log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s %n %s", error.getMessage(), ExceptionUtils.getStackTrace(error)));
             }
         });
     }
@@ -188,12 +183,9 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
         }
     }
 
-    private Result<Boolean, String> checkClosed() {
+    private boolean isClosed() {
         synchronized (this) {
-            if (closed) {
-                return Result.error("source is closed");
-            }
-            return Result.ok(true);
+            return closed;
         }
     }
 
@@ -202,8 +194,21 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      */
     @Data
     public static class X509SourceOptions {
+
+        /**
+         * Address to the Workload API, if it is not set, the default address will be used.
+         */
         String spiffeSocketPath;
+
+        /**
+         * Function to choose the X509 SVID from the list returned by the Workload API
+         * If it is not set, the default svid is picked.
+         */
         Function<List<X509Svid>, X509Svid> picker;
+
+        /**
+         * A custom instance of a {@link WorkloadApiClient}, if it is not set, a new instance will be created
+         */
         WorkloadApiClient workloadApiClient;
 
         @Builder

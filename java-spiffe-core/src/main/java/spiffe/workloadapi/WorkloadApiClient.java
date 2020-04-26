@@ -10,9 +10,10 @@ import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.jwtbundle.JwtBundleSet;
-import spiffe.result.Result;
+import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509ContextException;
+import spiffe.exception.X509SvidException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.jwtsvid.JwtSvid;
 import spiffe.workloadapi.internal.GrpcConversionUtils;
@@ -23,7 +24,7 @@ import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlocki
 import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 
 import java.io.Closeable;
-import java.net.URI;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -34,10 +35,7 @@ import static spiffe.workloadapi.internal.Workload.X509SVIDResponse;
 
 /**
  * A <code>WorkloadApiClient</code> represents a client to interact with the Workload API.
- * Supports one-shot calls and watch updates for X509 and JWT SVIDS and Bundles.
- * <p>
- * Multiple WorkloadApiClients can be created for the same SPIFFE Socket Path,
- * they will share a common ManagedChannel.
+ * Supports one-shot calls and watch updates for X509 and JWT SVIDS and bundles.
  */
 @Log
 public class WorkloadApiClient implements Closeable {
@@ -55,26 +53,25 @@ public class WorkloadApiClient implements Closeable {
     }
 
     /**
-     * Creates a new WorkloadAPI client using the Default Address from the Environment Variable
+     * Creates a new Workload API client using the default socket endpoint address.
+     * @see Address#getDefaultAddress()
      *
-     * @return a Result containing a WorklaodAPI client
+     * @return a {@link WorkloadApiClient}
      */
-    public static Result<WorkloadApiClient, String> newClient() {
+    public static WorkloadApiClient newClient() throws SocketEndpointAddressException {
         val options = ClientOptions.builder().build();
         return newClient(options);
     }
 
     /**
-     * Creates a new Workload API Client.
+     * Creates a new Workload API client.
      * <p>
-     * If the SPIFFE Socket Path is not provided, it uses the Default Address from
-     * the Environment variable for creating the client.
+     * If the SPIFFE socket endpoint address is not provided in the options, it uses the default address.
      *
      * @param options {@link ClientOptions}
-     * @return a Result containing a WorklaodAPI client
+     * @return a {@link WorkloadApiClient}
      */
-    public static Result<WorkloadApiClient, String> newClient(@NonNull ClientOptions options) {
-
+    public static WorkloadApiClient newClient(@NonNull ClientOptions options) throws SocketEndpointAddressException {
         String spiffeSocketPath;
         if (StringUtils.isNotBlank(options.spiffeSocketPath)) {
             spiffeSocketPath = options.spiffeSocketPath;
@@ -82,13 +79,8 @@ public class WorkloadApiClient implements Closeable {
             spiffeSocketPath = Address.getDefaultAddress();
         }
 
-        val parseResult = Address.parseAddress(spiffeSocketPath);
-        if (parseResult.isError()) {
-            return Result.error(parseResult.getError());
-        }
-
-        URI parsedAddress = parseResult.getValue();
-        val managedChannel = GrpcManagedChannelFactory.newChannel(parsedAddress);
+        val socketEndpointAddress = Address.parseAddress(spiffeSocketPath);
+        val managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress);
 
         val workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
                 .newStub(managedChannel)
@@ -98,64 +90,54 @@ public class WorkloadApiClient implements Closeable {
                 .newBlockingStub(managedChannel)
                 .withInterceptors(new SecurityHeaderInterceptor());
 
-        val workloadApiClient = new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel);
-        return Result.ok(workloadApiClient);
+        return new WorkloadApiClient(workloadAPIAsyncStub, workloadAPIBlockingStub, managedChannel);
     }
 
     /**
-     * One-shot fetch call to get an X509 Context (SPIFFE X509-SVID and Bundles).
+     * One-shot blocking fetch call to get an X509 context.
+     *
+     * @throws X509ContextException if there is an error fetching or processing the X509 context
      */
-    public Result<X509Context, String> fetchX509Context() {
+    public X509Context fetchX509Context() {
         Context.CancellableContext cancellableContext;
         cancellableContext = Context.current().withCancellation();
-        Result<X509Context, String> result;
+        X509Context result;
         try {
             result = cancellableContext.call(this::processX509Context);
         } catch (Exception e) {
-            return Result.error("Error fetching X509Context: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+            throw new X509ContextException("Error fetching X509Context", e);
         }
         // close connection
         cancellableContext.close();
         return result;
     }
 
-    private Result<X509Context, String> processX509Context() {
-        try {
-            Iterator<X509SVIDResponse> x509SVIDResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
-            if (x509SVIDResponse.hasNext()) {
-                return GrpcConversionUtils.toX509Context(x509SVIDResponse.next());
-            }
-        } catch (Exception e) {
-            return Result.error("Error processing X509Context: %s %n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
-        }
-        return Result.error("Could not get X509Context");
-    }
-
     /**
-     * Watches for updates to the X509 Context.
+     * Watches for X509 context updates.
      *
-     * @param watcher receives the update X509 context.
+     * @param watcher an instance that implements a {@link Watcher}.
      */
     public void watchX509Context(Watcher<X509Context> watcher) {
         StreamObserver<X509SVIDResponse> streamObserver = new StreamObserver<X509SVIDResponse>() {
             @Override
             public void onNext(X509SVIDResponse value) {
-                Result<X509Context, String> x509Context = GrpcConversionUtils.toX509Context(value);
-                if (x509Context.isError()) {
-                    watcher.OnError(Result.error(x509Context.getError()));
+                X509Context x509Context = null;
+                try {
+                    x509Context = GrpcConversionUtils.toX509Context(value);
+                } catch (CertificateException | X509SvidException e) {
+                    watcher.OnError(new X509ContextException("Error processing X509 Context update", e));
                 }
-                watcher.OnUpdate(x509Context.getValue());
+                watcher.OnUpdate(x509Context);
             }
 
             @Override
             public void onError(Throwable t) {
-                String error = String.format("Error getting X509Context update: %s %n %s", t.getMessage(), ExceptionUtils.getStackTrace(t));
-                watcher.OnError(Result.error(error));
+                watcher.OnError(new X509ContextException("Error getting X509Context", t));
             }
 
             @Override
             public void onCompleted() {
-                watcher.OnError(Result.error("Unexpected completed stream."));
+                watcher.OnError(new X509ContextException("Unexpected completed stream"));
             }
         };
         Context.CancellableContext cancellableContext;
@@ -170,20 +152,22 @@ public class WorkloadApiClient implements Closeable {
      * @param subject       a SPIFFE ID
      * @param audience      the audience of the JWT-SVID
      * @param extraAudience the extra audience for the JWT_SVID
-     * @return an {@link spiffe.result.Ok} containing the JWT SVID, or an {@link spiffe.result.Error}
-     * if the JwtSvid could not be fetched.
+     *
+     * @return an instance of a {@link JwtSvid}
+     *
+     * @throws //TODO: declare thrown exceptions
      */
-    public Result<JwtSvid, String> fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) {
+    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) {
         throw new NotImplementedException("Not implemented");
     }
 
     /**
-     * Fetches the JWT bundles for JWT-SVID validation, keyed
-     * by a SPIFFE ID of the trust domain to which they belong.
+     * Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
      *
-     * @return an {@link spiffe.result.Ok} containing the JwtBundleSet.
+     * @return an instance of a {@link JwtBundleSet}
+     * @throws //TODO: declare thrown exceptions
      */
-    public Result<JwtBundleSet, String> fetchJwtBundles() {
+    public JwtBundleSet fetchJwtBundles() {
         throw new NotImplementedException("Not implemented");
     }
 
@@ -193,14 +177,16 @@ public class WorkloadApiClient implements Closeable {
      *
      * @param token    JWT token
      * @param audience audience of the JWT
-     * @return the JwtSvid if the token and audience could be validated.
+     * @return the {@link JwtSvid} if the token and audience could be validated.
+     *
+     * @throws //TODO: declare thrown exceptions
      */
-    public Result<JwtSvid, String> validateJwtSvid(String token, String audience) {
+    public JwtSvid validateJwtSvid(String token, String audience) {
         throw new NotImplementedException("Not implemented");
     }
 
     /**
-     * Watches for updates to the JWT Bundles.
+     * Watches for JWT bundles updates.
      *
      * @param jwtBundlesWatcher receives the update for JwtBundles.
      */
@@ -208,10 +194,9 @@ public class WorkloadApiClient implements Closeable {
         throw new NotImplementedException("Not implemented");
     }
 
-    private X509SVIDRequest newX509SvidRequest() {
-        return X509SVIDRequest.newBuilder().build();
-    }
-
+    /**
+     * Closes this Workload API closing the underlying channel and cancelling the contexts.
+     */
     @Override
     public void close() {
         log.info("Closing WorkloadAPI client");
@@ -222,6 +207,22 @@ public class WorkloadApiClient implements Closeable {
             log.info("Shutting down Managed Channel");
             managedChannel.shutdown();
         }
+    }
+
+    private X509SVIDRequest newX509SvidRequest() {
+        return X509SVIDRequest.newBuilder().build();
+    }
+
+    private X509Context processX509Context() {
+        try {
+            Iterator<X509SVIDResponse> x509SVIDResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
+            if (x509SVIDResponse.hasNext()) {
+                return GrpcConversionUtils.toX509Context(x509SVIDResponse.next());
+            }
+        } catch (Exception e) {
+            throw new X509ContextException("Error processing X509Context", e);
+        }
+        throw new X509ContextException("Error processing X509Context: x509SVIDResponse is empty");
     }
 
     /**

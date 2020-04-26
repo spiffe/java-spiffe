@@ -7,6 +7,8 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * A <code>SpiffeSslSocketFactory</code> is an implementation of SSLSocketFactory
@@ -17,12 +19,9 @@ public class SpiffeSslSocketFactory extends SSLSocketFactory {
 
     private final SSLSocketFactory delegate;
 
-    public SpiffeSslSocketFactory(SslContextOptions contextOptions) {
+    public SpiffeSslSocketFactory(SslContextOptions contextOptions) throws KeyManagementException, NoSuchAlgorithmException {
         val sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
-        if (sslContext.isError()) {
-            throw new RuntimeException(sslContext.getError());
-        }
-        delegate = sslContext.getValue().getSocketFactory();
+        delegate = sslContext.getSocketFactory();
     }
 
     @Override
@@ -42,7 +41,7 @@ public class SpiffeSslSocketFactory extends SSLSocketFactory {
 
     @Override
     public Socket createSocket(String s, int i) throws IOException {
-        return delegate.createSocket(s, i );
+        return delegate.createSocket(s, i);
     }
 
     @Override

@@ -2,7 +2,6 @@ package spiffe.provider;
 
 import lombok.val;
 import spiffe.bundle.x509bundle.X509BundleSource;
-import spiffe.result.Result;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.SpiffeIdUtils;
 
@@ -77,9 +76,9 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      */
     public TrustManager[] engineGetTrustManagers(
             X509BundleSource x509BundleSource,
-            Supplier<Result<List<SpiffeId>, String>> acceptedSpiffeIdsSupplier) {
+            Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
 
-        Supplier<Result<List<SpiffeId>, String>> spiffeIdsSupplier;
+        Supplier<List<SpiffeId>> spiffeIdsSupplier;
         if (acceptedSpiffeIdsSupplier != null) {
             spiffeIdsSupplier = acceptedSpiffeIdsSupplier;
         } else {
@@ -104,7 +103,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     }
 
 
-    private Result<List<SpiffeId>, String> getAcceptedSpiffeIds() {
+    private List<SpiffeId> getAcceptedSpiffeIds() {
         return SpiffeIdUtils.getSpiffeIdsFromSecurityProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
     }
 }

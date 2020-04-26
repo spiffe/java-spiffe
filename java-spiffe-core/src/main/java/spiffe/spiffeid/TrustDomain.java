@@ -1,10 +1,10 @@
 package spiffe.spiffeid;
 
 
+import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import spiffe.result.Result;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,27 +24,30 @@ public class TrustDomain {
     }
 
     /**
-     * Creates an instance of a TrustDomain.
+     * Creates a trust domain.
      *
-     * @param trustDomain a TrustDomain represented as a String, must not be blank.
-     * @return an Ok result containing the parsed TrustDomain, or an Error if the trustDomain cannot be parsed
+     * @param trustDomain a trust domain represented as a string, must not be blank.
+     * @return an instance of a {@link TrustDomain}
+     *
+     * @throws IllegalArgumentException if the given string is blank or cannot be parsed
      */
-    public static Result<TrustDomain, String> of(String trustDomain) {
+    public static TrustDomain of(@NonNull String trustDomain) {
         if (StringUtils.isBlank(trustDomain)) {
-            return Result.error("Trust Domain cannot be empty.");
+            throw new IllegalArgumentException("Trust Domain cannot be empty");
         }
         try {
             val uri = new URI(normalize(trustDomain));
-            val result = new TrustDomain(getHost(uri));
-            return Result.ok(result);
+            val host = getHost(uri);
+            return new TrustDomain(host);
         } catch (URISyntaxException e) {
-            return Result.error(format("Unable to parse: %s.", trustDomain));
+            throw new IllegalArgumentException(format("Unable to parse: %s", trustDomain), e);
         }
     }
 
     /**
-     * Returns the trustDomain as String
-     * @return a String with the Trust Domain
+     * Returns the trust domain as a string.
+     *
+     * @return a String with the trust domain
      */
     @Override
     public String toString() {

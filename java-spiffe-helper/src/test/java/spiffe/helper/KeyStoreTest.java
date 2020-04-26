@@ -4,6 +4,7 @@ import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import spiffe.exception.X509SvidException;
 import spiffe.internal.CertificateUtils;
 import spiffe.svid.x509svid.X509Svid;
 
@@ -20,7 +21,8 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class KeyStoreTest {
 
@@ -31,12 +33,12 @@ public class KeyStoreTest {
 
 
     @BeforeEach
-    void setup() {
+    void setup() throws X509SvidException {
         x509Svid = X509Svid
                 .load(
                         Paths.get("../testdata/x509cert.pem"),
                         Paths.get("../testdata/pkcs8key.pem")
-                ).getValue();
+                );
     }
 
     @Test
@@ -60,9 +62,8 @@ public class KeyStoreTest {
                 .build();
 
 
-        val result = keyStore.storePrivateKey(privateKeyEntry);
+        keyStore.storePrivateKey(privateKeyEntry);
 
-        assertTrue(result.isOk());
         checkEntryWasStored(keyStoreFilePath, keyStorePassword, privateKeyPassword, keyStoreType, DEFAULT_ALIAS);
     }
 
@@ -81,7 +82,7 @@ public class KeyStoreTest {
         val privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword);
 
         assertEquals(1, chain.length);
-        assertEquals("spiffe://example.org/test", spiffeId.getValue().toString());
+        assertEquals("spiffe://example.org/test", spiffeId.toString());
         assertNotNull(privateKey);
     }
 

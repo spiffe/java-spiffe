@@ -1,7 +1,6 @@
 package spiffe.provider;
 
 import lombok.val;
-import spiffe.result.Result;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
@@ -17,9 +16,9 @@ import java.util.Objects;
 import static spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
 
 /**
- * A <code>SpiffeKeyManager</code> represents a X509 KeyManager for the SPIFFE Provider.
+ * A <code>SpiffeKeyManager</code> represents a X509 key manager for the SPIFFE provider.
  * <p>
- * Provides the chain of X509 Certificates and the Private Key.
+ * Provides the chain of X509 certificates and the private key.
  */
 public final class SpiffeKeyManager extends X509ExtendedKeyManager {
 
@@ -32,27 +31,24 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     /**
      * Returns the certificate chain associated with the given alias.
      *
-     * @return the X.509 SVID Certificates
+     * @return the certificate chain as an array of {@link X509Certificate}
      */
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
         if (!Objects.equals(alias, DEFAULT_ALIAS)) {
             return null;
         }
-        Result<X509Svid, String> x509Svid = x509SvidSource.getX509Svid();
-        if (x509Svid.isError()) {
-            throw new IllegalStateException(x509Svid.getError());
-        }
-        return x509Svid.getValue().getChainArray();
+        X509Svid x509Svid = x509SvidSource.getX509Svid();
+        return x509Svid.getChainArray();
     }
 
     /**
-     * Returns the key associated with the given alias.
+     * Returns the private key handled by this key manager.
      *
      * @param alias a key entry, as this KeyManager only handles one identity, i.e. one SVID,
-     * it will return the PrivateKey if the alias asked for is 'Spiffe'.
+     * it will return the PrivateKey if the given alias is 'Spiffe'.
      *
-     * @return the Private Key
+     * @return the {@link PrivateKey} handled by this key manager
      */
     @Override
     public PrivateKey getPrivateKey(String alias) {
@@ -61,12 +57,8 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
             return null;
         }
 
-        Result<X509Svid, String> x509Svid = x509SvidSource.getX509Svid();
-        if (x509Svid.isError()) {
-            throw new IllegalStateException(x509Svid.getError());
-        }
-
-        return x509Svid.getValue().getPrivateKey();
+        X509Svid x509Svid = x509SvidSource.getX509Svid();
+        return x509Svid.getPrivateKey();
     }
 
 
@@ -104,11 +96,8 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     // the ALIAS handled by the current KeyManager, if it's not supported returns null
     private String getAlias(String... keyTypes) {
         val x509Svid = x509SvidSource.getX509Svid();
-        if (x509Svid.isError()) {
-            return null;
-        }
 
-        val privateKeyAlgorithm = x509Svid.getValue().getPrivateKey().getAlgorithm();
+        val privateKeyAlgorithm = x509Svid.getPrivateKey().getAlgorithm();
         if (Arrays.asList(keyTypes).contains(privateKeyAlgorithm)) {
             return DEFAULT_ALIAS;
         }
