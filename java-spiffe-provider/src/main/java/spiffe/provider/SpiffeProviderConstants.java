@@ -13,4 +13,6 @@ class SpiffeProviderConstants {
 
     // alias used by the SpiffeKeyStore
     static final String DEFAULT_ALIAS = "Spiffe";
+
+    private SpiffeProviderConstants() {}
 }

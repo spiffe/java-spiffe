@@ -25,7 +25,7 @@ class KeyStore {
     private final KeyStoreType keyStoreType;
     private final char[] keyStorePassword;
 
-    private java.security.KeyStore keyStore;
+    private java.security.KeyStore javaKeyStore;
     private File keyStoreFile;
 
     @Builder
@@ -41,7 +41,7 @@ class KeyStore {
 
     private void setupKeyStore() throws KeyStoreException {
         this.keyStoreFile = new File(keyStoreFilePath.toUri());
-        this.keyStore = loadKeyStore(keyStoreFile);
+        this.javaKeyStore = loadKeyStore(keyStoreFile);
     }
 
 
@@ -70,7 +70,7 @@ class KeyStore {
      */
     void storePrivateKey(final PrivateKeyEntry privateKeyEntry) throws KeyStoreException {
         // Store PrivateKey Entry in KeyStore
-        keyStore.setKeyEntry(
+        javaKeyStore.setKeyEntry(
                 privateKeyEntry.getAlias(),
                 privateKeyEntry.getPrivateKey(),
                 privateKeyEntry.getPassword(),
@@ -85,7 +85,7 @@ class KeyStore {
      */
     void storeBundleEntry(BundleEntry bundleEntry) throws KeyStoreException {
         // Store Bundle Entry in KeyStore
-        this.keyStore.setCertificateEntry(
+        this.javaKeyStore.setCertificateEntry(
                 bundleEntry.getAlias(),
                 bundleEntry.getCertificate()
         );
@@ -95,7 +95,7 @@ class KeyStore {
     // Flush KeyStore to disk, to the configured (@see keyStoreFilePath)
     private void flush() throws KeyStoreException {
         try {
-            keyStore.store(new FileOutputStream(keyStoreFile), keyStorePassword);
+            javaKeyStore.store(new FileOutputStream(keyStoreFile), keyStorePassword);
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new KeyStoreException(e);
         }

@@ -96,18 +96,18 @@ public class KeyStoreHelper {
     private void setX509ContextWatcher(WorkloadApiClient workloadApiClient, CountDownLatch countDownLatch) {
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
-            public void OnUpdate(X509Context update) {
+            public void onUpdate(X509Context update) {
                 log.log(Level.INFO, "Received X509Context update");
                 try {
                     storeX509ContextUpdate(update);
                 } catch (KeyStoreException e) {
-                    this.OnError(e);
+                    this.onError(e);
                 }
                 countDownLatch.countDown();
             }
 
             @Override
-            public void OnError(Throwable t) {
+            public void onError(Throwable t) {
                 throw new RuntimeException(t);
             }
         });

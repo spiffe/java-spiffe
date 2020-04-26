@@ -31,7 +31,7 @@ public class JwtSource implements JwtSvidSource, JwtBundleSource {
     }
 
     @Override
-    public JwtSvid FetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences) {
+    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences) {
         throw new NotImplementedException("Not implemented");
     }
 }

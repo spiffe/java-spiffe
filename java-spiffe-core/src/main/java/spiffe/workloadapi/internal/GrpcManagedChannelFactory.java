@@ -65,4 +65,6 @@ public class GrpcManagedChannelFactory {
 
         channelBuilder.eventLoopGroup(new NioEventLoopGroup());
     }
+
+    private GrpcManagedChannelFactory() {}
 }

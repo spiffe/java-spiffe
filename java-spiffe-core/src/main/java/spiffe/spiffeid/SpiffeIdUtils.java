@@ -68,10 +68,11 @@ public class SpiffeIdUtils {
      * @throws IllegalArgumentException if any of the SPIFFE IDs in the file cannot be parsed
      */
     public static List<SpiffeId> getSpiffeIdListFromFile(final Path spiffeIdsFile) throws IOException {
-        Stream<String> lines = Files.lines(spiffeIdsFile);
-        return lines
-                .map(SpiffeId::parse)
-                .collect(Collectors.toList());
+        try (Stream<String> lines = Files.lines(spiffeIdsFile)) {
+            return lines
+                    .map(SpiffeId::parse)
+                    .collect(Collectors.toList());
+        }
     }
 
     /**
@@ -95,4 +96,6 @@ public class SpiffeIdUtils {
                 .map(SpiffeId::parse)
                 .collect(Collectors.toList());
     }
+
+    private SpiffeIdUtils() {}
 }

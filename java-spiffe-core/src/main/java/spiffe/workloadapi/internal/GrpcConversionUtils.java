@@ -47,4 +47,6 @@ public class GrpcConversionUtils {
         }
         return x509SvidList;
     }
+
+    private GrpcConversionUtils() {}
 }

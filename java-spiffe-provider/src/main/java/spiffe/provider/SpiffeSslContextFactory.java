@@ -74,4 +74,6 @@ public final class SpiffeSslContextFactory {
             this.sslProtocol = sslProtocol;
         }
     }
+
+    private SpiffeSslContextFactory() {}
 }

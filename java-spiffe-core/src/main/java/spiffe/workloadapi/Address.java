@@ -62,76 +62,14 @@ public class Address {
 
         String error = null;
         switch (scheme) {
-            case "unix": {
-                if (parsedAddress.isOpaque() && parsedAddress.isAbsolute()) {
-                    error = "Workload endpoint unix socket URI must not be opaque: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getUserInfo())) {
-                    error = "Workload endpoint unix socket URI must not include user info: %s";
-                    break;
-                }
-
-                if (StringUtils.isBlank(parsedAddress.getHost()) && StringUtils.isBlank(parsedAddress.getPath())) {
-                    error = "Workload endpoint unix socket URI must include a path: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
-                    error = "Workload endpoint unix socket URI must not include query values: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getFragment())) {
-                    error = "Workload endpoint unix socket URI must not include a fragment: %s";
-                }
+            case "unix":
+                error = validateUnixAddress(parsedAddress);
                 break;
-            }
-
-            case "tcp": {
-                if (parsedAddress.isOpaque() && parsedAddress.isAbsolute()) {
-                    error = "Workload endpoint tcp socket URI must not be opaque: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getUserInfo())) {
-                    error = "Workload endpoint tcp socket URI must not include user info: %s";
-                    break;
-                }
-
-                if (StringUtils.isBlank(parsedAddress.getHost())) {
-                    error = "Workload endpoint tcp socket URI must include a host: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getPath())) {
-                    error = "Workload endpoint tcp socket URI must not include a path: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
-                    error = "Workload endpoint tcp socket URI must not include query values: %s";
-                    break;
-                }
-
-                if (StringUtils.isNotBlank(parsedAddress.getFragment())) {
-                    error = "Workload endpoint tcp socket URI must not include a fragment: %s";
-                    break;
-                }
-
-                String ip = parseIp(parsedAddress.getHost());
-                if (StringUtils.isBlank(ip)) {
-                    error = "Workload endpoint tcp socket URI host component must be an IP:port: %s";
-                    break;
-                }
-
-                int port = parsedAddress.getPort();
-                if (port == -1) {
-                    error = "Workload endpoint tcp socket URI host component must include a port: %s";
-                }
+            case "tcp":
+                error = validateTcpAddress(parsedAddress);
                 break;
-            }
+            default:
+                error = "Workload endpoint socket URI must have a tcp:// or unix:// scheme: %s";
         }
 
         if (StringUtils.isNotBlank(error)) {
@@ -139,6 +77,66 @@ public class Address {
         }
 
         return parsedAddress;
+    }
+
+    private static String validateUnixAddress(URI parsedAddress) {
+        if (parsedAddress.isOpaque() && parsedAddress.isAbsolute()) {
+            return "Workload endpoint unix socket URI must not be opaque: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getUserInfo())) {
+            return "Workload endpoint unix socket URI must not include user info: %s";
+        }
+
+        if (StringUtils.isBlank(parsedAddress.getHost()) && StringUtils.isBlank(parsedAddress.getPath())) {
+            return "Workload endpoint unix socket URI must include a path: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
+            return "Workload endpoint unix socket URI must not include query values: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getFragment())) {
+            return "Workload endpoint unix socket URI must not include a fragment: %s";
+        }
+        return "";
+    }
+
+    private static String validateTcpAddress(URI parsedAddress) {
+        if (parsedAddress.isOpaque() && parsedAddress.isAbsolute()) {
+            return "Workload endpoint tcp socket URI must not be opaque: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getUserInfo())) {
+            return "Workload endpoint tcp socket URI must not include user info: %s";
+        }
+
+        if (StringUtils.isBlank(parsedAddress.getHost())) {
+            return "Workload endpoint tcp socket URI must include a host: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getPath())) {
+            return "Workload endpoint tcp socket URI must not include a path: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
+            return "Workload endpoint tcp socket URI must not include query values: %s";
+        }
+
+        if (StringUtils.isNotBlank(parsedAddress.getFragment())) {
+            return "Workload endpoint tcp socket URI must not include a fragment: %s";
+        }
+
+        String ip = parseIp(parsedAddress.getHost());
+        if (StringUtils.isBlank(ip)) {
+            return "Workload endpoint tcp socket URI host component must be an IP:port: %s";
+        }
+
+        int port = parsedAddress.getPort();
+        if (port == -1) {
+            return "Workload endpoint tcp socket URI host component must include a port: %s";
+        }
+        return "";
     }
 
     private static boolean isValid(String scheme) {
@@ -153,4 +151,6 @@ public class Address {
             return null;
         }
     }
+
+    private Address() {}
 }

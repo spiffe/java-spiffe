@@ -125,19 +125,19 @@ public class WorkloadApiClient implements Closeable {
                 try {
                     x509Context = GrpcConversionUtils.toX509Context(value);
                 } catch (CertificateException | X509SvidException e) {
-                    watcher.OnError(new X509ContextException("Error processing X509 Context update", e));
+                    watcher.onError(new X509ContextException("Error processing X509 Context update", e));
                 }
-                watcher.OnUpdate(x509Context);
+                watcher.onUpdate(x509Context);
             }
 
             @Override
             public void onError(Throwable t) {
-                watcher.OnError(new X509ContextException("Error getting X509Context", t));
+                watcher.onError(new X509ContextException("Error getting X509Context", t));
             }
 
             @Override
             public void onCompleted() {
-                watcher.OnError(new X509ContextException("Unexpected completed stream"));
+                watcher.onError(new X509ContextException("Unexpected completed stream"));
             }
         };
         Context.CancellableContext cancellableContext;

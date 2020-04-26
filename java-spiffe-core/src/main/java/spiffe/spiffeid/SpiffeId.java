@@ -41,7 +41,7 @@ public class SpiffeId {
         val path = Arrays.stream(segments)
                 .filter(StringUtils::isNotBlank)
                 .map(SpiffeId::normalize)
-                .map(s -> "/" + s)
+                .map(s -> '/' + s)
                 .collect(Collectors.joining());
         return new SpiffeId(trustDomain, path);
     }

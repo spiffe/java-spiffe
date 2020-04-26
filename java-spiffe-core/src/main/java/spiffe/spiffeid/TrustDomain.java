@@ -17,10 +17,10 @@ import static java.lang.String.format;
 @Value
 public class TrustDomain {
 
-    String trustDomain;
+    String name;
 
     private TrustDomain(String trustDomain) {
-        this.trustDomain = trustDomain;
+        this.name = trustDomain;
     }
 
     /**
@@ -51,7 +51,7 @@ public class TrustDomain {
      */
     @Override
     public String toString() {
-        return trustDomain;
+        return name;
     }
 
     private static String normalize(String s) {

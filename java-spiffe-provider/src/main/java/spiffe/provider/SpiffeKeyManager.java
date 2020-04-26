@@ -36,7 +36,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
         if (!Objects.equals(alias, DEFAULT_ALIAS)) {
-            return null;
+            return new X509Certificate[0];
         }
         X509Svid x509Svid = x509SvidSource.getX509Svid();
         return x509Svid.getChainArray();

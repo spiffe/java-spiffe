@@ -25,15 +25,15 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     private final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
 
     /**
-     * Creates a SpiffeTrustManager with a X509BundleSource used to provide the trusted
+     * Creates a SpiffeTrustManager with a X509 bundle source used to provide the trusted
      * bundles, and a Supplier of a List of accepted SpiffeIds to be used during peer SVID validation.
      *
-     * @param X509BundleSource          an implementation of a {@link X509BundleSource}
+     * @param x509BundleSource          an implementation of a {@link X509BundleSource}
      * @param acceptedSpiffeIdsSupplier a Supplier of a list of accepted SPIFFE IDs.
      */
-    public SpiffeTrustManager(X509BundleSource X509BundleSource,
+    public SpiffeTrustManager(X509BundleSource x509BundleSource,
                               Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
-        this.x509BundleSource = X509BundleSource;
+        this.x509BundleSource = x509BundleSource;
         this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
     }
 

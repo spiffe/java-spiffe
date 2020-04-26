@@ -58,13 +58,14 @@ public class HttpsServer {
         SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
 
         SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
-        SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(port);
 
-        // Server will validate Client chain and SPIFFE ID
-        sslServerSocket.setNeedClientAuth(true);
+        try (SSLServerSocket sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(port)) {
+            // Server will validate Client chain and SPIFFE ID
+            sslServerSocket.setNeedClientAuth(true);
 
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        new WorkloadThread(sslSocket, x509Source).start();
+            SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+            new WorkloadThread(sslSocket, x509Source).start();
+        }
     }
 }
 

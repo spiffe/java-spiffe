@@ -62,4 +62,6 @@ public class X509SvidValidator {
             throw new CertificateException(String.format("SPIFFE ID %s in x509Certificate is not accepted", spiffeId));
         }
     }
+
+    private X509SvidValidator() {}
 }

@@ -1,5 +1,6 @@
 package spiffe.provider.examples;
 
+import lombok.extern.java.Log;
 import spiffe.internal.CertificateUtils;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.workloadapi.X509Source;
@@ -8,7 +9,9 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
 
+@Log
 class WorkloadThread extends Thread {
 
     private final X509Source x509Source;
@@ -19,15 +22,16 @@ class WorkloadThread extends Thread {
         this.x509Source = x509Source;
     }
 
+
+    @Override
     public void run() {
         try {
             sslSocket.startHandshake();
             SSLSession sslSession = sslSocket.getSession();
 
-            System.out.println("SSLSession :");
-            System.out.println("\tProtocol : " + sslSession.getProtocol());
-            System.out.println("\tCipher suite : " + sslSession.getCipherSuite());
-            System.out.println();
+            log.info("SSLSession :\n");
+            log.info("\tProtocol : \n" + sslSession.getProtocol());
+            log.info("\tCipher suite \n: " + sslSession.getCipherSuite());
 
             // Start handling application content
             InputStream inputStream = sslSocket.getInputStream();
@@ -50,14 +54,14 @@ class WorkloadThread extends Thread {
             // Read message from peer
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                System.out.println("Message received: " + line);
+                log.info("Message received: " + line);
                 break;
             }
 
             x509Source.close();
             sslSocket.close();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.getMessage());
         }
     }
 }

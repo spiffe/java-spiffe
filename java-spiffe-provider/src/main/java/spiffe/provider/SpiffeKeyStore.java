@@ -30,7 +30,7 @@ public final class SpiffeKeyStore extends KeyStoreSpi {
 
     @Override
     public Certificate[] engineGetCertificateChain(String alias) {
-        return null;
+        return new Certificate[0];
     }
 
     @Override

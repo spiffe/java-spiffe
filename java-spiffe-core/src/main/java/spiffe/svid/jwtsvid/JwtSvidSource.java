@@ -17,5 +17,5 @@ public interface JwtSvidSource {
      *
      * @throws //TODO: declare thrown exceptions
      */
-    JwtSvid FetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
+    JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
 }

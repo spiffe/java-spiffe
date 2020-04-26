@@ -75,9 +75,8 @@ public class HttpsClient {
     }
 
     static List<SpiffeId> listOfSpiffeIds() {
-        try {
-            Path path = Paths.get("java-spiffe-provider/src/main/java/spiffe/provider/examples/spiffeIds.txt");
-            Stream<String> lines = Files.lines(path);
+        Path path = Paths.get("java-spiffe-provider/src/main/java/spiffe/provider/examples/spiffeIds.txt");
+        try (Stream<String> lines = Files.lines(path)) {
             return lines
                     .map(SpiffeId::parse)
                     .collect(Collectors.toList());

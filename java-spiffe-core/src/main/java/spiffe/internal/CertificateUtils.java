@@ -137,7 +137,7 @@ public class CertificateUtils {
 
     // Create an instance of PKIXParameters used as input for the PKIX CertPathValidator
     private static PKIXParameters toPkixParameters(List<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException {
-        if (trustedCerts == null || trustedCerts.size() == 0) {
+        if (trustedCerts == null || trustedCerts.isEmpty()) {
             throw new CertificateException("No trusted Certs");
         }
 
@@ -166,4 +166,6 @@ public class CertificateUtils {
         val decoder = Base64.getDecoder();
         return decoder.decode(privateKey);
     }
+
+    private CertificateUtils() {}
 }

@@ -158,27 +158,27 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     private void setX509ContextWatcher() {
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
-            public void OnUpdate(X509Context update) {
+            public void onUpdate(X509Context update) {
                 log.log(Level.INFO, "Received X509Context update");
                 setX509Context(update);
             }
 
             @Override
-            public void OnError(Throwable error) {
+            public void onError(Throwable error) {
                 log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s %n %s", error.getMessage(), ExceptionUtils.getStackTrace(error)));
             }
         });
     }
 
     private void setX509Context(@NonNull final X509Context update) {
-        X509Svid svid;
+        X509Svid svidUpdate;
         if (picker == null) {
-            svid = update.getDefaultSvid();
+            svidUpdate = update.getDefaultSvid();
         } else {
-            svid = picker.apply(update.getX509Svid());
+            svidUpdate = picker.apply(update.getX509Svid());
         }
         synchronized (this) {
-            this.svid = svid;
+            this.svid = svidUpdate;
             this.bundles = update.getX509BundleSet();
         }
     }

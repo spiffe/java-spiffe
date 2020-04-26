@@ -6,8 +6,6 @@ package spiffe.workloadapi;
  * @param <T> is the type of the updates.
  */
 public interface Watcher<T> {
-
-    void OnUpdate(final T update);
-
-    void OnError(final Throwable e);
+    void onUpdate(final T update);
+    void onError(final Throwable e);
 }
