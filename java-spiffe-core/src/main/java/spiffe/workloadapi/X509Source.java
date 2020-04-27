@@ -165,7 +165,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
 
             @Override
             public void onError(Throwable error) {
-                log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s %n %s", error.getMessage(), ExceptionUtils.getStackTrace(error)));
+                log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s", ExceptionUtils.getStackTrace(error)));
             }
         });
     }
