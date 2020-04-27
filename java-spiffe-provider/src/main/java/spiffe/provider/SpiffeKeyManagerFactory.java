@@ -13,7 +13,7 @@ import java.security.KeyStore;
  * to create a {@link KeyManager} that backed by the Workload API.
  * <p>
  * The JSSE API will call engineGetKeyManagers() to get an instance of a KeyManager. This KeyManager
- * instance is injected with a {@link spiffe.workloadapi.X509Source} to obtain the latest X509 SVIDs.
+ * instance is injected with a {@link spiffe.workloadapi.X509Source} to obtain the latest X.509 SVIDs.
  *
  * @see SpiffeSslContextFactory
  * @see X509SvidSource
@@ -33,7 +33,7 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
     }
 
     /**
-     * This method creates a KeyManager and initializes with the given X509 SVID source.
+     * This method creates a KeyManager and initializes with the given X.509 SVID source.
      *
      * @param x509SvidSource an instance of a {@link X509SvidSource}
      * @return an array with an instance of a {@link KeyManager}

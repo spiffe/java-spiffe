@@ -22,7 +22,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
- * A <code>X509Source</code> represents a source of X509 SVIDs and X509 bundles maintained via the
+ * A <code>X509Source</code> represents a source of X.509 SVIDs and X.509 bundles maintained via the
  * Workload API.
  * <p>
  * It handles a {@link X509Svid} and a {@link X509BundleSet} that are updated automatically
@@ -45,12 +45,12 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     private volatile boolean closed;
 
     /**
-     * Creates a new X509 source. It blocks until the initial update
+     * Creates a new X.509 source. It blocks until the initial update
      * has been received from the Workload API.
      * <p>
      * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      * <p>
-     * It uses the default X509 SVID.
+     * It uses the default X.509 SVID.
      *
      * @return an instance of {@link X509Source}, with the svid and bundles initialized
      *
@@ -63,7 +63,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     }
 
     /**
-     * Creates a new X509 source. It blocks until the initial update
+     * Creates a new X.509 source. It blocks until the initial update
      * has been received from the Workload API.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
@@ -95,7 +95,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     }
 
     /**
-     * Returns the X509 SVID handled by this source.
+     * Returns the X.509 SVID handled by this source.
      *
      * @return a {@link X509Svid}
      * @throws IllegalStateException if the source is closed
@@ -109,7 +109,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
     }
 
     /**
-     * Returns the X509 bundle for a given trust domain.
+     * Returns the X.509 bundle for a given trust domain.
      *
      * @return an instance of a {@link X509Bundle}
      *
@@ -201,7 +201,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
         String spiffeSocketPath;
 
         /**
-         * Function to choose the X509 SVID from the list returned by the Workload API
+         * Function to choose the X.509 SVID from the list returned by the Workload API
          * If it is not set, the default svid is picked.
          */
         Function<List<X509Svid>, X509Svid> picker;

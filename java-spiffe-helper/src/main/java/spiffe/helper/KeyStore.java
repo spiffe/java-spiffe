@@ -16,7 +16,7 @@ import java.security.cert.CertificateException;
 
 /**
  * Represents a Java KeyStore, provides some functions
- * to store a private key, a X509 certificate chain, and X509 bundles.
+ * to store a private key, a X.509 certificate chain, and X.509 bundles.
  * Package private, to be used by the KeyStoreHelper.
  */
 class KeyStore {
@@ -64,7 +64,7 @@ class KeyStore {
 
 
     /**
-     * Store a private key and X509 certificate chain in a Java KeyStore
+     * Store a private key and X.509 certificate chain in a Java KeyStore
      *
      * @param privateKeyEntry contains the alias, privateKey, chain, privateKey password
      */

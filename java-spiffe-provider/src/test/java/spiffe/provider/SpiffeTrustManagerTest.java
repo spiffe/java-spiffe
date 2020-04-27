@@ -99,7 +99,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID spiffe://example.org/test in x509Certificate is not accepted", e.getMessage());
+            assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
         }
     }
 
@@ -159,7 +159,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID spiffe://example.org/test in x509Certificate is not accepted", e.getMessage());
+            assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
         }
     }
 

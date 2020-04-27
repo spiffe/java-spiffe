@@ -6,12 +6,12 @@ import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
 /**
- * A <code>X509BundleSource</code> represents a source of X509 bundles keyed by trust domain.
+ * A <code>X509BundleSource</code> represents a source of X.509 bundles keyed by trust domain.
  */
 public interface X509BundleSource {
 
     /**
-     * Returns the X509 bundle associated to the given trust domain.
+     * Returns the X.509 bundle associated to the given trust domain.
      *
      * @param trustDomain an instance of a {@link TrustDomain}
      * @return the {@link X509Bundle} for the given trust domain

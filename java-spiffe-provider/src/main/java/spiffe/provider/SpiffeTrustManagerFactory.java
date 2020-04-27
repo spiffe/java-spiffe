@@ -70,7 +70,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * with a function verify a chain of certificates using a to validate the SPIFFE IDs
      * of the peer's certificates, and a supplier of accepted SPIFFE IDs.
      *
-     * @param x509BundleSource a {@link X509BundleSource} to provide the X509-Bundles
+     * @param x509BundleSource a {@link X509BundleSource} to provide the X.509-Bundles
      * @param acceptedSpiffeIdsSupplier a Supplier to provide a List of SPIFFE IDs that are accepted
      * @return a TrustManager array with an initialized TrustManager.
      */

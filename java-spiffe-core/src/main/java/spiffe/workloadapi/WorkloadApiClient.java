@@ -35,7 +35,7 @@ import static spiffe.workloadapi.internal.Workload.X509SVIDResponse;
 
 /**
  * A <code>WorkloadApiClient</code> represents a client to interact with the Workload API.
- * Supports one-shot calls and watch updates for X509 and JWT SVIDS and bundles.
+ * Supports one-shot calls and watch updates for X.509 and JWT SVIDS and bundles.
  */
 @Log
 public class WorkloadApiClient implements Closeable {
@@ -94,9 +94,9 @@ public class WorkloadApiClient implements Closeable {
     }
 
     /**
-     * One-shot blocking fetch call to get an X509 context.
+     * One-shot blocking fetch call to get an X.509 context.
      *
-     * @throws X509ContextException if there is an error fetching or processing the X509 context
+     * @throws X509ContextException if there is an error fetching or processing the X.509 context
      */
     public X509Context fetchX509Context() {
         Context.CancellableContext cancellableContext;
@@ -113,7 +113,7 @@ public class WorkloadApiClient implements Closeable {
     }
 
     /**
-     * Watches for X509 context updates.
+     * Watches for X.509 context updates.
      *
      * @param watcher an instance that implements a {@link Watcher}.
      */

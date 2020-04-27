@@ -2,7 +2,7 @@ package spiffe.exception;
 
 /**
  * Checked exception thrown when there is an error parsing
- * the components of an X509 SVID.
+ * the components of an X.509 SVID.
  */
 public class X509SvidException extends Exception {
 

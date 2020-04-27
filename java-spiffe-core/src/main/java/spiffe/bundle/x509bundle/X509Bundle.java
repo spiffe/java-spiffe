@@ -30,11 +30,11 @@ public class X509Bundle implements X509BundleSource {
     }
 
     /**
-     * Loads a X509 bundle from a file on disk.
+     * Loads a X.509 bundle from a file on disk.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the bundle
-     * @param bundlePath  a path to the file that has the X509 authorities
-     * @return an instance of {@link X509Bundle} with the X509 authorities
+     * @param bundlePath  a path to the file that has the X.509 authorities
+     * @return an instance of {@link X509Bundle} with the X.509 authorities
      * associated to the trust domain.
      *
      * @throws IOException in case of failure accessing the given bundle path
@@ -50,10 +50,10 @@ public class X509Bundle implements X509BundleSource {
     /**
      * Parses a X095 bundle from an array of bytes.
      *
-     * @param trustDomain a {@link TrustDomain} to associate to the X509 bundle
-     * @param bundleBytes an array of bytes that represents the X509 authorities
+     * @param trustDomain a {@link TrustDomain} to associate to the X.509 bundle
+     * @param bundleBytes an array of bytes that represents the X.509 authorities
      *
-     * @return an instance of {@link X509Bundle} with the X509 authorities
+     * @return an instance of {@link X509Bundle} with the X.509 authorities
      * associated to the given trust domain
      *
      * @throws CertificateException if the bundle cannot be parsed
@@ -65,12 +65,12 @@ public class X509Bundle implements X509BundleSource {
     }
 
     /**
-     * Returns the X509 bundle associated to the trust domain.
+     * Returns the X.509 bundle associated to the trust domain.
      *
      * @param trustDomain an instance of a {@link TrustDomain}
      * @return the {@link X509Bundle} associated to the given trust domain
      *
-     * @throws BundleNotFoundException if no X509 bundle can be found for the given trust domain
+     * @throws BundleNotFoundException if no X.509 bundle can be found for the given trust domain
      */
     @Override
     public X509Bundle getX509BundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {

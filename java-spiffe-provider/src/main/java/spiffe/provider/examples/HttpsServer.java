@@ -15,11 +15,11 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Example of a simple HTTPS Server backed by the Workload API to get the X509 certificates
+ * Example of a simple HTTPS Server backed by the Workload API to get the X.509 certificates
  * and trusted bundles.
  * <p>
  * The purpose of this class is to show the use of the {@link SpiffeSslContextFactory} to create
- * a {@link SSLContext} that uses X509-SVID provided by a Workload API. The SSLContext uses the
+ * a {@link SSLContext} that uses X.509-SVID provided by a Workload API. The SSLContext uses the
  * {@link spiffe.provider.SpiffeKeyManager} and {@link spiffe.provider.SpiffeTrustManager} for
  * providing certificates and doing chain and SPIFFE ID validation.
  * To run this example, Spire should be running, SPIFFE_ENDPOINT_SOCKET env variable should be

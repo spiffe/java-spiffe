@@ -31,9 +31,9 @@ public class CertificateUtils {
     private static final String X509_CERTIFICATE_TYPE = "X.509";
 
     /**
-     * Generate a list of X509 certificates from a byte array.
+     * Generate a list of X.509 certificates from a byte array.
      *
-     * @param input as byte array representing a list of X509 certificates, as a DER or PEM
+     * @param input as byte array representing a list of X.509 certificates, as a DER or PEM
      * @return a List of {@link X509Certificate}
      */
     public static List<X509Certificate> generateCertificates(byte[] input) throws CertificateException {
@@ -86,7 +86,7 @@ public class CertificateUtils {
     }
 
     /**
-     * Extracts the SPIFE ID from a X509 certificate.
+     * Extracts the SPIFE ID from a X.509 certificate.
      * <p>
      * It iterates over the list of SubjectAlternativesNames, read each entry, takes the value from the index
      * defined in SAN_VALUE_INDEX and filters the entries that starts with the SPIFFE_PREFIX and returns the first.
@@ -153,7 +153,7 @@ public class CertificateUtils {
         return CertPathValidator.getInstance(PUBLIC_KEY_INFRASTRUCTURE_ALGORITHM);
     }
 
-    // Get the X509 Certificate Factory
+    // Get the X.509 Certificate Factory
     private static CertificateFactory getCertificateFactory() throws CertificateException {
         return CertificateFactory.getInstance(X509_CERTIFICATE_TYPE);
     }

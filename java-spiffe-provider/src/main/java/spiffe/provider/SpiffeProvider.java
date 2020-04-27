@@ -9,9 +9,9 @@ import static spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  * A <code>SpiffeProvider</code> represents a Security Provider for the Java Security API.
  * <p>
  * It uses a custom implementation of KeyStore and TrustStore Managers that support
- * SPIFFE X509-SVID and Bundle retrieval from the Workload API and SPIFFE ID validation.
+ * SPIFFE X.509-SVID and Bundle retrieval from the Workload API and SPIFFE ID validation.
  * <p>
- * It registers a KeyManagerFactory for creating a KeyManager that handles an X509-SVID Certificate to
+ * It registers a KeyManagerFactory for creating a KeyManager that handles an X.509-SVID Certificate to
  * probe identity. It also registers a TrustManagerFactory for creating a TrustManager for trust chain
  * and SPIFFE ID validation.
  * <p>

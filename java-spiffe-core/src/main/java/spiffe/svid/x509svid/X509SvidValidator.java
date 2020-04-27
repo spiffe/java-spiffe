@@ -18,17 +18,17 @@ import java.util.function.Supplier;
 
 /**
  * A <code>X509SvidValidator</code> provides methods to validate
- * a chain of X509 certificates using an X509 bundle source.
+ * a chain of X.509 certificates using an X.509 bundle source.
  */
 public class X509SvidValidator {
 
     /**
-     * Verifies that a chain of certificates can be chained to one authority in the given X509 bundle source.
+     * Verifies that a chain of certificates can be chained to one authority in the given X.509 bundle source.
      *
-     * @param chain a list representing the chain of X509 certificates to be validated
+     * @param chain a list representing the chain of X.509 certificates to be validated
      * @param x509BundleSource a {@link X509BundleSource } to provide the authorities
      *
-     * @throws CertificateException is the chain cannot be verified with an authority from the X509 bundle source
+     * @throws CertificateException is the chain cannot be verified with an authority from the X.509 bundle source
      * @throws NullPointerException if the given chain or 509BundleSource are null
      */
     public static void verifyChain(
@@ -44,7 +44,7 @@ public class X509SvidValidator {
     }
 
     /**
-     * Checks that the X509 SVID provided has a SPIFFE ID that is in the list of accepted SPIFFE IDs supplied.
+     * Checks that the X.509 SVID provided has a SPIFFE ID that is in the list of accepted SPIFFE IDs supplied.
      *
      * @param x509Certificate a {@link X509Svid} with a SPIFFE ID to be verified
      * @param acceptedSpiffedIdsSupplier a {@link Supplier} of a list os SPIFFE IDs that are accepted
@@ -59,7 +59,7 @@ public class X509SvidValidator {
         val spiffeIdList = acceptedSpiffedIdsSupplier.get();
         val spiffeId = CertificateUtils.getSpiffeId(x509Certificate);
         if (!spiffeIdList.contains(spiffeId)) {
-            throw new CertificateException(String.format("SPIFFE ID %s in x509Certificate is not accepted", spiffeId));
+            throw new CertificateException(String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId));
         }
     }
 

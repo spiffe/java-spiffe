@@ -18,9 +18,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 /**
- * A <code>X509Svid</code> represents a SPIFFE X509 SVID.
+ * A <code>X509Svid</code> represents a SPIFFE X.509 SVID.
  * <p>
- * Contains a SPIFFE ID, a private key and a chain of X509 certificates.
+ * Contains a SPIFFE ID, a private key and a chain of X.509 certificates.
  */
 @Value
 public class X509Svid {
@@ -28,9 +28,9 @@ public class X509Svid {
     SpiffeId spiffeId;
 
     /**
-     * The X.509 certificates of the X509-SVID. The leaf certificate is
-     * the X509-SVID certificate. Any remaining certificates (if any) chain
-     * the X509-SVID certificate back to a X509 root for the trust domain.
+     * The X.509 certificates of the X.509-SVID. The leaf certificate is
+     * the X.509-SVID certificate. Any remaining certificates (if any) chain
+     * the X.509-SVID certificate back to a X.509 root for the trust domain.
      */
     List<X509Certificate> chain;
 
@@ -46,9 +46,9 @@ public class X509Svid {
     }
 
     /**
-     * Loads the X509 SVID from PEM encoded files on disk.
+     * Loads the X.509 SVID from PEM encoded files on disk.
      *
-     * @param certsFilePath      path to X509 certificate chain file
+     * @param certsFilePath      path to X.509 certificate chain file
      * @param privateKeyFilePath path to private key file
      * @return an instance of {@link X509Svid}
      *
@@ -67,7 +67,7 @@ public class X509Svid {
     }
 
     /**
-     * Parses the X509 SVID from PEM or DER blocks containing certificate chain and key
+     * Parses the X.509 SVID from PEM or DER blocks containing certificate chain and key
      * bytes. The key must be a PEM or DER block with PKCS#8.
      *
      * @param certsBytes      chain of certificates as a byte array

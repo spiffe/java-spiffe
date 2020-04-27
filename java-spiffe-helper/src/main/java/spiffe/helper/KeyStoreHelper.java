@@ -18,7 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
 /**
- * A <code>KeyStoreHelper</code> represents a helper for storing X509 SVIDs and bundles,
+ * A <code>KeyStoreHelper</code> represents a helper for storing X.509 SVIDs and bundles,
  * that are automatically rotated via the Workload API, in a Java KeyStore in a file in disk.
  */
 @Log
@@ -32,7 +32,7 @@ public class KeyStoreHelper {
     private final String spiffeSocketPath;
 
     /**
-     * Create an instance of a KeyStoreHelper for fetching X509 SVIDs and bundles
+     * Create an instance of a KeyStoreHelper for fetching X.509 SVIDs and bundles
      * from a Workload API and store them in a binary Java KeyStore in disk.
      * <p>
      * It blocks until the initial update has been received from the Workload API.

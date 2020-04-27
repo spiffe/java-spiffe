@@ -81,7 +81,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifySpiffeId(x509Certificate.get(0), () -> spiffeIdList);
             fail("Should have thrown CertificateException");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID spiffe://example.org/test in x509Certificate is not accepted", e.getMessage());
+            assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
         }
     }
 }

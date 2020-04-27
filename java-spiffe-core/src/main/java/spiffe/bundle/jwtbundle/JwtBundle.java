@@ -30,10 +30,10 @@ public class JwtBundle implements JwtBundleSource {
      * Creates a new bundle from JWT public keys.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
-     * @param jwtKeys     a Map of public Keys
+     * @param jwtAuthorities     a Map of public Keys
      * @return a new {@link JwtBundle}.
      */
-    public static JwtBundle fromJWTKeys(@NonNull TrustDomain trustDomain, Map<String, PublicKey> jwtKeys) {
+    public static JwtBundle fromJWTAuthorities(@NonNull TrustDomain trustDomain, Map<String, PublicKey> jwtAuthorities) {
         throw new NotImplementedException("Not implemented");
     }
 
@@ -87,14 +87,7 @@ public class JwtBundle implements JwtBundleSource {
      * @param keyId the Key ID
      * @return an {@link Optional} containing a {@link PublicKey}.
      */
-    public Optional<PublicKey> findJwtKey(String keyId)  {
+    public Optional<PublicKey> findJwtAuthority(String keyId)  {
         throw new NotImplementedException("Not implemented");
-    }
-
-    /**
-     * Returns the trust domain that the bundle belongs to.
-     */
-    public TrustDomain getTrustDomain() {
-        return trustDomain;
     }
 }
