@@ -2,6 +2,7 @@ package spiffe.bundle.x509bundle;
 
 import lombok.NonNull;
 import lombok.Value;
+import lombok.val;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
@@ -53,9 +54,10 @@ public class X509BundleSet implements X509BundleSource {
      */
     @Override
     public X509Bundle getX509BundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
-        if (bundles.containsKey(trustDomain)) {
-            return bundles.get(trustDomain);
+        val bundle = bundles.get(trustDomain);
+        if (bundle == null){
+            throw new BundleNotFoundException(String.format("No X509 bundle for trust domain %s", trustDomain));
         }
-        throw new BundleNotFoundException(String.format("No X509 bundle for trust domain %s", trustDomain));
+        return bundles.get(trustDomain);
     }
 }

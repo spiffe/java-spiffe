@@ -2,6 +2,7 @@ package spiffe.bundle.jwtbundle;
 
 import lombok.NonNull;
 import lombok.Value;
+import lombok.val;
 import org.apache.commons.lang3.NotImplementedException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
@@ -40,10 +41,11 @@ public class JwtBundleSet implements JwtBundleSource {
      */
     @Override
     public JwtBundle getJwtBundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
-        if (bundles.containsKey(trustDomain)) {
-            return bundles.get(trustDomain);
+        val bundle = bundles.get(trustDomain);
+        if (bundle == null) {
+            throw new BundleNotFoundException(String.format("No JWT bundle for trust domain %s", trustDomain));
         }
-        throw new BundleNotFoundException(String.format("No JWT bundle for trust domain %s", trustDomain));
+        return bundles.get(trustDomain);
     }
 
     /**
