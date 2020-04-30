@@ -20,7 +20,7 @@ public class X509SourceManager {
 
     private static volatile X509Source x509Source;
 
-    public X509SourceManager() {
+    private X509SourceManager() {
     }
 
     /**
