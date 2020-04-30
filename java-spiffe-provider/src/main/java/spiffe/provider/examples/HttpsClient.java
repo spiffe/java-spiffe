@@ -2,6 +2,7 @@ package spiffe.provider.examples;
 
 import lombok.val;
 import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509SourceException;
 import spiffe.provider.SpiffeSslContextFactory;
 import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
 import spiffe.spiffeid.SpiffeId;
@@ -38,11 +39,11 @@ public class HttpsClient {
     int serverPort;
 
     public static void main(String[] args) {
-        String spiffeSocket = "unix:/tmp/agent.sock";
+        String spiffeSocket = "unix:/tmp/agent2.sock";
         HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, HttpsClient::listOfSpiffeIds);
         try {
             httpsClient.run();
-        } catch (KeyManagementException | NoSuchAlgorithmException | IOException | SocketEndpointAddressException e) {
+        } catch (KeyManagementException | NoSuchAlgorithmException | IOException | SocketEndpointAddressException | X509SourceException e) {
             throw new RuntimeException("Error starting Https Client", e);
         }
     }
@@ -53,7 +54,7 @@ public class HttpsClient {
         this.acceptedSpiffeIdsListSupplier = acceptedSpiffeIdsListSupplier;
     }
 
-    void run() throws IOException, SocketEndpointAddressException, KeyManagementException, NoSuchAlgorithmException {
+    void run() throws IOException, SocketEndpointAddressException, KeyManagementException, NoSuchAlgorithmException, X509SourceException {
 
         val sourceOptions = X509SourceOptions
                 .builder()

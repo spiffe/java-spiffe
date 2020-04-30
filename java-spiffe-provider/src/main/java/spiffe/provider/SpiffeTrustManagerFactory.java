@@ -2,6 +2,8 @@ package spiffe.provider;
 
 import lombok.val;
 import spiffe.bundle.x509bundle.X509BundleSource;
+import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509SourceException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.SpiffeIdUtils;
 
@@ -11,6 +13,8 @@ import javax.net.ssl.TrustManagerFactorySpi;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY;
 
 /**
  * A <code>SpiffeTrustManagerFactory</code> is an implementation of a {@link javax.net.ssl.TrustManagerFactory} to create a
@@ -27,9 +31,6 @@ import java.util.function.Supplier;
  */
 public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
 
-    // System property to get the list of accepted SPIFFE IDs
-    private static final String SSL_SPIFFE_ACCEPT_PROPERTY = "ssl.spiffe.accept";
-
     /**
      * Default method for creating a TrustManager initializing it with
      * the {@link spiffe.workloadapi.X509Source} instance
@@ -38,14 +39,22 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
      *
      * @return a TrustManager array with an initialized TrustManager.
+     * @throws SpiffeProviderException in case there is an error setting up the X509 source
      */
     @Override
     public TrustManager[] engineGetTrustManagers() {
-        val spiffeTrustManager =
-                new SpiffeTrustManager(
-                        X509SourceManager.INSTANCE.getX509Source(),
-                        this::getAcceptedSpiffeIds
-                );
+        SpiffeTrustManager spiffeTrustManager =
+                null;
+        try {
+            spiffeTrustManager = new SpiffeTrustManager(
+                    X509SourceManager.getX509Source(),
+                    this::getAcceptedSpiffeIds
+            );
+        } catch (X509SourceException e) {
+            throw new SpiffeProviderException("The X509 source could not be created", e);
+        } catch (SocketEndpointAddressException e) {
+            throw new SpiffeProviderException("The Workload API Socket endpoint address configured is not valid", e);
+        }
         return new TrustManager[]{spiffeTrustManager};
     }
 

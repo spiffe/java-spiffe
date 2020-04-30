@@ -23,7 +23,7 @@ public final class SpiffeSslContextFactory {
     private static final String DEFAULT_SSL_PROTOCOL = "TLSv1.2";
 
     /**
-     * Creates an SSLContext initialized with a SPIFFE KeyManager and TrustManager that are backed by
+     * Creates an {@link SSLContext} initialized with a SPIFFE KeyManager and TrustManager that are backed by
      * the Workload API via a X509Source.
      *
      * @param options {@link SslContextOptions}. The option {@link X509Source} must be not null.

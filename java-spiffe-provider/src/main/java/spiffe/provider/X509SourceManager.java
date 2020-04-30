@@ -16,21 +16,32 @@ import spiffe.workloadapi.X509Source;
  * to be used by the {@link SpiffeKeyManagerFactory} and {@link SpiffeTrustManagerFactory} to inject it
  * in the {@link SpiffeKeyManager} and {@link SpiffeTrustManager} instances.
  */
-public enum X509SourceManager {
+public class X509SourceManager {
 
-    INSTANCE;
+    private static volatile X509Source x509Source;
 
-    private final X509Source x509Source;
-
-    X509SourceManager() {
-        try {
-            x509Source = X509Source.newSource();
-        } catch (SocketEndpointAddressException e) {
-            throw new X509SourceException("Could not create X509 Source. Socket endpoint address is not valid", e);
-        }
+    public X509SourceManager() {
     }
 
-    public X509Source getX509Source() {
-        return x509Source;
+    /**
+     * Returns the single instance handled by this singleton. If the instance has not been
+     * created yet, it creates a new X509Source and initializes the singleton in a thread safe way.
+     *
+     * @return a {@link X509Source}
+     * @throws X509SourceException            if the X509 source could not be initialized
+     * @throws SocketEndpointAddressException is the socket endpoint address is not valid
+     */
+    public static X509Source getX509Source() throws X509SourceException, SocketEndpointAddressException {
+        X509Source localRef = x509Source;
+        if (localRef == null) {
+            synchronized (X509SourceManager.class) {
+                localRef = x509Source;
+                if (localRef == null) {
+                    localRef = X509Source.newSource();
+                    x509Source = localRef;
+                }
+            }
+        }
+        return localRef;
     }
 }

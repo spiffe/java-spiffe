@@ -2,8 +2,11 @@ package spiffe.provider.examples;
 
 import lombok.val;
 import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509SourceException;
+import spiffe.provider.SpiffeProviderException;
 import spiffe.provider.SpiffeSslContextFactory;
 import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
+import spiffe.provider.X509SourceManager;
 import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.SSLContext;
@@ -46,9 +49,9 @@ public class HttpsServer {
     void run() throws IOException, KeyManagementException, NoSuchAlgorithmException {
         X509Source x509Source = null;
         try {
-            x509Source = X509Source.newSource();
-        } catch (SocketEndpointAddressException e) {
-            throw new RuntimeException(e);
+            x509Source = X509SourceManager.getX509Source();
+        } catch (SocketEndpointAddressException | X509SourceException e) {
+            throw new SpiffeProviderException(e);
         }
 
         val sslContextOptions = SslContextOptions

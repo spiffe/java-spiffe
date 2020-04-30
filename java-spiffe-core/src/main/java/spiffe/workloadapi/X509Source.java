@@ -11,6 +11,7 @@ import spiffe.bundle.x509bundle.X509BundleSet;
 import spiffe.bundle.x509bundle.X509BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.SocketEndpointAddressException;
+import spiffe.exception.X509ContextException;
 import spiffe.exception.X509SourceException;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
@@ -57,7 +58,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException if the source could not be initialized
      */
-    public static X509Source newSource() throws SocketEndpointAddressException {
+    public static X509Source newSource() throws SocketEndpointAddressException, X509SourceException {
         X509SourceOptions x509SourceOptions = X509SourceOptions.builder().build();
         return newSource(x509SourceOptions);
     }
@@ -75,7 +76,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException if the source could not be initialized
      */
-    public static X509Source newSource(@NonNull X509SourceOptions options) throws SocketEndpointAddressException {
+    public static X509Source newSource(@NonNull X509SourceOptions options) throws SocketEndpointAddressException, X509SourceException {
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }
@@ -149,7 +150,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
         return WorkloadApiClient.newClient(clientOptions);
     }
 
-    private void init() {
+    private void init() throws X509ContextException {
         X509Context x509Context = workloadApiClient.fetchX509Context();
         setX509Context(x509Context);
         setX509ContextWatcher();

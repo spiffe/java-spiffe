@@ -5,6 +5,12 @@ package spiffe.provider;
  */
 class SpiffeProviderConstants {
 
+    /**
+     * Security property to get the list of accepted SPIFFE IDs.
+     * This property is read in the java.security file
+     */
+    static final String SSL_SPIFFE_ACCEPT_PROPERTY = "ssl.spiffe.accept";
+
     // the name of this Provider implementation
     static final String PROVIDER_NAME = "Spiffe";
 

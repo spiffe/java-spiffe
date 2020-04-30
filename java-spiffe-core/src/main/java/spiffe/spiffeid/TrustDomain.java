@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static java.lang.String.format;
+import static spiffe.spiffeid.SpiffeId.SPIFFE_SCHEME;
 
 /**
  * A <code>TrustDomain</code> represents a normalized SPIFFE trust domain (e.g. domain.test).
@@ -33,15 +33,47 @@ public class TrustDomain {
      */
     public static TrustDomain of(@NonNull String trustDomain) {
         if (StringUtils.isBlank(trustDomain)) {
-            throw new IllegalArgumentException("Trust Domain cannot be empty");
+            throw new IllegalArgumentException("Trust domain cannot be empty");
         }
+
+        URI uri;
         try {
-            val uri = new URI(normalize(trustDomain));
-            val host = getHost(uri);
-            return new TrustDomain(host);
+            val normalized = normalize(trustDomain);
+            uri = new URI(normalized);
+            validateUri(uri);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(format("Unable to parse: %s", trustDomain), e);
+            throw new IllegalArgumentException(e.getMessage());
         }
+
+        val host = uri.getHost();
+        validateHost(host);
+        return new TrustDomain(host);
+    }
+
+    private static void validateHost(String host) {
+        if (StringUtils.isBlank(host)) {
+            throw new IllegalArgumentException("Trust domain cannot be empty");
+        }
+    }
+
+    private static void validateUri(URI uri) {
+        val scheme = uri.getScheme();
+        if (StringUtils.isNotBlank(scheme) && !SPIFFE_SCHEME.equals(scheme)) {
+            throw new IllegalArgumentException("Invalid scheme");
+        }
+
+        val port = uri.getPort();
+        if (port != -1) {
+            throw new IllegalArgumentException("Port is not allowed");
+        }
+    }
+
+    private static String normalize(String s) {
+        s = s.toLowerCase().trim();
+        if (!s.contains("://")) {
+            s = SPIFFE_SCHEME.concat("://").concat(s);
+        }
+        return s;
     }
 
     /**
@@ -52,16 +84,5 @@ public class TrustDomain {
     @Override
     public String toString() {
         return name;
-    }
-
-    private static String normalize(String s) {
-        return s.toLowerCase().trim();
-    }
-
-    private static String getHost(URI uri) {
-        if (StringUtils.isBlank(uri.getHost())) {
-            return uri.getPath();
-        }
-        return uri.getHost();
     }
 }

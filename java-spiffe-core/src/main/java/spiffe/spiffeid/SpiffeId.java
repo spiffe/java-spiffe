@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Value
 public class SpiffeId {
 
-    private static final String SPIFFE_SCHEMA = "spiffe";
+    public static final String SPIFFE_SCHEME = "spiffe";
 
     TrustDomain trustDomain;
 
@@ -60,7 +60,7 @@ public class SpiffeId {
 
         val uri = URI.create(spiffeIdAsString);
 
-        if (!SPIFFE_SCHEMA.equals(uri.getScheme())) {
+        if (!SPIFFE_SCHEME.equals(uri.getScheme())) {
             throw new IllegalArgumentException("Invalid SPIFFE schema");
         }
 
@@ -81,7 +81,7 @@ public class SpiffeId {
 
     @Override
     public String toString() {
-        return String.format("%s://%s%s", SPIFFE_SCHEMA, this.trustDomain.toString(), this.path);
+        return String.format("%s://%s%s", SPIFFE_SCHEME, this.trustDomain.toString(), this.path);
     }
 
     private static String normalize(String s) {
