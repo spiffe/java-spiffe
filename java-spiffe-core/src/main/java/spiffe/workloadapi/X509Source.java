@@ -142,7 +142,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
 
     }
 
-    private static WorkloadApiClient createClient(@NonNull X509Source.@NonNull X509SourceOptions options) throws SocketEndpointAddressException {
+    private static WorkloadApiClient createClient(@NonNull X509SourceOptions options) throws SocketEndpointAddressException {
         val clientOptions= WorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)
