@@ -13,7 +13,7 @@ public class BackoffPolicy {
     /**
      * Retry indefinitely, default behavior
      */
-    public static final int UNLIMITED_RETRIES = -1;
+    public static final int UNLIMITED_RETRIES = 0;
 
     private static final int BACKOFF_MULTIPLIER = 2;
 
@@ -45,10 +45,10 @@ public class BackoffPolicy {
 
     @Builder
     public BackoffPolicy(Duration initialDelay, Duration maxDelay, int maxRetries, UnaryOperator<Duration> backoffFunction) {
-        this.initialDelay = initialDelay;
-        this.maxDelay = maxDelay;
+        this.initialDelay = initialDelay != null ? initialDelay : Duration.ofSeconds(1);
+        this.maxDelay = maxDelay != null ? maxDelay : Duration.ofSeconds(60);
         this.maxRetries = maxRetries;
-        this.backoffFunction = backoffFunction;
+        this.backoffFunction = backoffFunction != null ? backoffFunction : d -> d.multipliedBy(BACKOFF_MULTIPLIER);
     }
 
     /**
