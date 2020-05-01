@@ -12,13 +12,14 @@ import spiffe.workloadapi.X509Source;
  * If the environment variable is not defined, it will throw an <code>IllegalStateException</code>.
  * If the X509Source cannot be initialized, it will throw a <code>RuntimeException</code>.
  * <p>
+ *
  * @implNote This Singleton needed to be able to handle a single {@link X509Source} instance
  * to be used by the {@link SpiffeKeyManagerFactory} and {@link SpiffeTrustManagerFactory} to inject it
  * in the {@link SpiffeKeyManager} and {@link SpiffeTrustManager} instances.
  */
 public class X509SourceManager {
 
-    private static volatile X509Source x509Source;
+    private static X509Source x509Source;
 
     private X509SourceManager() {
     }
@@ -31,17 +32,10 @@ public class X509SourceManager {
      * @throws X509SourceException            if the X509 source could not be initialized
      * @throws SocketEndpointAddressException is the socket endpoint address is not valid
      */
-    public static X509Source getX509Source() throws X509SourceException, SocketEndpointAddressException {
-        X509Source localRef = x509Source;
-        if (localRef == null) {
-            synchronized (X509SourceManager.class) {
-                localRef = x509Source;
-                if (localRef == null) {
-                    localRef = X509Source.newSource();
-                    x509Source = localRef;
-                }
-            }
+    public static synchronized X509Source getX509Source() throws X509SourceException, SocketEndpointAddressException {
+        if (x509Source == null) {
+            x509Source = X509Source.newSource();
         }
-        return localRef;
+        return x509Source;
     }
 }
