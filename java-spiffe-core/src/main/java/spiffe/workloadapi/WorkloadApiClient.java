@@ -59,7 +59,7 @@ public class WorkloadApiClient implements Closeable {
     // it is injected in each of the retryHandlers in the watch methods
     private final ScheduledExecutorService retryExecutor;
 
-    private ExecutorService executorService;
+    private final ExecutorService executorService;
 
     private boolean closed;
 
