@@ -1,7 +1,6 @@
 package spiffe.workloadapi;
 
 import io.grpc.Context;
-import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.Builder;
@@ -17,10 +16,7 @@ import spiffe.exception.X509ContextException;
 import spiffe.exception.X509SvidException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.jwtsvid.JwtSvid;
-import spiffe.workloadapi.internal.GrpcConversionUtils;
-import spiffe.workloadapi.internal.GrpcManagedChannelFactory;
-import spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc;
+import spiffe.workloadapi.internal.*;
 import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub;
 import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 import spiffe.workloadapi.retry.BackoffPolicy;
@@ -32,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
@@ -54,7 +51,7 @@ public class WorkloadApiClient implements Closeable {
 
     private final SpiffeWorkloadAPIStub workloadApiAsyncStub;
     private final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub;
-    private final ManagedChannel managedChannel;
+    private final ManagedChannelWrapper managedChannel;
     private final List<Context.CancellableContext> cancellableContexts;
     private final BackoffPolicy backoffPolicy;
 
@@ -62,18 +59,23 @@ public class WorkloadApiClient implements Closeable {
     // it is injected in each of the retryHandlers in the watch methods
     private final ScheduledExecutorService retryExecutor;
 
+    private ExecutorService executorService;
+
     private boolean closed;
 
     private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
                               SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                              ManagedChannel managedChannel,
-                              BackoffPolicy backoffPolicy, ScheduledExecutorService retryExecutor) {
+                              ManagedChannelWrapper managedChannel,
+                              BackoffPolicy backoffPolicy,
+                              ScheduledExecutorService retryExecutor,
+                              ExecutorService executorService) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
         this.managedChannel = managedChannel;
         this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
         this.backoffPolicy = backoffPolicy;
         this.retryExecutor = retryExecutor;
+        this.executorService = executorService;
     }
 
     /**
@@ -107,14 +109,20 @@ public class WorkloadApiClient implements Closeable {
             options.backoffPolicy = new BackoffPolicy();
         }
 
+        if (options.executorService == null) {
+            options.executorService = Executors.newCachedThreadPool();
+        }
+
         val socketEndpointAddress = Address.parseAddress(spiffeSocketPath);
-        val managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress);
+        val managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress, options.executorService);
         val workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
-                .newStub(managedChannel)
+                .newStub(managedChannel.getChannel())
+                .withExecutor(options.executorService)
                 .withInterceptors(new SecurityHeaderInterceptor());
 
         val workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
-                .newBlockingStub(managedChannel)
+                .newBlockingStub(managedChannel.getChannel())
+                .withExecutor(options.executorService)
                 .withInterceptors(new SecurityHeaderInterceptor());
 
         val retryExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -124,7 +132,8 @@ public class WorkloadApiClient implements Closeable {
                 workloadAPIBlockingStub,
                 managedChannel,
                 options.backoffPolicy,
-                retryExecutor);
+                retryExecutor,
+                options.executorService);
     }
 
     /**
@@ -237,7 +246,8 @@ public class WorkloadApiClient implements Closeable {
     }
 
     /**
-     * Closes this Workload API closing the underlying channel and cancelling the contexts.
+     * Closes this Workload API closing the underlying channel,
+     * cancelling the contexts and shutdown the executor service.
      */
     @Override
     public void close() {
@@ -248,11 +258,12 @@ public class WorkloadApiClient implements Closeable {
                 for (val context : cancellableContexts) {
                     context.close();
                 }
-                managedChannel.shutdown();
+                managedChannel.close();
                 retryExecutor.shutdown();
+                executorService.shutdown();
             }
         }
-        log.log(Level.FINE, "WorkloadAPI client is closed");
+        log.log(Level.INFO, "WorkloadAPI client is closed");
     }
 
     private X509SVIDRequest newX509SvidRequest() {
@@ -279,11 +290,13 @@ public class WorkloadApiClient implements Closeable {
     public static class ClientOptions {
         String spiffeSocketPath;
         BackoffPolicy backoffPolicy;
+        ExecutorService executorService;
 
         @Builder
-        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy) {
+        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy, ExecutorService executorService) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.backoffPolicy = backoffPolicy;
+            this.executorService = executorService;
         }
     }
 }
