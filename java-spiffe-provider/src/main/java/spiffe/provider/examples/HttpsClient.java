@@ -39,7 +39,7 @@ public class HttpsClient {
     int serverPort;
 
     public static void main(String[] args) {
-        String spiffeSocket = "unix:/tmp/agent2.sock";
+        String spiffeSocket = "unix:/tmp/agent.sock";
         HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, HttpsClient::listOfSpiffeIds);
         try {
             httpsClient.run();

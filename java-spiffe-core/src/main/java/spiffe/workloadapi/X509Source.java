@@ -58,10 +58,11 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      * Creates a new X.509 source. It blocks until the initial update
      * has been received from the Workload API or until the timeout configured
      * through the system property `spiffe.newX509Source.timeout` expires.
+     * If no timeout is configured, it blocks until it gets a X.509 update from the Workload API.
      * <p>
      * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      * <p>
-     * It uses the default X.509 SVID.
+     * It uses the default X.509 SVID (picks the first SVID that comes in the Workload API response).
      *
      * @return an instance of {@link X509Source}, with the svid and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
@@ -78,7 +79,7 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      * <p>
      * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      * <p>
-     * It uses the default X.509 SVID.
+     * It uses the default X.509 SVID (picks the first SVID that comes in the Workload API response).
      *
      * @param timeout Time to wait for the X509 context update. If the timeout is Zero, it will wait indefinitely.
      * @return an instance of {@link X509Source}, with the svid and bundles initialized
@@ -92,7 +93,25 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
 
     /**
      * Creates a new X.509 source. It blocks until the initial update
-     * has been received from the Workload API.
+     * has been received from the Workload API or until the timeout configured
+     * through the system property `spiffe.newX509Source.timeout` expires.
+     * If no timeout is configured, it blocks until it gets a X.509 update from the Workload API.
+     * <p>
+     * The {@link WorkloadApiClient} can be provided in the options, if it is not, a new client is created.
+     *
+     * @param options {@link X509SourceOptions}
+     * @return an instance of {@link X509Source}, with the svid and bundles initialized
+     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
+     * @throws X509SourceException            if the source could not be initialized
+     */
+    public static X509Source newSource(X509SourceOptions options) throws SocketEndpointAddressException, X509SourceException {
+        return newSource(options, DEFAULT_TIMEOUT);
+    }
+
+    /**
+     * Creates a new X.509 source. It blocks until the initial update
+     * has been received from the Workload API, doing retries with a backoff exponential policy,
+     * or the timeout has expired.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
