@@ -170,9 +170,10 @@ public class WorkloadApiClient implements Closeable {
             public void onNext(X509SVIDResponse value) {
                 try {
                     X509Context x509Context = GrpcConversionUtils.toX509Context(value);
+                    validateX509Context(x509Context);
                     watcher.onUpdate(x509Context);
                     retryHandler.reset();
-                } catch (CertificateException | X509SvidException e) {
+                } catch (CertificateException | X509SvidException | X509ContextException e) {
                     watcher.onError(new X509ContextException("Error processing X509 Context update", e));
                 }
             }
@@ -198,6 +199,18 @@ public class WorkloadApiClient implements Closeable {
                 watcher.onError(new X509ContextException("Unexpected completed stream"));
             }
         };
+    }
+
+    // validates that the X509 context has both the SVID and the bundles
+    private void validateX509Context(X509Context x509Context) throws X509ContextException {
+        if (x509Context.getX509BundleSet() == null || x509Context.getX509BundleSet().getBundles() == null ||
+                x509Context.getX509BundleSet().getBundles().isEmpty()) {
+            throw new X509ContextException("X509 context error: no X.509 bundles found");
+        }
+
+        if (x509Context.getX509Svid() == null || x509Context.getX509Svid().isEmpty()) {
+            throw new X509ContextException("X509 context error: no X.509 SVID found");
+        }
     }
 
     /**
