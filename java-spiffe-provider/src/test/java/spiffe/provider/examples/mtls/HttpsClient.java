@@ -1,4 +1,4 @@
-package spiffe.provider.examples;
+package spiffe.provider.examples.mtls;
 
 import lombok.val;
 import spiffe.exception.SocketEndpointAddressException;
@@ -6,6 +6,7 @@ import spiffe.exception.X509SourceException;
 import spiffe.provider.SpiffeSslContextFactory;
 import spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
 import spiffe.spiffeid.SpiffeId;
+import spiffe.spiffeid.SpiffeIdUtils;
 import spiffe.workloadapi.X509Source;
 import spiffe.workloadapi.X509Source.X509SourceOptions;
 
@@ -13,15 +14,11 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Example of a simple HTTPS Client backed by the Workload API to get the X.509 Certificates
@@ -76,12 +73,9 @@ public class HttpsClient {
     }
 
     static List<SpiffeId> listOfSpiffeIds() {
-        Path path = Paths.get("java-spiffe-provider/src/main/java/spiffe/provider/examples/spiffeIds.txt");
-        try (Stream<String> lines = Files.lines(path)) {
-            return lines
-                    .map(SpiffeId::parse)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
+        try {
+            return SpiffeIdUtils.getSpiffeIdListFromFile(Paths.get("java-spiffe-provider/src/test/java/spiffe/provider/examples/mtls/spiffeIds.txt"));
+        } catch (IOException e) {
             throw new RuntimeException("Error getting list of spiffeIds", e);
         }
     }

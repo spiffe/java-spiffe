@@ -38,7 +38,7 @@ Supplier of accepted SPIFFE IDs list can be provided as part of the `SslContextO
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
 ```
 
-See [HttpsClient example](src/main/java/spiffe/provider/examples/HttpsClient.java) that defines a Supplier for providing
+See [HttpsClient example](src/test/java/spiffe/provider/examples/mtls/HttpsClient.java) that defines a Supplier for providing
 the list of SPIFFE IDs from a file.
 
 ## Plug Java SPIFFE Provider into Java Security
@@ -52,6 +52,11 @@ security.provider.<n>=<className>
 ```
 
 This declares a provider, and specifies its preference order n.
+
+### Copy the JAR to the JVM extensions
+
+For installing the JAR file containing the provider classes as a bundled extension in the java platform, 
+copy build/libs/spiffe-provider-<version>-all.jar to <java-home>/jre/lib/ext
 
 #### Register the SPIFFE Provider
 
@@ -82,13 +87,6 @@ To pass your custom security properties file through the command line via system
 
 ```
 -Djava.security.properties=<path to java.security>
-```
-
-For example, it can be passed in the `JAVA_OPTS` used by the Tomcat's startup script: 
-
-```
-$ export JAVA_OPTS="$JAVA_OPTS -Djava.security.properties=java.security"
-$ ./catalina.sh run
 ```
 
 The properties defined in your custom properties file will override the properties in the master file. 

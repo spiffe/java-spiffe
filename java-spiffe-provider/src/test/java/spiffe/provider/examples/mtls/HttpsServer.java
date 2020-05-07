@@ -1,4 +1,4 @@
-package spiffe.provider.examples;
+package spiffe.provider.examples.mtls;
 
 import lombok.val;
 import spiffe.exception.SocketEndpointAddressException;
