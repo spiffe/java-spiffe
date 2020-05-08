@@ -2,7 +2,7 @@
 
 Core functionality to fetch X509 and JWT SVIDs from the Workload API.
 
-## X509Source
+## X509 source creation
 
 A `spiffe.workloadapi.X509Source` represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
 
@@ -22,7 +22,19 @@ the updates from the Workload API. This watcher performs retries if at any time 
 reports an error.
 
 The socket endpoint address is configured through the environment variable `SPIFFE_ENDPOINT_SOCKET`. Another way to
-configure it is by providing a `X509SourceOptions` instance to the `newSource` method.
+configure it is by providing a `X509SourceOptions` instance to the `newSource` method:
+
+```
+    X509Source.X509SourceOptions x509SourceOptions = X509Source.X509SourceOptions
+            .builder()
+            .spiffeSocketPath("unix:/tmp/agent-other.sock")
+            .picker(list -> list.get(list.size()-1))
+            .build();
+    
+    X509Source x509Source = X509Source.newSource(x509SourceOptions);
+```
+
+It allows to configure another SVID picker. By default, the first SVID is used. 
 
 ### Configure a timeout for X509Source initialization 
 

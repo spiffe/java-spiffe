@@ -65,10 +65,10 @@ You can extend and override the master security properties file.
 Create a file `java.security` with the following content:
 
 ```
+# Add the spiffe provider, change the <n> for the correct consecutive number
 security.provider.<n>=spiffe.provider.SpiffeProvider
 
-# Determines the default key and trust manager factory algorithms for
-# the javax.net.ssl package.
+# Configure the default KeyManager and TrustManager factory algorithms 
 ssl.KeyManagerFactory.algorithm=Spiffe
 ssl.TrustManagerFactory.algorithm=Spiffe
 
@@ -103,6 +103,8 @@ export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
 
 ### Configure a Tomcat connector
 
+Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
+
 A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as follows: 
 
 ```
@@ -113,6 +115,75 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
             keystoreFile="" keystorePass=""
             keystoreType="Spiffe"
             clientAuth="true" sslProtocol="TLS"/>
+```
+
+### Create mTLS GRPC server and client
+
+Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
+
+A GRPC Server using a SSL context backed by the Workload API:
+
+```
+    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM, SpiffeProviderConstants.PROVIDER_NAME);
+    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM, SpiffeProviderConstants.PROVIDER_NAME);
+
+    SslContextBuilder sslContextBuilder =
+            SslContextBuilder
+                    .forServer(keyManagerFactory)
+                    .trustManager(trustManagerFactory);
+
+    Server server = NettyServerBuilder.forPort(9000)
+            .sslContext(GrpcSslContexts.configure(sslContextBuilder)
+                    .clientAuth(ClientAuth.REQUIRE)
+                    .build())
+            .build();
+
+    server.start();
+```
+
+The following alternative does not need the configuration through the `java.security`.
+
+The `SpiffeKeyManager` and `SpiffeTrustManager` can be created without resorting to factories, providing the constructors
+with a [X509Source instance](../java-spiffe-core/README.md#x509source).
+
+```
+    // create a new X509 source using the default socket endpoint address
+    X509Source x509Source = X509Source.newSource();
+    KeyManager keyManager = new SpiffeKeyManager(x509Source);
+
+    // TrustManager gets the X509Source and the supplier of the list of accepted SPIFFE IDs.
+    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toListOfSpiffeIds("spiffe://example.org/workload-client", ','));
+
+    SslContextBuilder sslContextBuilder =
+            SslContextBuilder
+            .forServer(keyManager)
+            .trustManager(trustManager);
+
+    Server server = NettyServerBuilder.forPort(9000)
+            .addService(new GreetingServiceImpl())
+            .sslContext(GrpcSslContexts.configure(sslContextBuilder)
+                    .clientAuth(ClientAuth.REQUIRE)
+                    .build())
+            .build();
+``` 
+
+For the client, a ManagedChannel would be created using the `SpiffeKeyManager` and `SpiffeTrustManager` for configuring 
+the GRPC SSL context, analogous to the config for the Server:
+
+``` 
+    X509Source x509Source = X509Source.newSource();
+    KeyManager keyManager = new SpiffeKeyManager(x509Source);
+    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toListOfSpiffeIds("spiffe://example.org/workload-server", ','));
+
+    SslContextBuilder sslContextBuilder = SslContextBuilder
+            .forClient()
+            .trustManager(trustManager)
+            .keyManager(keyManager)
+            .clientAuth(ClientAuth.REQUIRE);
+    
+    ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", 9000)
+            .sslContext(GrpcSslContexts.configure(sslContextBuilder).build())
+            .build();
 ```
 
 ## References 
