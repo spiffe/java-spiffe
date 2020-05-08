@@ -17,10 +17,6 @@ public class SecurityHeaderInterceptor implements ClientInterceptor {
                 Metadata.Key<String> headerKey = Metadata.Key.of(SECURITY_HEADER, Metadata.ASCII_STRING_MARSHALLER);
                 headers.put(headerKey, "true");
                 super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {
-                    @Override
-                    public void onHeaders(Metadata headers) {
-                        super.onHeaders(headers);
-                    }
                 }, headers);
             }
         };
