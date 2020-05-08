@@ -25,7 +25,7 @@ public class RetryHandler {
      * Updates the next delay and retries count
      */
     public void scheduleRetry(Runnable runnable) {
-        if (backoffPolicy.doNotExceedMaxRetries(retryCount)) {
+        if (backoffPolicy.didNotReachMaxRetries(retryCount)) {
             executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
             nextDelay = backoffPolicy.nextDelay(nextDelay);
             retryCount++;

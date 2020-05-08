@@ -67,13 +67,13 @@ public class BackoffPolicy {
     }
 
     /**
-     * Returns true if the RetryPolicy is configure with UNLIMITED_RETRIES
+     * Returns true if the RetryPolicy is configured with UNLIMITED_RETRIES
      * or if the retriesCount param is lower than the maxRetries
      *
      * @param retriesCount the current number of retries
      * @return
      */
-    public boolean doNotExceedMaxRetries(int retriesCount) {
+    public boolean didNotReachMaxRetries(int retriesCount) {
         return (maxRetries == UNLIMITED_RETRIES || retriesCount < maxRetries);
     }
 }

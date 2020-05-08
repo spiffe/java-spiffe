@@ -1,7 +1,6 @@
 package spiffe.internal;
 
 import lombok.val;
-import lombok.var;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 
@@ -160,11 +159,11 @@ public class CertificateUtils {
 
     // Given a private key in PEM format, encode it as DER
     private static byte[] toDerFormat(byte[] privateKeyPem) {
-        var privateKey = new String(privateKeyPem);
-        privateKey = privateKey.replaceAll("(-+BEGIN PRIVATE KEY-+\\r?\\n|-+END PRIVATE KEY-+\\r?\\n?)", "");
-        privateKey = privateKey.replaceAll("\n", "");
+        String privateKeyAsString = new String(privateKeyPem);
+        privateKeyAsString = privateKeyAsString.replaceAll("(-+BEGIN PRIVATE KEY-+\\r?\\n|-+END PRIVATE KEY-+\\r?\\n?)", "");
+        privateKeyAsString = privateKeyAsString.replaceAll("\n", "");
         val decoder = Base64.getDecoder();
-        return decoder.decode(privateKey);
+        return decoder.decode(privateKeyAsString);
     }
 
     private CertificateUtils() {}
