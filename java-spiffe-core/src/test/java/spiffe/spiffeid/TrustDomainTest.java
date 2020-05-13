@@ -1,5 +1,6 @@
 package spiffe.spiffeid;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -31,7 +32,7 @@ public class TrustDomainTest {
 
     @ParameterizedTest
     @MethodSource("provideTestTrustDomain")
-    void parseAddressInvalid(String input, Object expected) {
+    void parseTrustDomain(String input, Object expected) {
         TrustDomain result = null;
         try {
             result = TrustDomain.of(input);
@@ -39,5 +40,14 @@ public class TrustDomainTest {
         } catch (Exception e) {
             assertEquals(expected, e.getMessage());
         }
+    }
+
+    @Test
+    void newSpiffeId() {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("path1", "host");
+
+        assertEquals(trustDomain, spiffeId.getTrustDomain());
+        assertEquals("/path1/host", spiffeId.getPath());
     }
 }

@@ -50,6 +50,10 @@ public class TrustDomain {
         return new TrustDomain(host);
     }
 
+    public SpiffeId newSpiffeId(String ...path) {
+        return SpiffeId.of(this, path);
+    }
+
     private static void validateHost(String host) {
         if (StringUtils.isBlank(host)) {
             throw new IllegalArgumentException("Trust domain cannot be empty");

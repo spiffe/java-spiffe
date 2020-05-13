@@ -14,7 +14,7 @@ public class AddressTest {
 
     @ParameterizedTest
     @MethodSource("provideTestAddress")
-    void parseAddressInvalid(String input, Object expected) {
+    void parseAddress(String input, Object expected) {
         URI result = null;
         try {
             result = Address.parseAddress(input);
