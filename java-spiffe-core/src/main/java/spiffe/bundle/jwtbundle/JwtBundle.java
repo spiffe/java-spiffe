@@ -3,13 +3,15 @@ package spiffe.bundle.jwtbundle;
 import lombok.NonNull;
 import lombok.Value;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
+import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
 import java.nio.file.Path;
 import java.security.PublicKey;
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A <code>JwtBundle</code> represents a collection of trusted JWT authorities for a trust domain.
@@ -21,9 +23,14 @@ public class JwtBundle implements JwtBundleSource {
 
     Map<String, PublicKey> jwtAuthorities;
 
-    private JwtBundle(TrustDomain trustDomain, Map<String, PublicKey> jwtAuthorities) {
+    public JwtBundle(@NonNull TrustDomain trustDomain, @NonNull Map<String, PublicKey> jwtAuthorities) {
         this.trustDomain = trustDomain;
-        this.jwtAuthorities = jwtAuthorities;
+        this.jwtAuthorities = new ConcurrentHashMap<>(jwtAuthorities);
+    }
+
+    public JwtBundle(@NonNull TrustDomain trustDomain) {
+        this.trustDomain = trustDomain;
+        this.jwtAuthorities = new ConcurrentHashMap<>();
     }
 
     /**
@@ -80,14 +87,26 @@ public class JwtBundle implements JwtBundleSource {
     }
 
     /**
-     * Finds the JWT key with the given key id from the bundle. If the key
-     * is found, it returns an Optional wrapping the key. Otherwise,
-     * it returns an Optional.empty().
+     * Finds the JWT key with the given key id from the bundle.
      *
      * @param keyId the Key ID
-     * @return an {@link Optional} containing a {@link PublicKey}.
+     * @return {@link PublicKey} representing the Authority associated to the KeyID.
+     *
+     * @throws AuthorityNotFoundException if no Authority is found associated to the Key ID
      */
-    public Optional<PublicKey> findJwtAuthority(String keyId)  {
-        throw new NotImplementedException("Not implemented");
+    public PublicKey findJwtAuthority(String keyId) throws AuthorityNotFoundException {
+        PublicKey key = jwtAuthorities.get(keyId);
+        if (key != null) {
+            return key;
+        }
+        throw new AuthorityNotFoundException(String.format("No authority found for the trust domain %s and key id %s", this.trustDomain, keyId));
+    }
+
+    public void addJWTAuthority(String keyId, PublicKey jwtAuthority) {
+        if (StringUtils.isBlank(keyId)) {
+            throw new IllegalArgumentException("KeyId cannot be empty");
+        }
+
+        jwtAuthorities.put(keyId, jwtAuthority);
     }
 }
