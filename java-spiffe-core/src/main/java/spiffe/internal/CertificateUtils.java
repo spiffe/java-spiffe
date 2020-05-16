@@ -5,15 +5,15 @@ import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 
 import java.io.ByteArrayInputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
+import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
@@ -25,9 +25,19 @@ public class CertificateUtils {
 
     private static final String SPIFFE_PREFIX = "spiffe://";
     private static final int SAN_VALUE_INDEX = 1;
-    private static final String PRIVATE_KEY_ALGORITHM = "EC";
     private static final String PUBLIC_KEY_INFRASTRUCTURE_ALGORITHM = "PKIX";
     private static final String X509_CERTIFICATE_TYPE = "X.509";
+
+    // X509Certificate Key Usage indexes
+    private static final int DIGITAL_SIGNATURE = 0;
+    private static final int NON_REPUDIATION = 1;
+    private static final int KEY_ENCIPHERMENT = 2;
+    private static final int DATA_ENCIPHERMENT = 3;
+    private static final int KEY_AGREEMENT = 4;
+    private static final int KEY_CERT_SIGN = 5;
+    private static final int CRL_SIGN = 6;
+    private static final int ENCIPHER_ONLY = 7;
+    private static final int DECIPHER_ONLY = 8;
 
     /**
      * Generate a list of X.509 certificates from a byte array.
@@ -35,11 +45,20 @@ public class CertificateUtils {
      * @param input as byte array representing a list of X.509 certificates, as a DER or PEM
      * @return a List of {@link X509Certificate}
      */
-    public static List<X509Certificate> generateCertificates(byte[] input) throws CertificateException {
-        val certificateFactory = getCertificateFactory();
+    public static List<X509Certificate> generateCertificates(byte[] input) throws CertificateParsingException {
+        CertificateFactory certificateFactory = null;
+        try {
+            certificateFactory = getCertificateFactory();
+        } catch (CertificateException e) {
+            throw new IllegalStateException("Could not create Certificate Factory", e);
+        }
 
-        val certificates = certificateFactory
-                .generateCertificates(new ByteArrayInputStream(input));
+        Collection<? extends Certificate> certificates;
+        try {
+            certificates = certificateFactory.generateCertificates(new ByteArrayInputStream(input));
+        } catch (CertificateException e) {
+            throw new CertificateParsingException("Certificate could not be parsed from cert bytes");
+        }
 
         return certificates.stream()
                 .map(X509Certificate.class::cast)
@@ -54,7 +73,7 @@ public class CertificateUtils {
      * @throws InvalidKeySpecException
      * @throws NoSuchAlgorithmException
      */
-    public static PrivateKey generatePrivateKey(byte[] privateKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException {
+    public static PrivateKey generatePrivateKey(byte[] privateKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(privateKeyBytes);
         PrivateKey privateKey = null;
         try {
@@ -103,7 +122,7 @@ public class CertificateUtils {
         }
 
         if (spiffeIds.size() < 1) {
-            throw new CertificateException("No SPIFFE ID found in the certificate");
+            throw new CertificateException("Certificate does not contain SPIFFE ID in the URI SAN");
         }
 
         return SpiffeId.parse(spiffeIds.get(0));
@@ -114,12 +133,61 @@ public class CertificateUtils {
      *
      * @param chain a list of {@link X509Certificate}
      * @return a {@link TrustDomain}
-     *
      * @throws CertificateException
      */
     public static TrustDomain getTrustDomain(List<X509Certificate> chain) throws CertificateException {
         val spiffeId = getSpiffeId(chain.get(0));
         return spiffeId.getTrustDomain();
+    }
+
+    /**
+     * Validates that the private key and the public key in the x509Certificate match by
+     * creating a signature with the private key and verifying with the public key.
+     *
+     * @throws InvalidKeyException if the keys don't match
+     */
+    public static void validatePrivateKey(PrivateKey privateKey, X509Certificate x509Certificate) throws InvalidKeyException, NoSuchAlgorithmException, SignatureException {
+        // create a challenge
+        byte[] challenge = new byte[1000];
+        ThreadLocalRandom.current().nextBytes(challenge);
+
+        Signature sig = null;
+
+        if ("RSA".equals(privateKey.getAlgorithm())) {
+            sig = Signature.getInstance("SHA256withRSA");
+        } else {
+            sig = Signature.getInstance("SHA1withECDSA");
+        }
+
+        sig.initSign(privateKey);
+        sig.update(challenge);
+        byte[] signature = sig.sign();
+
+        sig.initVerify(x509Certificate.getPublicKey());
+        sig.update(challenge);
+
+        if (!sig.verify(signature)) {
+            throw new InvalidKeyException("Private Key does not match Certificate Public Key");
+        }
+    }
+
+    public static boolean isCA(X509Certificate cert) {
+        return cert.getBasicConstraints() != -1;
+    }
+
+    public static boolean hasKeyUsageCertSign(X509Certificate cert) {
+        boolean[] keyUsage = cert.getKeyUsage();
+        return keyUsage[KEY_CERT_SIGN];
+    }
+
+    public static boolean hasKeyUsageDigitalSignature(X509Certificate cert) {
+        boolean[] keyUsage = cert.getKeyUsage();
+        return keyUsage[DIGITAL_SIGNATURE];
+    }
+
+    public static boolean hasKeyUsageCRLSign(X509Certificate cert) {
+        boolean[] keyUsage = cert.getKeyUsage();
+        return keyUsage[CRL_SIGN];
     }
 
     private static List<String> getSpiffeIds(X509Certificate certificate) throws CertificateParsingException {
@@ -131,7 +199,11 @@ public class CertificateUtils {
     }
 
     private static PrivateKey generatePrivateKeyWithSpec(PKCS8EncodedKeySpec kspec) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        return KeyFactory.getInstance(PRIVATE_KEY_ALGORITHM).generatePrivate(kspec);
+        try {
+            return KeyFactory.getInstance("EC").generatePrivate(kspec);
+        } catch (InvalidKeySpecException e) {
+            return KeyFactory.getInstance("RSA").generatePrivate(kspec);
+        }
     }
 
     // Create an instance of PKIXParameters used as input for the PKIX CertPathValidator
@@ -158,13 +230,18 @@ public class CertificateUtils {
     }
 
     // Given a private key in PEM format, encode it as DER
-    private static byte[] toDerFormat(byte[] privateKeyPem) {
+    private static byte[] toDerFormat(byte[] privateKeyPem) throws InvalidKeyException {
         String privateKeyAsString = new String(privateKeyPem);
         privateKeyAsString = privateKeyAsString.replaceAll("(-+BEGIN PRIVATE KEY-+\\r?\\n|-+END PRIVATE KEY-+\\r?\\n?)", "");
         privateKeyAsString = privateKeyAsString.replaceAll("\n", "");
         val decoder = Base64.getDecoder();
-        return decoder.decode(privateKeyAsString);
+        try {
+            return decoder.decode(privateKeyAsString);
+        } catch (Exception e) {
+            throw new InvalidKeyException(e);
+        }
     }
 
-    private CertificateUtils() {}
+    private CertificateUtils() {
+    }
 }
