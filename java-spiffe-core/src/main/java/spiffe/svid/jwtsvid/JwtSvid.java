@@ -54,6 +54,13 @@ public class JwtSvid {
      */
     String token;
 
+    JwtSvid(SpiffeId spiffeId, List<String> audience, Date expiry, Map<String, Object> claims, String token) {
+        this.spiffeId = spiffeId;
+        this.audience = audience;
+        this.expiry = expiry;
+        this.claims = claims;
+        this.token = token;
+    }
 
     /**
      * Parses and validates a JWT-SVID token and returns the
@@ -138,6 +145,21 @@ public class JwtSvid {
         return new JwtSvid(spiffeId, aud, claims.getExpiration(), claims, token);
     }
 
+    /**
+     * Returns the JWT-SVID marshaled to a string. The returned value is
+     * the same token value originally passed to parseAndValidate.
+     *
+     * @return the token
+     */
+    public String marshall() {
+        return token;
+    }
+
+    public Date getExpiry() {
+        // defensive copying to prevent exposing a mutable object
+        return new Date(expiry.getTime());
+    }
+
     private static void verifySignature(@NonNull String token, String keyId, PublicKey jwtAuthority) throws JwtSvidException {
         JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(jwtAuthority).build();
         try {
@@ -190,15 +212,5 @@ public class JwtSvid {
         } catch (Exception e) {
             throw new IllegalArgumentException("Unable to parse JWT token", e);
         }
-    }
-
-    /**
-     * Returns the JWT-SVID marshaled to a string. The returned value is
-     * the same token value originally passed to parseAndValidate.
-     *
-     * @return the token
-     */
-    public String marshall() {
-        return token;
     }
 }
