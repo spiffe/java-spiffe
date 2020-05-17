@@ -11,6 +11,8 @@ import spiffe.svid.x509svid.X509Svid;
 import spiffe.svid.x509svid.X509SvidSource;
 
 import javax.net.ssl.X509KeyManager;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 
@@ -27,13 +29,13 @@ public class SpiffeKeyManagerTest {
     X509Svid x509Svid;
 
     @BeforeEach
-    void setup() throws X509SvidException {
+    void setup() throws X509SvidException, URISyntaxException {
         MockitoAnnotations.initMocks(this);
         keyManager = (X509KeyManager) new SpiffeKeyManagerFactory().engineGetKeyManagers(x509SvidSource)[0];
         x509Svid = X509Svid
                 .load(
-                        Paths.get("../testdata/x509cert.pem"),
-                        Paths.get("../testdata/pkcs8key.pem"));
+                        Paths.get(loadResource("testdata/cert.pem")),
+                        Paths.get(loadResource("testdata/key.pem")));
     }
 
     @Test
@@ -56,5 +58,9 @@ public class SpiffeKeyManagerTest {
         val privateKey = keyManager.getPrivateKey(DEFAULT_ALIAS);
 
         assertNotNull(privateKey);
+    }
+
+    private URI loadResource(String path) throws URISyntaxException {
+        return getClass().getClassLoader().getResource(path).toURI();
     }
 }

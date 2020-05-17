@@ -16,6 +16,8 @@ import spiffe.svid.x509svid.X509Svid;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -37,19 +39,19 @@ public class SpiffeTrustManagerTest {
     X509TrustManager trustManager;
 
     @BeforeAll
-    static void setupClass() throws IOException, CertificateException, X509SvidException {
+    static void setupClass() throws IOException, CertificateException, X509SvidException, URISyntaxException {
         x509Svid = X509Svid
                 .load(
-                        Paths.get("../testdata/x509cert.pem"),
-                        Paths.get("../testdata/pkcs8key.pem"));
+                        Paths.get(loadResource("testdata/cert.pem")),
+                        Paths.get(loadResource("testdata/key.pem")));
         otherX509Svid = X509Svid
                 .load(
-                        Paths.get("../testdata/x509cert_other.pem"),
-                        Paths.get("../testdata/key_other.pem"));
+                        Paths.get(loadResource("testdata/cert2.pem")),
+                        Paths.get(loadResource("testdata/key2.pem")));
         x509Bundle = X509Bundle
                 .load(
                         TrustDomain.of("example.org"),
-                        Paths.get("../testdata/bundle.pem"));
+                        Paths.get(loadResource("testdata/bundle.pem")));
     }
 
     @BeforeEach
@@ -181,5 +183,9 @@ public class SpiffeTrustManagerTest {
         } catch (CertificateException e) {
             assertTrue(e.getMessage().contains("CertPathValidatorException: Path does not chain with any of the trust anchors"));
         }
+    }
+
+    private static URI loadResource(String path) throws URISyntaxException {
+        return SpiffeTrustManagerTest.class.getClassLoader().getResource(path).toURI();
     }
 }

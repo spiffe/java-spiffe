@@ -1,5 +1,6 @@
 package spiffe.internal;
 
+import lombok.NonNull;
 import lombok.val;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
@@ -45,7 +46,11 @@ public class CertificateUtils {
      * @param input as byte array representing a list of X.509 certificates, as a DER or PEM
      * @return a List of {@link X509Certificate}
      */
-    public static List<X509Certificate> generateCertificates(byte[] input) throws CertificateParsingException {
+    public static List<X509Certificate> generateCertificates(@NonNull byte[] input) throws CertificateParsingException {
+        if (input.length == 0) {
+            throw new CertificateParsingException("No certificates found");
+        }
+
         CertificateFactory certificateFactory = null;
         try {
             certificateFactory = getCertificateFactory();

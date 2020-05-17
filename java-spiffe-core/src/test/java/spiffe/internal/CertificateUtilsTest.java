@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import spiffe.spiffeid.SpiffeId;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
@@ -20,8 +22,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class CertificateUtilsTest {
 
     @Test
-    void generateCertificates_ofPEMByteArray_returnsListWithOneX509Certificate() throws IOException {
-        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
+    void generateCertificates_ofPEMByteArray_returnsListWithOneX509Certificate() throws IOException, URISyntaxException {
+        val path = Paths.get(loadResource("testdata/internal/cert.pem"));
+        val certBytes = Files.readAllBytes(path);
 
         List<X509Certificate> x509CertificateList = null;
         SpiffeId spiffeId = null;
@@ -36,9 +39,12 @@ public class CertificateUtilsTest {
     }
 
     @Test
-    void validate_certificateThatIsExpired_throwsCertificateException() throws IOException, CertificateException {
-        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert_other.pem"));
-        val bundleBytes = Files.readAllBytes(Paths.get("../testdata/bundle_other.pem"));
+    void validate_certificateThatIsExpired_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
+        val certPath = Paths.get(loadResource("testdata/internal/cert2.pem"));
+        val certBundle = Paths.get(loadResource("testdata/internal/bundle.pem"));
+
+        val certBytes = Files.readAllBytes(certPath);
+        val bundleBytes = Files.readAllBytes(certBundle);
 
         val chain = CertificateUtils.generateCertificates(certBytes);
         val trustedCert = CertificateUtils.generateCertificates(bundleBytes);
@@ -49,5 +55,9 @@ public class CertificateUtilsTest {
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertPathValidatorException e) {
             assertEquals("validity check failed", e.getMessage());
         }
+    }
+
+    private URI loadResource(String path) throws URISyntaxException {
+        return getClass().getClassLoader().getResource(path).toURI();
     }
 }

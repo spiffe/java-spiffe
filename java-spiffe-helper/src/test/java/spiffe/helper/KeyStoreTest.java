@@ -11,6 +11,8 @@ import spiffe.svid.x509svid.X509Svid;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,11 +35,11 @@ public class KeyStoreTest {
 
 
     @BeforeEach
-    void setup() throws X509SvidException {
+    void setup() throws X509SvidException, URISyntaxException {
         x509Svid = X509Svid
                 .load(
-                        Paths.get("../testdata/x509cert.pem"),
-                        Paths.get("../testdata/pkcs8key.pem")
+                        Paths.get(loadResource("testdata/x509cert.pem")),
+                        Paths.get(loadResource("testdata/pkcs8key.pem"))
                 );
     }
 
@@ -95,4 +97,7 @@ public class KeyStoreTest {
         }
     }
 
+    private URI loadResource(String path) throws URISyntaxException {
+        return getClass().getClassLoader().getResource(path).toURI();
+    }
 }

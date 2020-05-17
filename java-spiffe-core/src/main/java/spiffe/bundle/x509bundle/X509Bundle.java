@@ -9,11 +9,13 @@ import spiffe.spiffeid.TrustDomain;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A <code>X509Bundle</code> represents a collection of trusted X.509 authorities for a trust domain.
@@ -24,9 +26,15 @@ public class X509Bundle implements X509BundleSource {
     TrustDomain trustDomain;
     Set<X509Certificate> x509Authorities;
 
-    private X509Bundle(final TrustDomain trustDomain, final Set<X509Certificate> x509Authorities) {
+    public X509Bundle(@NonNull final TrustDomain trustDomain) {
         this.trustDomain = trustDomain;
-        this.x509Authorities = x509Authorities;
+        this.x509Authorities = ConcurrentHashMap.newKeySet();
+    }
+
+    public X509Bundle(@NonNull final TrustDomain trustDomain, @NonNull final Set<X509Certificate> x509Authorities) {
+        this.trustDomain = trustDomain;
+        this.x509Authorities = ConcurrentHashMap.newKeySet();
+        this.x509Authorities.addAll(x509Authorities);
     }
 
     /**
@@ -41,7 +49,12 @@ public class X509Bundle implements X509BundleSource {
      * @throws CertificateException if the bundle cannot be parsed
      */
     public static X509Bundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) throws IOException, CertificateException {
-        val bundleBytes = Files.readAllBytes(bundlePath);
+        byte[] bundleBytes = new byte[0];
+        try {
+            bundleBytes = Files.readAllBytes(bundlePath);
+        } catch (NoSuchFileException e) {
+            throw new IOException("Unable to load X.509 bundle file");
+        }
         val x509Certificates = CertificateUtils.generateCertificates(bundleBytes);
         val x509CertificateSet = new HashSet<>(x509Certificates);
         return new X509Bundle(trustDomain, x509CertificateSet);
@@ -78,5 +91,26 @@ public class X509Bundle implements X509BundleSource {
             return this;
         }
         throw new BundleNotFoundException(String.format("No X509 bundle found for trust domain %s", trustDomain));
+    }
+
+    /**
+     * Checks if the given X.509 authority exists in the bundle.
+     */
+    public boolean hasX509Authority(X509Certificate x509Authority) {
+        return x509Authorities.contains(x509Authority);
+    }
+
+    /**
+     * Adds an X.509 authority to the bundle.
+     */
+    public void addX509Authority(X509Certificate x509Authority) {
+        x509Authorities.add(x509Authority);
+    }
+
+    /**
+     * Removes an X.509 authority from the bundle.
+     */
+    public void removeX509Authority(X509Certificate x509Authority) {
+        x509Authorities.remove(x509Authority);
     }
 }

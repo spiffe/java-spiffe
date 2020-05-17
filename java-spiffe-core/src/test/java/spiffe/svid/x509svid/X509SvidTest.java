@@ -73,7 +73,7 @@ public class X509SvidTest {
 
     @ParameterizedTest
     @MethodSource("provideX509SvidScenarios")
-    void parseJwt(TestCase testCase) {
+    void parseX509Svid(TestCase testCase) {
         try {
             Path certPath = Paths.get(loadResource(testCase.certsPath));
             Path keyPath = Paths.get(loadResource(testCase.keyPath));

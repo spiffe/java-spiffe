@@ -13,6 +13,8 @@ import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
@@ -34,13 +36,16 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void verifyChain_certificateExpired_throwsCertificateException() throws IOException, CertificateException, BundleNotFoundException {
-        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
+    void verifyChain_certificateExpired_throwsCertificateException() throws IOException, CertificateException, BundleNotFoundException, URISyntaxException {
+        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certBytes = Files.readAllBytes(certPath);
         val chain = CertificateUtils.generateCertificates(certBytes);
+
+        val bundlePath = Paths.get(loadResource("testdata/x509svid/bundle.pem"));
         X509Bundle x509Bundle=
                 X509Bundle.load(
                         TrustDomain.of("example.org"),
-                        Paths.get("../testdata/bundle.pem")
+                        bundlePath
                 );
 
         when(bundleSourceMock
@@ -57,11 +62,12 @@ public class X509SvidValidatorTest {
     }
     
     @Test
-    void checkSpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException {
+    void checkSpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException, URISyntaxException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
-        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
+        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certBytes = Files.readAllBytes(certPath);
         val x509Certificate = CertificateUtils.generateCertificates(certBytes);
 
         val spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
@@ -70,12 +76,13 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void checkSpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException {
+    void checkSpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
         List<SpiffeId> spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
 
-        val certBytes = Files.readAllBytes(Paths.get("../testdata/x509cert.pem"));
+        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certBytes = Files.readAllBytes(certPath);
         val x509Certificate = CertificateUtils.generateCertificates(certBytes);
 
         try {
@@ -84,5 +91,9 @@ public class X509SvidValidatorTest {
         } catch (CertificateException e) {
             assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
         }
+    }
+
+    private URI loadResource(String path) throws URISyntaxException {
+        return getClass().getClassLoader().getResource(path).toURI();
     }
 }
