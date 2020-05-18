@@ -69,6 +69,8 @@ public class GrpcManagedChannelFactory {
             // nThreads = 0 -> use Netty default
             KQueueEventLoopGroup kQueueEventLoopGroup = new KQueueEventLoopGroup(0, executorService);
             channelBuilder.eventLoopGroup(kQueueEventLoopGroup)
+                    // avoid warning Unknown channel option 'SO_KEEPALIVE'
+                    .withOption(ChannelOption.SO_KEEPALIVE, null)
                     .channelType(KQueueDomainSocketChannel.class);
             return kQueueEventLoopGroup;
         }
