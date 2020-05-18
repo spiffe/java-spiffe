@@ -33,13 +33,17 @@ public class X509SvidValidator {
      */
     public static void verifyChain(
             @NonNull List<X509Certificate> chain,
-            @NonNull X509BundleSource x509BundleSource) throws CertificateException {
+            @NonNull X509BundleSource x509BundleSource) throws CertificateException, BundleNotFoundException {
+
+        val trustDomain = CertificateUtils.getTrustDomain(chain);
+        val x509Bundle = x509BundleSource.getX509BundleForTrustDomain(trustDomain);
+
         try {
-            val trustDomain = CertificateUtils.getTrustDomain(chain);
-            val x509Bundle = x509BundleSource.getX509BundleForTrustDomain(trustDomain);
             CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getX509Authorities()));
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertPathValidatorException | BundleNotFoundException e) {
-            throw new CertificateException(e);
+        } catch (CertPathValidatorException e) {
+            throw new CertificateException("Cert chain cannot be verified", e);
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+            throw new CertificateException(e.getMessage(), e);
         }
     }
 

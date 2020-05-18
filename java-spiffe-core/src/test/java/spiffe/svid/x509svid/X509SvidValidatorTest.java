@@ -57,10 +57,36 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifyChain(chain, bundleSourceMock);
             fail("Verify chain should have thrown validation exception");
         } catch (CertificateException e) {
-            assertEquals("java.security.cert.CertPathValidatorException: validity check failed", e.getMessage());
+            assertEquals("Cert chain cannot be verified", e.getMessage());
         }
     }
-    
+
+    @Test
+    void verifyChain_noBundleForTrustDomain_throwsBundleNotFoundException() throws IOException, CertificateException, BundleNotFoundException, URISyntaxException {
+        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certBytes = Files.readAllBytes(certPath);
+        val chain = CertificateUtils.generateCertificates(certBytes);
+
+        val bundlePath = Paths.get(loadResource("testdata/x509svid/bundle.pem"));
+        X509Bundle x509Bundle=
+                X509Bundle.load(
+                        TrustDomain.of("example.org"),
+                        bundlePath
+                );
+
+        when(bundleSourceMock
+                .getX509BundleForTrustDomain(
+                        TrustDomain.of("example.org")))
+                .thenThrow(new BundleNotFoundException("No bundle found"));
+
+        try {
+            X509SvidValidator.verifyChain(chain, bundleSourceMock);
+            fail("Verify chain should have thrown validation exception");
+        } catch (BundleNotFoundException e) {
+            assertEquals("No bundle found", e.getMessage());
+        }
+    }
+
     @Test
     void checkSpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException, URISyntaxException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");

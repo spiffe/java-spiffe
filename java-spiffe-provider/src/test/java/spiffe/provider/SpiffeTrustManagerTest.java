@@ -24,7 +24,8 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 public class SpiffeTrustManagerTest {
@@ -80,7 +81,27 @@ public class SpiffeTrustManagerTest {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("java.security.cert.CertPathValidatorException: validity check failed", e.getMessage());
+            assertEquals("Cert chain cannot be verified", e.getMessage());
+        }
+    }
+
+    @Test
+    void checkClientTrusted_noBundleForTrustDomain_ThrowCertificateException() throws BundleNotFoundException {
+        acceptedSpiffeIds =
+                Collections
+                        .singletonList(
+                                SpiffeId.parse("spiffe://example.org/test")
+                        );
+
+        val chain = x509Svid.getChainArray();
+
+        when(bundleSource.getX509BundleForTrustDomain(TrustDomain.of("example.org"))).thenThrow(new BundleNotFoundException("Bundle not found"));
+
+        try {
+            trustManager.checkClientTrusted(chain, "");
+            fail("CertificateException was expected");
+        } catch (CertificateException e) {
+            assertEquals("Bundle not found", e.getMessage());
         }
     }
 
@@ -121,7 +142,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkClientTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertTrue(e.getMessage().contains("CertPathValidatorException: Path does not chain with any of the trust anchors"));
+            assertEquals("Cert chain cannot be verified", e.getMessage());
         }
     }
 
@@ -141,7 +162,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("java.security.cert.CertPathValidatorException: validity check failed", e.getMessage());
+            assertEquals("Cert chain cannot be verified", e.getMessage());
         }
     }
 
@@ -181,7 +202,7 @@ public class SpiffeTrustManagerTest {
             trustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertTrue(e.getMessage().contains("CertPathValidatorException: Path does not chain with any of the trust anchors"));
+            assertEquals("Cert chain cannot be verified", e.getMessage());
         }
     }
 

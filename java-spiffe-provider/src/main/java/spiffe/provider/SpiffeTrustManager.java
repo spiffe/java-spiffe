@@ -1,6 +1,7 @@
 package spiffe.provider;
 
 import spiffe.bundle.x509bundle.X509BundleSource;
+import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.x509svid.X509SvidValidator;
 
@@ -108,6 +109,10 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     // Check the spiffeId using the checkSpiffeId function and the chain using the bundleSource and a Validator
     private void validatePeerChain(X509Certificate[] chain) throws CertificateException {
         X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
-        X509SvidValidator.verifyChain(Arrays.asList(chain), x509BundleSource);
+        try {
+            X509SvidValidator.verifyChain(Arrays.asList(chain), x509BundleSource);
+        } catch (BundleNotFoundException e) {
+            throw new CertificateException(e.getMessage(), e);
+        }
     }
 }
