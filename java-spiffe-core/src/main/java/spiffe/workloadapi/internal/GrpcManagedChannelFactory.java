@@ -3,6 +3,7 @@ package spiffe.workloadapi.internal;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -58,6 +59,8 @@ public class GrpcManagedChannelFactory {
             // nThreads = 0 -> use Netty default
             EpollEventLoopGroup epollEventLoopGroup = new EpollEventLoopGroup(0, executorService);
             channelBuilder.eventLoopGroup(epollEventLoopGroup)
+                    // avoid warning Unknown channel option 'SO_KEEPALIVE'
+                    .withOption(ChannelOption.SO_KEEPALIVE, null)
                     .channelType(EpollDomainSocketChannel.class);
             return epollEventLoopGroup;
         }
