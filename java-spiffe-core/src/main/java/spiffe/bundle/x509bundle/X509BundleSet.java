@@ -53,7 +53,7 @@ public class X509BundleSet implements X509BundleSource {
      * @throws BundleNotFoundException if no bundle could be found for the given trust domain
      */
     @Override
-    public X509Bundle getX509BundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         val bundle = bundles.get(trustDomain);
         if (bundle == null){
             throw new BundleNotFoundException(String.format("No X509 bundle for trust domain %s", trustDomain));

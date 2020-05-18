@@ -95,8 +95,20 @@ public class SpiffeIdTest {
                 () -> assertEquals("trust-domain.org", spiffeId.getTrustDomain().toString()),
                 () -> assertEquals("/path1/path2", spiffeId.getPath())
         );
-
     }
+
+    @Test
+    void parse_aStringContainingLeadingAndTrailingBlanks_ReturnsASpiffeIdThatHasTrustDomainAndPathSegments() {
+        val spiffeIdAsString = " spiffe://trust-domain.org/path1/path2 ";
+
+        val spiffeId = SpiffeId.parse(spiffeIdAsString);
+
+        assertAll("SpiffeId",
+                () -> assertEquals("trust-domain.org", spiffeId.getTrustDomain().toString()),
+                () -> assertEquals("/path1/path2", spiffeId.getPath())
+        );
+    }
+
 
     @Test
     void parse_aStringContainingInvalidSchema_throwsIllegalArgumentException() {
@@ -121,7 +133,27 @@ public class SpiffeIdTest {
     }
 
     @Test
-    void of_nullTrustDomain_throwsIllegalArgumentException() {
+    void parse_Null_throwsIllegalArgumentException() {
+        try {
+            SpiffeId.parse(null);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (NullPointerException e) {
+            assertEquals("spiffeIdAsString is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void of_nullTrustDomain_throwsNullPointerException() {
+        try {
+            SpiffeId.of(null);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (NullPointerException e) {
+            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void of_nullTrustDomainNotNullPath_throwsIllegalArgumentException() {
         try {
             SpiffeId.of(null, "path");
             fail("Should have thrown IllegalArgumentException");

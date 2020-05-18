@@ -7,6 +7,7 @@ import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.security.Keys;
 import lombok.Builder;
 import lombok.Value;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,7 +35,7 @@ class JwtSvidParseAndValidateTest {
 
     @ParameterizedTest
     @MethodSource("provideJwtScenarios")
-    void parseJwt(TestCase testCase) {
+    void parseAndValidateJwt(TestCase testCase) {
 
         try {
             String token = testCase.generateToken.get();
@@ -44,13 +45,61 @@ class JwtSvidParseAndValidateTest {
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
+            assertEquals(token, jwtSvid.marshall());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
             assertEquals(testCase.expectedException.getMessage(), e.getMessage());
         }
-
     }
 
+    @Test
+    void testParseAndValidate_nullToken_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        List<String> audience = Collections.singletonList("audience");
+
+        try {
+            JwtSvid.parseAndValidate(null, jwtBundle, audience);
+        } catch (NullPointerException e) {
+            assertEquals("token is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParseAndValidate_emptyToken_throwsIllegalArgumentException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        List<String> audience = Collections.singletonList("audience");
+
+        try {
+            JwtSvid.parseAndValidate("", jwtBundle, audience);
+        } catch (IllegalArgumentException e) {
+            assertEquals("Token cannot be blank", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParseAndValidate_nullBundle_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
+        List<String> audience = Collections.singletonList("audience");
+        try {
+            JwtSvid.parseAndValidate("token", null, audience);
+        } catch (NullPointerException e) {
+            assertEquals("jwtBundleSource is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParseAndValidate_nullAudience_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        List<String> audience = Collections.singletonList("audience");
+
+        try {
+            JwtSvid.parseAndValidate("token", jwtBundle, null);
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        }
+    }
 
     static Stream<Arguments> provideJwtScenarios() {
         KeyPair key1 = Keys.keyPairFor(SignatureAlgorithm.ES384);

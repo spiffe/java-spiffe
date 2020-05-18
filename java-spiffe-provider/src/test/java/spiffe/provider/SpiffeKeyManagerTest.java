@@ -34,8 +34,8 @@ public class SpiffeKeyManagerTest {
         keyManager = (X509KeyManager) new SpiffeKeyManagerFactory().engineGetKeyManagers(x509SvidSource)[0];
         x509Svid = X509Svid
                 .load(
-                        Paths.get(loadResource("testdata/cert.pem")),
-                        Paths.get(loadResource("testdata/key.pem")));
+                        Paths.get(toUri("testdata/cert.pem")),
+                        Paths.get(toUri("testdata/key.pem")));
     }
 
     @Test
@@ -60,7 +60,7 @@ public class SpiffeKeyManagerTest {
         assertNotNull(privateKey);
     }
 
-    private URI loadResource(String path) throws URISyntaxException {
+    private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }
 }

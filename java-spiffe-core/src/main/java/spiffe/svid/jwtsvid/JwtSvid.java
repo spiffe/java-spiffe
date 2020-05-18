@@ -77,7 +77,7 @@ public class JwtSvid {
      * when the algorithm is not supported, when the header 'kid' is missing, when the signature cannot be verified, or
      * when the 'aud' claim has an audience that is not in the audience list provided as parameter
      *
-     * @throws IllegalArgumentException when the token cannot be parsed
+     * @throws IllegalArgumentException when the token is blank or cannot be parsed
      *
      * @throws BundleNotFoundException if the bundle for the trust domain of the spiffe id from the 'sub' cannot be found
      * in the JwtBundleSource
@@ -92,6 +92,10 @@ public class JwtSvid {
         // in order to get the KeyID and the trust domain that are needed
         // to find the Authority in the jwtBundleSource. Once the Authority
         // is found, the token signature is verified
+
+        if (StringUtils.isBlank(token)) {
+            throw new IllegalArgumentException("Token cannot be blank");
+        }
 
         Jwt<?, ?> jwt = decodeToken(token);
         Claims claims = (Claims) jwt.getBody();
@@ -130,7 +134,11 @@ public class JwtSvid {
      * the 'aud' has an audience that is not in the audience provided as parameter
      * @throws IllegalArgumentException when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, List<String> audience) throws JwtSvidException {
+    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull List<String> audience) throws JwtSvidException {
+        if (StringUtils.isBlank(token)) {
+            throw new IllegalArgumentException("Token cannot be blank");
+
+        }
         Jwt<?, ?> jwt = decodeToken(token);
         Claims claims = (Claims) jwt.getBody();
         List<String> aud = claims.get("aud", List.class);
@@ -160,7 +168,7 @@ public class JwtSvid {
         return new Date(expiry.getTime());
     }
 
-    private static void verifySignature(@NonNull String token, String keyId, PublicKey jwtAuthority) throws JwtSvidException {
+    private static void verifySignature(String token, String keyId, PublicKey jwtAuthority) throws JwtSvidException {
         JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(jwtAuthority).build();
         try {
             // parse token with signature verification using the jwt authority (public key)

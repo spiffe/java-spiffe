@@ -7,8 +7,6 @@ import spiffe.exception.BundleNotFoundException;
 import spiffe.internal.CertificateUtils;
 import spiffe.spiffeid.SpiffeId;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -42,8 +40,6 @@ public class X509SvidValidator {
             CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getX509Authorities()));
         } catch (CertPathValidatorException e) {
             throw new CertificateException("Cert chain cannot be verified", e);
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
-            throw new CertificateException(e.getMessage(), e);
         }
     }
 

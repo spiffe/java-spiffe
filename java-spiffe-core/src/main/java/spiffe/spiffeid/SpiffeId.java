@@ -58,7 +58,7 @@ public class SpiffeId {
             throw new IllegalArgumentException("SPIFFE ID cannot be empty");
         }
 
-        val uri = URI.create(spiffeIdAsString);
+        val uri = URI.create(normalize(spiffeIdAsString));
 
         if (!SPIFFE_SCHEME.equals(uri.getScheme())) {
             throw new IllegalArgumentException("Invalid SPIFFE schema");

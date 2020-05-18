@@ -21,6 +21,7 @@ import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Collections.EMPTY_LIST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
@@ -37,11 +38,11 @@ public class X509SvidValidatorTest {
 
     @Test
     void verifyChain_certificateExpired_throwsCertificateException() throws IOException, CertificateException, BundleNotFoundException, URISyntaxException {
-        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certPath = Paths.get(toUri("testdata/x509svid/cert.pem"));
         val certBytes = Files.readAllBytes(certPath);
         val chain = CertificateUtils.generateCertificates(certBytes);
 
-        val bundlePath = Paths.get(loadResource("testdata/x509svid/bundle.pem"));
+        val bundlePath = Paths.get(toUri("testdata/x509svid/bundle.pem"));
         X509Bundle x509Bundle=
                 X509Bundle.load(
                         TrustDomain.of("example.org"),
@@ -63,11 +64,11 @@ public class X509SvidValidatorTest {
 
     @Test
     void verifyChain_noBundleForTrustDomain_throwsBundleNotFoundException() throws IOException, CertificateException, BundleNotFoundException, URISyntaxException {
-        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certPath = Paths.get(toUri("testdata/x509svid/cert.pem"));
         val certBytes = Files.readAllBytes(certPath);
         val chain = CertificateUtils.generateCertificates(certBytes);
 
-        val bundlePath = Paths.get(loadResource("testdata/x509svid/bundle.pem"));
+        val bundlePath = Paths.get(toUri("testdata/x509svid/bundle.pem"));
         X509Bundle x509Bundle=
                 X509Bundle.load(
                         TrustDomain.of("example.org"),
@@ -92,7 +93,7 @@ public class X509SvidValidatorTest {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
-        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certPath = Paths.get(toUri("testdata/x509svid/cert.pem"));
         val certBytes = Files.readAllBytes(certPath);
         val x509Certificate = CertificateUtils.generateCertificates(certBytes);
 
@@ -107,7 +108,7 @@ public class X509SvidValidatorTest {
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
         List<SpiffeId> spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
 
-        val certPath = Paths.get(loadResource("testdata/x509svid/cert.pem"));
+        val certPath = Paths.get(toUri("testdata/x509svid/cert.pem"));
         val certBytes = Files.readAllBytes(certPath);
         val x509Certificate = CertificateUtils.generateCertificates(certBytes);
 
@@ -119,7 +120,53 @@ public class X509SvidValidatorTest {
         }
     }
 
-    private URI loadResource(String path) throws URISyntaxException {
+    @Test
+    void checkSpiffeId_nullX509Certificate_throwsNullPointerException() throws CertificateException {
+        try {
+            X509SvidValidator.verifySpiffeId(null, () -> EMPTY_LIST);
+            fail("should have thrown an exception");
+        } catch (NullPointerException e) {
+            assertEquals("x509Certificate is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void checkSpiffeId_nullAcceptedSpiffeIdsSuppplier_throwsNullPointerException() throws CertificateException, URISyntaxException, IOException {
+        try {
+            val certPath = Paths.get(toUri("testdata/x509svid/cert.pem"));
+            val certBytes = Files.readAllBytes(certPath);
+            val x509Certificate = CertificateUtils.generateCertificates(certBytes);
+            X509SvidValidator.verifySpiffeId(x509Certificate.get(0), null);
+            fail("should have thrown an exception");
+        } catch (NullPointerException e) {
+            assertEquals("acceptedSpiffedIdsSupplier is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void verifyChain_nullChain_throwsNullPointerException() throws CertificateException, BundleNotFoundException {
+        try {
+            X509SvidValidator.verifyChain(null, bundleSourceMock);
+            fail("should have thrown an exception");
+        } catch (NullPointerException e) {
+            assertEquals("chain is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void verifyChain_nullBundleSource_throwsNullPointerException() throws CertificateException, BundleNotFoundException, URISyntaxException, IOException {
+        try {
+            val certPath = Paths.get(toUri("testdata/x509svid/cert.pem"));
+            val certBytes = Files.readAllBytes(certPath);
+            val chain = CertificateUtils.generateCertificates(certBytes);
+            X509SvidValidator.verifyChain(chain, null);
+            fail("should have thrown an exception");
+        } catch (NullPointerException e) {
+            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }
 }

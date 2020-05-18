@@ -9,8 +9,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -23,7 +21,7 @@ public class CertificateUtilsTest {
 
     @Test
     void generateCertificates_ofPEMByteArray_returnsListWithOneX509Certificate() throws IOException, URISyntaxException {
-        val path = Paths.get(loadResource("testdata/internal/cert.pem"));
+        val path = Paths.get(toUri("testdata/internal/cert.pem"));
         val certBytes = Files.readAllBytes(path);
 
         List<X509Certificate> x509CertificateList = null;
@@ -40,8 +38,8 @@ public class CertificateUtilsTest {
 
     @Test
     void validate_certificateThatIsExpired_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
-        val certPath = Paths.get(loadResource("testdata/internal/cert2.pem"));
-        val certBundle = Paths.get(loadResource("testdata/internal/bundle.pem"));
+        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        val certBundle = Paths.get(toUri("testdata/internal/bundle.pem"));
 
         val certBytes = Files.readAllBytes(certPath);
         val bundleBytes = Files.readAllBytes(certBundle);
@@ -52,12 +50,12 @@ public class CertificateUtilsTest {
         try {
             CertificateUtils.validate(chain, trustedCert);
             fail("Expected exception");
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertPathValidatorException e) {
+        } catch (CertPathValidatorException e) {
             assertEquals("validity check failed", e.getMessage());
         }
     }
 
-    private URI loadResource(String path) throws URISyntaxException {
+    private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }
 }

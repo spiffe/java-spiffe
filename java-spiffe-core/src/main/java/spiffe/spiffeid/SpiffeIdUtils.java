@@ -1,6 +1,7 @@
 package spiffe.spiffeid;
 
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.EMPTY_LIST;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
@@ -24,7 +26,8 @@ public class SpiffeIdUtils {
      * Reads the Accepted SPIFFE IDs from a system property and parses them to {@link SpiffeId} instances.
      *
      * @param systemProperty name of the system property that contains a list of SPIFFE IDs separated by a commas.
-     * @return a list of {@link SpiffeId} parsed from the values read from the security property
+     * @return a list of {@link SpiffeId} parsed from the values read from the security property, in case there's no values
+     * in the System property, it returns an emtpy list
      *
      * @throws IllegalArgumentException if the given system property is empty or if any of the SPIFFE IDs
      * cannot be parsed
@@ -35,6 +38,9 @@ public class SpiffeIdUtils {
         }
 
         val spiffeIds = System.getProperty(systemProperty);
+        if (StringUtils.isBlank(spiffeIds)) {
+            return EMPTY_LIST;
+        }
         return toListOfSpiffeIds(spiffeIds, DEFAULT_CHAR_SEPARATOR);
     }
 
@@ -52,7 +58,12 @@ public class SpiffeIdUtils {
         if (isBlank(securityProperty)) {
             throw new IllegalArgumentException("Argument securityProperty cannot be empty");
         }
+
         val spiffeIds = Security.getProperty(securityProperty);
+        if (StringUtils.isBlank(spiffeIds)) {
+            return EMPTY_LIST;
+        }
+
         return toListOfSpiffeIds(spiffeIds, DEFAULT_CHAR_SEPARATOR);
     }
 
@@ -88,7 +99,7 @@ public class SpiffeIdUtils {
      */
     public static List<SpiffeId> toListOfSpiffeIds(final String spiffeIds, final char separator) {
         if (isBlank(spiffeIds)) {
-            throw new IllegalArgumentException("Argument spiffeIds cannot be emtpy");
+            throw new IllegalArgumentException("Argument spiffeIds cannot be empty");
         }
 
         val array = spiffeIds.split(String.valueOf(separator));

@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -41,9 +40,9 @@ public class X509Svid implements X509SvidSource {
     PrivateKey privateKey;
 
     private X509Svid(
-            @NonNull SpiffeId spiffeId,
-            @NonNull List<X509Certificate> chain,
-            @NonNull PrivateKey privateKey) {
+            SpiffeId spiffeId,
+            List<X509Certificate> chain,
+            PrivateKey privateKey) {
         this.spiffeId = spiffeId;
         this.chain = chain;
         this.privateKey = privateKey;
@@ -163,8 +162,6 @@ public class X509Svid implements X509SvidSource {
             CertificateUtils.validatePrivateKey(privateKey, x509Certificates.get(0));
         } catch (InvalidKeyException e) {
             throw new X509SvidException("Private Key does not match Certificate Public Key", e);
-        } catch (NoSuchAlgorithmException | SignatureException e) {
-            throw new IllegalStateException("Could not validate private key", e);
         }
     }
 

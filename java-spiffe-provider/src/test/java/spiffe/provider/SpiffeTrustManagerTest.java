@@ -43,16 +43,16 @@ public class SpiffeTrustManagerTest {
     static void setupClass() throws IOException, CertificateException, X509SvidException, URISyntaxException {
         x509Svid = X509Svid
                 .load(
-                        Paths.get(loadResource("testdata/cert.pem")),
-                        Paths.get(loadResource("testdata/key.pem")));
+                        Paths.get(toUri("testdata/cert.pem")),
+                        Paths.get(toUri("testdata/key.pem")));
         otherX509Svid = X509Svid
                 .load(
-                        Paths.get(loadResource("testdata/cert2.pem")),
-                        Paths.get(loadResource("testdata/key2.pem")));
+                        Paths.get(toUri("testdata/cert2.pem")),
+                        Paths.get(toUri("testdata/key2.pem")));
         x509Bundle = X509Bundle
                 .load(
                         TrustDomain.of("example.org"),
-                        Paths.get(loadResource("testdata/bundle.pem")));
+                        Paths.get(toUri("testdata/bundle.pem")));
     }
 
     @BeforeEach
@@ -206,7 +206,7 @@ public class SpiffeTrustManagerTest {
         }
     }
 
-    private static URI loadResource(String path) throws URISyntaxException {
+    private static URI toUri(String path) throws URISyntaxException {
         return SpiffeTrustManagerTest.class.getClassLoader().getResource(path).toURI();
     }
 }

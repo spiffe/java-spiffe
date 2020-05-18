@@ -7,6 +7,7 @@ import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.security.Keys;
 import lombok.Builder;
 import lombok.Value;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -47,6 +48,42 @@ class JwtSvidParseInsecureTest {
             assertEquals(testCase.expectedException.getMessage(), e.getMessage());
         }
 
+    }
+
+    @Test
+    void testParseInsecure_nullToken_throwsNullPointerException() throws JwtSvidException {
+        List<String> audience = Collections.singletonList("audience");
+
+        try {
+            JwtSvid.parseInsecure(null, audience);
+        } catch (NullPointerException e) {
+            assertEquals("token is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParseAndValidate_emptyToken_throwsIllegalArgumentException() throws JwtSvidException {
+        List<String> audience = Collections.singletonList("audience");
+        try {
+            JwtSvid.parseInsecure("", audience);
+        } catch (IllegalArgumentException e) {
+            assertEquals("Token cannot be blank", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParseInsecure_nullAudience_throwsNullPointerException() throws JwtSvidException {
+        try {
+            KeyPair key1 = Keys.keyPairFor(SignatureAlgorithm.ES384);
+            TrustDomain trustDomain = TrustDomain.of("test.domain");
+            SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+            List<String> audience = Collections.singletonList("audience");
+            Date expiration = new Date(System.currentTimeMillis() + 3600000);
+            Claims claims = buildClaims(audience, spiffeId.toString(), expiration);
+            JwtSvid.parseInsecure(generateToken(claims, key1, "authority1"), null);
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        }
     }
 
 

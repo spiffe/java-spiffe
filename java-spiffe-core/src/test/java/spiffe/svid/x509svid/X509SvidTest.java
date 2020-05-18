@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,8 +39,8 @@ public class X509SvidTest {
     @Test
     void testLoad_Success() throws URISyntaxException {
 
-        Path certPath = Paths.get(loadResource(certSingle));
-        Path keyPath = Paths.get(loadResource(keyRSA));
+        Path certPath = Paths.get(toUri(certSingle));
+        Path keyPath = Paths.get(toUri(keyRSA));
         try {
             X509Svid x509Svid = X509Svid.load(certPath, keyPath);
             assertEquals("spiffe://example.org/workload-1", x509Svid.getSpiffeId().toString());
@@ -50,7 +51,7 @@ public class X509SvidTest {
 
     @Test
     void testLoad_FailsCannotReadCertFile() throws URISyntaxException {
-        Path keyPath = Paths.get(loadResource(keyRSA));
+        Path keyPath = Paths.get(toUri(keyRSA));
         try {
             X509Svid.load(Paths.get("not-existent-cert"), keyPath);
             fail("should have thrown IOException");
@@ -61,7 +62,7 @@ public class X509SvidTest {
 
     @Test
     void testLoad_FailsCannotReadKeyFile() throws URISyntaxException {
-        Path certPath = Paths.get(loadResource(certSingle));
+        Path certPath = Paths.get(toUri(certSingle));
         try {
             X509Svid.load(certPath, Paths.get("not-existent-key"));
             fail("should have thrown IOException");
@@ -70,13 +71,72 @@ public class X509SvidTest {
         }
     }
 
+    @Test
+    void testLoad_nullCertFilePath_throwsNullPointerException() throws URISyntaxException {
+        try {
+            X509Svid.load(null, Paths.get(toUri(keyRSA)));
+            fail("should have thrown exception");
+        } catch (NullPointerException | X509SvidException e) {
+            assertEquals("certsFilePath is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testLoad_nullKeyFilePath_throwsNullPointerException() throws URISyntaxException, X509SvidException {
+        try {
+            X509Svid.load(Paths.get(toUri(certSingle)), null);
+            fail("should have thrown exception");
+        } catch (NullPointerException e) {
+            assertEquals("privateKeyFilePath is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParse_nullByteArray_throwsNullPointerException() throws X509SvidException {
+        try {
+            X509Svid.parse(null, "key".getBytes());
+            fail("should have thrown exception");
+        } catch (NullPointerException e) {
+            assertEquals("certsBytes is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParse_nullKeyByteArray_throwsNullPointerException() throws X509SvidException {
+        try {
+            X509Svid.parse("cert".getBytes(), null);
+            fail("should have thrown exception");
+        } catch (NullPointerException e) {
+            assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testGetX509Svid() throws URISyntaxException, X509SvidException {
+        Path certPath = Paths.get(toUri(certSingle));
+        Path keyPath = Paths.get(toUri(keyRSA));
+        X509Svid x509Svid = X509Svid.load(certPath, keyPath);
+        assertEquals(x509Svid, x509Svid.getX509Svid());
+    }
+
+    @Test
+    void testGetChainArray() throws URISyntaxException, X509SvidException {
+        Path certPath = Paths.get(toUri(certMultiple));
+        Path keyPath = Paths.get(toUri(keyECDSA));
+        X509Svid x509Svid = X509Svid.load(certPath, keyPath);
+        X509Certificate[] x509CertificatesArray = x509Svid.getChainArray();
+        assertEquals(x509Svid.getChain().get(0), x509CertificatesArray[0]);
+        assertEquals(x509Svid.getChain().get(1), x509CertificatesArray[1]);
+    }
+
+
 
     @ParameterizedTest
     @MethodSource("provideX509SvidScenarios")
     void parseX509Svid(TestCase testCase) {
         try {
-            Path certPath = Paths.get(loadResource(testCase.certsPath));
-            Path keyPath = Paths.get(loadResource(testCase.keyPath));
+            Path certPath = Paths.get(toUri(testCase.certsPath));
+            Path keyPath = Paths.get(toUri(testCase.keyPath));
             byte[] certBytes = Files.readAllBytes(certPath);
             byte[] keyBytes = Files.readAllBytes(keyPath);
 
@@ -246,7 +306,7 @@ public class X509SvidTest {
         }
     }
 
-    private URI loadResource(String path) throws URISyntaxException {
+    private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }
 }

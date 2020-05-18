@@ -38,8 +38,8 @@ public class KeyStoreTest {
     void setup() throws X509SvidException, URISyntaxException {
         x509Svid = X509Svid
                 .load(
-                        Paths.get(loadResource("testdata/x509cert.pem")),
-                        Paths.get(loadResource("testdata/pkcs8key.pem"))
+                        Paths.get(toUri("testdata/x509cert.pem")),
+                        Paths.get(toUri("testdata/pkcs8key.pem"))
                 );
     }
 
@@ -97,7 +97,7 @@ public class KeyStoreTest {
         }
     }
 
-    private URI loadResource(String path) throws URISyntaxException {
+    private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }
 }

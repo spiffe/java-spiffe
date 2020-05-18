@@ -101,11 +101,16 @@ public class CertificateUtils {
      * @throws NoSuchAlgorithmException
      * @throws CertPathValidatorException
      */
-    public static void validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertPathValidatorException {
+    public static void validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
         val certificateFactory = getCertificateFactory();
-        val pkixParameters = toPkixParameters(trustedCerts);
-        val certPath = certificateFactory.generateCertPath(chain);
-        getCertPathValidator().validate(certPath, pkixParameters);
+        PKIXParameters pkixParameters = null;
+        try {
+            pkixParameters = toPkixParameters(trustedCerts);
+            val certPath = certificateFactory.generateCertPath(chain);
+            getCertPathValidator().validate(certPath, pkixParameters);
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+            throw new CertificateException(e);
+        }
     }
 
     /**
@@ -151,28 +156,32 @@ public class CertificateUtils {
      *
      * @throws InvalidKeyException if the keys don't match
      */
-    public static void validatePrivateKey(PrivateKey privateKey, X509Certificate x509Certificate) throws InvalidKeyException, NoSuchAlgorithmException, SignatureException {
+    public static void validatePrivateKey(PrivateKey privateKey, X509Certificate x509Certificate) throws InvalidKeyException {
         // create a challenge
         byte[] challenge = new byte[1000];
         ThreadLocalRandom.current().nextBytes(challenge);
 
         Signature sig = null;
 
-        if ("RSA".equals(privateKey.getAlgorithm())) {
-            sig = Signature.getInstance("SHA256withRSA");
-        } else {
-            sig = Signature.getInstance("SHA1withECDSA");
-        }
+        try {
+            if ("RSA".equals(privateKey.getAlgorithm())) {
+                sig = Signature.getInstance("SHA256withRSA");
+            } else {
+                sig = Signature.getInstance("SHA1withECDSA");
+            }
 
-        sig.initSign(privateKey);
-        sig.update(challenge);
-        byte[] signature = sig.sign();
+            sig.initSign(privateKey);
+            sig.update(challenge);
+            byte[] signature = sig.sign();
 
-        sig.initVerify(x509Certificate.getPublicKey());
-        sig.update(challenge);
+            sig.initVerify(x509Certificate.getPublicKey());
+            sig.update(challenge);
 
-        if (!sig.verify(signature)) {
-            throw new InvalidKeyException("Private Key does not match Certificate Public Key");
+            if (!sig.verify(signature)) {
+                throw new InvalidKeyException("Private Key does not match Certificate Public Key");
+            }
+        } catch (SignatureException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Could not validate private keys", e);
         }
     }
 
