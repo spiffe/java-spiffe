@@ -3,6 +3,7 @@ package spiffe.api.svid;
 import io.grpc.*;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueDomainSocketChannel;
@@ -107,6 +108,8 @@ class SpiffeEndpointChannelBuilder {
         checkNotNull(channelBuilder, "Channel builder is Null");
         if (SystemUtils.IS_OS_LINUX) {
             channelBuilder.eventLoopGroup(new EpollEventLoopGroup())
+                          // avoid Unknown channel option 'SO_KEEPALIVE'
+                          .withOption(ChannelOption.SO_KEEPALIVE, null)
                           .channelType(EpollDomainSocketChannel.class);
         } else if (SystemUtils.IS_OS_MAC) {
             channelBuilder.eventLoopGroup(new KQueueEventLoopGroup())
