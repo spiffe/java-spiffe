@@ -108,12 +108,12 @@ class SpiffeEndpointChannelBuilder {
         checkNotNull(channelBuilder, "Channel builder is Null");
         if (SystemUtils.IS_OS_LINUX) {
             channelBuilder.eventLoopGroup(new EpollEventLoopGroup())
-                          // avoid Unknown channel option 'SO_KEEPALIVE'
+                    // avoid Unknown channel option 'SO_KEEPALIVE'
                     .withOption(ChannelOption.SO_KEEPALIVE, null)
                     .channelType(EpollDomainSocketChannel.class);
         } else if (SystemUtils.IS_OS_MAC) {
             channelBuilder.eventLoopGroup(new KQueueEventLoopGroup())
-                     .withOption(ChannelOption.SO_KEEPALIVE, null)
+                    .withOption(ChannelOption.SO_KEEPALIVE, null)
                     .channelType(KQueueDomainSocketChannel.class);
         } else {
             channelBuilder.eventLoopGroup(new NioEventLoopGroup());
