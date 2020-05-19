@@ -54,8 +54,12 @@ dependencies {
     implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: "${nettyVersion}", classifier: 'osx-x86_64'
     compileOnly group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
 
+    // library for processing JWT tokens
     implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.1'
     implementation group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.1'
     implementation group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.1'
+
+    // library for processing JOSE JWK bundles
+    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '5.7'
 }
 

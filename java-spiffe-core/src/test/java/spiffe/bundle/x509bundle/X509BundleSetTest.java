@@ -20,8 +20,8 @@ class X509BundleSetTest {
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
-        assertTrue(bundleSet.getBundles().contains(x509Bundle1));
-        assertTrue(bundleSet.getBundles().contains(x509Bundle2));
+        assertTrue(bundleSet.getBundles().containsValue(x509Bundle1));
+        assertTrue(bundleSet.getBundles().containsValue(x509Bundle2));
     }
 
     @Test
@@ -43,8 +43,8 @@ class X509BundleSetTest {
         X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
         bundleSet.add(x509Bundle2);
 
-        assertTrue(bundleSet.getBundles().contains(x509Bundle1));
-        assertTrue(bundleSet.getBundles().contains(x509Bundle2));
+        assertTrue(bundleSet.getBundles().containsValue(x509Bundle1));
+        assertTrue(bundleSet.getBundles().containsValue(x509Bundle2));
     }
 
     @Test
@@ -55,7 +55,7 @@ class X509BundleSetTest {
 
         bundleSet.add(x509Bundle1);
 
-        assertTrue(bundleSet.getBundles().contains(x509Bundle1));
+        assertTrue(bundleSet.getBundles().containsValue(x509Bundle1));
         assertEquals(1, bundleSet.getBundles().size());
     }
 
@@ -69,8 +69,8 @@ class X509BundleSetTest {
         x509Bundle2.addX509Authority(new DummyX509Certificate());
         bundleSet.add(x509Bundle2);
 
-        assertTrue(bundleSet.getBundles().contains(x509Bundle2));
-        assertFalse(bundleSet.getBundles().contains(x509Bundle1));
+        assertTrue(bundleSet.getBundles().containsValue(x509Bundle2));
+        assertFalse(bundleSet.getBundles().containsValue(x509Bundle1));
         assertEquals(1, bundleSet.getBundles().size());
     }
 
@@ -127,9 +127,5 @@ class X509BundleSetTest {
         } catch (NullPointerException e) {
             assertEquals("trustDomain is marked non-null but is null", e.getMessage());
         }
-    }
-
-    @Test
-    void getBundles() {
     }
 }

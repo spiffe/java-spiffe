@@ -94,8 +94,8 @@ class JwtSvidParseInsecureTest {
 
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
-        jwtBundle.addJWTAuthority("authority1", key1.getPublic());
-        jwtBundle.addJWTAuthority("authority2", key2.getPublic());
+        jwtBundle.addJwtAuthority("authority1", key1.getPublic());
+        jwtBundle.addJwtAuthority("authority2", key2.getPublic());
 
         SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);

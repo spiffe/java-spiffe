@@ -26,11 +26,22 @@ public class X509Bundle implements X509BundleSource {
     TrustDomain trustDomain;
     Set<X509Certificate> x509Authorities;
 
+    /**
+     * Creates a new X.509 bundle for a trust domain.
+     *
+     * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
+     */
     public X509Bundle(@NonNull final TrustDomain trustDomain) {
         this.trustDomain = trustDomain;
         this.x509Authorities = ConcurrentHashMap.newKeySet();
     }
 
+    /**
+     * Creates a new JWT bundle for a trust domain with X.509 Authorities.
+     *
+     * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
+     * @param x509Authorities a Map of X.509 Certificates
+     */
     public X509Bundle(@NonNull final TrustDomain trustDomain, @NonNull final Set<X509Certificate> x509Authorities) {
         this.trustDomain = trustDomain;
         this.x509Authorities = ConcurrentHashMap.newKeySet();
@@ -49,7 +60,7 @@ public class X509Bundle implements X509BundleSource {
      * @throws CertificateException if the bundle cannot be parsed
      */
     public static X509Bundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) throws IOException, CertificateException {
-        byte[] bundleBytes = new byte[0];
+        byte[] bundleBytes;
         try {
             bundleBytes = Files.readAllBytes(bundlePath);
         } catch (NoSuchFileException e) {
@@ -91,6 +102,13 @@ public class X509Bundle implements X509BundleSource {
             return this;
         }
         throw new BundleNotFoundException(String.format("No X509 bundle found for trust domain %s", trustDomain));
+    }
+
+    /**
+     * Returns the X.509 x509Authorities in the bundle.
+     */
+    public Set<X509Certificate> getX509Authorities() {
+        return new HashSet<>(x509Authorities);
     }
 
     /**

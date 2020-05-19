@@ -3,11 +3,12 @@ package spiffe.bundle.jwtbundle;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
-import org.apache.commons.lang3.NotImplementedException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -18,8 +19,8 @@ public class JwtBundleSet implements JwtBundleSource {
 
     ConcurrentHashMap<TrustDomain, JwtBundle> bundles;
 
-    private JwtBundleSet(ConcurrentHashMap<TrustDomain, JwtBundle> bundles) {
-        this.bundles = bundles;
+    private JwtBundleSet(Map<TrustDomain, JwtBundle> bundles) {
+        this.bundles = new ConcurrentHashMap<>(bundles);
     }
 
     /**
@@ -29,7 +30,11 @@ public class JwtBundleSet implements JwtBundleSource {
      * @return a {@link JwtBundleSet}
      */
     public static JwtBundleSet of(@NonNull final List<JwtBundle> bundles) {
-        throw new NotImplementedException("Not implemented");
+        Map<TrustDomain, JwtBundle> bundleMap = new HashMap<>();
+        for (JwtBundle bundle : bundles) {
+            bundleMap.put(bundle.getTrustDomain(), bundle);
+        }
+        return new JwtBundleSet(bundleMap);
     }
 
     /**
@@ -40,7 +45,7 @@ public class JwtBundleSet implements JwtBundleSource {
      * @throws BundleNotFoundException if no bundle could be found for the given trust domain
      */
     @Override
-    public JwtBundle getJwtBundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getJwtBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         val bundle = bundles.get(trustDomain);
         if (bundle == null) {
             throw new BundleNotFoundException(String.format("No JWT bundle for trust domain %s", trustDomain));
@@ -49,12 +54,19 @@ public class JwtBundleSet implements JwtBundleSource {
     }
 
     /**
+     * Returns the map of JWT bundles keyed by trust domain.
+     */
+    public Map<TrustDomain, JwtBundle> getBundles() {
+        return new HashMap<>(bundles);
+    }
+
+    /**
      * Add JWT bundle to this set, if the trust domain already exists
      * replace the bundle.
      *
      * @param jwtBundle an instance of a JwtBundle.
      */
-    public void add(JwtBundle jwtBundle){
-        throw new NotImplementedException("Not implemented");
+    public void add(@NonNull JwtBundle jwtBundle){
+        bundles.put(jwtBundle.getTrustDomain(), jwtBundle);
     }
 }

@@ -6,7 +6,9 @@ import lombok.val;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -17,8 +19,8 @@ public class X509BundleSet implements X509BundleSource {
 
     ConcurrentHashMap<TrustDomain, X509Bundle> bundles;
 
-    private X509BundleSet(final ConcurrentHashMap<TrustDomain, X509Bundle> bundles) {
-        this.bundles = bundles;
+    private X509BundleSet(final Map<TrustDomain, X509Bundle> bundles) {
+        this.bundles = new ConcurrentHashMap<>(bundles);
     }
 
     /**
@@ -28,7 +30,7 @@ public class X509BundleSet implements X509BundleSource {
      * @return a {@link X509BundleSet} initialized with the list of bundles
      */
     public static X509BundleSet of(@NonNull final List<X509Bundle> bundles) {
-        ConcurrentHashMap<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
+        Map<TrustDomain, X509Bundle> bundleMap = new HashMap<>();
         for (X509Bundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
@@ -59,5 +61,9 @@ public class X509BundleSet implements X509BundleSource {
             throw new BundleNotFoundException(String.format("No X509 bundle for trust domain %s", trustDomain));
         }
         return bundles.get(trustDomain);
+    }
+
+    public Map<TrustDomain, X509Bundle> getBundles() {
+        return new HashMap<>(bundles);
     }
 }
