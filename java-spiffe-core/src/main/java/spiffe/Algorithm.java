@@ -6,56 +6,56 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 
 @EqualsAndHashCode
-public class SignatureAlgorithm {
+public class Algorithm {
 
     /**
      * ECDSA signature algorithm using SHA-256 hash algorithm.
      */
-    public static final SignatureAlgorithm ES256 = new SignatureAlgorithm("ES256");
+    public static final Algorithm ES256 = new Algorithm("ES256");
 
     /**
      * ECDSA signature algorithm using SHA-384 hash algorithm.
      */
-    public static final SignatureAlgorithm ES384 = new SignatureAlgorithm("ES384");
+    public static final Algorithm ES384 = new Algorithm("ES384");
 
     /**
      * ECDSA signature algorithm using SHA-512 hash algorithm.
      */
-    public static final SignatureAlgorithm ES512 = new SignatureAlgorithm("ES512");
+    public static final Algorithm ES512 = new Algorithm("ES512");
 
     /**
      * RSASSA-PKCS1-v1_5 signature algorithm using SHA-256 hash algorithm.
      */
-    public static final SignatureAlgorithm RS256 = new SignatureAlgorithm("RS256");
+    public static final Algorithm RS256 = new Algorithm("RS256");
 
     /**
      * RSASSA-PKCS1-v1_5 signature algorithm using SHA-384 hash algorithm.
      */
-    public static final SignatureAlgorithm RS384 = new SignatureAlgorithm("RS384");
+    public static final Algorithm RS384 = new Algorithm("RS384");
 
     /**
      * RSASSA-PKCS1-v1_5 signature algorithm using SHA-512 hash algorithm.
      */
-    public static final SignatureAlgorithm RS512 = new SignatureAlgorithm("RS512");
+    public static final Algorithm RS512 = new Algorithm("RS512");
 
     /**
      * RSASSA-PSS signature using SHA-256 and MGF1 padding with SHA-256.
      */
-    public static final SignatureAlgorithm PS256 = new SignatureAlgorithm("PS256");
+    public static final Algorithm PS256 = new Algorithm("PS256");
 
     /**
      * RSASSA-PSS signature using SHA-384 and MGF1 padding with SHA-384.
      */
-    public static final SignatureAlgorithm PS384 = new SignatureAlgorithm("PS384");
+    public static final Algorithm PS384 = new Algorithm("PS384");
 
     /**
      * RSASSA-PSS signature using SHA-512 and MGF1 padding with SHA-512.
      */
-    public static final SignatureAlgorithm PS512 = new SignatureAlgorithm("PS512");
+    public static final Algorithm PS512 = new Algorithm("PS512");
 
     private final String name;
 
-    public SignatureAlgorithm(final String name) {
+    public Algorithm(final String name) {
         this.name = name;
     }
 
@@ -63,14 +63,14 @@ public class SignatureAlgorithm {
         return name;
     }
 
-    public static final class Family extends LinkedHashSet<SignatureAlgorithm> {
+    public static final class Family extends LinkedHashSet<Algorithm> {
 
         public static final Family RSA = new Family("RSA", RS256, RS384, RS512, PS256, PS384, PS512);
         public static final Family EC = new Family("EC", ES256, ES384, ES512);
 
         private final String name;
 
-        public Family(String name, final SignatureAlgorithm... algorithms) {
+        public Family(String name, final Algorithm... algorithms) {
             super(Arrays.asList(algorithms));
             this.name = name;
         }
@@ -90,7 +90,7 @@ public class SignatureAlgorithm {
         }
     }
 
-    public static SignatureAlgorithm parse(final String s) {
+    public static Algorithm parse(final String s) {
         if (s.equals(RS256.getName())) {
             return RS256;
         } else if (s.equals(RS384.getName())) {
@@ -110,7 +110,7 @@ public class SignatureAlgorithm {
         } else if (s.equals(PS512.getName())) {
             return PS512;
         } else {
-            return new SignatureAlgorithm(s);
+            return new Algorithm(s);
         }
     }
 }

@@ -9,7 +9,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import spiffe.SignatureAlgorithm;
+import spiffe.Algorithm;
 import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtBundleException;
@@ -177,13 +177,13 @@ public class JwtBundle implements JwtBundleSource {
     }
 
     private static PublicKey getPublicKey(JWK jwk) throws JOSEException, ParseException, KeyException {
-        val family = SignatureAlgorithm.Family.parse(jwk.getKeyType().getValue());
+        val family = Algorithm.Family.parse(jwk.getKeyType().getValue());
 
-        if (SignatureAlgorithm.Family.EC.equals(family)) {
+        if (Algorithm.Family.EC.equals(family)) {
             return ECKey.parse(jwk.toJSONString()).toPublicKey();
         }
 
-        if (SignatureAlgorithm.Family.RSA.equals(family)) {
+        if (Algorithm.Family.RSA.equals(family)) {
             return RSAKey.parse(jwk.toJSONString()).toPublicKey();
         }
 

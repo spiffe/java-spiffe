@@ -11,7 +11,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import spiffe.SignatureAlgorithm;
+import spiffe.Algorithm;
 import spiffe.bundle.jwtbundle.JwtBundleSource;
 import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
@@ -185,9 +185,9 @@ public class JwtSvid {
 
     private static JWSVerifier getJwsVerifier(PublicKey jwtAuthority, String algorithm) throws JOSEException, JwtSvidException {
         JWSVerifier verifier;
-        if (SignatureAlgorithm.Family.EC.contains(new SignatureAlgorithm(algorithm))) {
+        if (Algorithm.Family.EC.contains(new Algorithm(algorithm))) {
             verifier = new ECDSAVerifier((ECPublicKey) jwtAuthority);
-        } else if (SignatureAlgorithm.Family.RSA.contains(new SignatureAlgorithm(algorithm))) {
+        } else if (Algorithm.Family.RSA.contains(new Algorithm(algorithm))) {
             verifier = new RSASSAVerifier((RSAPublicKey) jwtAuthority);
         } else {
             throw new JwtSvidException(String.format("Unsupported token signature algorithm %s", algorithm));
