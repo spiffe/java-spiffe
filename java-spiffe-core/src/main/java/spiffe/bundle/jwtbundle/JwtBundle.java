@@ -7,7 +7,9 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import lombok.NonNull;
 import lombok.Value;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import spiffe.SignatureAlgorithm;
 import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtBundleException;
@@ -66,7 +68,7 @@ public class JwtBundle implements JwtBundleSource {
      */
     public static JwtBundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) throws KeyException, JwtBundleException {
         try {
-            JWKSet jwkSet = JWKSet.load(bundlePath.toFile());
+            val jwkSet = JWKSet.load(bundlePath.toFile());
             return toJwtBundle(trustDomain, jwkSet);
         } catch (IOException | ParseException | JOSEException e) {
             throw new JwtBundleException(String.format("Could not load bundle from file: %s", bundlePath.toString()), e);
@@ -84,7 +86,7 @@ public class JwtBundle implements JwtBundleSource {
             @NonNull final TrustDomain trustDomain,
             @NonNull final byte[] bundleBytes) throws KeyException, JwtBundleException {
         try {
-            JWKSet jwkSet = JWKSet.parse(new String(bundleBytes));
+            val jwkSet = JWKSet.parse(new String(bundleBytes));
             return toJwtBundle(trustDomain, jwkSet);
         } catch (ParseException | JOSEException e) {
             throw new JwtBundleException("Could not parse bundle from bytes", e);
@@ -167,7 +169,7 @@ public class JwtBundle implements JwtBundleSource {
     }
 
     private static String getKeyId(JWK jwk) throws JwtBundleException {
-        String keyId = jwk.getKeyID();
+        val keyId = jwk.getKeyID();
         if (StringUtils.isBlank(keyId)) {
             throw new JwtBundleException("Error adding authority of JWKS: keyID cannot be empty");
         }
@@ -175,12 +177,16 @@ public class JwtBundle implements JwtBundleSource {
     }
 
     private static PublicKey getPublicKey(JWK jwk) throws JOSEException, ParseException, KeyException {
-        if ("EC".equals(jwk.getKeyType().getValue())) {
+        val family = SignatureAlgorithm.Family.parse(jwk.getKeyType().getValue());
+
+        if (SignatureAlgorithm.Family.EC.equals(family)) {
             return ECKey.parse(jwk.toJSONString()).toPublicKey();
         }
-        if ("RSA".equals(jwk.getKeyType().getValue())) {
+
+        if (SignatureAlgorithm.Family.RSA.equals(family)) {
             return RSAKey.parse(jwk.toJSONString()).toPublicKey();
         }
+
         throw new KeyException(String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
     }
 }

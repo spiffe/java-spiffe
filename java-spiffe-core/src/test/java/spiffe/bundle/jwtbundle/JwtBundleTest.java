@@ -1,13 +1,13 @@
 package spiffe.bundle.jwtbundle;
 
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import com.nimbusds.jose.jwk.Curve;
 import org.junit.jupiter.api.Test;
 import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtBundleException;
 import spiffe.internal.DummyPublicKey;
 import spiffe.spiffeid.TrustDomain;
+import spiffe.utils.TestUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -34,8 +34,9 @@ class JwtBundleTest {
     @Test
     void testNewJwtBundleWithTrustDomainAndAuthorities_Success() {
         HashMap<String, PublicKey> authorities = new HashMap<>();
-        KeyPair key1 = Keys.keyPairFor(SignatureAlgorithm.ES384);
-        KeyPair key2 = Keys.keyPairFor(SignatureAlgorithm.PS256);
+
+        KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
+        KeyPair key2 = TestUtils.generateRSAKeyPair(2048);
 
         authorities.put("authority1", key1.getPublic());
         authorities.put("authority2", key2.getPublic());

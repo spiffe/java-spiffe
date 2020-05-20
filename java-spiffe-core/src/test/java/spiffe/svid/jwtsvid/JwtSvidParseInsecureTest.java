@@ -1,10 +1,7 @@
 package spiffe.svid.jwtsvid;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.DefaultClaims;
-import io.jsonwebtoken.security.Keys;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jwt.JWTClaimsSet;
 import lombok.Builder;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
@@ -15,21 +12,18 @@ import spiffe.bundle.jwtbundle.JwtBundle;
 import spiffe.exception.JwtSvidException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
+import spiffe.utils.TestUtils;
 
 import java.security.KeyPair;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JwtSvidParseInsecureTest {
-
-    private static final String HS256TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG" +
-            "4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
 
     @ParameterizedTest
     @MethodSource("provideJwtScenarios")
@@ -74,23 +68,23 @@ class JwtSvidParseInsecureTest {
     @Test
     void testParseInsecure_nullAudience_throwsNullPointerException() throws JwtSvidException {
         try {
-            KeyPair key1 = Keys.keyPairFor(SignatureAlgorithm.ES384);
+            KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
             TrustDomain trustDomain = TrustDomain.of("test.domain");
             SpiffeId spiffeId = trustDomain.newSpiffeId("host");
             List<String> audience = Collections.singletonList("audience");
             Date expiration = new Date(System.currentTimeMillis() + 3600000);
-            Claims claims = buildClaims(audience, spiffeId.toString(), expiration);
-            JwtSvid.parseInsecure(generateToken(claims, key1, "authority1"), null);
+            JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
+
+            JwtSvid.parseInsecure(TestUtils.generateToken(claims, key1, "authority1"), null);
+
         } catch (NullPointerException e) {
             assertEquals("audience is marked non-null but is null", e.getMessage());
         }
     }
 
-
     static Stream<Arguments> provideJwtScenarios() {
-        KeyPair key1 = Keys.keyPairFor(SignatureAlgorithm.ES384);
-        KeyPair key2 = Keys.keyPairFor(SignatureAlgorithm.ES384);
-        KeyPair key3 = Keys.keyPairFor(SignatureAlgorithm.RS256);
+        KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
+        KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
 
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
@@ -101,19 +95,19 @@ class JwtSvidParseInsecureTest {
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
         List<String> audience = Collections.singletonList("audience");
 
-        Claims claims = buildClaims(audience, spiffeId.toString(), expiration);
+        JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
 
         return Stream.of(
                 Arguments.of(TestCase.builder()
                         .name("success")
                         .expectedAudience(audience)
-                        .generateToken(() -> generateToken(claims, key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(null)
                         .expectedJwtSvid(new JwtSvid(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims, null))
+                                claims.getClaims(), null))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("malformed")
@@ -122,58 +116,36 @@ class JwtSvidParseInsecureTest {
                         .expectedException(new IllegalArgumentException("Unable to parse JWT token"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("unsupported algorithm")
-                        .expectedAudience(audience)
-                        .generateToken(() -> HS256TOKEN)
-                        .expectedException(new JwtSvidException("Unsupported token signature algorithm HS256"))
-                        .build()),
-                Arguments.of(TestCase.builder()
                         .name("missing subject")
                         .expectedAudience(audience)
-                        .generateToken(() -> generateToken(buildClaims(audience, "", expiration), key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token missing subject claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("missing expiration")
                         .expectedAudience(audience)
-                        .generateToken(() -> generateToken(buildClaims(audience, spiffeId.toString(), null), key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), null), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token missing expiration claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("token has expired")
                         .expectedAudience(audience)
-                        .generateToken(() -> generateToken(buildClaims(audience, spiffeId.toString(), new Date()), key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), new Date()), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token has expired"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("unexpected audience")
                         .expectedAudience(Collections.singletonList("another"))
-                        .generateToken(() -> generateToken(claims, key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience])"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("invalid subject claim")
                         .expectedAudience(audience)
-                        .generateToken(() -> generateToken(buildClaims(audience, "non-spiffe-subject", expiration), key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "non-spiffe-subject", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Subject non-spiffe-subject cannot be parsed as a SPIFFE ID"))
                         .build())
         );
-    }
-
-    private static String generateToken(Map<String, Object> claims, KeyPair key, String keyId) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .signWith(key.getPrivate())
-                .setHeaderParam("kid", keyId)
-                .compact();
-    }
-
-    private static Claims buildClaims(List<String> audience, String spiffeId, Date expiration) {
-        Claims claims = new DefaultClaims();
-        claims.put("aud", audience);
-        claims.setSubject(spiffeId);
-        claims.setExpiration(expiration);
-        return claims;
     }
 
     @Value

@@ -2,6 +2,7 @@ package spiffe.internal;
 
 import lombok.NonNull;
 import lombok.val;
+import spiffe.SignatureAlgorithm;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 
@@ -164,10 +165,13 @@ public class CertificateUtils {
         Signature sig = null;
 
         try {
-            if ("RSA".equals(privateKey.getAlgorithm())) {
+            SignatureAlgorithm.Family algorithm = SignatureAlgorithm.Family.parse(privateKey.getAlgorithm());
+            if (SignatureAlgorithm.Family.RSA.equals(algorithm)) {
                 sig = Signature.getInstance("SHA256withRSA");
-            } else {
+            } else if (SignatureAlgorithm.Family.EC.equals(algorithm)) {
                 sig = Signature.getInstance("SHA1withECDSA");
+            } else {
+                throw new InvalidKeyException(String.format("Private Key algorithm not supported: %s", algorithm));
             }
 
             sig.initSign(privateKey);
