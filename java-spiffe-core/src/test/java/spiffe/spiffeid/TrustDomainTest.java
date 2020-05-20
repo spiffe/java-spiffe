@@ -9,8 +9,40 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-
 public class TrustDomainTest {
+
+    @ParameterizedTest
+    @MethodSource("provideTestTrustDomain")
+    void testParseTrustDomain(String input, Object expected) {
+        TrustDomain result;
+        try {
+            result = TrustDomain.of(input);
+            assertEquals(expected, result.getName());
+        } catch (Exception e) {
+            assertEquals(expected, e.getMessage());
+        }
+    }
+
+    @Test
+    void testNewSpiffeId() {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("path1", "host");
+
+        assertEquals(trustDomain, spiffeId.getTrustDomain());
+        assertEquals("/path1/host", spiffeId.getPath());
+    }
+
+    @Test
+    void testToString() {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        assertEquals("test.domain", trustDomain.toString());
+    }
+
+    @Test
+    void testGetName() {
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        assertEquals("test.domain", trustDomain.getName());
+    }
 
     static Stream<Arguments> provideTestTrustDomain() {
         return Stream.of(
@@ -28,26 +60,5 @@ public class TrustDomainTest {
                 Arguments.of("/path/element", "Trust domain cannot be empty"),
                 Arguments.of("spiffe://domain.test:80", "Port is not allowed")
         );
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideTestTrustDomain")
-    void parseTrustDomain(String input, Object expected) {
-        TrustDomain result = null;
-        try {
-            result = TrustDomain.of(input);
-            assertEquals(expected, result.getName());
-        } catch (Exception e) {
-            assertEquals(expected, e.getMessage());
-        }
-    }
-
-    @Test
-    void newSpiffeId() {
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
-        SpiffeId spiffeId = trustDomain.newSpiffeId("path1", "host");
-
-        assertEquals(trustDomain, spiffeId.getTrustDomain());
-        assertEquals("/path1/host", spiffeId.getPath());
     }
 }

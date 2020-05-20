@@ -62,7 +62,7 @@ public class TrustDomain {
 
     private static void validateUri(URI uri) {
         val scheme = uri.getScheme();
-        if (StringUtils.isNotBlank(scheme) && !SPIFFE_SCHEME.equals(scheme)) {
+        if (!SPIFFE_SCHEME.equals(scheme)) {
             throw new IllegalArgumentException("Invalid scheme");
         }
 
