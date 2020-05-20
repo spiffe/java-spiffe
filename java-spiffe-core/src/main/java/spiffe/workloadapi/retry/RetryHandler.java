@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class RetryHandler {
 
-    public final ScheduledExecutorService executor;
-    private final BackoffPolicy backoffPolicy;
-    private Duration nextDelay;
-    private int retryCount;
+    final ScheduledExecutorService executor;
+    final BackoffPolicy backoffPolicy;
+    Duration nextDelay;
+    int retryCount;
 
     public RetryHandler(BackoffPolicy backoffPolicy, ScheduledExecutorService executor) {
         this.nextDelay = backoffPolicy.getInitialDelay();
