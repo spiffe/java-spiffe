@@ -185,9 +185,9 @@ public class JwtSvid {
 
     private static JWSVerifier getJwsVerifier(PublicKey jwtAuthority, String algorithm) throws JOSEException, JwtSvidException {
         JWSVerifier verifier;
-        if (Algorithm.Family.EC.contains(new Algorithm(algorithm))) {
+        if (Algorithm.Family.EC.contains(Algorithm.parse(algorithm))) {
             verifier = new ECDSAVerifier((ECPublicKey) jwtAuthority);
-        } else if (Algorithm.Family.RSA.contains(new Algorithm(algorithm))) {
+        } else if (Algorithm.Family.RSA.contains(Algorithm.parse(algorithm))) {
             verifier = new RSASSAVerifier((RSAPublicKey) jwtAuthority);
         } else {
             throw new JwtSvidException(String.format("Unsupported token signature algorithm %s", algorithm));

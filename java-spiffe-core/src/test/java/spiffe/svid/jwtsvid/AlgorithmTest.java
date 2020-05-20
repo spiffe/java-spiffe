@@ -2,6 +2,7 @@ package spiffe.svid.jwtsvid;
 
 import lombok.Builder;
 import lombok.Value;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -10,6 +11,7 @@ import spiffe.Algorithm;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AlgorithmTest {
 
@@ -32,7 +34,7 @@ class AlgorithmTest {
                 Arguments.of(TestCase.builder().name("PS256").expectedAlgorithm(Algorithm.PS256).build()),
                 Arguments.of(TestCase.builder().name("PS384").expectedAlgorithm(Algorithm.PS384).build()),
                 Arguments.of(TestCase.builder().name("PS512").expectedAlgorithm(Algorithm.PS512).build()),
-                Arguments.of(TestCase.builder().name("OTHER").expectedAlgorithm(new Algorithm("OTHER")).build())
+                Arguments.of(TestCase.builder().name("OTHER").expectedAlgorithm(Algorithm.OTHER).build())
         );
     }
 
@@ -46,5 +48,32 @@ class AlgorithmTest {
             this.name = name;
             this.expectedAlgorithm = expectedAlgorithm;
         }
+    }
+
+    @Test
+    void testParseFamilyRSA() {
+        Algorithm.Family rsa = Algorithm.Family.parse("RSA");
+        assertEquals(Algorithm.Family.RSA, rsa);
+        assertTrue(rsa.contains(Algorithm.RS256));
+        assertTrue(rsa.contains(Algorithm.RS384));
+        assertTrue(rsa.contains(Algorithm.RS512));
+        assertTrue(rsa.contains(Algorithm.PS256));
+        assertTrue(rsa.contains(Algorithm.PS384));
+        assertTrue(rsa.contains(Algorithm.PS512));
+    }
+
+    @Test
+    void testParseFamilyEC() {
+        Algorithm.Family ec = Algorithm.Family.parse("EC");
+        assertEquals(Algorithm.Family.EC, ec);
+        assertTrue(ec.contains(Algorithm.ES256));
+        assertTrue(ec.contains(Algorithm.ES384));
+        assertTrue(ec.contains(Algorithm.ES512));
+    }
+
+    @Test
+    void testParseFamilyOTHER() {
+        Algorithm.Family other = Algorithm.Family.parse("unknown family");
+        assertEquals(Algorithm.Family.OTHER, other);
     }
 }
