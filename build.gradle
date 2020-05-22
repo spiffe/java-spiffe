@@ -3,6 +3,7 @@ subprojects {
     version '0.6.0'
 
     apply plugin: 'java-library'
+    apply plugin: 'jacoco'
 
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -13,6 +14,28 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        finalizedBy jacocoTestReport
+
+    }
+
+    jacocoTestReport {
+        dependsOn test // tests are required to run before generating the report
+        reports {
+            xml.enabled false
+            csv.enabled false
+            html.destination file("${buildDir}/jacocoHtml")
+        }
+
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: ['**/internal/**', '**/exception/**'])
+            }))
+        }
+    }
+
+    jacoco {
+        toolVersion = "0.8.5"
+        reportsDir = file("$buildDir/customJacocoReportDir")
     }
 
     dependencies {

@@ -56,5 +56,8 @@ dependencies {
 
     // library for processing JWT tokens and JOSE JWK bundles
     implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '5.7'
+
+    // using bouncy castle for generating x509 certs for testing purposes
+    testImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.65'
 }
 

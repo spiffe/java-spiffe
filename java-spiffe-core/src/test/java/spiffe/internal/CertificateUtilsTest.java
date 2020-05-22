@@ -3,19 +3,26 @@ package spiffe.internal;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import spiffe.spiffeid.SpiffeId;
+import spiffe.spiffeid.TrustDomain;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
+import static spiffe.utils.X509CertificateTestUtils.createCertificate;
+import static spiffe.utils.X509CertificateTestUtils.createRootCA;
 
 public class CertificateUtilsTest {
 
@@ -24,7 +31,7 @@ public class CertificateUtilsTest {
         val path = Paths.get(toUri("testdata/internal/cert.pem"));
         val certBytes = Files.readAllBytes(path);
 
-        List<X509Certificate> x509CertificateList = null;
+        List<X509Certificate> x509CertificateList;
         SpiffeId spiffeId = null;
         try {
             x509CertificateList = CertificateUtils.generateCertificates(certBytes);
@@ -55,7 +62,59 @@ public class CertificateUtilsTest {
         }
     }
 
+    @Test
+    void testGeneratePrivateKey() throws URISyntaxException, IOException {
+        val keyPath = Paths.get(toUri("testdata/internal/privateKeyRsa.pem"));
+        val keyBytes = Files.readAllBytes(keyPath);
+
+        try {
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes);
+            assertNotNull(privateKey);
+            assertEquals("RSA", privateKey.getAlgorithm());
+        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
+            fail("Should have generated key", e);
+        }
+    }
+
+    @Test
+    void testGetSpiffeId() throws Exception {
+        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test" );
+        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://domain.test/workload", rootCa, false);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId(leaf.getCertificate());
+        assertEquals(SpiffeId.parse("spiffe://domain.test/workload"), spiffeId);
+    }
+
+    @Test
+    void testGetSpiffeId_certNotContainSpiffeId_throwsCertificateException() throws Exception {
+        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test" );
+        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "", rootCa, false);
+        try {
+            CertificateUtils.getSpiffeId(leaf.getCertificate());
+            fail("exception is expected");
+        } catch (CertificateException e) {
+            assertEquals("Certificate does not contain SPIFFE ID in the URI SAN", e.getMessage());
+        }
+    }
+
+    @Test
+    void testGetTrustDomain() throws Exception {
+        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test" );
+        val intermediate = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://domain.test/host", rootCa, true);
+        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://domain.test/workload", intermediate, false);
+
+        val chain = Arrays.asList(leaf.getCertificate(), intermediate.getCertificate());
+
+        try {
+            TrustDomain trustDomain = CertificateUtils.getTrustDomain(chain);
+            assertNotNull(trustDomain);
+            assertEquals(TrustDomain.of("domain.test"), trustDomain);
+        } catch (CertificateException e) {
+            fail(e);
+        }
+    }
+
     private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }
+
 }

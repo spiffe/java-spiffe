@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.EMPTY_LIST;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -209,6 +210,9 @@ public class CertificateUtils {
     }
 
     private static List<String> getSpiffeIds(X509Certificate certificate) throws CertificateParsingException {
+        if (certificate.getSubjectAlternativeNames() == null) {
+            return EMPTY_LIST;
+        }
         return certificate.getSubjectAlternativeNames()
                 .stream()
                 .map(san -> (String) san.get(SAN_VALUE_INDEX))
