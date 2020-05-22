@@ -1,9 +1,11 @@
 package spiffe.internal;
 
+import com.nimbusds.jose.jwk.Curve;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
+import spiffe.utils.TestUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,6 +13,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertPathValidatorException;
@@ -63,7 +66,7 @@ public class CertificateUtilsTest {
     }
 
     @Test
-    void testGeneratePrivateKey() throws URISyntaxException, IOException {
+    void testGenerateiRsaPrivateKeyFromBytes() throws URISyntaxException, IOException {
         val keyPath = Paths.get(toUri("testdata/internal/privateKeyRsa.pem"));
         val keyBytes = Files.readAllBytes(keyPath);
 
@@ -71,6 +74,20 @@ public class CertificateUtilsTest {
             PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes);
             assertNotNull(privateKey);
             assertEquals("RSA", privateKey.getAlgorithm());
+        } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
+            fail("Should have generated key", e);
+        }
+    }
+
+    @Test
+    void testGenerateEcPrivateKeyFromBytes() {
+        KeyPair ecKeyPair = TestUtils.generateECKeyPair(Curve.P_256);
+        byte[] keyBytes = ecKeyPair.getPrivate().getEncoded();
+
+        try {
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes);
+            assertNotNull(privateKey);
+            assertEquals("EC", privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
             fail("Should have generated key", e);
         }
