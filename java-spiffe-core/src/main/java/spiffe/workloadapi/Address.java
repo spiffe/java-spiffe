@@ -17,11 +17,13 @@ import java.util.List;
 public class Address {
 
     /**
-     * 	Environment variable holding the default Workload API address.
+     * Environment variable holding the default Workload API address.
      */
     public static final String SOCKET_ENV_VARIABLE = "SPIFFE_ENDPOINT_SOCKET";
 
-    private static final List<String> VALID_SCHEMES = Arrays.asList("unix", "tcp");
+    private static final String UNIX_SCHEME = "unix";
+    private static final String TCP_SCHEME = "tcp";
+    private static final List<String> VALID_SCHEMES = Arrays.asList(UNIX_SCHEME, TCP_SCHEME);
 
     /**
      * Returns the default Workload API address hold by the system environment variable
@@ -44,7 +46,6 @@ public class Address {
      *
      * @param address the Workload API socket address as a string
      * @return an instance of a {@link URI}
-     *
      * @throws SocketEndpointAddressException if the address could not be parsed or if it is not valid
      */
     public static URI parseAddress(String address) throws SocketEndpointAddressException {
@@ -61,15 +62,12 @@ public class Address {
         }
 
         String error = null;
-        switch (scheme) {
-            case "unix":
-                error = validateUnixAddress(parsedAddress);
-                break;
-            case "tcp":
-                error = validateTcpAddress(parsedAddress);
-                break;
-            default:
-                error = "Workload endpoint socket URI must have a tcp:// or unix:// scheme: %s";
+        if (UNIX_SCHEME.equals(scheme)) {
+            error = validateUnixAddress(parsedAddress);
+        }
+
+        if (TCP_SCHEME.equals(scheme)) {
+            error = validateTcpAddress(parsedAddress);
         }
 
         if (StringUtils.isNotBlank(error)) {
@@ -86,10 +84,6 @@ public class Address {
 
         if (StringUtils.isNotBlank(parsedAddress.getUserInfo())) {
             return "Workload endpoint unix socket URI must not include user info: %s";
-        }
-
-        if (StringUtils.isBlank(parsedAddress.getHost()) && StringUtils.isBlank(parsedAddress.getPath())) {
-            return "Workload endpoint unix socket URI must include a path: %s";
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
@@ -152,5 +146,6 @@ public class Address {
         }
     }
 
-    private Address() {}
+    private Address() {
+    }
 }

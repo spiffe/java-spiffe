@@ -10,10 +10,12 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
+import java.lang.reflect.Field;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Util methods for generating KeyPairs, tokens, and other functionality used only to be used in testing.
@@ -49,16 +51,23 @@ public class TestUtils {
         }
     }
 
-    public static String generateToken(JWTClaimsSet claims, KeyPair key, String keyId) {
+    public static String generateToken(Map<String, Object> claims, KeyPair keyPair, String keyId) {
+        JWTClaimsSet jwtClaimsSet = buildJWTClaimSetFromClaimsMap(claims);
+        return generateToken(jwtClaimsSet, keyPair, keyId);
+
+
+    }
+
+    public static String generateToken(JWTClaimsSet claims, KeyPair keyPair, String keyId) {
         try {
             JWSAlgorithm algorithm;
             JWSSigner signer;
-            if ("EC".equals(key.getPublic().getAlgorithm())) {
+            if ("EC".equals(keyPair.getPublic().getAlgorithm())) {
                 algorithm = JWSAlgorithm.ES512;
-                signer = new ECDSASigner(key.getPrivate(), Curve.P_521);
-            } else if ("RSA".equals(key.getPublic().getAlgorithm())) {
+                signer = new ECDSASigner(keyPair.getPrivate(), Curve.P_521);
+            } else if ("RSA".equals(keyPair.getPublic().getAlgorithm())) {
                 algorithm = JWSAlgorithm.RS512;
-                signer = new RSASSASigner(key.getPrivate());
+                signer = new RSASSASigner(keyPair.getPrivate());
             } else {
                 throw new IllegalArgumentException("Algorithm not supported");
             }
@@ -77,5 +86,38 @@ public class TestUtils {
                 .expirationTime(expiration)
                 .audience(audience)
                 .build();
+    }
+
+    public static JWTClaimsSet buildJWTClaimSetFromClaimsMap(Map<String, Object> claims) {
+        return new JWTClaimsSet.Builder()
+                .subject((String) claims.get("sub"))
+                .expirationTime((Date) claims.get("exp"))
+                .audience((List<String>) claims.get("aud"))
+                .build();
+    }
+
+    public static void setEnvironmentVariable(String variableName, String value) throws Exception {
+        Class<?> processEnvironment = Class.forName("java.lang.ProcessEnvironment");
+
+        Field unmodifiableMapField = getField(processEnvironment, "theUnmodifiableEnvironment");
+        Object unmodifiableMap = unmodifiableMapField.get(null);
+        injectIntoUnmodifiableMap(variableName, value, unmodifiableMap);
+
+        Field mapField = getField(processEnvironment, "theEnvironment");
+        Map<String, String> map = (Map<String, String>) mapField.get(null);
+        map.put(variableName, value);
+    }
+
+    private static Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+        Field field = clazz.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private static void injectIntoUnmodifiableMap(String key, String value, Object map) throws ReflectiveOperationException {
+        Class unmodifiableMap = Class.forName("java.util.Collections$UnmodifiableMap");
+        Field field = getField(unmodifiableMap, "m");
+        Object obj = field.get(map);
+        ((Map<String, String>) obj).put(key, value);
     }
 }

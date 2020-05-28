@@ -1,5 +1,6 @@
 package spiffe.svid.jwtsvid;
 
+import spiffe.exception.JwtSvidException;
 import spiffe.spiffeid.SpiffeId;
 
 /**
@@ -17,5 +18,5 @@ public interface JwtSvidSource {
      *
      * @throws //TODO: declare thrown exceptions
      */
-    JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences);
+    JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences) throws JwtSvidException;
 }

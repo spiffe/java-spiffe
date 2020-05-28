@@ -2,14 +2,18 @@ package spiffe.workloadapi.internal;
 
 import com.google.protobuf.ByteString;
 import lombok.val;
+import spiffe.bundle.jwtbundle.JwtBundle;
+import spiffe.bundle.jwtbundle.JwtBundleSet;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSet;
+import spiffe.exception.JwtBundleException;
 import spiffe.exception.X509SvidException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.workloadapi.X509Context;
 
+import java.security.KeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,13 +55,27 @@ public class GrpcConversionUtils {
 
     private static List<X509Svid> getListOfX509Svid(Workload.X509SVIDResponse x509SVIDResponse) throws X509SvidException {
         List<X509Svid> x509SvidList = new ArrayList<>();
+
         for (Workload.X509SVID x509SVID : x509SVIDResponse.getSvidsList()) {
             val svid = X509Svid.parse(
                     x509SVID.getX509Svid().toByteArray(),
                     x509SVID.getX509SvidKey().toByteArray());
             x509SvidList.add(svid);
+
+            if (!x509SVID.getSpiffeId().equals(svid.getSpiffeId().toString())) {
+                throw new X509SvidException(String.format("SPIFFE ID in X509SVIDResponse (%s) does not match SPIFFE ID in X.509 certificate (%s)", x509SVID.getSpiffeId(), svid.getSpiffeId()));
+            }
         }
         return x509SvidList;
+    }
+
+    public static JwtBundleSet toBundleSet(Workload.JWTBundlesResponse bundlesResponse) throws KeyException, JwtBundleException {
+        List<JwtBundle> jwtBundles = new ArrayList<>();
+        for (Map.Entry<String, ByteString> entry : bundlesResponse.getBundlesMap().entrySet()) {
+            JwtBundle jwtBundle = JwtBundle.parse(TrustDomain.of(entry.getKey()), entry.getValue().toByteArray());
+            jwtBundles.add(jwtBundle);
+        }
+        return JwtBundleSet.of(jwtBundles);
     }
 
     private GrpcConversionUtils() {}

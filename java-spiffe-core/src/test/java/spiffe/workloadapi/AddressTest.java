@@ -38,6 +38,7 @@ public class AddressTest {
                 Arguments.of("tcp://1.2.3.4:5", URI.create("tcp://1.2.3.4:5")),
                 Arguments.of("tcp:opaque", "Workload endpoint tcp socket URI must not be opaque: tcp:opaque"),
                 Arguments.of("tcp://", "Workload endpoint socket is not a valid URI: tcp://"),
+                Arguments.of("tcp:///test", "Workload endpoint tcp socket URI must include a host: tcp:///test"),
                 Arguments.of("tcp://1.2.3.4:5?whatever", "Workload endpoint tcp socket URI must not include query values: tcp://1.2.3.4:5?whatever"),
                 Arguments.of("tcp://1.2.3.4:5#whatever", "Workload endpoint tcp socket URI must not include a fragment: tcp://1.2.3.4:5#whatever"),
                 Arguments.of("tcp://john:doe@1.2.3.4:5/path", "Workload endpoint tcp socket URI must not include user info: tcp://john:doe@1.2.3.4:5/path"),
