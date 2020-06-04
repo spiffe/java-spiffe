@@ -12,8 +12,8 @@ import org.junit.platform.commons.util.StringUtils;
 import spiffe.exception.JwtSvidException;
 import spiffe.svid.jwtsvid.JwtSvid;
 import spiffe.utils.TestUtils;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc;
-import spiffe.workloadapi.internal.Workload;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase;
+import spiffe.workloadapi.grpc.Workload;
 
 import java.io.IOException;
 import java.net.URI;
@@ -24,7 +24,7 @@ import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.util.*;
 
-class FakeWorkloadApi extends SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase {
+class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
     final String privateKey = "testdata/workloadapi/svid.key";
     final String svid = "testdata/workloadapi/svid.pem";

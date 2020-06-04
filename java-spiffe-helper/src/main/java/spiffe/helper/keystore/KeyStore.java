@@ -1,8 +1,9 @@
-package spiffe.helper;
+package spiffe.helper.keystore;
 
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,27 +24,26 @@ class KeyStore {
 
     private final Path keyStoreFilePath;
     private final KeyStoreType keyStoreType;
-    private final char[] keyStorePassword;
+    private final String keyStorePassword;
 
-    private java.security.KeyStore javaKeyStore;
-    private File keyStoreFile;
+    private final java.security.KeyStore javaKeyStore;
+    private final File keyStoreFile;
 
     @Builder
     KeyStore(
             @NonNull final Path keyStoreFilePath,
             @NonNull final KeyStoreType keyStoreType,
-            @NonNull final char[] keyStorePassword) throws KeyStoreException {
+            @NonNull final String keyStorePassword) throws KeyStoreException {
         this.keyStoreFilePath = keyStoreFilePath;
         this.keyStoreType = keyStoreType;
-        this.keyStorePassword = keyStorePassword;
-        setupKeyStore();
-    }
 
-    private void setupKeyStore() throws KeyStoreException {
+        if (StringUtils.isBlank(keyStorePassword)) {
+            throw new IllegalArgumentException("keyStorePassword cannot be blank");
+        }
+        this.keyStorePassword = keyStorePassword;
         this.keyStoreFile = new File(keyStoreFilePath.toUri());
         this.javaKeyStore = loadKeyStore(keyStoreFile);
     }
-
 
     private java.security.KeyStore loadKeyStore(final File keyStoreFile) throws KeyStoreException {
         try {
@@ -51,10 +51,12 @@ class KeyStore {
 
             // Initialize KeyStore
             if (Files.exists(keyStoreFilePath)) {
-                keyStore.load(new FileInputStream(keyStoreFile), keyStorePassword);
+                try (final FileInputStream fileInputStream = new FileInputStream(keyStoreFile)) {
+                    keyStore.load(fileInputStream, keyStorePassword.toCharArray());
+                }
             } else {
                 //create new keyStore
-                keyStore.load(null, keyStorePassword);
+                keyStore.load(null, keyStorePassword.toCharArray());
             }
             return keyStore;
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
@@ -66,36 +68,36 @@ class KeyStore {
     /**
      * Store a private key and X.509 certificate chain in a Java KeyStore
      *
-     * @param privateKeyEntry contains the alias, privateKey, chain, privateKey password
+     * @param keyEntry contains the alias, privateKey, chain, privateKey password
      */
-    void storePrivateKey(final PrivateKeyEntry privateKeyEntry) throws KeyStoreException {
+    void storePrivateKeyEntry(final PrivateKeyEntry keyEntry) throws KeyStoreException {
         // Store PrivateKey Entry in KeyStore
         javaKeyStore.setKeyEntry(
-                privateKeyEntry.getAlias(),
-                privateKeyEntry.getPrivateKey(),
-                privateKeyEntry.getPassword(),
-                privateKeyEntry.getCertificateChain()
+                keyEntry.getAlias(),
+                keyEntry.getPrivateKey(),
+                keyEntry.getPassword().toCharArray(),
+                keyEntry.getCertificateChain()
         );
 
         this.flush();
     }
 
     /**
-     * Store a Bundle Entry in the KeyStore
+     * Store an Authority Entry in the KeyStore.
      */
-    void storeBundleEntry(BundleEntry bundleEntry) throws KeyStoreException {
+    void storeAuthorityEntry(AuthorityEntry authorityEntry) throws KeyStoreException {
         // Store Bundle Entry in KeyStore
         this.javaKeyStore.setCertificateEntry(
-                bundleEntry.getAlias(),
-                bundleEntry.getCertificate()
+                authorityEntry.getAlias(),
+                authorityEntry.getCertificate()
         );
         this.flush();
     }
 
-    // Flush KeyStore to disk, to the configured (@see keyStoreFilePath)
+    // Flush KeyStore to disk, to the configured keyStoreFilePath
     private void flush() throws KeyStoreException {
-        try {
-            javaKeyStore.store(new FileOutputStream(keyStoreFile), keyStorePassword);
+        try (FileOutputStream fileOutputStream = new FileOutputStream(keyStoreFile)){
+            javaKeyStore.store(fileOutputStream, keyStorePassword.toCharArray());
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new KeyStoreException(e);
         }

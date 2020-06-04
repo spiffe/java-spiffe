@@ -1,6 +1,5 @@
 subprojects {
     group 'spiffe'
-    version '0.6.0'
 
     apply plugin: 'java-library'
     apply plugin: 'jacoco'
@@ -15,27 +14,6 @@ subprojects {
     test {
         useJUnitPlatform()
         finalizedBy jacocoTestReport
-
-    }
-
-    jacocoTestReport {
-        dependsOn test // tests are required to run before generating the report
-        reports {
-            xml.enabled false
-            csv.enabled false
-            html.destination file("${buildDir}/jacocoHtml")
-        }
-
-        afterEvaluate {
-            classDirectories.setFrom(files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: ['**/internal/**', '**/exception/**'])
-            }))
-        }
-    }
-
-    jacoco {
-        toolVersion = "0.8.5"
-        reportsDir = file("$buildDir/customJacocoReportDir")
     }
 
     dependencies {
@@ -53,6 +31,36 @@ subprojects {
         annotationProcessor 'org.projectlombok:lombok:1.18.12'
         testCompileOnly 'org.projectlombok:lombok:1.18.12'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.12'
+    }
+
+    jacocoTestReport {
+        dependsOn test // tests are required to run before generating the report
+        reports {
+            xml.enabled false
+            csv.enabled false
+            html.destination file("${buildDir}/jacocoHtml")
+        }
+
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: ['**/grpc/**', '**/exception/**'])
+            }))
+        }
+    }
+
+    jacoco {
+        toolVersion = "0.8.5"
+        reportsDir = file("$buildDir/customJacocoReportDir")
+    }
+
+    test {
+        testLogging {
+            afterSuite { desc, result ->
+                if (!desc.parent) { // will match the outermost suite
+                    println "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+                }
+            }
+        }
     }
 }
 

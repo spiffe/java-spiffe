@@ -25,6 +25,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
 
+import static spiffe.workloadapi.internal.ThreadUtils.await;
+
 /**
  * A <code>X509Source</code> represents a source of X.509 SVIDs and X.509 bundles maintained via the
  * Workload API.
@@ -199,16 +201,16 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
         return WorkloadApiClient.newClient(clientOptions);
     }
 
-    private void init(Duration timeout) throws InterruptedException, TimeoutException {
+    private void init(Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
         setX509ContextWatcher(done);
 
         boolean success;
         if (timeout.isZero()) {
-            done.await();
+            await(done);
             success = true;
         } else {
-            success = done.await(timeout.getSeconds(), TimeUnit.SECONDS);
+            success = await(done, timeout.getSeconds(), TimeUnit.SECONDS);
         }
         if (!success) {
             throw new TimeoutException("Timeout waiting for X509 Context update");

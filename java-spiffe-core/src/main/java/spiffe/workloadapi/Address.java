@@ -49,7 +49,9 @@ public class Address {
      * @throws SocketEndpointAddressException if the address could not be parsed or if it is not valid
      */
     public static URI parseAddress(String address) throws SocketEndpointAddressException {
+
         URI parsedAddress;
+
         try {
             parsedAddress = new URI(address);
         } catch (URISyntaxException e) {

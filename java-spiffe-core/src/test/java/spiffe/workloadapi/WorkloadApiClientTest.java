@@ -21,9 +21,9 @@ import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.jwtsvid.JwtSvid;
 import spiffe.utils.TestUtils;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import spiffe.workloadapi.internal.ManagedChannelWrapper;
 import spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc;
 import spiffe.workloadapi.retry.BackoffPolicy;
 
 import java.io.IOException;

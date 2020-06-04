@@ -22,9 +22,10 @@ public class SpiffeProviderConstants {
     public static final String ALGORITHM = "Spiffe";
 
     /**
-     * Alias used by the SpiffeKeyStore
+     * Alias used by the SpiffeKeyStore.
+     * Note: KeyStore aliases are case-insensitive.
      */
-    public static final String DEFAULT_ALIAS = "Spiffe";
+    public static final String DEFAULT_ALIAS = "spiffe";
 
     private SpiffeProviderConstants() {
     }

@@ -13,9 +13,14 @@ import spiffe.bundle.jwtbundle.JwtBundleSet;
 import spiffe.exception.*;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.jwtsvid.JwtSvid;
-import spiffe.workloadapi.internal.*;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
+import spiffe.workloadapi.grpc.Workload;
+import spiffe.workloadapi.internal.GrpcConversionUtils;
+import spiffe.workloadapi.internal.GrpcManagedChannelFactory;
+import spiffe.workloadapi.internal.ManagedChannelWrapper;
+import spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 import spiffe.workloadapi.retry.BackoffPolicy;
 import spiffe.workloadapi.retry.RetryHandler;
 
@@ -30,9 +35,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
-
-import static spiffe.workloadapi.internal.Workload.X509SVIDRequest;
-import static spiffe.workloadapi.internal.Workload.X509SVIDResponse;
 
 /**
  * A <code>WorkloadApiClient</code> represents a client to interact with the Workload API.
@@ -60,32 +62,6 @@ public class WorkloadApiClient implements Closeable {
     private final ExecutorService executorService;
 
     private boolean closed;
-
-    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                              SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                              ManagedChannelWrapper managedChannel,
-                              BackoffPolicy backoffPolicy,
-                              ScheduledExecutorService retryExecutor,
-                              ExecutorService executorService) {
-        this.workloadApiAsyncStub = workloadApiAsyncStub;
-        this.workloadApiBlockingStub = workloadApiBlockingStub;
-        this.managedChannel = managedChannel;
-        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
-        this.backoffPolicy = backoffPolicy;
-        this.retryExecutor = retryExecutor;
-        this.executorService = executorService;
-    }
-
-    // package private constructor, used to inject workloadApi stubs for testing
-    WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub, SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub, ManagedChannelWrapper managedChannel) {
-        this.workloadApiAsyncStub = workloadApiAsyncStub;
-        this.workloadApiBlockingStub = workloadApiBlockingStub;
-        this.backoffPolicy = new BackoffPolicy();
-        this.executorService = Executors.newCachedThreadPool();
-        this.retryExecutor = Executors.newSingleThreadScheduledExecutor();
-        this.cancellableContexts = new ArrayList<>();
-        this.managedChannel = managedChannel;
-    }
 
     /**
      * Creates a new Workload API client using the default socket endpoint address.
@@ -143,6 +119,33 @@ public class WorkloadApiClient implements Closeable {
                 options.backoffPolicy,
                 retryExecutor,
                 options.executorService);
+    }
+
+    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
+                             SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                             ManagedChannelWrapper managedChannel,
+                             BackoffPolicy backoffPolicy,
+                             ScheduledExecutorService retryExecutor,
+                             ExecutorService executorService) {
+        this.workloadApiAsyncStub = workloadApiAsyncStub;
+        this.workloadApiBlockingStub = workloadApiBlockingStub;
+        this.managedChannel = managedChannel;
+        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
+        this.backoffPolicy = backoffPolicy;
+        this.retryExecutor = retryExecutor;
+        this.executorService = executorService;
+    }
+
+    public WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
+                             SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                             ManagedChannelWrapper managedChannel) {
+        this.workloadApiAsyncStub = workloadApiAsyncStub;
+        this.workloadApiBlockingStub = workloadApiBlockingStub;
+        this.backoffPolicy = new BackoffPolicy();
+        this.executorService = Executors.newCachedThreadPool();
+        this.retryExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
+        this.managedChannel = managedChannel;
     }
 
     /**
@@ -271,12 +274,12 @@ public class WorkloadApiClient implements Closeable {
         log.log(Level.INFO, "WorkloadAPI client is closed");
     }
 
-    private StreamObserver<X509SVIDResponse> getX509ContextStreamObserver(Watcher<X509Context> watcher, RetryHandler retryHandler, Context.CancellableContext cancellableContext) {
-        return new StreamObserver<X509SVIDResponse>() {
+    private StreamObserver<Workload.X509SVIDResponse> getX509ContextStreamObserver(Watcher<X509Context> watcher, RetryHandler retryHandler, Context.CancellableContext cancellableContext) {
+        return new StreamObserver<Workload.X509SVIDResponse>() {
             @Override
-            public void onNext(X509SVIDResponse value) {
+            public void onNext(Workload.X509SVIDResponse value) {
                 try {
-                    X509Context x509Context = GrpcConversionUtils.toX509Context(value);
+                    val x509Context = GrpcConversionUtils.toX509Context(value);
                     validateX509Context(x509Context);
                     watcher.onUpdate(x509Context);
                     retryHandler.reset();
@@ -287,6 +290,7 @@ public class WorkloadApiClient implements Closeable {
 
             @Override
             public void onError(Throwable t) {
+                log.log(Level.SEVERE, "X.509 context observer error", t);
                 handleWatchX509ContextError(t);
             }
 
@@ -314,7 +318,7 @@ public class WorkloadApiClient implements Closeable {
             @Override
             public void onNext(Workload.JWTBundlesResponse value) {
                 try {
-                    JwtBundleSet jwtBundleSet = GrpcConversionUtils.toBundleSet(value);
+                    val jwtBundleSet = GrpcConversionUtils.toBundleSet(value);
                     watcher.onUpdate(jwtBundleSet);
                     retryHandler.reset();
                 } catch (KeyException | JwtBundleException e) {
@@ -324,6 +328,7 @@ public class WorkloadApiClient implements Closeable {
 
             @Override
             public void onError(Throwable t) {
+                log.log(Level.SEVERE, "JWT observer error", t);
                 handleWatchJwtBundleError(t);
             }
 
@@ -357,8 +362,8 @@ public class WorkloadApiClient implements Closeable {
         }
     }
 
-    private X509SVIDRequest newX509SvidRequest() {
-        return X509SVIDRequest.newBuilder().build();
+    private Workload.X509SVIDRequest newX509SvidRequest() {
+        return Workload.X509SVIDRequest.newBuilder().build();
     }
 
     private Workload.JWTBundlesRequest newJwtBundlesRequest() {
@@ -367,7 +372,7 @@ public class WorkloadApiClient implements Closeable {
 
     private X509Context processX509Context() throws X509ContextException {
         try {
-            Iterator<X509SVIDResponse> x509SVIDResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
+            Iterator<Workload.X509SVIDResponse> x509SVIDResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
             if (x509SVIDResponse.hasNext()) {
                 return GrpcConversionUtils.toX509Context(x509SVIDResponse.next());
             }

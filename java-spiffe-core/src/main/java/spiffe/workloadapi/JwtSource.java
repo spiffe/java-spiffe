@@ -9,6 +9,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import spiffe.bundle.jwtbundle.JwtBundle;
 import spiffe.bundle.jwtbundle.JwtBundleSet;
 import spiffe.bundle.jwtbundle.JwtBundleSource;
+import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtSourceException;
 import spiffe.exception.JwtSvidException;
@@ -24,6 +25,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+
+import static spiffe.workloadapi.internal.ThreadUtils.await;
 
 /**
  * A <code>JwtSource</code> represents a source of SPIFFE JWT SVID and JWT bundles
@@ -127,16 +130,64 @@ public class JwtSource implements JwtSvidSource, JwtBundleSource, Closeable {
         return jwtSource;
     }
 
-    private void init(Duration timeout) throws InterruptedException, TimeoutException {
+    /**
+     * Returns the JWT SVID handled by this source.
+     *
+     * @return a {@link JwtSvid}
+     * @throws IllegalStateException if the source is closed
+     */
+    @Override
+    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences) throws JwtSvidException {
+        if (isClosed()) {
+            throw new IllegalStateException("JWT SVID source is closed");
+        }
+
+        return workloadApiClient.fetchJwtSvid(subject, audience, extraAudiences);
+    }
+
+    /**
+     * Returns the JWT bundle for a given trust domain.
+     *
+     * @return an instance of a {@link X509Bundle}
+     *
+     * @throws BundleNotFoundException is there is no bundle for the trust domain provided
+     * @throws IllegalStateException if the source is closed
+     */
+    @Override
+    public JwtBundle getJwtBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+        if (isClosed()) {
+            throw new IllegalStateException("JWT bundle source is closed");
+        }
+        return bundles.getJwtBundleForTrustDomain(trustDomain);
+    }
+
+    /**
+     * Closes this source, dropping the connection to the Workload API.
+     * Other source methods will return an error after close has been called.
+     */
+    @Override
+    public void close() {
+        if (!closed) {
+            synchronized (this) {
+                if (!closed) {
+                    workloadApiClient.close();
+                    closed = true;
+                }
+            }
+        }
+    }
+
+
+    private void init(Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
         setJwtBundlesWatcher(done);
 
         boolean success;
         if (timeout.isZero()) {
-            done.await();
+            await(done);
             success = true;
         } else {
-            success = done.await(timeout.getSeconds(), TimeUnit.SECONDS);
+            success = await(done, timeout.getSeconds(), TimeUnit.SECONDS);
         }
         if (!success) {
             throw new TimeoutException("Timeout waiting for JWT bundles update");
@@ -169,39 +220,6 @@ public class JwtSource implements JwtSvidSource, JwtBundleSource, Closeable {
     private boolean isClosed() {
         synchronized (this) {
             return closed;
-        }
-    }
-
-    @Override
-    public JwtBundle getJwtBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
-        if (isClosed()) {
-            throw new IllegalStateException("JWT bundle source is closed");
-        }
-        return bundles.getJwtBundleForTrustDomain(trustDomain);
-    }
-
-    @Override
-    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences) throws JwtSvidException {
-        if (isClosed()) {
-            throw new IllegalStateException("JWT SVID source is closed");
-        }
-
-        return workloadApiClient.fetchJwtSvid(subject, audience, extraAudiences);
-    }
-
-    /**
-     * Closes this source, dropping the connection to the Workload API.
-     * Other source methods will return an error after close has been called.
-     */
-    @Override
-    public void close() {
-        if (!closed) {
-            synchronized (this) {
-                if (!closed) {
-                    workloadApiClient.close();
-                    closed = true;
-                }
-            }
         }
     }
 

@@ -1,3 +1,31 @@
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+}
+
+version '0.1.0'
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'spiffe.helper.cli.Runner'
+    }
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+assemble.dependsOn shadowJar
+
+shadowJar {
+    classifier = ""
+}
+
 dependencies {
-    compile(project(":java-spiffe-core"))
+    implementation(project(':java-spiffe-core'))
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    // pull grpc libraries for testing
+    testImplementation group: 'io.grpc', name: 'grpc-netty', version: "1.29.0"
+    testImplementation group: 'io.grpc', name: 'grpc-protobuf', version: "1.29.0"
+    testImplementation group: 'io.grpc', name: 'grpc-stub', version: "1.29.0"
+    testImplementation group: 'io.grpc', name: 'grpc-testing', version: "1.29.0"
 }

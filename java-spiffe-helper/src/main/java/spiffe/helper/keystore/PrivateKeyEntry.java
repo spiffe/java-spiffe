@@ -1,4 +1,4 @@
-package spiffe.helper;
+package spiffe.helper.keystore;
 
 import lombok.Builder;
 import lombok.Value;
@@ -10,25 +10,18 @@ import java.security.cert.X509Certificate;
 class PrivateKeyEntry {
     String alias;
     Key privateKey;
-    char[] password;
+    String password;
     X509Certificate[] certificateChain;
 
     @Builder
     PrivateKeyEntry(
             final String alias,
             final Key privateKey,
-            final char[] password,
+            final String password,
             final X509Certificate[] certificateChain) {
         this.alias = alias;
         this.privateKey = privateKey;
         this.password = password;
         this.certificateChain = certificateChain;
-    }
-
-    @Override
-    public String toString() {
-        return "PrivateKeyEntry{" +
-                "alias='" + alias + '\'' +
-                '}';
     }
 }

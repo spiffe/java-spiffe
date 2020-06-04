@@ -17,9 +17,9 @@ import spiffe.exception.SocketEndpointAddressException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.jwtsvid.JwtSvid;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import spiffe.workloadapi.internal.ManagedChannelWrapper;
 import spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc;
 
 import java.io.IOException;
 import java.util.Arrays;

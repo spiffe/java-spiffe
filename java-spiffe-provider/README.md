@@ -1,6 +1,6 @@
 # Java SPIFFE Provider
 
-This module provides a Java Security Provider implementation supporting X509-SVIDs and methods for
+This module provides a Java Security Provider implementation supporting X.509-SVIDs and methods for
 creating SSLContexts that are backed by the Workload API.
 
 ## Create an SSL Context backed by the Workload API
@@ -11,11 +11,12 @@ Security property defined in the `java.security` containing the list of SPIFFE I
 will trust for TLS connections. 
 
 ```
-    val sslContextOptions = SslContextOptions
+    SslContextOptions options = SslContextOptions
             .builder()
-            .x509Source(x509Source.newSource()())
+            .x509Source(x509Source.newSource())
             .build();
-    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
+
+    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
  ```
 
 See [HttpsServer example](src/main/java/spiffe/provider/examples/HttpsServer.java).
@@ -24,24 +25,25 @@ Alternatively, a different Workload API address can be used by passing it to the
 Supplier of accepted SPIFFE IDs list can be provided as part of the `SslContextOptions`:
 
 ```
-    val sourceOptions = X509SourceOptions
+    X509SourceOptions sourceOptions = X509SourceOptions
             .builder()
             .spiffeSocketPath(spiffeSocket)
             .build();
-    val x509Source = X509Source.newSource(sourceOptions);
+    X509Source x509Source = X509Source.newSource(sourceOptions);
 
     SslContextOptions sslContextOptions = SslContextOptions
             .builder()
             .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
-            .x509Source(x509Source())
+            .x509Source(x509Source)
             .build();
+
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
 ```
 
 See [HttpsClient example](src/test/java/spiffe/provider/examples/mtls/HttpsClient.java) that defines a Supplier for providing
 the list of SPIFFE IDs from a file.
 
-## Plug Java SPIFFE Provider into Java Security
+## Plug Java SPIFFE Provider into Java Security architecture
 
 Java Security Providers are configured in the master security properties file `<java-home>/jre/lib/security/java.security`. 
 

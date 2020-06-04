@@ -1,23 +1,27 @@
 # JAVA-SPIFFE Core
 
-Core functionality to fetch X509 and JWT SVIDs from the Workload API.
+Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundles from the Workload API.
 
-## X509 source creation
+## X.509 Source
 
 A `spiffe.workloadapi.X509Source` represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
 
 To create a new X509 Source:
 
 ```
+    X509Source x509Source; 
     try {
         x509Source = X509Source.newSource();
     } catch (SocketEndpointAddressException | X509SourceException e) {
         // handle exception
     }
+
+    X509Svid svid = x509Source.getX509Svid();
+    X509Bundle bundle = x509Source.getX509BundleForTrustDomain(TrustDomain.of("example.org"));
 ```
 
-The `newSource()` blocks until the X505 materials can be retrieved from the Workload API and the X509Source is 
-initialized with the SVID and Bundles. A `X509 context watcher` is configured on the X509Source to get automatically
+The `newSource()` blocks until the X.509 materials can be retrieved from the Workload API and the X509Source is 
+initialized with the X.509 SVIDs and Bundles. A `X509 context watcher` is configured on the X509Source to get automatically
 the updates from the Workload API. This watcher performs retries if at any time the connection to the Workload API 
 reports an error.
 
@@ -48,6 +52,33 @@ using a System property:
 `spiffe.newX509Source.timeout=30`
 
 The Time Unit is seconds.
+
+
+## JWT Source
+
+A `spiffe.workloadapi.JwtSource` represents a source of JWT SVIDs and bundles maintained via the Workload API.
+
+To create a new JWT Source:
+
+```
+    JwtSource jwtSource; 
+    try {
+        jwtSource = JwtSource.newSource();
+    } catch (SocketEndpointAddressException | JwtSourceException e) {
+        // handle exception
+    }
+
+    JwtSvid svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/test"), "testaudience1", "audience2");
+
+    JwtBundle bundle = jwtSource.getJwtBundleForTrustDomain(TrustDomain.of("example.org"));
+```
+
+The `newSource()` blocks until the JWT materials can be retrieved from the Workload API and the JwtSource is 
+initialized with the JWT Bundles. A `JWT context watcher` is configured on the JwtSource to get automatically
+the updates from the Workload API. This watcher performs retries if at any time the connection to the Workload API 
+reports an error.
+
+The socket endpoint address is configured through the environment variable `SPIFFE_ENDPOINT_SOCKET`. 
 
 ## Netty Event Loop thread number configuration
 

@@ -12,6 +12,7 @@ import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
 import spiffe.workloadapi.X509Context;
+import spiffe.workloadapi.grpc.Workload;
 
 import java.security.KeyException;
 import java.security.cert.CertificateException;

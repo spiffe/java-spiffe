@@ -16,9 +16,9 @@ import spiffe.exception.X509SourceException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
 import spiffe.svid.x509svid.X509Svid;
+import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import spiffe.workloadapi.internal.ManagedChannelWrapper;
 import spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import spiffe.workloadapi.internal.SpiffeWorkloadAPIGrpc;
 
 import java.io.IOException;
 
