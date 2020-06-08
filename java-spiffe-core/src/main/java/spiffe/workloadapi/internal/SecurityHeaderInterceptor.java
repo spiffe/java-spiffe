@@ -10,13 +10,13 @@ public class SecurityHeaderInterceptor implements ClientInterceptor {
      * Intercepts the call to the WorkloadAPI and add the required security header
      */
     @Override
-    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
-        return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
+    public <R,S> ClientCall<R,S> interceptCall(MethodDescriptor<R,S> method, CallOptions callOptions, Channel next) {
+        return new ForwardingClientCall.SimpleForwardingClientCall<R,S>(next.newCall(method, callOptions)) {
             @Override
-            public void start(Listener<RespT> responseListener, Metadata headers) {
+            public void start(Listener<S> responseListener, Metadata headers) {
                 Metadata.Key<String> headerKey = Metadata.Key.of(SECURITY_HEADER, Metadata.ASCII_STRING_MARSHALLER);
                 headers.put(headerKey, "true");
-                super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {}, headers);
+                super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<S>(responseListener) {}, headers);
             }
         };
     }

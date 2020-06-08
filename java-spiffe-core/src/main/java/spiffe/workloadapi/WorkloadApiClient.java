@@ -17,7 +17,6 @@ import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub;
 import spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub;
 import spiffe.workloadapi.grpc.Workload;
-import spiffe.workloadapi.internal.GrpcConversionUtils;
 import spiffe.workloadapi.internal.GrpcManagedChannelFactory;
 import spiffe.workloadapi.internal.ManagedChannelWrapper;
 import spiffe.workloadapi.internal.SecurityHeaderInterceptor;

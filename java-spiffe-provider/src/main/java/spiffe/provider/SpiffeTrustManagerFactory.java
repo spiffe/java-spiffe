@@ -43,13 +43,9 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      */
     @Override
     public TrustManager[] engineGetTrustManagers() {
-        SpiffeTrustManager spiffeTrustManager =
-                null;
+        SpiffeTrustManager spiffeTrustManager = null;
         try {
-            spiffeTrustManager = new SpiffeTrustManager(
-                    X509SourceManager.getX509Source(),
-                    this::getAcceptedSpiffeIds
-            );
+            spiffeTrustManager = new SpiffeTrustManager(X509SourceManager.getX509Source(), this::getAcceptedSpiffeIds);
         } catch (X509SourceException e) {
             throw new SpiffeProviderException("The X509 source could not be created", e);
         } catch (SocketEndpointAddressException e) {
@@ -79,7 +75,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * with a function verify a chain of certificates using a to validate the SPIFFE IDs
      * of the peer's certificates, and a supplier of accepted SPIFFE IDs.
      *
-     * @param x509BundleSource a {@link X509BundleSource} to provide the X.509-Bundles
+     * @param x509BundleSource          a {@link X509BundleSource} to provide the X.509-Bundles
      * @param acceptedSpiffeIdsSupplier a Supplier to provide a List of SPIFFE IDs that are accepted
      * @return a TrustManager array with an initialized TrustManager.
      */
@@ -87,17 +83,10 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
             X509BundleSource x509BundleSource,
             Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
 
-        Supplier<List<SpiffeId>> spiffeIdsSupplier;
-        if (acceptedSpiffeIdsSupplier != null) {
-            spiffeIdsSupplier = acceptedSpiffeIdsSupplier;
-        } else {
-            spiffeIdsSupplier = this::getAcceptedSpiffeIds;
-        }
-        val spiffeTrustManager =
-                new SpiffeTrustManager(
-                        x509BundleSource,
-                        spiffeIdsSupplier
-                );
+        final Supplier<List<SpiffeId>> spiffeIdsSupplier =
+                acceptedSpiffeIdsSupplier != null ? acceptedSpiffeIdsSupplier : this::getAcceptedSpiffeIds;
+
+        val spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, spiffeIdsSupplier);
         return new TrustManager[]{spiffeTrustManager};
     }
 
