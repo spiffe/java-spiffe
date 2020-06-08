@@ -10,6 +10,7 @@ import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import spiffe.Algorithm;
+import spiffe.bundle.BundleSource;
 import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtBundleException;
@@ -25,10 +26,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A <code>JwtBundle</code> represents a collection of trusted JWT authorities for a trust domain.
+ * A <code>JwtBundle</code> represents a collection of trusted JWT authorities (Public Keys) for a trust domain.
  */
 @Value
-public class JwtBundle implements JwtBundleSource {
+public class JwtBundle implements BundleSource<JwtBundle> {
 
     TrustDomain trustDomain;
 
@@ -84,7 +85,8 @@ public class JwtBundle implements JwtBundleSource {
      */
     public static JwtBundle parse(
             @NonNull final TrustDomain trustDomain,
-            @NonNull final byte[] bundleBytes) throws KeyException, JwtBundleException {
+            @NonNull final byte[] bundleBytes)
+            throws KeyException, JwtBundleException {
         try {
             val jwkSet = JWKSet.parse(new String(bundleBytes));
             return toJwtBundle(trustDomain, jwkSet);
@@ -101,7 +103,7 @@ public class JwtBundle implements JwtBundleSource {
      * @throws BundleNotFoundException if there is no bundle for the given trust domain
      */
     @Override
-    public JwtBundle getJwtBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (this.trustDomain.equals(trustDomain)) {
             return this;
         }

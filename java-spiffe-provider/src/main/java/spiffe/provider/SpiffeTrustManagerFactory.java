@@ -1,7 +1,7 @@
 package spiffe.provider;
 
 import lombok.val;
-import spiffe.bundle.x509bundle.X509BundleSource;
+import spiffe.bundle.BundleSource;
 import spiffe.exception.SocketEndpointAddressException;
 import spiffe.exception.X509SourceException;
 import spiffe.spiffeid.SpiffeId;
@@ -25,7 +25,7 @@ import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY
  * also gets a Supplier of a List of accepted SPIFFE IDs.
  *
  * @see SpiffeSslContextFactory
- * @see X509BundleSource
+ * @see BundleSource
  * @see X509SourceManager
  * @see SpiffeSslContextFactory
  */
@@ -61,7 +61,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      *
      * @return a TrustManager array with an initialized TrustManager.
      */
-    public TrustManager[] engineGetTrustManagers(X509BundleSource x509BundleSource) {
+    public TrustManager[] engineGetTrustManagers(BundleSource x509BundleSource) {
         val spiffeTrustManager =
                 new SpiffeTrustManager(
                         x509BundleSource,
@@ -75,12 +75,12 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * with a function verify a chain of certificates using a to validate the SPIFFE IDs
      * of the peer's certificates, and a supplier of accepted SPIFFE IDs.
      *
-     * @param x509BundleSource          a {@link X509BundleSource} to provide the X.509-Bundles
+     * @param x509BundleSource          a {@link BundleSource} to provide the X.509-Bundles
      * @param acceptedSpiffeIdsSupplier a Supplier to provide a List of SPIFFE IDs that are accepted
      * @return a TrustManager array with an initialized TrustManager.
      */
     public TrustManager[] engineGetTrustManagers(
-            X509BundleSource x509BundleSource,
+            BundleSource x509BundleSource,
             Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
 
         final Supplier<List<SpiffeId>> spiffeIdsSupplier =

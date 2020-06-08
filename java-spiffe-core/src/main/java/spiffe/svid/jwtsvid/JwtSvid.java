@@ -12,7 +12,8 @@ import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import spiffe.Algorithm;
-import spiffe.bundle.jwtbundle.JwtBundleSource;
+import spiffe.bundle.BundleSource;
+import spiffe.bundle.jwtbundle.JwtBundle;
 import spiffe.exception.AuthorityNotFoundException;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtSvidException;
@@ -70,7 +71,7 @@ public class JwtSvid {
      * JWT-SVID. The JWT-SVID signature is verified using the JWT bundle source.
      *
      * @param token           a token as a string that is parsed and validated
-     * @param jwtBundleSource an implementation of a {@link JwtBundleSource} that provides the authority to verify the signature
+     * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the authority to verify the signature
      * @param audience        audience as a List of String used to validate the 'aud' claim
      * @return an instance of a {@link JwtSvid} with a spiffe id parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
@@ -83,7 +84,7 @@ public class JwtSvid {
      * @throws AuthorityNotFoundException        if the authority cannot be found in the bundle using the value from the 'kid' header
      */
     public static JwtSvid parseAndValidate(@NonNull final String token,
-                                           @NonNull final JwtBundleSource jwtBundleSource,
+                                           @NonNull final BundleSource<JwtBundle> jwtBundleSource,
                                            @NonNull List<String> audience)
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
 
@@ -102,7 +103,7 @@ public class JwtSvid {
             validateExpiration(expirationTime);
 
             val spiffeId = getSpiffeId(claimsSet);
-            val jwtBundle = jwtBundleSource.getJwtBundleForTrustDomain(spiffeId.getTrustDomain());
+            val jwtBundle = jwtBundleSource.getBundleForTrustDomain(spiffeId.getTrustDomain());
 
             val keyId = getKeyId(signedJwt.getHeader());
             val jwtAuthority = jwtBundle.findJwtAuthority(keyId);

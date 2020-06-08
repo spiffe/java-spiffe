@@ -89,25 +89,25 @@ class X509BundleSetTest {
     }
 
     @Test
-    void testGetX509BundleForTrustDomain_Success() throws BundleNotFoundException {
+    void testgetBundleForTrustDomain_Success() throws BundleNotFoundException {
         X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
         X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
-        assertEquals(x509Bundle1, bundleSet.getX509BundleForTrustDomain(TrustDomain.of("example.org")));
-        assertEquals(x509Bundle2, bundleSet.getX509BundleForTrustDomain(TrustDomain.of("other.org")));
+        assertEquals(x509Bundle1, bundleSet.getBundleForTrustDomain(TrustDomain.of("example.org")));
+        assertEquals(x509Bundle2, bundleSet.getBundleForTrustDomain(TrustDomain.of("other.org")));
     }
 
     @Test
-    void testGetX509BundleForTrustDomain_notFoundTrustDomain() {
+    void testgetBundleForTrustDomain_notFoundTrustDomain() {
         X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
         X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
         try {
-            bundleSet.getX509BundleForTrustDomain(TrustDomain.of("unknown.org"));
+            bundleSet.getBundleForTrustDomain(TrustDomain.of("unknown.org"));
             fail("expected BundleNotFoundException");
         } catch (BundleNotFoundException e) {
             assertEquals("No X509 bundle for trust domain unknown.org", e.getMessage());
@@ -115,14 +115,14 @@ class X509BundleSetTest {
     }
 
     @Test
-    void testGetX509BundleForTrustDomain_nullTrustDomain_throwsException() throws BundleNotFoundException {
+    void testgetBundleForTrustDomain_nullTrustDomain_throwsException() throws BundleNotFoundException {
         X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
         X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
         try {
-            bundleSet.getX509BundleForTrustDomain(null);
+            bundleSet.getBundleForTrustDomain(null);
             fail("expected exception");
         } catch (NullPointerException e) {
             assertEquals("trustDomain is marked non-null but is null", e.getMessage());

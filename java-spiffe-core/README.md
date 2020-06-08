@@ -17,7 +17,7 @@ To create a new X509 Source:
     }
 
     X509Svid svid = x509Source.getX509Svid();
-    X509Bundle bundle = x509Source.getX509BundleForTrustDomain(TrustDomain.of("example.org"));
+    X509Bundle bundle = x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
 ```
 
 The `newSource()` blocks until the X.509 materials can be retrieved from the Workload API and the X509Source is 
@@ -70,7 +70,7 @@ To create a new JWT Source:
 
     JwtSvid svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/test"), "testaudience1", "audience2");
 
-    JwtBundle bundle = jwtSource.getJwtBundleForTrustDomain(TrustDomain.of("example.org"));
+    JwtBundle bundle = jwtSource.getBundleForTrustDomain(TrustDomain.of("example.org"));
 ```
 
 The `newSource()` blocks until the JWT materials can be retrieved from the Workload API and the JwtSource is 

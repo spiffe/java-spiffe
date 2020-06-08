@@ -6,9 +6,9 @@ import lombok.NonNull;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import spiffe.bundle.BundleSource;
 import spiffe.bundle.jwtbundle.JwtBundle;
 import spiffe.bundle.jwtbundle.JwtBundleSet;
-import spiffe.bundle.jwtbundle.JwtBundleSource;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.JwtSourceException;
@@ -33,7 +33,7 @@ import static spiffe.workloadapi.internal.ThreadUtils.await;
  * maintained via the Workload API.
  */
 @Log
-public class JwtSource implements JwtSvidSource, JwtBundleSource, Closeable {
+public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closeable {
 
     private static final Duration DEFAULT_TIMEOUT;
 
@@ -154,11 +154,11 @@ public class JwtSource implements JwtSvidSource, JwtBundleSource, Closeable {
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public JwtBundle getJwtBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
             throw new IllegalStateException("JWT bundle source is closed");
         }
-        return bundles.getJwtBundleForTrustDomain(trustDomain);
+        return bundles.getBundleForTrustDomain(trustDomain);
     }
 
     /**

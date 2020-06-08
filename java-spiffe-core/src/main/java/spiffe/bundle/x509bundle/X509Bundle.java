@@ -3,6 +3,7 @@ package spiffe.bundle.x509bundle;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
+import spiffe.bundle.BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.internal.CertificateUtils;
 import spiffe.spiffeid.TrustDomain;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * A <code>X509Bundle</code> represents a collection of trusted X.509 authorities for a trust domain.
  */
 @Value
-public class X509Bundle implements X509BundleSource {
+public class X509Bundle implements BundleSource<X509Bundle> {
 
     TrustDomain trustDomain;
     Set<X509Certificate> x509Authorities;
@@ -97,7 +98,7 @@ public class X509Bundle implements X509BundleSource {
      * @throws BundleNotFoundException if no X.509 bundle can be found for the given trust domain
      */
     @Override
-    public X509Bundle getX509BundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (this.trustDomain.equals(trustDomain)) {
             return this;
         }

@@ -3,6 +3,7 @@ package spiffe.bundle.jwtbundle;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
+import spiffe.bundle.BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * A <code>JwtBundleSet</code> represents a set of JWT bundles keyed by trust domain.
  */
 @Value
-public class JwtBundleSet implements JwtBundleSource {
+public class JwtBundleSet implements BundleSource<JwtBundle> {
 
     ConcurrentHashMap<TrustDomain, JwtBundle> bundles;
 
@@ -45,12 +46,12 @@ public class JwtBundleSet implements JwtBundleSource {
      * @throws BundleNotFoundException if no bundle could be found for the given trust domain
      */
     @Override
-    public JwtBundle getJwtBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         val bundle = bundles.get(trustDomain);
         if (bundle == null) {
             throw new BundleNotFoundException(String.format("No JWT bundle for trust domain %s", trustDomain));
         }
-        return bundles.get(trustDomain);
+        return bundle;
     }
 
     /**

@@ -1,6 +1,6 @@
 package spiffe.provider;
 
-import spiffe.bundle.x509bundle.X509BundleSource;
+import spiffe.bundle.BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.x509svid.X509SvidValidator;
@@ -17,22 +17,22 @@ import java.util.function.Supplier;
 /**
  * A <code>SpiffeTrustManager</code> is an implementation of a X.509 TrustManager for the SPIFFE Provider.
  * <p>
- * Provides methods to validate the certificate chain using Trusted certs provided by a {@link X509BundleSource}
+ * Provides methods to validate the certificate chain using Trusted certs provided by a {@link BundleSource}
  * maintained via the Workload API and the SPIFFE ID using a Supplier of a List of accepted SPIFFE IDs.
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
-    private final X509BundleSource x509BundleSource;
+    private final BundleSource x509BundleSource;
     private final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
 
     /**
      * Creates a SpiffeTrustManager with a X.509 bundle source used to provide the trusted
      * bundles, and a Supplier of a List of accepted SpiffeIds to be used during peer SVID validation.
      *
-     * @param x509BundleSource          an implementation of a {@link X509BundleSource}
+     * @param x509BundleSource          an implementation of a {@link BundleSource}
      * @param acceptedSpiffeIdsSupplier a Supplier of a list of accepted SPIFFE IDs.
      */
-    public SpiffeTrustManager(X509BundleSource x509BundleSource,
+    public SpiffeTrustManager(BundleSource x509BundleSource,
                               Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
         this.x509BundleSource = x509BundleSource;
         this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;

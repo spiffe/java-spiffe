@@ -6,9 +6,9 @@ import lombok.NonNull;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import spiffe.bundle.BundleSource;
 import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.bundle.x509bundle.X509BundleSet;
-import spiffe.bundle.x509bundle.X509BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.exception.SocketEndpointAddressException;
 import spiffe.exception.X509SourceException;
@@ -34,14 +34,14 @@ import static spiffe.workloadapi.internal.ThreadUtils.await;
  * It handles a {@link X509Svid} and a {@link X509BundleSet} that are updated automatically
  * whenever there is an update from the Workload API.
  * <p>
- * Implements {@link X509SvidSource} and {@link X509BundleSource}.
+ * Implements {@link X509SvidSource} and {@link BundleSource}.
  * <p>
  * Implements the {@link Closeable} interface. The {@link #close()} method closes the source,
  * dropping the connection to the Workload API. Other source methods will return an error
  * after close has been called.
  */
 @Log
-public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
+public class X509Source implements X509SvidSource, BundleSource, Closeable {
 
     private static final Duration DEFAULT_TIMEOUT;
 
@@ -166,11 +166,11 @@ public class X509Source implements X509SvidSource, X509BundleSource, Closeable {
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public X509Bundle getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
             throw new IllegalStateException("X509 bundle source is closed");
         }
-        return bundles.getX509BundleForTrustDomain(trustDomain);
+        return bundles.getBundleForTrustDomain(trustDomain);
     }
 
     /**

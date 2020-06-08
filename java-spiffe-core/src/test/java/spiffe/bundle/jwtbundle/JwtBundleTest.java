@@ -259,10 +259,10 @@ class JwtBundleTest {
 
 
     @Test
-    void testGetJwtBundleForTrustDomain_Success() {
+    void testgetBundleForTrustDomain_Success() {
         JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
         try {
-            JwtBundle bundle = jwtBundle.getJwtBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = jwtBundle.getBundleForTrustDomain(TrustDomain.of("example.org"));
             assertEquals(jwtBundle, bundle);
         } catch (BundleNotFoundException e) {
            fail(e);
@@ -270,10 +270,10 @@ class JwtBundleTest {
     }
 
     @Test
-    void testGetJwtBundleForTrustDomain_doesNotExiste_ThrowsBundleNotFoundException() {
+    void testgetBundleForTrustDomain_doesNotExiste_ThrowsBundleNotFoundException() {
         JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
         try {
-            jwtBundle.getJwtBundleForTrustDomain(TrustDomain.of("other.org"));
+            jwtBundle.getBundleForTrustDomain(TrustDomain.of("other.org"));
             fail("exception expected");
         } catch (BundleNotFoundException e) {
             assertEquals("No JWT bundle found for trust domain other.org", e.getMessage());

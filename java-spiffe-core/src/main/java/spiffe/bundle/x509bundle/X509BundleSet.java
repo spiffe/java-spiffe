@@ -3,6 +3,7 @@ package spiffe.bundle.x509bundle;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
+import spiffe.bundle.BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * A <code>X509BundleSet</code> represents a set of X.509 bundles keyed by trust domain.
  */
 @Value
-public class X509BundleSet implements X509BundleSource {
+public class X509BundleSet implements BundleSource<X509Bundle> {
 
     ConcurrentHashMap<TrustDomain, X509Bundle> bundles;
 
@@ -55,12 +56,12 @@ public class X509BundleSet implements X509BundleSource {
      * @throws BundleNotFoundException if no bundle could be found for the given trust domain
      */
     @Override
-    public X509Bundle getX509BundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         val bundle = bundles.get(trustDomain);
         if (bundle == null){
             throw new BundleNotFoundException(String.format("No X509 bundle for trust domain %s", trustDomain));
         }
-        return bundles.get(trustDomain);
+        return bundle;
     }
 
     public Map<TrustDomain, X509Bundle> getBundles() {

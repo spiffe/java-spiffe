@@ -78,16 +78,16 @@ public class X509BundleTest {
     }
 
     @Test
-    void testGetX509BundleForTrustDomain() throws BundleNotFoundException {
+    void testgetBundleForTrustDomain() throws BundleNotFoundException {
         X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
-        assertEquals(x509Bundle, x509Bundle.getX509BundleForTrustDomain(TrustDomain.of("example.org")));
+        assertEquals(x509Bundle, x509Bundle.getBundleForTrustDomain(TrustDomain.of("example.org")));
     }
 
     @Test
-    void testGetX509BundleForTrustDomain_notBundleFound_throwsBundleNotFoundException() {
+    void testgetBundleForTrustDomain_notBundleFound_throwsBundleNotFoundException() {
         X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
         try {
-            x509Bundle.getX509BundleForTrustDomain(TrustDomain.of("other.org"));
+            x509Bundle.getBundleForTrustDomain(TrustDomain.of("other.org"));
         } catch (BundleNotFoundException e) {
             assertEquals("No X509 bundle found for trust domain other.org", e.getMessage());
         }

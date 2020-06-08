@@ -29,7 +29,7 @@ class JwtBundleSetTest {
     }
 
     @Test
-    void getJwtBundleForTrustDomain_Success() {
+    void getBundleForTrustDomain_Success() {
         JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
         JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
         List<JwtBundle> bundles = Arrays.asList(jwtBundle1, jwtBundle2);
@@ -37,7 +37,7 @@ class JwtBundleSetTest {
 
         JwtBundle bundle = null;
         try {
-            bundle = bundleSet.getJwtBundleForTrustDomain(TrustDomain.of("example.org"));
+            bundle = bundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
         } catch (BundleNotFoundException e) {
             fail(e);
         }
@@ -56,14 +56,14 @@ class JwtBundleSetTest {
     }
 
     @Test
-    void testGetJwtBundleForTrustDomain_TrustDomainNotInSet_ThrowsBundleNotFoundException() {
+    void testgetBundleForTrustDomain_TrustDomainNotInSet_ThrowsBundleNotFoundException() {
         JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
         JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
         List<JwtBundle> bundles = Arrays.asList(jwtBundle1, jwtBundle2);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundles);
 
         try {
-            bundleSet.getJwtBundleForTrustDomain(TrustDomain.of("domain.test"));
+            bundleSet.getBundleForTrustDomain(TrustDomain.of("domain.test"));
             fail("exception expected");
         } catch (BundleNotFoundException e) {
             assertEquals("No JWT bundle for trust domain domain.test", e.getMessage());
@@ -71,12 +71,12 @@ class JwtBundleSetTest {
     }
 
     @Test
-    void testGetJwtBundleForTrustDomain_null_throwsNullPointerException() throws BundleNotFoundException {
+    void testgetBundleForTrustDomain_null_throwsNullPointerException() throws BundleNotFoundException {
         JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
         try {
-            bundleSet.getJwtBundleForTrustDomain(null);
+            bundleSet.getBundleForTrustDomain(null);
         } catch (NullPointerException e) {
             assertEquals("trustDomain is marked non-null but is null", e.getMessage());
         }

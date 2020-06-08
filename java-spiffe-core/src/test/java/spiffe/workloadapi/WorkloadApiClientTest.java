@@ -110,7 +110,7 @@ class WorkloadApiClientTest {
         assertNotNull(x509Context.getDefaultSvid().getPrivateKey());
         assertNotNull(x509Context.getX509BundleSet());
         try {
-            X509Bundle bundle = x509Context.getX509BundleSet().getX509BundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle = x509Context.getX509BundleSet().getBundleForTrustDomain(TrustDomain.of("example.org"));
             assertNotNull(bundle);
         } catch (BundleNotFoundException e) {
             fail(e);
@@ -144,7 +144,7 @@ class WorkloadApiClientTest {
         assertNotNull(update.getDefaultSvid().getPrivateKey());
         assertNotNull(update.getX509BundleSet());
         try {
-            X509Bundle bundle = update.getX509BundleSet().getX509BundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle = update.getX509BundleSet().getBundleForTrustDomain(TrustDomain.of("example.org"));
             assertNotNull(bundle);
         } catch (BundleNotFoundException e) {
             fail(e);
@@ -190,7 +190,7 @@ class WorkloadApiClientTest {
 
         assertNotNull(jwtBundleSet);
         try {
-            JwtBundle bundle = jwtBundleSet.getJwtBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = jwtBundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
             assertNotNull(bundle);
             assertEquals(3, bundle.getJwtAuthorities().size());
         } catch (BundleNotFoundException e) {
@@ -222,20 +222,12 @@ class WorkloadApiClientTest {
         JwtBundleSet update = jwtBundleSet[0];
         assertNotNull(update);
         try {
-            JwtBundle bundle = update.getJwtBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = update.getBundleForTrustDomain(TrustDomain.of("example.org"));
             assertNotNull(bundle);
             assertEquals(3, bundle.getJwtAuthorities().size());
         } catch (BundleNotFoundException e) {
             fail(e);
         }
-    }
-
-    @Test
-    void watchJwtBundles() {
-    }
-
-    @Test
-    void testClose() {
     }
 
     private String generateToken(String sub, List<String> aud) {
