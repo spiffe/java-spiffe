@@ -2,6 +2,7 @@ package spiffe.internal;
 
 import lombok.NonNull;
 import lombok.val;
+import org.apache.commons.lang3.RandomStringUtils;
 import spiffe.Algorithm;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.TrustDomain;
@@ -15,7 +16,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.EMPTY_LIST;
@@ -25,6 +25,10 @@ import static org.apache.commons.lang3.StringUtils.startsWith;
  * Common certificate utility methods.
  */
 public class CertificateUtils {
+
+    // Algorithms for verifying private and public keys
+    private static final String SHA_512_WITH_ECDSA = "SHA512withECDSA";
+    private static final String SHA_512_WITH_RSA = "SHA512withRSA";
 
     private static final String SPIFFE_PREFIX = "spiffe://";
     private static final int SAN_VALUE_INDEX = 1;
@@ -41,6 +45,9 @@ public class CertificateUtils {
     private static final int CRL_SIGN = 6;
     private static final int ENCIPHER_ONLY = 7;
     private static final int DECIPHER_ONLY = 8;
+
+    private CertificateUtils() {
+    }
 
     /**
      * Generate a list of X.509 certificates from a byte array.
@@ -159,34 +166,13 @@ public class CertificateUtils {
      * @throws InvalidKeyException if the keys don't match
      */
     public static void validatePrivateKey(PrivateKey privateKey, X509Certificate x509Certificate) throws InvalidKeyException {
-        // create a challenge
-        byte[] challenge = new byte[1000];
-        ThreadLocalRandom.current().nextBytes(challenge);
-
-        Signature sig = null;
-
-        try {
-            Algorithm.Family algorithm = Algorithm.Family.parse(privateKey.getAlgorithm());
-            if (Algorithm.Family.RSA.equals(algorithm)) {
-                sig = Signature.getInstance("SHA256withRSA");
-            } else if (Algorithm.Family.EC.equals(algorithm)) {
-                sig = Signature.getInstance("SHA1withECDSA");
-            } else {
-                throw new InvalidKeyException(String.format("Private Key algorithm not supported: %s", algorithm));
-            }
-
-            sig.initSign(privateKey);
-            sig.update(challenge);
-            byte[] signature = sig.sign();
-
-            sig.initVerify(x509Certificate.getPublicKey());
-            sig.update(challenge);
-
-            if (!sig.verify(signature)) {
-                throw new InvalidKeyException("Private Key does not match Certificate Public Key");
-            }
-        } catch (SignatureException | NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Could not validate private keys", e);
+        Algorithm.Family algorithm = Algorithm.Family.parse(privateKey.getAlgorithm());
+        if (Algorithm.Family.RSA.equals(algorithm)) {
+            verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_RSA);
+        } else if (Algorithm.Family.EC.equals(algorithm)) {
+            verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_ECDSA);
+        } else {
+            throw new InvalidKeyException(String.format("Private Key algorithm not supported: %s", algorithm));
         }
     }
 
@@ -207,6 +193,25 @@ public class CertificateUtils {
     public static boolean hasKeyUsageCRLSign(X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
         return keyUsage[CRL_SIGN];
+    }
+
+    private static void verifyKeys(PrivateKey privateKey, PublicKey publicKey, String algorithm) throws InvalidKeyException {
+        final String randomString = RandomStringUtils.random(100, 0, 0, true, true, null, new SecureRandom());
+        byte[] challenge = randomString.getBytes();
+
+        try {
+            Signature sig = Signature.getInstance(algorithm);
+            sig.initSign(privateKey);
+            sig.update(challenge);
+            byte[] signature = sig.sign();
+            sig.initVerify(publicKey);
+            sig.update(challenge);
+            if (!sig.verify(signature)) {
+                throw new InvalidKeyException("Private Key does not match Certificate Public Key");
+            }
+        } catch (NoSuchAlgorithmException | SignatureException e) {
+            throw new InvalidKeyException("Private and Public Keys could not be verified");
+        }
     }
 
     private static List<String> getSpiffeIds(X509Certificate certificate) throws CertificateParsingException {
@@ -262,8 +267,5 @@ public class CertificateUtils {
         } catch (Exception e) {
             throw new InvalidKeyException(e);
         }
-    }
-
-    private CertificateUtils() {
     }
 }
