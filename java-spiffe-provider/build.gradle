@@ -10,6 +10,6 @@ apply plugin: 'com.github.johnrengelman.shadow'
 assemble.dependsOn shadowJar
 
 dependencies {
-    compile(project(":java-spiffe-core"))
+    implementation(project(":java-spiffe-core"))
 }
 
