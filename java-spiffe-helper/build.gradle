@@ -20,7 +20,7 @@ shadowJar {
 }
 
 dependencies {
-    implementation(project(':java-spiffe-core'))
+    api (project(':java-spiffe-core'))
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
     // pull grpc libraries for testing
