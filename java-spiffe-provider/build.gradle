@@ -12,4 +12,3 @@ assemble.dependsOn shadowJar
 dependencies {
     api(project(":java-spiffe-core"))
 }
-
