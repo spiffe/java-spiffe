@@ -1,5 +1,6 @@
 subprojects {
-    group 'spiffe'
+    group = 'spiffe'
+    version = '0.6.0'
 
     apply plugin: 'java-library'
     apply plugin: 'jacoco'
@@ -64,5 +65,21 @@ subprojects {
     }
 }
 
+// copy submodules jars to a common folder for deploy
+task copyJars(type: Copy) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from subprojects.collect { it.tasks.withType(Jar) }
+    into "$buildDir/libs"
+}
 
+task build {
+    dependsOn subprojects.build
+}
+
+build.finalizedBy copyJars
+
+task clean {
+    dependsOn subprojects.clean
+    delete "$buildDir"
+}
 
