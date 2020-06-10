@@ -72,11 +72,11 @@ task copyJars(type: Copy) {
     into "$buildDir/libs"
 }
 
-task build {
-    dependsOn subprojects.build
+task assemble {
+    dependsOn subprojects.assemble
 }
 
-build.finalizedBy copyJars
+assemble.finalizedBy copyJars
 
 task clean {
     dependsOn subprojects.clean
