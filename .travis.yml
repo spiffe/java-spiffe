@@ -1,7 +1,8 @@
-sudo: false
-
 language: java
 jdk:
+  - openjdk8
+  - oraclejdk9
+  - openjdk10
   - oraclejdk11
 
 before_cache:
@@ -22,3 +23,4 @@ deploy:
     on:
       tags: true
       condition: $GITHUB_TOKEN != ""
+      jdk: oraclejdk11
