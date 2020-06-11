@@ -1,5 +1,11 @@
 language: java
 jdk:
+  - openjdk8
+  - oraclejdk9
+  - openjdk10
+  - oraclejdk11
+  - oraclejdk12
+  - oraclejdk13
   - oraclejdk14
 
 before_cache:
@@ -20,3 +26,4 @@ deploy:
     on:
       tags: true
       condition: $GITHUB_TOKEN != ""
+      jdk: oraclejdk14
