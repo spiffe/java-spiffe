@@ -114,7 +114,7 @@ class JwtBundleSetTest {
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
 
         JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("example.org"));
-        jwtBundle2.addJwtAuthority("key1", new DummyPublicKey());
+        jwtBundle2.putJwtAuthority("key1", new DummyPublicKey());
         bundleSet.add(jwtBundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(jwtBundle2));

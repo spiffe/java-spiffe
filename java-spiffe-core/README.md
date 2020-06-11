@@ -6,7 +6,7 @@ Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundle
 
 A `spiffe.workloadapi.X509Source` represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
 
-To create a new X509 Source:
+To create a new X.509 Source:
 
 ```
     X509Source x509Source; 
@@ -20,13 +20,13 @@ To create a new X509 Source:
     X509Bundle bundle = x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
 ```
 
-The `newSource()` blocks until the X.509 materials can be retrieved from the Workload API and the X509Source is 
-initialized with the X.509 SVIDs and Bundles. A `X509 context watcher` is configured on the X509Source to get automatically
+The `newSource()`method blocks until the X.509 materials can be retrieved from the Workload API and the `X509Source` is 
+initialized with the X.509 SVIDs and Bundles. A `X.509 context watcher` is configured on the `X509Source` to automatically get 
 the updates from the Workload API. This watcher performs retries if at any time the connection to the Workload API 
 reports an error.
 
 The socket endpoint address is configured through the environment variable `SPIFFE_ENDPOINT_SOCKET`. Another way to
-configure it is by providing a `X509SourceOptions` instance to the `newSource` method:
+configure it is by providing an `X509SourceOptions` instance to the `newSource` method:
 
 ```
     X509Source.X509SourceOptions x509SourceOptions = X509Source.X509SourceOptions
@@ -42,16 +42,16 @@ It allows to configure another SVID picker. By default, the first SVID is used.
 
 ### Configure a timeout for X509Source initialization 
 
-The method `X509Source newSource()` blocks waiting until a X509 context is fetched. The X509 context fetch is retried
+The method `X509Source newSource()` blocks waiting until a X.509 context is fetched. The X.509 context fetch is retried
 using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
 It retries indefinitely unless a timeout is configured. 
 
 This timeout can be configured either providing it through the `newSource(Duration timeout)` method or 
 using a System property:
 
-`spiffe.newX509Source.timeout=30`
+`spiffe.newX509Source.timeout=PT30S`
 
-The Time Unit is seconds.
+The `timout` duration is expressed in `ISO-8601` format.
 
 
 ## JWT Source
@@ -73,15 +73,34 @@ To create a new JWT Source:
     JwtBundle bundle = jwtSource.getBundleForTrustDomain(TrustDomain.of("example.org"));
 ```
 
-The `newSource()` blocks until the JWT materials can be retrieved from the Workload API and the JwtSource is 
-initialized with the JWT Bundles. A `JWT context watcher` is configured on the JwtSource to get automatically
+The `newSource()` method blocks until the JWT materials can be retrieved from the Workload API and the `JwtSource` is 
+initialized with the JWT Bundles. A `JWT context watcher` is configured on the JwtSource to automatically get 
 the updates from the Workload API. This watcher performs retries if at any time the connection to the Workload API 
 reports an error.
 
 The socket endpoint address is configured through the environment variable `SPIFFE_ENDPOINT_SOCKET`. 
 
-## Netty Event Loop thread number configuration
+Another way to configure it is by providing an `JwtSourceOptions` instance to the `newSource` method:
 
-Use the variable `io.netty.eventLoopThreads` to configure the number of threads for the Netty Event Loop Group. 
+```
+    JwtSource.JwtSourceOptions jwtSourceOptions = JwtSource.JwtSourceOptions
+            .builder()
+            .spiffeSocketPath("unix:/tmp/agent-other.sock")
+            .build();
+    
+    JwtSource jwtSource = JwtSource.newSource(jwtSourceOptions);
+```
 
-By default, it is `availableProcessors * 2`.
+### Configure a timeout for JwtSource initialization 
+
+The method `JwtSource newSource()` blocks until the JWT materials are fetched. The fetching process is retried
+using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
+It retries indefinitely unless a timeout is configured. 
+
+This timeout can be configured either providing it through the `newSource(Duration timeout)` method or 
+using a System property:
+
+`spiffe.newJwtSource.timeout=PT30S`
+
+The `timout` duration is expressed in `ISO-8601` format.
+

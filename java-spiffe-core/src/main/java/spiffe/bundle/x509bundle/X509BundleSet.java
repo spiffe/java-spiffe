@@ -7,6 +7,7 @@ import spiffe.bundle.BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +40,12 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Adds a bundle to this Set, if the trust domain already exists,
+     * Adds an X.509 bundle to this Set, if the trust domain already exists,
      * replaces the bundle.
      *
      * @param x509Bundle a {@link X509Bundle}
      */
-    public void add(@NonNull X509Bundle x509Bundle){
+    public void put(@NonNull X509Bundle x509Bundle){
         bundles.put(x509Bundle.getTrustDomain(), x509Bundle);
     }
 
@@ -64,7 +65,10 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
         return bundle;
     }
 
+    /**
+     * Returns the X.509 bundles of this X.509 Bundle Set.
+     */
     public Map<TrustDomain, X509Bundle> getBundles() {
-        return new HashMap<>(bundles);
+        return Collections.unmodifiableMap(bundles);
     }
 }

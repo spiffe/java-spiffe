@@ -41,7 +41,7 @@ class X509BundleSetTest {
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
         X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
-        bundleSet.add(x509Bundle2);
+        bundleSet.put(x509Bundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(x509Bundle1));
         assertTrue(bundleSet.getBundles().containsValue(x509Bundle2));
@@ -53,7 +53,7 @@ class X509BundleSetTest {
         List<X509Bundle> bundleList = Collections.singletonList(x509Bundle1);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
-        bundleSet.add(x509Bundle1);
+        bundleSet.put(x509Bundle1);
 
         assertTrue(bundleSet.getBundles().containsValue(x509Bundle1));
         assertEquals(1, bundleSet.getBundles().size());
@@ -67,7 +67,7 @@ class X509BundleSetTest {
 
         X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("example.org"));
         x509Bundle2.addX509Authority(new DummyX509Certificate());
-        bundleSet.add(x509Bundle2);
+        bundleSet.put(x509Bundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(x509Bundle2));
         assertFalse(bundleSet.getBundles().containsValue(x509Bundle1));
@@ -81,7 +81,7 @@ class X509BundleSetTest {
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
         try {
-            bundleSet.add(null);
+            bundleSet.put(null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("x509Bundle is marked non-null but is null", e.getMessage());

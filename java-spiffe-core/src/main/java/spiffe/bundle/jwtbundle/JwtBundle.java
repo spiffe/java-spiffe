@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.security.KeyException;
 import java.security.PublicKey;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +58,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     /**
-     * Loads a bundle from a file on disk. The file must contain a standard RFC 7517 JWKS document.
+     * Loads a JWT bundle from a file on disk. The file must contain a standard RFC 7517 JWKS document.
      * <p>
      * Key Types supported are EC and RSA.
      *
@@ -77,7 +78,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     /**
-     * Parses a bundle from a byte array.
+     * Parses a JWT bundle from a byte array.
      *
      * @param trustDomain a {@link TrustDomain}
      * @param bundleBytes an array of bytes representing the JWT bundle.
@@ -114,7 +115,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * Returns the JWT authorities in the bundle, keyed by key ID.
      */
     public Map<String, PublicKey> getJwtAuthorities() {
-        return new HashMap<>(jwtAuthorities);
+        return Collections.unmodifiableMap(jwtAuthorities);
     }
 
     /**
@@ -146,7 +147,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param keyId Key ID to associate to the jwtAuthority
      * @param jwtAuthority a PublicKey
      */
-    public void addJwtAuthority(@NonNull String keyId, @NonNull PublicKey jwtAuthority) {
+    public void putJwtAuthority(@NonNull String keyId, @NonNull PublicKey jwtAuthority) {
         if (StringUtils.isBlank(keyId)) {
             throw new IllegalArgumentException("KeyId cannot be empty");
         }

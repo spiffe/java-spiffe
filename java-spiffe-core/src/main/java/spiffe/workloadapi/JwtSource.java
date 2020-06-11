@@ -29,7 +29,7 @@ import java.util.logging.Level;
 import static spiffe.workloadapi.internal.ThreadUtils.await;
 
 /**
- * A <code>JwtSource</code> represents a source of SPIFFE JWT SVID and JWT bundles
+ * A <code>JwtSource</code> represents a source of SPIFFE JWT SVIDs and JWT bundles
  * maintained via the Workload API.
  */
 @Log
@@ -38,7 +38,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
     private static final Duration DEFAULT_TIMEOUT;
 
     static {
-        DEFAULT_TIMEOUT = Duration.ofSeconds(Long.getLong("spiffe.newJwtSource.timeout", 0));
+        DEFAULT_TIMEOUT = Duration.parse(System.getProperty("spiffe.newJwtSource.timeout", "PT0S"));
     }
 
     private JwtBundleSet bundles;
@@ -131,7 +131,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
     }
 
     /**
-     * Returns the JWT SVID handled by this source.
+     * Fetches a new JWT SVID from the Workload API for the given subject SPIFFE ID and audiences.
      *
      * @return a {@link JwtSvid}
      * @throws IllegalStateException if the source is closed

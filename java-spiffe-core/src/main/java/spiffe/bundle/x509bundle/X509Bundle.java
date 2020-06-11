@@ -14,6 +14,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +39,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Creates a new JWT bundle for a trust domain with X.509 Authorities.
+     * Creates a new X.509 bundle for a trust domain with X.509 Authorities.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      * @param x509Authorities a Map of X.509 Certificates
@@ -50,7 +51,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Loads a X.509 bundle from a file on disk.
+     * Loads an X.509 bundle from a file on disk.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the bundle
      * @param bundlePath  a path to the file that has the X.509 authorities
@@ -73,7 +74,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Parses a X095 bundle from an array of bytes.
+     * Parses a X.509 bundle from an array of bytes.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the X.509 bundle
      * @param bundleBytes an array of bytes that represents the X.509 authorities
@@ -109,7 +110,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      * Returns the X.509 x509Authorities in the bundle.
      */
     public Set<X509Certificate> getX509Authorities() {
-        return new HashSet<>(x509Authorities);
+        return Collections.unmodifiableSet(x509Authorities);
     }
 
     /**

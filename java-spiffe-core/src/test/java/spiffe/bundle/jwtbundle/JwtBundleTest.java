@@ -287,8 +287,8 @@ class JwtBundleTest {
         // Test addJWTAuthority
         DummyPublicKey jwtAuthority1 = new DummyPublicKey();
         DummyPublicKey jwtAuthority2 = new DummyPublicKey();
-        jwtBundle.addJwtAuthority("key1", jwtAuthority1);
-        jwtBundle.addJwtAuthority("key2", jwtAuthority2);
+        jwtBundle.putJwtAuthority("key1", jwtAuthority1);
+        jwtBundle.putJwtAuthority("key2", jwtAuthority2);
 
         assertEquals(2, jwtBundle.getJwtAuthorities().size());
 
@@ -310,7 +310,7 @@ class JwtBundleTest {
         assertTrue(jwtBundle.hasJwtAuthority("key2"));
 
         // Test update
-        jwtBundle.addJwtAuthority("key2", jwtAuthority1);
+        jwtBundle.putJwtAuthority("key2", jwtAuthority1);
         assertEquals(jwtAuthority1, jwtBundle.getJwtAuthorities().get("key2"));
         assertEquals(1, jwtBundle.getJwtAuthorities().size());
     }
@@ -319,7 +319,7 @@ class JwtBundleTest {
     void testAddJwtAuthority_emtpyKeyId_throwsIllegalArgumentException() {
         JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
         try {
-            jwtBundle.addJwtAuthority("", new DummyPublicKey());
+            jwtBundle.putJwtAuthority("", new DummyPublicKey());
         } catch (IllegalArgumentException e) {
             assertEquals("KeyId cannot be empty", e.getMessage());
         }
@@ -329,7 +329,7 @@ class JwtBundleTest {
     void testAddJwtAuthority_nullKeyId_throwsNullPointerException() {
         JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
         try {
-            jwtBundle.addJwtAuthority(null, new DummyPublicKey());
+            jwtBundle.putJwtAuthority(null, new DummyPublicKey());
         } catch (NullPointerException e) {
             assertEquals("keyId is marked non-null but is null", e.getMessage());
         }
@@ -339,7 +339,7 @@ class JwtBundleTest {
     void testAddJwtAuthority_nullJwtAuthority_throwsNullPointerException() {
         JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
         try {
-            jwtBundle.addJwtAuthority("key1", null);
+            jwtBundle.putJwtAuthority("key1", null);
         } catch (NullPointerException e) {
             assertEquals("jwtAuthority is marked non-null but is null", e.getMessage());
         }

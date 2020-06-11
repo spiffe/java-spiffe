@@ -41,12 +41,12 @@ import static spiffe.workloadapi.internal.ThreadUtils.await;
  * after close has been called.
  */
 @Log
-public class X509Source implements X509SvidSource, BundleSource, Closeable {
+public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Closeable {
 
     private static final Duration DEFAULT_TIMEOUT;
 
     static {
-        DEFAULT_TIMEOUT = Duration.ofSeconds(Long.getLong("spiffe.newX509Source.timeout", 0));
+        DEFAULT_TIMEOUT = Duration.parse(System.getProperty("spiffe.newX509Source.timeout", "PT0S"));
     }
 
     private X509Svid svid;
@@ -125,6 +125,8 @@ public class X509Source implements X509SvidSource, BundleSource, Closeable {
      * @throws X509SourceException            if the source could not be initialized
      */
     public static X509Source newSource(@NonNull X509SourceOptions options, @NonNull Duration timeout) throws SocketEndpointAddressException, X509SourceException {
+
+        System.out.println("TIMEOUT: ***** "  + timeout);
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }
