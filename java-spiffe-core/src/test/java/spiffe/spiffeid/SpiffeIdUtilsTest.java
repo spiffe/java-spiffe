@@ -139,15 +139,6 @@ class piffeIdUtilsTest {
         assertEquals(SpiffeId.parse("spiffe://example.org/workload2"), spiffeIdList.get(1));
     }
 
-    @Test
-    void toListOfSPiffeIds_blankStringParameter() {
-        try {
-            SpiffeIdUtils.toListOfSpiffeIds("", ',');
-        } catch (IllegalArgumentException e) {
-            assertEquals("Argument spiffeIds cannot be empty", e.getMessage());
-        }
-    }
-
     private URI toUri(String path) throws URISyntaxException {
         return getClass().getClassLoader().getResource(path).toURI();
     }

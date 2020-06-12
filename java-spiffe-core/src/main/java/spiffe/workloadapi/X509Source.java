@@ -83,8 +83,8 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * <p>
      * It uses the default X.509 SVID (picks the first SVID that comes in the Workload API response).
      *
-     * @param timeout Time to wait for the X509 context update. If the timeout is Zero, it will wait indefinitely.
-     * @return an instance of {@link X509Source}, with the svid and bundles initialized
+     * @param timeout Time to wait for the X.509 context update. If the timeout is Zero, it will wait indefinitely.
+     * @return an instance of {@link X509Source}, with the SVID and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
@@ -118,7 +118,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
      *
-     * @param timeout Time to wait for the X509 context update. If the timeout is Zero, it will wait indefinitely.
+     * @param timeout Time to wait for the X.509 context update. If the timeout is Zero, it will wait indefinitely.
      * @param options {@link X509SourceOptions}
      * @return an instance of {@link X509Source}, with the svid and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
@@ -137,7 +137,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
             x509Source.init(timeout);
         } catch (Exception e) {
             x509Source.close();
-            throw new X509SourceException("Error creating X509 source", e);
+            throw new X509SourceException("Error creating X.509 source", e);
         }
 
         return x509Source;
@@ -152,7 +152,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
     @Override
     public X509Svid getX509Svid() {
         if (isClosed()) {
-            throw new IllegalStateException("X509 SVID source is closed");
+            throw new IllegalStateException("X.509 SVID source is closed");
         }
         return svid;
     }
@@ -168,7 +168,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
     @Override
     public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
-            throw new IllegalStateException("X509 bundle source is closed");
+            throw new IllegalStateException("X.509 bundle source is closed");
         }
         return bundles.getBundleForTrustDomain(trustDomain);
     }
@@ -213,7 +213,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
             success = await(done, timeout.getSeconds(), TimeUnit.SECONDS);
         }
         if (!success) {
-            throw new TimeoutException("Timeout waiting for X509 Context update");
+            throw new TimeoutException("Timeout waiting for X.509 Context update");
         }
     }
 

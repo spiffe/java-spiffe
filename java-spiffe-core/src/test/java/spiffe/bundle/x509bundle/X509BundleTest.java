@@ -89,7 +89,7 @@ public class X509BundleTest {
         try {
             x509Bundle.getBundleForTrustDomain(TrustDomain.of("other.org"));
         } catch (BundleNotFoundException e) {
-            assertEquals("No X509 bundle found for trust domain other.org", e.getMessage());
+            assertEquals("No X.509 bundle found for trust domain other.org", e.getMessage());
         }
     }
 

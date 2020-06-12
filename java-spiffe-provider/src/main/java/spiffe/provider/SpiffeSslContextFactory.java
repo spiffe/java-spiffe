@@ -8,6 +8,7 @@ import spiffe.spiffeid.SpiffeId;
 import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -44,14 +45,22 @@ public final class SpiffeSslContextFactory {
         }
 
         if (options.x509Source == null) {
-            throw new IllegalArgumentException("x509Source option cannot be null, a X509 Source must be provided");
+            throw new IllegalArgumentException("x509Source option cannot be null, a X.509 Source must be provided");
+        }
+
+        TrustManager[] trustManager;
+        if (options.acceptAnySpiffeId) {
+            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(options.x509Source);
+        } else if (options.acceptedSpiffeIdsSupplier != null)  {
+            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
+        } else {
+            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source);
         }
 
         sslContext.init(
                 new SpiffeKeyManagerFactory().engineGetKeyManagers(options.x509Source),
-                new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier),
+                trustManager,
                 null);
-
         return sslContext;
     }
 
@@ -63,15 +72,18 @@ public final class SpiffeSslContextFactory {
         String sslProtocol;
         X509Source x509Source;
         Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
+        boolean acceptAnySpiffeId;
 
         @Builder
         public SslContextOptions(
                 String sslProtocol,
                 X509Source x509Source,
-                Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
+                Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier,
+                boolean acceptAnySpiffeId) {
             this.x509Source = x509Source;
             this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
             this.sslProtocol = sslProtocol;
+            this.acceptAnySpiffeId = acceptAnySpiffeId;
         }
     }
 

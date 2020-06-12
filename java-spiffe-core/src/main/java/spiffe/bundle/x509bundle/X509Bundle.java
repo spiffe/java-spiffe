@@ -103,7 +103,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
         if (this.trustDomain.equals(trustDomain)) {
             return this;
         }
-        throw new BundleNotFoundException(String.format("No X509 bundle found for trust domain %s", trustDomain));
+        throw new BundleNotFoundException(String.format("No X.509 bundle found for trust domain %s", trustDomain));
     }
 
     /**

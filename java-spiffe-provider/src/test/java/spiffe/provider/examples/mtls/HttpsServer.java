@@ -47,7 +47,7 @@ public class HttpsServer {
     }
 
     void run() throws IOException, KeyManagementException, NoSuchAlgorithmException {
-        X509Source x509Source = null;
+        X509Source x509Source;
         try {
             x509Source = X509SourceManager.getX509Source();
         } catch (SocketEndpointAddressException | X509SourceException e) {

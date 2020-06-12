@@ -51,7 +51,7 @@ using a System property:
 
 `spiffe.newX509Source.timeout=PT30S`
 
-The `timout` duration is expressed in `ISO-8601` format.
+The `timeout` duration is expressed in `ISO-8601` format.
 
 
 ## JWT Source
@@ -102,5 +102,5 @@ using a System property:
 
 `spiffe.newJwtSource.timeout=PT30S`
 
-The `timout` duration is expressed in `ISO-8601` format.
+The `timeout` duration is expressed in `ISO-8601` format.
 

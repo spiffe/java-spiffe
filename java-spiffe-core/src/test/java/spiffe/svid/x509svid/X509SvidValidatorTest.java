@@ -75,7 +75,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifyChain(chain, x509Bundle);
             fail("Verify chain should have thrown validation exception");
         } catch (BundleNotFoundException e) {
-            assertEquals("No X509 bundle found for trust domain example.org", e.getMessage());
+            assertEquals("No X.509 bundle found for trust domain example.org", e.getMessage());
         }
     }
 

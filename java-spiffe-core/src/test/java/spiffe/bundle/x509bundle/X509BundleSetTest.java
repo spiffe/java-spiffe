@@ -110,7 +110,7 @@ class X509BundleSetTest {
             bundleSet.getBundleForTrustDomain(TrustDomain.of("unknown.org"));
             fail("expected BundleNotFoundException");
         } catch (BundleNotFoundException e) {
-            assertEquals("No X509 bundle for trust domain unknown.org", e.getMessage());
+            assertEquals("No X.509 bundle for trust domain unknown.org", e.getMessage());
         }
     }
 

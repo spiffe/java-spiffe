@@ -283,7 +283,7 @@ public class WorkloadApiClient implements Closeable {
                     watcher.onUpdate(x509Context);
                     retryHandler.reset();
                 } catch (CertificateException | X509SvidException | X509ContextException e) {
-                    watcher.onError(new X509ContextException("Error processing X509 Context update", e));
+                    watcher.onError(new X509ContextException("Error processing X.509 Context update", e));
                 }
             }
 
@@ -295,9 +295,9 @@ public class WorkloadApiClient implements Closeable {
 
             private void handleWatchX509ContextError(Throwable t) {
                 if (INVALID_ARGUMENT.equals(Status.fromThrowable(t).getCode().name())) {
-                    watcher.onError(new X509ContextException("Canceling X509 Context watch", t));
+                    watcher.onError(new X509ContextException("Canceling X.509 Context watch", t));
                 } else {
-                    log.log(Level.INFO, "Retrying connecting to Workload API to register X509 context watcher");
+                    log.log(Level.INFO, "Retrying connecting to Workload API to register X.509 context watcher");
                     retryHandler.scheduleRetry(() ->
                             cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), this)));
                 }
@@ -349,7 +349,7 @@ public class WorkloadApiClient implements Closeable {
         };
     }
 
-    // validates that the X509 context has both the SVID and the bundles
+    // validates that the X.509 context has both the SVID and the bundles
     private void validateX509Context(X509Context x509Context) throws X509ContextException {
         if (x509Context.getX509BundleSet() == null || x509Context.getX509BundleSet().getBundles() == null ||
                 x509Context.getX509BundleSet().getBundles().isEmpty()) {

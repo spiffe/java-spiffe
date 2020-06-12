@@ -11,6 +11,7 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -25,6 +26,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
     private final BundleSource<X509Bundle> x509BundleSource;
     private final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
+    private final boolean acceptAnySpiffeId;
 
     /**
      * Creates a SpiffeTrustManager with a X.509 bundle source used to provide the trusted
@@ -37,6 +39,21 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
                               Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
         this.x509BundleSource = x509BundleSource;
         this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
+        this.acceptAnySpiffeId = false;
+    }
+
+    /**
+     * Creates a SpiffeTrustManager with a X.509 bundle source used to provide the trusted
+     * bundles, and a flag to indicate that any SPIFFE IDs will be accepted.
+     *
+     * @param x509BundleSource          an implementation of a {@link BundleSource}
+     * @param acceptAnySpiffeId a Supplier of a list of accepted SPIFFE IDs.
+     */
+    public SpiffeTrustManager(BundleSource<X509Bundle> x509BundleSource,
+                              boolean acceptAnySpiffeId) {
+        this.x509BundleSource = x509BundleSource;
+        this.acceptedSpiffeIdsSupplier = ArrayList::new;
+        this.acceptAnySpiffeId = acceptAnySpiffeId;
     }
 
     /**
@@ -107,8 +124,12 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
         checkServerTrusted(chain, authType);
     }
 
-    // Check the spiffeId using the checkSpiffeId function and the chain using the bundleSource and a Validator
+    // Check that the SPIFFE ID in the peer's certificate is accepted and the chain can be validated with a root CA in the bundle source
     private void validatePeerChain(X509Certificate[] chain) throws CertificateException {
+        if (acceptAnySpiffeId) {
+            return;
+        }
+
         X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
         try {
             X509SvidValidator.verifyChain(Arrays.asList(chain), x509BundleSource);

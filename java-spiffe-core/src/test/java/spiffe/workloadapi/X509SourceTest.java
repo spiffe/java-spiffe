@@ -81,7 +81,7 @@ class X509SourceTest {
             x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
             fail("exceptions is expected");
         } catch (IllegalStateException e) {
-            assertEquals("X509 bundle source is closed", e.getMessage());
+            assertEquals("X.509 bundle source is closed", e.getMessage());
         } catch (BundleNotFoundException e) {
             fail("not expected exception", e);
         }
@@ -101,7 +101,7 @@ class X509SourceTest {
             x509Source.getX509Svid();
             fail("exceptions is expected");
         } catch (IllegalStateException e) {
-            assertEquals("X509 SVID source is closed", e.getMessage());
+            assertEquals("X.509 SVID source is closed", e.getMessage());
         }
     }
 }

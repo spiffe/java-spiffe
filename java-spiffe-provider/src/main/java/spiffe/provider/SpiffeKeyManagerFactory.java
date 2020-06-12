@@ -1,9 +1,11 @@
 package spiffe.provider;
 
+import lombok.NonNull;
 import lombok.val;
 import spiffe.exception.SocketEndpointAddressException;
 import spiffe.exception.X509SourceException;
 import spiffe.svid.x509svid.X509SvidSource;
+import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
@@ -28,18 +30,21 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      * Default method for creating the KeyManager, uses a X509Source instance
      * that is handled by the Singleton {@link X509SourceManager}
      *
-     * @throws SpiffeProviderException in case there is an error setting up the X509 source
+     * @throws SpiffeProviderException in case there is an error setting up the X.509 source
      */
     @Override
     protected KeyManager[] engineGetKeyManagers() {
         SpiffeKeyManager spiffeKeyManager;
+        X509Source x509Source;
         try {
-            spiffeKeyManager = new SpiffeKeyManager(X509SourceManager.getX509Source());
+            x509Source = X509SourceManager.getX509Source();
         } catch (X509SourceException e) {
-            throw new SpiffeProviderException("The X509 source could not be created", e);
+            throw new SpiffeProviderException("The X.509 source could not be created", e);
         } catch (SocketEndpointAddressException e) {
             throw new SpiffeProviderException("The Workload API Socket endpoint address configured is not valid", e);
         }
+
+        spiffeKeyManager = new SpiffeKeyManager(x509Source);
         return new KeyManager[]{spiffeKeyManager};
     }
 
@@ -49,7 +54,7 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      * @param x509SvidSource an instance of a {@link X509SvidSource}
      * @return an array with an instance of a {@link KeyManager}
      */
-    public KeyManager[] engineGetKeyManagers(X509SvidSource x509SvidSource) {
+    public KeyManager[] engineGetKeyManagers(@NonNull X509SvidSource x509SvidSource) {
         val spiffeKeyManager = new SpiffeKeyManager(x509SvidSource);
         return new KeyManager[]{spiffeKeyManager};
     }

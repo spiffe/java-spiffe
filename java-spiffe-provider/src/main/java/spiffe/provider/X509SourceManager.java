@@ -29,7 +29,7 @@ public class X509SourceManager {
      * created yet, it creates a new X509Source and initializes the singleton in a thread safe way.
      *
      * @return a {@link X509Source}
-     * @throws X509SourceException            if the X509 source could not be initialized
+     * @throws X509SourceException            if the X.509 source could not be initialized
      * @throws SocketEndpointAddressException is the socket endpoint address is not valid
      */
     public static synchronized X509Source getX509Source() throws X509SourceException, SocketEndpointAddressException {

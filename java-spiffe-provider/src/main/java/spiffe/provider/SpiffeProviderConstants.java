@@ -12,6 +12,12 @@ public class SpiffeProviderConstants {
     public static final String SSL_SPIFFE_ACCEPT_PROPERTY = "ssl.spiffe.accept";
 
     /**
+     * Security property to be used as flag for accepting any SPIFFE IDs.
+     * This property is read in the java.security file
+     */
+    public static final String SSL_SPIFFE_ACCEPT_ALL_PROPERTY = "ssl.spiffe.acceptAll";
+
+    /**
      * The name of this Provider implementation
      */
     public static final String PROVIDER_NAME = "Spiffe";

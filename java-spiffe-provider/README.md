@@ -37,7 +37,7 @@ Alternatively, a different Workload API address can be used by passing it to the
 
     SslContextOptions sslContextOptions = SslContextOptions
             .builder()
-            .acceptedSpiffeIdsSupplier(spiffeIdListSupplier )
+            .acceptedSpiffeIdsSupplier(spiffeIdListSupplier)
             .x509Source(x509Source)
             .build();
 
@@ -96,7 +96,34 @@ To pass your custom security properties file through the command line via system
 
 The properties defined in your custom properties file will override the properties in the master file. 
 
-### Configure Workload API Socket Endpoint
+The property `ssl.spiffe.accept` can also be defined through a System property passed as `-Dssl.spiffe.accept=`;
+
+#### Accept all SPIFFE IDs
+
+By default, only the SPIFFE IDs defined in the property `ssl.spiffe.accept` are accepted for a TLS connection. Thus
+if the property is empty or not defined, no SPIFFE ID will be accepted. To accept all SPIFFE IDs it should be used
+the property `ssl.spiffe.acceptAll` and set as `true` in the Security properties file:
+
+```
+ssl.spiffe.acceptAll=true
+```
+
+or through a System property: `-Dssl.spiffe.acceptAll=true`.
+
+It can also be configured when the SSL Context is created programmatically setting as `true` the option `acceptAnySpiffeId` 
+in the `SslContextOptions`:
+
+```
+SslContextOptions sslContextOptions = SslContextOptions
+            .builder()
+            .x509Source(x509Source)
+            .acceptAnySpiffeId(true)
+            .build();
+
+SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
+```
+
+#### Configure Workload API Socket Endpoint
 
 The socket endpoint can be configured defining an environment variable named `SPIFFE_ENDPOINT_SOCKET`: 
 
@@ -146,13 +173,13 @@ A `GRPC Server` using a SSL context backed by the Workload API:
     server.start();
 ```
 
-#### Configuration programmatically:
+#### Configure it programmatically:
 
 The `SpiffeKeyManager` and `SpiffeTrustManager` can be created without resorting to factories, providing the constructors
 with a [X509Source instance](../java-spiffe-core/README.md#x509source).
 
 ```
-    // create a new X509 source using the default socket endpoint address
+    // create a new X.509 source using the default socket endpoint address
     X509Source x509Source = X509Source.newSource();
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
 

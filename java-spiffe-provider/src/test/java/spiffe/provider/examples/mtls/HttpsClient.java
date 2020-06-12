@@ -14,6 +14,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -37,7 +39,7 @@ public class HttpsClient {
 
     public static void main(String[] args) {
         String spiffeSocket = "unix:/tmp/agent.sock";
-        HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, HttpsClient::listOfSpiffeIds);
+        HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, () -> new AcceptedSpiffeIds().getList());
         try {
             httpsClient.run();
         } catch (KeyManagementException | NoSuchAlgorithmException | IOException | SocketEndpointAddressException | X509SourceException e) {
@@ -72,11 +74,18 @@ public class HttpsClient {
         new WorkloadThread(sslSocket, x509Source).start();
     }
 
-    static List<SpiffeId> listOfSpiffeIds() {
-        try {
-            return SpiffeIdUtils.getSpiffeIdListFromFile(Paths.get("java-spiffe-provider/src/test/java/spiffe/provider/examples/mtls/spiffeIds.txt"));
-        } catch (IOException e) {
-            throw new RuntimeException("Error getting list of spiffeIds", e);
+    private static class AcceptedSpiffeIds {
+        List<SpiffeId> getList() {
+            try {
+                return SpiffeIdUtils.getSpiffeIdListFromFile(Paths.get(toUri("testdata/spiffeIds.txt")));
+            } catch (IOException | URISyntaxException e) {
+                throw new RuntimeException("Error getting list of spiffeIds", e);
+            }
+        }
+
+
+        URI toUri(String path) throws URISyntaxException {
+            return getClass().getClassLoader().getResource(path).toURI();
         }
     }
 }

@@ -1,11 +1,13 @@
 package spiffe.provider;
 
-import lombok.val;
+import lombok.NonNull;
 import spiffe.bundle.BundleSource;
+import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.exception.SocketEndpointAddressException;
 import spiffe.exception.X509SourceException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.spiffeid.SpiffeIdUtils;
+import spiffe.workloadapi.X509Source;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
@@ -14,6 +16,7 @@ import java.security.KeyStore;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_ALL_PROPERTY;
 import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY;
 
 /**
@@ -31,6 +34,14 @@ import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY
  */
 public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
 
+    private static final boolean ACCEPT_ANY_SPIFFE_ID;
+    private static final Supplier<List<SpiffeId>> DEFAULT_SPIFFE_ID_LIST_SUPPLIER;
+
+    static {
+        ACCEPT_ANY_SPIFFE_ID = Boolean.parseBoolean(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_ALL_PROPERTY, "false"));
+        DEFAULT_SPIFFE_ID_LIST_SUPPLIER = () -> SpiffeIdUtils.toListOfSpiffeIds(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY));
+    }
+
     /**
      * Default method for creating a TrustManager initializing it with
      * the {@link spiffe.workloadapi.X509Source} instance
@@ -38,35 +49,57 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * with and a supplier of accepted SPIFFE IDs. that reads the list
      * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
      *
-     * @return a TrustManager array with an initialized TrustManager.
-     * @throws SpiffeProviderException in case there is an error setting up the X509 source
+     * @return a {@link TrustManager} array with an initialized TrustManager.
+     * @throws SpiffeProviderException in case there is an error setting up the X.509 source
      */
     @Override
     public TrustManager[] engineGetTrustManagers() {
-        SpiffeTrustManager spiffeTrustManager = null;
+
+        X509Source x509Source;
         try {
-            spiffeTrustManager = new SpiffeTrustManager(X509SourceManager.getX509Source(), this::getAcceptedSpiffeIds);
+            x509Source = X509SourceManager.getX509Source();
         } catch (X509SourceException e) {
-            throw new SpiffeProviderException("The X509 source could not be created", e);
+            throw new SpiffeProviderException("The X.509 source could not be created", e);
         } catch (SocketEndpointAddressException e) {
             throw new SpiffeProviderException("The Workload API Socket endpoint address configured is not valid", e);
+        }
+
+        SpiffeTrustManager spiffeTrustManager;
+        if (ACCEPT_ANY_SPIFFE_ID) {
+            spiffeTrustManager = new SpiffeTrustManager(x509Source, true);
+        } else {
+            spiffeTrustManager = new SpiffeTrustManager(x509Source, DEFAULT_SPIFFE_ID_LIST_SUPPLIER);
         }
         return new TrustManager[]{spiffeTrustManager};
     }
 
     /**
-     * Creates a TrustManager initializing it with the X509BundleSource instance
+     * Creates a {@link TrustManager} initializing it with the X.509 BundleSource instance
      * and with and a supplier of accepted SPIFFE IDs. that reads the list
      * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
      *
      * @return a TrustManager array with an initialized TrustManager.
      */
-    public TrustManager[] engineGetTrustManagers(BundleSource x509BundleSource) {
-        val spiffeTrustManager =
-                new SpiffeTrustManager(
-                        x509BundleSource,
-                        this::getAcceptedSpiffeIds
-                );
+    public TrustManager[] engineGetTrustManagers(@NonNull BundleSource<X509Bundle> x509BundleSource) {
+        SpiffeTrustManager spiffeTrustManager;
+
+        if (ACCEPT_ANY_SPIFFE_ID) {
+            // make explicit that all SPIFFE IDs will be accepted
+            spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
+        } else {
+            spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, DEFAULT_SPIFFE_ID_LIST_SUPPLIER);
+        }
+        return new TrustManager[]{spiffeTrustManager};
+    }
+
+    /**
+     * Creates a {@link TrustManager} initializing it with the X.509 BundleSource instance.
+     * The TrustManager is configured to accept any SPIFFE ID.
+     *
+     * @return a TrustManager array with an initialized TrustManager.
+     */
+    public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull BundleSource<X509Bundle> x509BundleSource) {
+        SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
         return new TrustManager[]{spiffeTrustManager};
     }
 
@@ -80,13 +113,10 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @return a TrustManager array with an initialized TrustManager.
      */
     public TrustManager[] engineGetTrustManagers(
-            BundleSource x509BundleSource,
-            Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
+            @NonNull BundleSource<X509Bundle> x509BundleSource,
+            @NonNull Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
 
-        final Supplier<List<SpiffeId>> spiffeIdsSupplier =
-                acceptedSpiffeIdsSupplier != null ? acceptedSpiffeIdsSupplier : this::getAcceptedSpiffeIds;
-
-        val spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, spiffeIdsSupplier);
+        SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, acceptedSpiffeIdsSupplier);
         return new TrustManager[]{spiffeTrustManager};
     }
 
@@ -98,10 +128,5 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     @Override
     protected void engineInit(ManagerFactoryParameters managerFactoryParameters) {
         // no implementation needed
-    }
-
-
-    private List<SpiffeId> getAcceptedSpiffeIds() {
-        return SpiffeIdUtils.getSpiffeIdsFromSecurityProperty(SSL_SPIFFE_ACCEPT_PROPERTY);
     }
 }

@@ -60,7 +60,7 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
     public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         val bundle = bundles.get(trustDomain);
         if (bundle == null){
-            throw new BundleNotFoundException(String.format("No X509 bundle for trust domain %s", trustDomain));
+            throw new BundleNotFoundException(String.format("No X.509 bundle for trust domain %s", trustDomain));
         }
         return bundle;
     }

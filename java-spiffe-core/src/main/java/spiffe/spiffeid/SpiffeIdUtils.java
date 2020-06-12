@@ -99,13 +99,17 @@ public class SpiffeIdUtils {
      */
     public static List<SpiffeId> toListOfSpiffeIds(final String spiffeIds, final char separator) {
         if (isBlank(spiffeIds)) {
-            throw new IllegalArgumentException("Argument spiffeIds cannot be empty");
+            return EMPTY_LIST;
         }
 
         val array = spiffeIds.split(String.valueOf(separator));
         return Arrays.stream(array)
                 .map(SpiffeId::parse)
                 .collect(Collectors.toList());
+    }
+
+    public static List<SpiffeId> toListOfSpiffeIds(final String spiffeIds) {
+        return toListOfSpiffeIds(spiffeIds, DEFAULT_CHAR_SEPARATOR);
     }
 
     private SpiffeIdUtils() {}
