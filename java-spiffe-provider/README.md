@@ -5,15 +5,16 @@ creating SSLContexts that are backed by the Workload API.
 
 ## Create an SSL Context backed by the Workload API
 
-To create an SSL Context that uses a X509Source backed by the WorkloadAPI, having the environment variable
-` SPIFFE_ENDPOINT_SOCKET` defined with the WorkloadAPI endpoint address, and the `ssl.spiffe.accept` 
-Security property defined in the `java.security` containing the list of SPIFFE IDs that the current workload
-will trust for TLS connections. 
+To create an SSL Context that uses a `X509Source` backed by the Workload API, having the environment variable
+` SPIFFE_ENDPOINT_SOCKET` defined with the Workload API endpoint address, and the `ssl.spiffe.accept` 
+Security property defined in the `java.security` file containing the list of SPIFFE IDs that the current workload
+will trust for TLS connections:
 
 ```
+    X509Source source = X509Source.newSource();
     SslContextOptions options = SslContextOptions
             .builder()
-            .x509Source(x509Source.newSource())
+            .x509Source(source)
             .build();
 
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
@@ -21,19 +22,22 @@ will trust for TLS connections.
 
 See [HttpsServer example](src/main/java/spiffe/provider/examples/HttpsServer.java).
 
-Alternatively, a different Workload API address can be used by passing it to the X509Source creation method, and the
-Supplier of accepted SPIFFE IDs list can be provided as part of the `SslContextOptions`:
+Alternatively, a different Workload API address can be used by passing it to the X509Source creation method, and a
+`Supplier` of a list of accepted SPIFFE IDs can be provided as part of the `SslContextOptions`:
 
 ```
     X509SourceOptions sourceOptions = X509SourceOptions
             .builder()
-            .spiffeSocketPath(spiffeSocket)
+            .spiffeSocketPath("unix:/tmp/agent.sock")
             .build();
+
     X509Source x509Source = X509Source.newSource(sourceOptions);
+
+    Supplier<List<SpiffeId>> spiffeIdListSupplier = () -> Collections.singletonList(SpiffeId.parse("spiffe://example.org/test"));
 
     SslContextOptions sslContextOptions = SslContextOptions
             .builder()
-            .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
+            .acceptedSpiffeIdsSupplier(spiffeIdListSupplier )
             .x509Source(x509Source)
             .build();
 
@@ -47,24 +51,23 @@ the list of SPIFFE IDs from a file.
 
 Java Security Providers are configured in the master security properties file `<java-home>/jre/lib/security/java.security`. 
 
-The way to register a provider is to specify the Provider subclass name and priority in the format
+The way to register a java security provider is by specifying the custom `Provider` subclass name and the priority in the 
+following format:
 
 ```
 security.provider.<n>=<className>
 ```
 
-This declares a provider, and specifies its preference order n.
+This declares a provider, and specifies its preference order `n`.
 
 ### Copy the JAR to the JVM extensions
 
 For installing the JAR file containing the provider classes as a bundled extension in the java platform, 
-copy build/libs/spiffe-provider-<version>-all.jar to <java-home>/jre/lib/ext
+copy `build/libs/java-spiffe-provider-<version>-all.jar` to `<java-home>/jre/lib/ext`.
 
 #### Register the SPIFFE Provider
 
-You can extend and override the master security properties file. 
-
-Create a file `java.security` with the following content:
+The master security properties file can be extended. Create a file `java.security` with the following content:
 
 ```
 # Add the spiffe provider, change the <n> for the correct consecutive number
@@ -78,12 +81,12 @@ ssl.TrustManagerFactory.algorithm=Spiffe
 ssl.spiffe.accept=spiffe://example.org/workload, spiffe://example.org/workload2, spiffe://example2.org/workload
 ```
 
-In your `java.security` file: 
+In this `java.security` file: 
 
 * replace `<n>` following the order of the `# List of Providers` in the master file. 
 
-* replace the value of the custom property `ssl.spiffe.accept` with the Spiffe IDs of the workloads that are allowed to connect.
-If the property is not present or if it's empty, any spiffe id will be authorized. 
+* replace the value of the custom property `ssl.spiffe.accept` with the SPIFFE IDs of the workloads that are allowed to connect.
+***If the property is not present or if it's empty, no SPIFFE ID will be authorized.*** 
 
 To pass your custom security properties file through the command line via system property when starting the JVM:
 
@@ -105,7 +108,7 @@ export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
 
 ### Configure a Tomcat connector
 
-Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
+***Prerequisite***: Having the SPIFFE Provider configured through the `java.security`.
 
 A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as follows: 
 
@@ -123,7 +126,7 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
 
 Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
 
-A GRPC Server using a SSL context backed by the Workload API:
+A `GRPC Server` using a SSL context backed by the Workload API:
 
 ```
     KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM, SpiffeProviderConstants.PROVIDER_NAME);
@@ -143,7 +146,7 @@ A GRPC Server using a SSL context backed by the Workload API:
     server.start();
 ```
 
-The following alternative does not need the configuration through the `java.security`.
+#### Configuration programmatically:
 
 The `SpiffeKeyManager` and `SpiffeTrustManager` can be created without resorting to factories, providing the constructors
 with a [X509Source instance](../java-spiffe-core/README.md#x509source).
@@ -169,7 +172,7 @@ with a [X509Source instance](../java-spiffe-core/README.md#x509source).
             .build();
 ``` 
 
-For the client, a ManagedChannel would be created using the `SpiffeKeyManager` and `SpiffeTrustManager` for configuring 
+For the client, a `ManagedChannel` would be created using the `SpiffeKeyManager` and `SpiffeTrustManager` for configuring 
 the GRPC SSL context, analogous to the config for the Server:
 
 ``` 

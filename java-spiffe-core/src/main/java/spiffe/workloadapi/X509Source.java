@@ -125,8 +125,6 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * @throws X509SourceException            if the source could not be initialized
      */
     public static X509Source newSource(@NonNull X509SourceOptions options, @NonNull Duration timeout) throws SocketEndpointAddressException, X509SourceException {
-
-        System.out.println("TIMEOUT: ***** "  + timeout);
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }

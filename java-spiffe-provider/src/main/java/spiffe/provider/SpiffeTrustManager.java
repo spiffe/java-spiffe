@@ -1,6 +1,7 @@
 package spiffe.provider;
 
 import spiffe.bundle.BundleSource;
+import spiffe.bundle.x509bundle.X509Bundle;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.SpiffeId;
 import spiffe.svid.x509svid.X509SvidValidator;
@@ -22,7 +23,7 @@ import java.util.function.Supplier;
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
-    private final BundleSource x509BundleSource;
+    private final BundleSource<X509Bundle> x509BundleSource;
     private final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
 
     /**
@@ -32,7 +33,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * @param x509BundleSource          an implementation of a {@link BundleSource}
      * @param acceptedSpiffeIdsSupplier a Supplier of a list of accepted SPIFFE IDs.
      */
-    public SpiffeTrustManager(BundleSource x509BundleSource,
+    public SpiffeTrustManager(BundleSource<X509Bundle> x509BundleSource,
                               Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
         this.x509BundleSource = x509BundleSource;
         this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
