@@ -1,16 +1,13 @@
 package spiffe.workloadapi.internal;
 
 import io.grpc.ManagedChannel;
-import io.grpc.netty.NegotiationType;
-import io.grpc.netty.NettyChannelBuilder;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollDomainSocketChannel;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.kqueue.KQueueDomainSocketChannel;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.unix.DomainSocketAddress;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.netty.channel.ChannelOption;
+import io.grpc.netty.shaded.io.netty.channel.EventLoopGroup;
+import io.grpc.netty.shaded.io.netty.channel.epoll.EpollDomainSocketChannel;
+import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup;
+import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress;
 import lombok.NonNull;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -53,7 +50,6 @@ public class GrpcManagedChannelFactory {
         return new ManagedChannelWrapper(managedChannel);
     }
 
-    // Based on the detected OS, configures the Socket Channel EventLookGroup and Channel Type
     private static EventLoopGroup configureNativeSocketChannel(@NonNull NettyChannelBuilder channelBuilder, ExecutorService executorService) {
         if (SystemUtils.IS_OS_LINUX) {
             // nThreads = 0 -> use Netty default
@@ -65,19 +61,7 @@ public class GrpcManagedChannelFactory {
             return epollEventLoopGroup;
         }
 
-        if (SystemUtils.IS_OS_MAC) {
-            // nThreads = 0 -> use Netty default
-            KQueueEventLoopGroup kQueueEventLoopGroup = new KQueueEventLoopGroup(0, executorService);
-            channelBuilder.eventLoopGroup(kQueueEventLoopGroup)
-                    // avoid warning Unknown channel option 'SO_KEEPALIVE'
-                    .withOption(ChannelOption.SO_KEEPALIVE, null)
-                    .channelType(KQueueDomainSocketChannel.class);
-            return kQueueEventLoopGroup;
-        }
-
-        NioEventLoopGroup nioEventLoopGroup = new NioEventLoopGroup(0, executorService);
-        channelBuilder.eventLoopGroup(nioEventLoopGroup);
-        return nioEventLoopGroup;
+        throw new IllegalStateException("Operating System is not supported.");
     }
 
     private GrpcManagedChannelFactory() {}

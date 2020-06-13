@@ -1,7 +1,7 @@
 package spiffe.workloadapi.internal;
 
 import io.grpc.ManagedChannel;
-import io.netty.channel.EventLoopGroup;
+import io.grpc.netty.shaded.io.netty.channel.EventLoopGroup;
 
 import java.io.Closeable;
 
