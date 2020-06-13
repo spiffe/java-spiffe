@@ -126,11 +126,10 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
     // Check that the SPIFFE ID in the peer's certificate is accepted and the chain can be validated with a root CA in the bundle source
     private void validatePeerChain(X509Certificate[] chain) throws CertificateException {
-        if (acceptAnySpiffeId) {
-            return;
+        if (!acceptAnySpiffeId) {
+            X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
         }
 
-        X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
         try {
             X509SvidValidator.verifyChain(Arrays.asList(chain), x509BundleSource);
         } catch (BundleNotFoundException e) {
