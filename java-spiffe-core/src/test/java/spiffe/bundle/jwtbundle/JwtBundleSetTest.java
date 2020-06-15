@@ -89,7 +89,7 @@ class JwtBundleSetTest {
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
 
         JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
-        bundleSet.add(jwtBundle2);
+        bundleSet.put(jwtBundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(jwtBundle1));
         assertTrue(bundleSet.getBundles().containsValue(jwtBundle2));
@@ -101,7 +101,7 @@ class JwtBundleSetTest {
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
 
-        bundleSet.add(jwtBundle1);
+        bundleSet.put(jwtBundle1);
 
         assertEquals(1, bundleSet.getBundles().size());
         assertTrue(bundleSet.getBundles().containsValue(jwtBundle1));
@@ -115,7 +115,7 @@ class JwtBundleSetTest {
 
         JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("example.org"));
         jwtBundle2.putJwtAuthority("key1", new DummyPublicKey());
-        bundleSet.add(jwtBundle2);
+        bundleSet.put(jwtBundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(jwtBundle2));
         assertFalse(bundleSet.getBundles().containsValue(jwtBundle1));
@@ -127,7 +127,7 @@ class JwtBundleSetTest {
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
         try {
-            bundleSet.add(null);
+            bundleSet.put(null);
         } catch (NullPointerException e) {
             assertEquals("jwtBundle is marked non-null but is null", e.getMessage());
         }

@@ -7,6 +7,7 @@ import spiffe.bundle.BundleSource;
 import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Value
 public class JwtBundleSet implements BundleSource<JwtBundle> {
 
-    ConcurrentHashMap<TrustDomain, JwtBundle> bundles;
+    Map<TrustDomain, JwtBundle> bundles;
 
     private JwtBundleSet(Map<TrustDomain, JwtBundle> bundles) {
         this.bundles = new ConcurrentHashMap<>(bundles);
@@ -58,7 +59,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      * Returns the map of JWT bundles keyed by trust domain.
      */
     public Map<TrustDomain, JwtBundle> getBundles() {
-        return new HashMap<>(bundles);
+        return Collections.unmodifiableMap(bundles);
     }
 
     /**
@@ -67,7 +68,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      *
      * @param jwtBundle an instance of a JwtBundle.
      */
-    public void add(@NonNull JwtBundle jwtBundle){
+    public void put(@NonNull JwtBundle jwtBundle) {
         bundles.put(jwtBundle.getTrustDomain(), jwtBundle);
     }
 }

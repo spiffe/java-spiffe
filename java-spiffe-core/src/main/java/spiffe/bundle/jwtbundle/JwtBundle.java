@@ -64,7 +64,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JWT bundle.
      * @param bundlePath  a path to a file containing the JWT authorities (public keys).
-     * @return a instance of a {@link JwtBundle}
+     * @return an instance of a {@link JwtBundle}
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
      * @throws KeyException       if the bundle file contains a key type that is not supported
      */
@@ -83,6 +83,8 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param trustDomain a {@link TrustDomain}
      * @param bundleBytes an array of bytes representing the JWT bundle.
      * @return an instance of a {@link JwtBundle}
+     * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
+     * @throws KeyException       if the bundle file contains a key type that is not supported
      */
     public static JwtBundle parse(
             @NonNull final TrustDomain trustDomain,

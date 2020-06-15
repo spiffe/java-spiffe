@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Value
 public class X509BundleSet implements BundleSource<X509Bundle> {
 
-    ConcurrentHashMap<TrustDomain, X509Bundle> bundles;
+    Map<TrustDomain, X509Bundle> bundles;
 
     private X509BundleSet(final Map<TrustDomain, X509Bundle> bundles) {
         this.bundles = new ConcurrentHashMap<>(bundles);

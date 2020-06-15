@@ -74,7 +74,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Parses a X.509 bundle from an array of bytes.
+     * Parses an X.509 bundle from an array of bytes.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the X.509 bundle
      * @param bundleBytes an array of bytes that represents the X.509 authorities
@@ -107,7 +107,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Returns the X.509 x509Authorities in the bundle.
+     * Returns the X.509 Authorities in the bundle.
      */
     public Set<X509Certificate> getX509Authorities() {
         return Collections.unmodifiableSet(x509Authorities);
