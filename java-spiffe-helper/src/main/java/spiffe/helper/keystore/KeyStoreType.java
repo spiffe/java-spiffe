@@ -1,7 +1,7 @@
 package spiffe.helper.keystore;
 
 /**
- * KeyStore types supported by the KeyStoreHelper
+ * KeyStore types supported by the KeyStoreHelper.
  */
 public enum KeyStoreType {
 

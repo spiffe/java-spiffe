@@ -22,8 +22,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
 /**
- * A <code>KeyStoreHelper</code> represents a helper for storing X.509 SVIDs and bundles,
- * that are automatically rotated via the Workload API, in a Java KeyStore and a TrustStore in files in disk.
+ * Represents a helper for storing X.509 SVIDs and bundles that are automatically rotated via the Workload API,
+ * in a Java KeyStore and a TrustStore in files in disk.
  * <p>
  * It stores the Private Key along with the chain of certificates in a KeyStore, and the
  * trusted bundles in a separate KeyStore (TrustStore).
@@ -51,7 +51,9 @@ public class KeyStoreHelper {
 
 
     /**
-     * Create an instance of a KeyStoreHelper for fetching X.509 SVIDs and bundles
+     * Constructor.
+     * <p>
+     * Creates an instance of a KeyStoreHelper for fetching X.509 SVIDs and bundles
      * from a Workload API and store them in a binary Java KeyStore in disk.
      * <p>
      * It blocks until the initial update has been received from the Workload API.
@@ -226,6 +228,9 @@ public class KeyStoreHelper {
          */
         String spiffeSocketPath;
 
+        /**
+         * Optional. The workload api client to fetch the X.509 materials from the Workload API.
+         */
         WorkloadApiClient client;
 
         @Builder
