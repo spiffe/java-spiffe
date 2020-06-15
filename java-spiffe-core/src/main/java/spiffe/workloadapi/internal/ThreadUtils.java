@@ -21,4 +21,7 @@ public class ThreadUtils {
         }
         return false;
     }
+
+    private ThreadUtils() {
+    }
 }

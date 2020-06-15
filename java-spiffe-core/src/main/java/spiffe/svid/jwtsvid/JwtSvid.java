@@ -67,13 +67,13 @@ public class JwtSvid {
     }
 
     /**
-     * Parses and validates a JWT-SVID token and returns an instance of JwtSvid.
+     * Parses and validates a JWT-SVID token and returns an instance of {@link JwtSvid}.
      * <p>
      * The JWT-SVID signature is verified using the JWT bundle source.
      *
      * @param token           a token as a string that is parsed and validated
-     * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the authority to verify the signature
-     * @param audience        audience as a List of String used to validate the 'aud' claim
+     * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the JWT authorities to verify the signature
+     * @param audience        audience as a list of strings used to validate the 'aud' claim
      * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
      * @throws spiffe.exception.JwtSvidException when the token expired or the expiration claim is missing,
@@ -119,13 +119,13 @@ public class JwtSvid {
     }
 
     /**
-     * Parses and validates a JWT-SVID token and returns an instance of a JwtSvid.
+     * Parses and validates a JWT-SVID token and returns an instance of a {@link JwtSvid}.
      * <p>
      * The JWT-SVID signature is not verified.
      *
      * @param token    a token as a string that is parsed and validated
-     * @param audience audience as a List of String used to validate the 'aud' claim
-     * @return an instance of a {@link JwtSvid} with a spiffe id parsed from the 'sub', audience from 'aud', and expiry
+     * @param audience audience as a list of strings used to validate the 'aud' claim
+     * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
      * @throws spiffe.exception.JwtSvidException when the token expired or the expiration claim is missing, or when
      *                                           the 'aud' has an audience that is not in the audience provided as parameter
@@ -155,17 +155,17 @@ public class JwtSvid {
     }
 
     /**
-     * Returns the JWT-SVID marshaled to a string. The returned value is
-     * the same token value originally passed to parseAndValidate.
+     * Returns the JWT-SVID marshaled to a string. The returned value is the same token value originally passed
+     * to the parseAndValidate method.
      *
-     * @return the token
+     * @return the token as String
      */
     public String marshall() {
         return token;
     }
 
     /**
-     * Return the expiration date time of the JWT SVID.
+     * Returns a copy of the expiration date time of the JWT SVID.
      */
     public Date getExpiry() {
         // defensive copying to prevent exposing a mutable object

@@ -20,11 +20,11 @@ import java.util.concurrent.ExecutorService;
 public class GrpcManagedChannelFactory {
 
     /**
-     * Returns a ManagedChannelWrapper with a Channel to the Spiffe Socket Endpoint provided.
+     * Returns a ManagedChannelWrapper that contains a {@link ManagedChannel }to the Spiffe Socket Endpoint provided.
      *
      * @param address         URI representing the Workload API endpoint.
      * @param executorService the executor to configure the event loop group
-     * @return a instance of a {@link ManagedChannel}
+     * @return a instance of a {@link ManagedChannelWrapper}
      */
     public static ManagedChannelWrapper newChannel(@NonNull URI address, ExecutorService executorService) {
         if ("unix".equals(address.getScheme())) {

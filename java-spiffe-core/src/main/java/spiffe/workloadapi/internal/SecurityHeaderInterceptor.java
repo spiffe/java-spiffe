@@ -2,12 +2,15 @@ package spiffe.workloadapi.internal;
 
 import io.grpc.*;
 
+/**
+ * ClientInterceptor implementation to add a security header required to connect to the Workload API.
+ */
 public class SecurityHeaderInterceptor implements ClientInterceptor {
 
     private static final String SECURITY_HEADER = "workload.spiffe.io";
 
     /**
-     * Intercepts the call to the WorkloadAPI and add the required security header
+     * Intercepts the call to the WorkloadAPI and add the required security header.
      */
     @Override
     public <R,S> ClientCall<R,S> interceptCall(MethodDescriptor<R,S> method, CallOptions callOptions, Channel next) {

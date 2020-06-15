@@ -88,7 +88,7 @@ public class X509Svid implements X509SvidSource {
     }
 
     /**
-     * Return the chain of certificates as an array of {@link X509Certificate}
+     * Returns the chain of certificates as an array of {@link X509Certificate}
      */
     public X509Certificate[] getChainArray() {
         return chain.toArray(new X509Certificate[0]);
