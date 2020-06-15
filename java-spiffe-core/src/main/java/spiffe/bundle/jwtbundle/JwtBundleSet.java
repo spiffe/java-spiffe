@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A <code>JwtBundleSet</code> represents a set of JWT bundles keyed by trust domain.
+ * Represents a set of JWT bundles keyed by trust domain.
  */
 @Value
 public class JwtBundleSet implements BundleSource<JwtBundle> {

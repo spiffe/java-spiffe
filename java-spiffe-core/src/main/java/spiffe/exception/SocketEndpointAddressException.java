@@ -12,8 +12,4 @@ public class SocketEndpointAddressException extends Exception {
     public SocketEndpointAddressException(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public SocketEndpointAddressException(Throwable cause) {
-        super(cause);
-    }
 }

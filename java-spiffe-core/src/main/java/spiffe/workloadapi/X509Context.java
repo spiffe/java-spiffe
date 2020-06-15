@@ -8,7 +8,7 @@ import spiffe.svid.x509svid.X509Svid;
 import java.util.List;
 
 /**
- * A <code>X509Context</code> represents the X.509 materials that are fetched from the Workload API.
+ * Represents the X.509 materials that are fetched from the Workload API.
  * <p>
  * Contains a list of {@link X509Svid} and a {@link X509BundleSet}.
  */

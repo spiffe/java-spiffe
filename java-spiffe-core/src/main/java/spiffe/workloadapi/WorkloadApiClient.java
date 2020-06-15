@@ -36,7 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 /**
- * A <code>WorkloadApiClient</code> represents a client to interact with the Workload API.
+ * Represents a client to interact with the Workload API.
  * <p>
  * Supports one-shot calls and watch updates for X.509 and JWT SVIDs and bundles.
  * <p>
@@ -74,7 +74,7 @@ public class WorkloadApiClient implements Closeable {
     }
 
     /**
-     * Creates a new Workload API client.
+     * Creates a new Workload API client configured with the given client options.
      * <p>
      * If the SPIFFE socket endpoint address is not provided in the options, it uses the default address.
      *
@@ -121,11 +121,11 @@ public class WorkloadApiClient implements Closeable {
     }
 
     private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                             SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                             ManagedChannelWrapper managedChannel,
-                             BackoffPolicy backoffPolicy,
-                             ScheduledExecutorService retryExecutor,
-                             ExecutorService executorService) {
+                              SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                              ManagedChannelWrapper managedChannel,
+                              BackoffPolicy backoffPolicy,
+                              ScheduledExecutorService retryExecutor,
+                              ExecutorService executorService) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
         this.managedChannel = managedChannel;
@@ -182,6 +182,7 @@ public class WorkloadApiClient implements Closeable {
      * @param audience      the audience of the JWT-SVID
      * @param extraAudience the extra audience for the JWT_SVID
      * @return an instance of a {@link JwtSvid}
+     * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
     public JwtSvid fetchJwtSvid(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException {
         List<String> audParam = new ArrayList<>();
@@ -210,8 +211,7 @@ public class WorkloadApiClient implements Closeable {
     }
 
     /**
-     * Validates the JWT-SVID token. The parsed and validated
-     * JWT-SVID is returned.
+     * Validates the JWT-SVID token. The parsed and validated JWT-SVID is returned.
      *
      * @param token    JWT token
      * @param audience audience of the JWT

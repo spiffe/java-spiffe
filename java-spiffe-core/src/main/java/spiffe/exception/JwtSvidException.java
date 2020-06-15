@@ -13,8 +13,4 @@ public class JwtSvidException extends Exception {
     public JwtSvidException(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public JwtSvidException(Throwable cause) {
-        super(cause);
-    }
 }

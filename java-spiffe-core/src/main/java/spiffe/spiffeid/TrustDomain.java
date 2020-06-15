@@ -12,7 +12,7 @@ import java.net.URISyntaxException;
 import static spiffe.spiffeid.SpiffeId.SPIFFE_SCHEME;
 
 /**
- * A <code>TrustDomain</code> represents a normalized SPIFFE trust domain (e.g. domain.test).
+ * Represents a normalized SPIFFE trust domain (e.g. 'domain.test').
  */
 @Value
 public class TrustDomain {
@@ -28,7 +28,6 @@ public class TrustDomain {
      *
      * @param trustDomain a trust domain represented as a string, must not be blank.
      * @return an instance of a {@link TrustDomain}
-     *
      * @throws IllegalArgumentException if the given string is blank or cannot be parsed
      */
     public static TrustDomain of(@NonNull String trustDomain) {
@@ -50,8 +49,24 @@ public class TrustDomain {
         return new TrustDomain(host);
     }
 
-    public SpiffeId newSpiffeId(String ...path) {
-        return SpiffeId.of(this, path);
+    /**
+     * Creates a SPIFFE ID from this trust domain and the given path segments.
+     *
+     * @param segments path segments
+     * @return a {@link SpiffeId} with the current trust domain and the given path segments
+     */
+    public SpiffeId newSpiffeId(String... segments) {
+        return SpiffeId.of(this, segments);
+    }
+
+    /**
+     * Returns the trust domain as a String.
+     *
+     * @return a String with the trust domain
+     */
+    @Override
+    public String toString() {
+        return name;
     }
 
     private static void validateHost(String host) {
@@ -78,15 +93,5 @@ public class TrustDomain {
             s = SPIFFE_SCHEME.concat("://").concat(s);
         }
         return s;
-    }
-
-    /**
-     * Returns the trust domain as a string.
-     *
-     * @return a String with the trust domain
-     */
-    @Override
-    public String toString() {
-        return name;
     }
 }

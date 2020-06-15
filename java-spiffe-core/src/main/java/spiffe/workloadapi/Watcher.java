@@ -1,7 +1,7 @@
 package spiffe.workloadapi;
 
 /**
- * a <code>Watcher</code> handles updates of type T.
+ * Watches updates of type T.
  *
  * @param <T> is the type of the updates.
  */

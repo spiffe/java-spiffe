@@ -28,33 +28,33 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A <code>JwtSvid</code> represents a SPIFFE JWT-SVID.
+ * Represents a SPIFFE JWT-SVID.
  */
 @Value
 public class JwtSvid {
 
     /**
-     * SPIFFE ID of the JWT-SVID as present in the 'sub' claim
+     * SPIFFE ID of the JWT-SVID as present in the 'sub' claim.
      */
     SpiffeId spiffeId;
 
     /**
-     * Audience is the intended recipients of JWT-SVID as present in the 'aud' claim
+     * Audience is the intended recipients of JWT-SVID as present in the 'aud' claim.
      */
     List<String> audience;
 
     /**
-     * Expiration time of JWT-SVID as present in 'exp' claim
+     * Expiration time of JWT-SVID as present in 'exp' claim.
      */
     Date expiry;
 
     /**
-     * Parsed claims from token
+     * Parsed claims from token.
      */
     Map<String, Object> claims;
 
     /**
-     * Serialized JWT token
+     * Serialized JWT token.
      */
     String token;
 
@@ -67,13 +67,14 @@ public class JwtSvid {
     }
 
     /**
-     * Parses and validates a JWT-SVID token and returns the
-     * JWT-SVID. The JWT-SVID signature is verified using the JWT bundle source.
+     * Parses and validates a JWT-SVID token and returns an instance of JwtSvid.
+     * <p>
+     * The JWT-SVID signature is verified using the JWT bundle source.
      *
      * @param token           a token as a string that is parsed and validated
      * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the authority to verify the signature
      * @param audience        audience as a List of String used to validate the 'aud' claim
-     * @return an instance of a {@link JwtSvid} with a spiffe id parsed from the 'sub', audience from 'aud', and expiry
+     * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
      * @throws spiffe.exception.JwtSvidException when the token expired or the expiration claim is missing,
      *                                           when the algorithm is not supported, when the header 'kid' is missing, when the signature cannot be verified, or
@@ -118,7 +119,9 @@ public class JwtSvid {
     }
 
     /**
-     * Parses and validates a JWT-SVID token and returns the JWT-SVID. The JWT-SVID signature is not verified.
+     * Parses and validates a JWT-SVID token and returns an instance of a JwtSvid.
+     * <p>
+     * The JWT-SVID signature is not verified.
      *
      * @param token    a token as a string that is parsed and validated
      * @param audience audience as a List of String used to validate the 'aud' claim

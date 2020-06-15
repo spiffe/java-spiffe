@@ -6,7 +6,7 @@ import spiffe.exception.BundleNotFoundException;
 import spiffe.spiffeid.TrustDomain;
 
 /**
- * A <code>BundleSource</code> represents a source of bundles of type T keyed by trust domain.
+ * Represents a source of bundles of type T keyed by trust domain.
  */
 public interface BundleSource<T> {
 

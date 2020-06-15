@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A <code>X509Bundle</code> represents a collection of trusted X.509 authorities for a trust domain.
+ * Represents a collection of trusted X.509 authorities for a trust domain.
  */
 @Value
 public class X509Bundle implements BundleSource<X509Bundle> {

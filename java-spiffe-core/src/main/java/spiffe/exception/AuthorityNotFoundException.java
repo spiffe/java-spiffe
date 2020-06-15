@@ -1,8 +1,8 @@
 package spiffe.exception;
 
 /**
- * Checked exception thrown to indicate that an authority could not be
- * found in the bundle source.
+ * Checked exception thrown to indicate that an Authority could not be
+ * found in the Bundle Source.
  */
 public class AuthorityNotFoundException extends Exception {
     public AuthorityNotFoundException(String message) {

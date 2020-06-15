@@ -4,16 +4,16 @@ import spiffe.exception.JwtSvidException;
 import spiffe.spiffeid.SpiffeId;
 
 /**
- * A <code>JwtSvidSource</code> represents a source of SPIFFE JWT-SVIDs.
+ * Represents a source of SPIFFE JWT-SVIDs.
  */
 public interface JwtSvidSource {
 
     /**
-     * Fetches a JWT-SVID from the source with the given parameters.
+     * Fetches a JWT-SVID from the source with the given subject and audiences.
      *
      * @param subject        a {@link SpiffeId}
      * @param audience       the audience
-     * @param extraAudiences an array of Strings
+     * @param extraAudiences a list of extra audiences as an array of String
      * @return a {@link JwtSvid}
      * @throws JwtSvidException when there is an error fetching the JWT SVID
      */

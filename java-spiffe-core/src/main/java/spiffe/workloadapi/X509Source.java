@@ -28,8 +28,7 @@ import java.util.logging.Level;
 import static spiffe.workloadapi.internal.ThreadUtils.await;
 
 /**
- * A <code>X509Source</code> represents a source of X.509 SVIDs and X.509 bundles maintained via the
- * Workload API.
+ * Represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
  * <p>
  * It handles a {@link X509Svid} and a {@link X509BundleSet} that are updated automatically
  * whenever there is an update from the Workload API.
@@ -97,7 +96,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * Creates a new X.509 source. It blocks until the initial update
      * has been received from the Workload API or until the timeout configured
      * through the system property `spiffe.newX509Source.timeout` expires.
-     * If no timeout is configured, it blocks until it gets a X.509 update from the Workload API.
+     * If no timeout is configured, it blocks until it gets an X.509 update from the Workload API.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not, a new client is created.
      *

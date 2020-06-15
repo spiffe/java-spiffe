@@ -27,7 +27,7 @@ public class Address {
 
     /**
      * Returns the default Workload API address hold by the system environment variable
-     * defined by SOCKET_ENV_VARIABLE
+     * defined by SOCKET_ENV_VARIABLE.
      */
     public static String getDefaultAddress() {
         return System.getenv(Address.SOCKET_ENV_VARIABLE);

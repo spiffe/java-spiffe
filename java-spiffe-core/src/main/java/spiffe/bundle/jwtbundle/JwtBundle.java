@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A <code>JwtBundle</code> represents a collection of trusted JWT authorities (Public Keys) for a trust domain.
+ * Represents a collection of trusted JWT authorities (Public Keys) for a trust domain.
  */
 @Value
 public class JwtBundle implements BundleSource<JwtBundle> {

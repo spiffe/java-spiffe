@@ -5,7 +5,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Provides methods to schedule the execution of retries based on a backoff policy
+ * Provides methods to schedule the execution of retries based on a backoff policy.
  */
 public class RetryHandler {
 

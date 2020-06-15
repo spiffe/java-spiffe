@@ -16,8 +16,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * A <code>X509SvidValidator</code> provides methods to validate
- * a chain of X.509 certificates using an X.509 bundle source.
+ * Provides methods to validate a chain of X.509 certificates using an X.509 bundle source.
  */
 public class X509SvidValidator {
 

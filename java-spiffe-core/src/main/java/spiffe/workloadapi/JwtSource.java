@@ -29,8 +29,7 @@ import java.util.logging.Level;
 import static spiffe.workloadapi.internal.ThreadUtils.await;
 
 /**
- * A <code>JwtSource</code> represents a source of SPIFFE JWT SVIDs and JWT bundles
- * maintained via the Workload API.
+ * Represents a source of SPIFFE JWT SVIDs and JWT bundles maintained via the Workload API.
  */
 @Log
 public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closeable {

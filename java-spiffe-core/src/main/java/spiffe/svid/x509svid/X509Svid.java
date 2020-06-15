@@ -21,7 +21,7 @@ import java.util.List;
 import static spiffe.internal.CertificateUtils.*;
 
 /**
- * A <code>X509Svid</code> represents a SPIFFE X.509 SVID.
+ * Represents a SPIFFE X.509 SVID.
  * <p>
  * Contains a SPIFFE ID, a private key and a chain of X.509 certificates.
  */
@@ -33,7 +33,7 @@ public class X509Svid implements X509SvidSource {
     /**
      * The X.509 certificates of the X.509-SVID. The leaf certificate is
      * the X.509-SVID certificate. Any remaining certificates (if any) chain
-     * the X.509-SVID certificate back to a X.509 root for the trust domain.
+     * the X.509-SVID certificate back to an X.509 root for the trust domain.
      */
     List<X509Certificate> chain;
 
@@ -88,7 +88,7 @@ public class X509Svid implements X509SvidSource {
     }
 
     /**
-     * Return the chain of certificates as an array.
+     * Return the chain of certificates as an array of {@link X509Certificate}
      */
     public X509Certificate[] getChainArray() {
         return chain.toArray(new X509Certificate[0]);

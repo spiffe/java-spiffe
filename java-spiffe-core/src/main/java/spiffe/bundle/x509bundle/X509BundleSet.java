@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A <code>X509BundleSet</code> represents a set of X.509 bundles keyed by trust domain.
+ * Represents a set of X.509 bundles keyed by trust domain.
  */
 @Value
 public class X509BundleSet implements BundleSource<X509Bundle> {

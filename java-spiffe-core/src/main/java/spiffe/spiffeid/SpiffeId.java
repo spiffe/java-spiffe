@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * A <code>SpiffeId</code> represents a SPIFFE ID as defined in SPIFFE standard.
+ * Represents a SPIFFE ID as defined in SPIFFE standard.
  * <p>
  * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md">https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md</a>
  */
@@ -70,15 +70,19 @@ public class SpiffeId {
     }
 
     /**
-     * Returns true if the trust domain of this SPIFFE ID is the same as the given trust domain.
+     * Returns true if the trust domain of this SPIFFE ID is the same as trust domain given as parameter.
      *
-     * @param trustDomain instance of a {@link TrustDomain}
+     * @param trustDomain an instance of a {@link TrustDomain}
      * @return <code>true</code> if the given trust domain equals the trust domain of this object, <code>false</code> otherwise
      */
     public boolean memberOf(final TrustDomain trustDomain) {
         return this.trustDomain.equals(trustDomain);
     }
 
+    /**
+     * Returns the string representation of the SPIFFE ID, concatenating schema, trust domain,
+     * and path segments (e.g. 'spiffe://example.org/path1/path2')
+     */
     @Override
     public String toString() {
         return String.format("%s://%s%s", SPIFFE_SCHEME, this.trustDomain.toString(), this.path);

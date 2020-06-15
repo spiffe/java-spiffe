@@ -2,7 +2,7 @@ package spiffe.exception;
 
 /**
  * Checked exception thrown when a there was an error retrieving
- * or processing a X509Context.
+ * or processing an X.509 Context.
  */
 public class X509ContextException extends Exception {
     public X509ContextException(String message) {
@@ -11,9 +11,5 @@ public class X509ContextException extends Exception {
 
     public X509ContextException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public X509ContextException(Throwable cause) {
-        super(cause);
     }
 }

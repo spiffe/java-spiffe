@@ -7,6 +7,9 @@ import lombok.val;
 import java.time.Duration;
 import java.util.function.UnaryOperator;
 
+/**
+ * Represents a backoff policy for performing retries using exponential increasing delays.
+ */
 @Data
 public class BackoffPolicy {
 
@@ -55,8 +58,8 @@ public class BackoffPolicy {
      * Calculate the nextDelay based on a currentDelay, applying the backoff function
      * If the calculated delay is greater than maxDelay, it returns maxDelay
      *
-     * @param currentDelay
-     * @return next delay
+     * @param currentDelay a {@link Duration} representing the current delay
+     * @return a {@link Duration} representing the next delay
      */
     public Duration nextDelay(Duration currentDelay) {
         val next = backoffFunction.apply(currentDelay);
@@ -71,7 +74,7 @@ public class BackoffPolicy {
      * or if the retriesCount param is lower than the maxRetries
      *
      * @param retriesCount the current number of retries
-     * @return
+     * @return false if the number of retries did not reach the max number of retries, true otherwise
      */
     public boolean didNotReachMaxRetries(int retriesCount) {
         return (maxRetries == UNLIMITED_RETRIES || retriesCount < maxRetries);

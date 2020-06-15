@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Represents JWT Algorithms.
+ */
 public enum Algorithm {
 
     /**
@@ -66,6 +69,9 @@ public enum Algorithm {
         return name;
     }
 
+    /**
+     * Represents families of algorithms.
+     */
     public enum Family {
         RSA("RSA", RS256, RS384, RS512, PS256, PS384, PS512),
         EC("EC", ES256, ES384, ES512),

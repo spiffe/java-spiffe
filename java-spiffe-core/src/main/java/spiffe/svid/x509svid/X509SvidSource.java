@@ -1,7 +1,7 @@
 package spiffe.svid.x509svid;
 
 /**
- * A <code>X509SvidSource</code> represents a source of X.509 SVIDs.
+ * Represents a source of X.509 SVIDs.
  */
 public interface X509SvidSource {
 

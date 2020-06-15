@@ -8,96 +8,11 @@ import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Security;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class piffeIdUtilsTest {
-
-    @Test
-    void getSpiffeIdsFromSystemProperty() {
-        System.setProperty("spiffe.property", " spiffe://example.org/workload1, spiffe://example.org/workload2 ");
-
-        List<SpiffeId> spiffeIdList = SpiffeIdUtils.getSpiffeIdsFromSystemProperty("spiffe.property");
-
-        assertNotNull(spiffeIdList);
-        assertEquals(2, spiffeIdList.size());
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload1"), spiffeIdList.get(0));
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload2"), spiffeIdList.get(1));
-    }
-
-    @Test
-    void getSpiffeIdsFromSystemPropertyThatHasNoValue_returnsEmptyList() {
-        System.setProperty("spiffe.property", "");
-
-        List<SpiffeId> spiffeIdList = SpiffeIdUtils.getSpiffeIdsFromSystemProperty("spiffe.property");
-
-        assertNotNull(spiffeIdList);
-        assertEquals(0, spiffeIdList.size());
-    }
-
-    @Test
-    void getSpiffeIdsFromBlankSystemProperty_throwsIllegalArgumentException() {
-        try {
-            SpiffeIdUtils.getSpiffeIdsFromSystemProperty("");
-            fail("should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            //expected
-        }
-    }
-
-    @Test
-    void getSpiffeIdsFromNullSystemProperty_throwsIllegalArgumentException() {
-        try {
-            SpiffeIdUtils.getSpiffeIdsFromSystemProperty(null);
-            fail("should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            //expected
-        }
-    }
-
-    @Test
-    void getSpiffeIdsFromSecurityProperty() {
-        Security.setProperty("spiffe.property", " spiffe://example.org/workload1, spiffe://example.org/workload2 ");
-
-        List<SpiffeId> spiffeIdList = SpiffeIdUtils.getSpiffeIdsFromSecurityProperty("spiffe.property");
-
-        assertNotNull(spiffeIdList);
-        assertEquals(2, spiffeIdList.size());
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload1"), spiffeIdList.get(0));
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload2"), spiffeIdList.get(1));
-    }
-
-    @Test
-    void getSpiffeIdsFromSecurityPropertyThatHasNoValue_returnsEmptyList() {
-        Security.setProperty("spiffe.property", "");
-
-        List<SpiffeId> spiffeIdList = SpiffeIdUtils.getSpiffeIdsFromSecurityProperty("spiffe.property");
-
-        assertNotNull(spiffeIdList);
-        assertEquals(0, spiffeIdList.size());
-    }
-
-    @Test
-    void getSpiffeIdsFromBlankSecurityProperty_throwsIllegalArgumentException() {
-        try {
-            SpiffeIdUtils.getSpiffeIdsFromSecurityProperty("");
-            fail("should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            //expected
-        }
-    }
-
-    @Test
-    void getSpiffeIdsFromNullSecurityProperty_throwsIllegalArgumentException() {
-        try {
-            SpiffeIdUtils.getSpiffeIdsFromSecurityProperty(null);
-            fail("should have thrown exception");
-        } catch (IllegalArgumentException e) {
-            //expected
-        }
-    }
+class SpiffeIdUtilsTest {
 
     @Test
     void getSpiffeIdListFromFile() throws URISyntaxException {
