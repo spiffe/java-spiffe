@@ -5,10 +5,11 @@ import spiffe.exception.X509SourceException;
 import spiffe.workloadapi.X509Source;
 
 /**
- * A <code>X509SourceManager</code> is a Singleton that handles an instance of a X509Source.
+ * Singleton that handles an instance of a {@link X509Source}.
  * <p>
- * The default SPIFFE socket enpoint address is used to create a X509Source backed by the
+ * The default SPIFFE socket enpoint address is used to create a X.509 Source backed by the
  * Workload API.
+ * <p>
  * If the environment variable is not defined, it will throw an <code>IllegalStateException</code>.
  * If the X509Source cannot be initialized, it will throw a <code>RuntimeException</code>.
  * <p>
@@ -28,7 +29,7 @@ public class X509SourceManager {
      * Returns the single instance handled by this singleton. If the instance has not been
      * created yet, it creates a new X509Source and initializes the singleton in a thread safe way.
      *
-     * @return a {@link X509Source}
+     * @return the single instance of {@link X509Source}
      * @throws X509SourceException            if the X.509 source could not be initialized
      * @throws SocketEndpointAddressException is the socket endpoint address is not valid
      */

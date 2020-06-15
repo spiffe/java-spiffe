@@ -20,16 +20,16 @@ import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_ALL_PROP
 import static spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY;
 
 /**
- * A <code>SpiffeTrustManagerFactory</code> is an implementation of a {@link javax.net.ssl.TrustManagerFactory} to create a
- * TrustManager backed by a X509BundleSource that is maintained via the Workload API.
+ * Implementation of a {@link javax.net.ssl.TrustManagerFactory} to create a {@link SpiffeTrustManager} backed by a
+ * {@link X509Source} that is maintained via the Workload API.
  * <p>
- * The JSSE API will call engineGetTrustManagers() to get an instance of a TrustManager. This TrustManager
- * instance gets injected a X509Source, which implements X509BundleSource and keeps bundles updated. The TrustManager
- * also gets a Supplier of a List of accepted SPIFFE IDs.
+ * The Java Security API will call <code>engineGetTrustManagers()</code> to get an instance of a {@link TrustManager}.
+ * This TrustManager instance gets injected a {@link X509Source}, which implements {@link BundleSource} and keeps bundles updated.
+ * The TrustManager also gets a Supplier of a List of accepted SPIFFE IDs used to validate the SPIFFE ID from the SVID
+ * presented by a peer during the handshake.
  *
  * @see SpiffeSslContextFactory
  * @see BundleSource
- * @see X509SourceManager
  * @see SpiffeSslContextFactory
  */
 public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
@@ -43,13 +43,14 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     }
 
     /**
-     * Default method for creating a TrustManager initializing it with
-     * the {@link spiffe.workloadapi.X509Source} instance
-     * that is handled by the {@link X509SourceManager}, and
-     * with and a supplier of accepted SPIFFE IDs. that reads the list
-     * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
+     * Creates a TrustManager initialized with the {@link spiffe.workloadapi.X509Source} instance
+     * that is handled by the {@link X509SourceManager}, and with and a supplier of accepted SPIFFE IDs. that reads
+     * the list of {@link SpiffeId} from the System Property 'ssl.spiffe.accept'.
+     * <p>
+     * If the System property 'ssl.spiffe.acceptAll' is defined as 'true', the TrustManager is configure to accept
+     * any SPIFFE ID presented by a peer.
      *
-     * @return a {@link TrustManager} array with an initialized TrustManager.
+     * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      * @throws SpiffeProviderException in case there is an error setting up the X.509 source
      */
     @Override
@@ -74,11 +75,13 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     }
 
     /**
-     * Creates a {@link TrustManager} initializing it with the X.509 BundleSource instance
-     * and with and a supplier of accepted SPIFFE IDs. that reads the list
-     * from the System Property defined in SSL_SPIFFE_ACCEPT_PROPERTY.
+     * Creates a TrustManager initialized with the {@link BundleSource} to provide X.509 bundles,
+     * and with and a supplier of accepted SPIFFE IDs. that reads the list from the System Property 'ssl.spiffe.accept'.
+     * <p>
+     * If the System property 'ssl.spiffe.acceptAll' is defined as 'true', the TrustManager is configure to accept
+     * any SPIFFE ID presented by a peer.
      *
-     * @return a TrustManager array with an initialized TrustManager.
+     * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagers(@NonNull BundleSource<X509Bundle> x509BundleSource) {
         SpiffeTrustManager spiffeTrustManager;
@@ -93,10 +96,10 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     }
 
     /**
-     * Creates a {@link TrustManager} initializing it with the X.509 BundleSource instance.
+     * Creates a {@link TrustManager} initialized with a {@link BundleSource} to provide the X.509 bundles.
      * The TrustManager is configured to accept any SPIFFE ID.
      *
-     * @return a TrustManager array with an initialized TrustManager.
+     * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull BundleSource<X509Bundle> x509BundleSource) {
         SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
@@ -104,13 +107,12 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
     }
 
     /**
-     * Creates a TrustManager initializing it with a X509BundleSource to get the bundles,
-     * with a function verify a chain of certificates using a to validate the SPIFFE IDs
-     * of the peer's certificates, and a supplier of accepted SPIFFE IDs.
+     * Creates a TrustManager initialized with a {@link BundleSource} to provide X.509 bundles,
+     * and a supplier of accepted SPIFFE IDs.
      *
      * @param x509BundleSource          a {@link BundleSource} to provide the X.509-Bundles
      * @param acceptedSpiffeIdsSupplier a Supplier to provide a List of SPIFFE IDs that are accepted
-     * @return a TrustManager array with an initialized TrustManager.
+     * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagers(
             @NonNull BundleSource<X509Bundle> x509BundleSource,

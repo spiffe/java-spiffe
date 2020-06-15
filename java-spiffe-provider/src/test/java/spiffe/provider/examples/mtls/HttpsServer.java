@@ -51,7 +51,7 @@ public class HttpsServer {
         try {
             x509Source = X509SourceManager.getX509Source();
         } catch (SocketEndpointAddressException | X509SourceException e) {
-            throw new SpiffeProviderException(e);
+            throw new SpiffeProviderException("Error at getting the X509Source instance", e);
         }
 
         val sslContextOptions = SslContextOptions

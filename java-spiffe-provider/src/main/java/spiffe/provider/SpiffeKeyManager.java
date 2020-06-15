@@ -16,7 +16,7 @@ import java.util.Objects;
 import static spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
 
 /**
- * A <code>SpiffeKeyManager</code> represents a X.509 key manager for the SPIFFE provider.
+ * Represents an X.509 key manager for the SPIFFE provider.
  * <p>
  * Provides the chain of X.509 certificates and the private key.
  */
@@ -24,6 +24,11 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
 
     private final X509SvidSource x509SvidSource;
 
+    /**
+     * Constructor.
+     *
+     * @param x509SvidSource source of X.509 SVIDs
+     */
     public SpiffeKeyManager(X509SvidSource x509SvidSource) {
         this.x509SvidSource = x509SvidSource;
     }

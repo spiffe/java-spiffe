@@ -13,11 +13,11 @@ import javax.net.ssl.ManagerFactoryParameters;
 import java.security.KeyStore;
 
 /**
- * A <code>SpiffeKeyManagerFactory</code></cod> is an implementation of a {@link KeyManagerFactorySpi}
- * to create a {@link KeyManager} that backed by the Workload API.
+ * Implementation of a {@link KeyManagerFactorySpi} to create a {@link KeyManager} that is backed by the Workload API.
  * <p>
- * The JSSE API will call engineGetKeyManagers() to get an instance of a KeyManager. This KeyManager
- * instance is injected with a {@link spiffe.workloadapi.X509Source} to obtain the latest X.509 SVIDs.
+ * The Java Security API will call <code>engineGetKeyManagers()</code> to get an instance of a KeyManager. This KeyManager
+ * instance is injected with a {@link spiffe.workloadapi.X509Source} to obtain the latest X.509 SVIDs updates from the
+ * Workload API.
  *
  * @see SpiffeSslContextFactory
  * @see X509SvidSource
@@ -27,7 +27,7 @@ import java.security.KeyStore;
 public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
 
     /**
-     * Default method for creating the KeyManager, uses a X509Source instance
+     * Default method for creating the KeyManager, uses a {@link X509Source} instance
      * that is handled by the Singleton {@link X509SourceManager}
      *
      * @throws SpiffeProviderException in case there is an error setting up the X.509 source
@@ -49,7 +49,7 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
     }
 
     /**
-     * This method creates a KeyManager and initializes with the given X.509 SVID source.
+     * This method creates a new key manager and initializes it with the given X.509 SVID source.
      *
      * @param x509SvidSource an instance of a {@link X509SvidSource}
      * @return an array with an instance of a {@link KeyManager}

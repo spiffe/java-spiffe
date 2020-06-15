@@ -15,26 +15,25 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Utility class to create instances of {@link SSLContext} initialized
- * with a {@link SpiffeKeyManager} and a {@link SpiffeTrustManager} that
- * are backed by the Workload API.
+ * Utility class to create instances of {@link SSLContext} initialized with a {@link SpiffeKeyManager} and
+ * a {@link SpiffeTrustManager} that are backed by the Workload API.
  */
 public final class SpiffeSslContextFactory {
 
     private static final String DEFAULT_SSL_PROTOCOL = "TLSv1.2";
 
     /**
-     * Creates an {@link SSLContext} initialized with a SPIFFE KeyManager and TrustManager that are backed by
-     * the Workload API via a X509Source.
+     * Creates an {@link SSLContext} initialized with a {@link SpiffeKeyManager} and {@link SpiffeTrustManager}
+     * that are backed by the Workload API via a {@link X509Source}.
      *
      * @param options {@link SslContextOptions}. The option {@link X509Source} must be not null.
      *                If the option acceptedSpiffeIdsSupplier is not provided, the list of accepted SPIFFE IDs
-     *                is read from the Security Property ssl.spiffe.accept.
+     *                is read from the Security or System Property ssl.spiffe.accept.
      *                If the sslProcotol is not provided, the default TLSv1.2 is used.
      * @return a {@link SSLContext}
      * @throws IllegalArgumentException if the X509Source is not provided in the options
-     * @throws NoSuchAlgorithmException at initializing the SSL context
-     * @throws KeyManagementException at initializing the SSL context
+     * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
+     * @throws KeyManagementException if there is a problem initializing the SSL context
      */
     public static SSLContext getSslContext(@NonNull SslContextOptions options) throws NoSuchAlgorithmException, KeyManagementException {
         SSLContext sslContext;

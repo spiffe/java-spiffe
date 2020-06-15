@@ -11,14 +11,20 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * A <code>SpiffeSslSocketFactory</code> is an implementation of SSLSocketFactory
- * that provides methods to create {@link javax.net.ssl.SSLSocket}
+ * Implementation of {@link SSLSocketFactory} that provides methods to create {@link javax.net.ssl.SSLSocket}
  * backed by a SPIFFE SSLContext {@link SpiffeSslContextFactory}.
  */
 public class SpiffeSslSocketFactory extends SSLSocketFactory {
 
     private final SSLSocketFactory delegate;
 
+    /**
+     * Constructor.
+     *
+     * @param contextOptions options for creating the SSL Context
+     * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
+     * @throws KeyManagementException if there is a problem initializing the SSL context
+     */
     public SpiffeSslSocketFactory(SslContextOptions contextOptions) throws KeyManagementException, NoSuchAlgorithmException {
         val sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
         delegate = sslContext.getSocketFactory();
