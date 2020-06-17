@@ -1,5 +1,8 @@
 # JAVA-SPIFFE library
 
+<a href='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'><img src='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'></a>
+[![Coverage Status](https://coveralls.io/repos/github/spiffe/java-spiffe/badge.svg?branch=master)](https://coveralls.io/github/spiffe/java-spiffe?branch=master)
+
 ## Overview
 
 The JAVA-SPIFFE library provides functionality to interact with the Workload API to fetch X.509 and JWT SVIDs and Bundles, 
@@ -23,9 +26,8 @@ X.509 and JWT SVIDs and bundles.
 ### Build the JARs
 
 ```
- $ ./gradlew build
- 
+ $ ./gradlew assemble
  BUILD SUCCESSFUL 
 ```
 
-`jar` files are placed in `build/libs` in each module.  
+All `jar` files are placed in `build/libs` folder.  
