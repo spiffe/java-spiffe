@@ -79,6 +79,7 @@ task jacocoTestReport(type: JacocoReport) {
 
 coveralls {
     jacocoReportPath 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
+    sourceDirs = ['java-spiffe-core/src/main/java', 'java-spiffe-helper/src/main/java']
 }
 
 // always run the tests before generating the report
