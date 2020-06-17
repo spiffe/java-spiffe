@@ -1,7 +1,7 @@
 # JAVA-SPIFFE library
 
 <a href='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'><img src='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'></a>
-[![Coverage Status](https://coveralls.io/repos/github/spiffe/java-spiffe/badge.svg?branch=master)](https://coveralls.io/github/spiffe/java-spiffe?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/spiffe/java-spiffe/badge.svg)](https://coveralls.io/github/spiffe/java-spiffe?branch=master)
 
 ## Overview
 

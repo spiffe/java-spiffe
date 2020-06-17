@@ -73,6 +73,7 @@ task jacocoTestReport(type: JacocoReport) {
 
     reports {
         xml.enabled true
+        xml.destination file("$buildDir/reports/cobertura/coverage.xml")
         html.enabled true
     }
 }
