@@ -73,9 +73,12 @@ task jacocoTestReport(type: JacocoReport) {
 
     reports {
         xml.enabled true
-        xml.destination file("$buildDir/reports/cobertura/coverage.xml")
         html.enabled true
     }
+}
+
+coveralls {
+    jacocoReportPath 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
 }
 
 // always run the tests before generating the report
