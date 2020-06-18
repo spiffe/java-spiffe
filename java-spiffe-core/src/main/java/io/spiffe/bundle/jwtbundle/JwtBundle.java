@@ -114,7 +114,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     /**
-     * Returns the JWT authorities in the bundle, keyed by key ID.
+     * @return the JWT authorities in the bundle, keyed by key ID.
      */
     public Map<String, PublicKey> getJwtAuthorities() {
         return Collections.unmodifiableMap(jwtAuthorities);
@@ -136,7 +136,10 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     /**
-     * Returns true if the bundle has a JWT authority with the given key ID.
+     * Looks for a JWT authority id in the JWT bundle.
+     *
+     * @param keyId id of a JWT Authority
+     * @return true if the bundle has a JWT authority with the given key ID.
      */
     public boolean hasJwtAuthority(String keyId) {
         return jwtAuthorities.containsKey(keyId);
@@ -158,6 +161,8 @@ public class JwtBundle implements BundleSource<JwtBundle> {
 
     /**
      * Removes the JWT authority identified by the key ID from the bundle.
+     *
+     * @param keyId The key id of the JWT authority to be removed
      */
     public void removeJwtAuthority(String keyId) {
         jwtAuthorities.remove(keyId);

@@ -66,6 +66,7 @@ public class WorkloadApiClient implements Closeable {
      * Creates a new Workload API client using the default socket endpoint address.
      *
      * @return a {@link WorkloadApiClient}
+     * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
      * @see Address#getDefaultAddress()
      */
     public static WorkloadApiClient newClient() throws SocketEndpointAddressException {
@@ -80,6 +81,7 @@ public class WorkloadApiClient implements Closeable {
      *
      * @param options {@link ClientOptions}
      * @return a {@link WorkloadApiClient}
+     * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
      */
     public static WorkloadApiClient newClient(@NonNull ClientOptions options) throws SocketEndpointAddressException {
         String spiffeSocketPath;
@@ -150,6 +152,7 @@ public class WorkloadApiClient implements Closeable {
     /**
      * One-shot blocking fetch call to get an X.509 context.
      *
+     * @return an instance of a {@link X509Context} containing the X.509 materials fetched from the Workload API
      * @throws X509ContextException if there is an error fetching or processing the X.509 context
      */
     public X509Context fetchX509Context() throws X509ContextException {

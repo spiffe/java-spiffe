@@ -26,7 +26,7 @@ public class Address {
     private static final List<String> VALID_SCHEMES = Arrays.asList(UNIX_SCHEME, TCP_SCHEME);
 
     /**
-     * Returns the default Workload API address hold by the system environment variable
+     * @return the default Workload API address hold by the system environment variable
      * defined by SOCKET_ENV_VARIABLE.
      */
     public static String getDefaultAddress() {

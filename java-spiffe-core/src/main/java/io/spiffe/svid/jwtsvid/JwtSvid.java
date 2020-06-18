@@ -165,7 +165,7 @@ public class JwtSvid {
     }
 
     /**
-     * Returns a copy of the expiration date time of the JWT SVID.
+     * @return a copy of the expiration date time of the JWT SVID.
      */
     public Date getExpiry() {
         // defensive copying to prevent exposing a mutable object

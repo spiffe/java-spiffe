@@ -23,6 +23,8 @@ public class RetryHandler {
     /**
      * Schedule to execute a Runnable, based on the backoff policy
      * Updates the next delay and retries count
+     *
+     * @param runnable the task to be scheduled for execution
      */
     public void scheduleRetry(Runnable runnable) {
         if (backoffPolicy.didNotReachMaxRetries(retryCount)) {

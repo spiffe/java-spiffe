@@ -66,7 +66,7 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
     }
 
     /**
-     * Returns the X.509 bundles of this X.509 Bundle Set.
+     * @return the X.509 bundles of this X.509 Bundle Set.
      */
     public Map<TrustDomain, X509Bundle> getBundles() {
         return Collections.unmodifiableMap(bundles);

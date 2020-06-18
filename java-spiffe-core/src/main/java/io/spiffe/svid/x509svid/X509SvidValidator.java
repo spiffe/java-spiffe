@@ -26,6 +26,7 @@ public class X509SvidValidator {
      * @param chain            a list representing the chain of X.509 certificates to be validated
      * @param x509BundleSource a {@link BundleSource } to provide the authorities
      * @throws CertificateException is the chain cannot be verified with an authority from the X.509 bundle source
+     * @throws BundleNotFoundException if no X.509 bundle for the trust domain could be found in the X.509 bundle source
      * @throws NullPointerException if the given chain or 509BundleSource are null
      */
     public static void verifyChain(

@@ -56,7 +56,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
     }
 
     /**
-     * Returns the map of JWT bundles keyed by trust domain.
+     * @return the map of JWT bundles keyed by trust domain.
      */
     public Map<TrustDomain, JwtBundle> getBundles() {
         return Collections.unmodifiableMap(bundles);
