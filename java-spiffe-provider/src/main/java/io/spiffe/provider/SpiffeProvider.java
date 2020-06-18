@@ -15,14 +15,14 @@ import static io.spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  * that handles an X.509-SVID Certificate to probe identity. It also registers a {@link javax.net.ssl.TrustManagerFactory}
  * for creating a {@link javax.net.ssl.TrustManager} for trust chain and SPIFFE ID validation.
  * <p>
- * To use this Provider, it is needed to add the following lines to the <tt>java.security</tt> file:
+ * To use this Provider, it is needed to add the following lines to the java.security file:
  * <pre>
- * security.provider.<n>=SpiffeProvider
+ * security.provider.n=SpiffeProvider
  * ssl.KeyManagerFactory.algorithm=Spiffe
  * ssl.TrustManagerFactory.algorithm=Spiffe
  * </pre>
  * <p>
- * Also, to configure the accepted SPIFFE IDs, add to the <tt>java.security</tt> the list of SPIFFE IDs
+ * Also, to configure the accepted SPIFFE IDs, add to the java.security the list of SPIFFE IDs
  * separated by commas:
  * <pre>
  * ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2, spiffe://other-domain.org/workload

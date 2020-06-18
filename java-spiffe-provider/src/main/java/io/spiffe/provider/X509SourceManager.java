@@ -13,8 +13,7 @@ import io.spiffe.workloadapi.X509Source;
  * If the environment variable is not defined, it will throw an <code>IllegalStateException</code>.
  * If the X509Source cannot be initialized, it will throw a <code>RuntimeException</code>.
  * <p>
- *
- * @implNote This Singleton needed to be able to handle a single {@link X509Source} instance
+ * This Singleton needed to be able to handle a single {@link X509Source} instance
  * to be used by the {@link SpiffeKeyManagerFactory} and {@link SpiffeTrustManagerFactory} to inject it
  * in the {@link SpiffeKeyManager} and {@link SpiffeTrustManager} instances.
  */

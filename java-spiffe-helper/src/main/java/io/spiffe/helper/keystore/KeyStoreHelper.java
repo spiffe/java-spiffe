@@ -57,6 +57,7 @@ public class KeyStoreHelper {
      * <p>
      * It blocks until the initial update has been received from the Workload API.
      *
+     * @param options an instance of {@link KeyStoreOptions}
      * @throws SocketEndpointAddressException is the socket endpoint address is not valid
      * @throws KeyStoreException              is the entry cannot be stored in the KeyStore
      */

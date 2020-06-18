@@ -106,8 +106,6 @@ public class CertificateUtils {
      * @param chain        the certificate chain
      * @param trustedCerts to validate the certificate chain
      * @throws CertificateException
-     * @throws InvalidAlgorithmParameterException
-     * @throws NoSuchAlgorithmException
      * @throws CertPathValidatorException
      */
     public static void validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {

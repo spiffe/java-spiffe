@@ -81,6 +81,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * If the System property 'ssl.spiffe.acceptAll' is defined as 'true', the TrustManager is configure to accept
      * any SPIFFE ID presented by a peer.
      *
+     * @param x509BundleSource a source of X.509 bundles
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagers(@NonNull BundleSource<X509Bundle> x509BundleSource) {
@@ -99,6 +100,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * Creates a {@link TrustManager} initialized with a {@link BundleSource} to provide the X.509 bundles.
      * The TrustManager is configured to accept any SPIFFE ID.
      *
+     * @param x509BundleSource a source of X.509 bundles
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull BundleSource<X509Bundle> x509BundleSource) {
