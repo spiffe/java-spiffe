@@ -10,7 +10,7 @@ allprojects {
 }
 
 subprojects {
-    group = 'spiffe'
+    group = 'io.spiffe'
     version = '0.6.0'
 
     apply plugin: 'java-library'

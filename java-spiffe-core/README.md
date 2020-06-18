@@ -4,7 +4,7 @@ Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundle
 
 ## X.509 Source
 
-A `spiffe.workloadapi.X509Source` represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
+A `X509Source` represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
 
 To create a new X.509 Source:
 
@@ -56,7 +56,7 @@ The `timeout` duration is expressed in `ISO-8601` format.
 
 ## JWT Source
 
-A `spiffe.workloadapi.JwtSource` represents a source of JWT SVIDs and bundles maintained via the Workload API.
+A `JwtSource` represents a source of JWT SVIDs and bundles maintained via the Workload API.
 
 To create a new JWT Source:
 

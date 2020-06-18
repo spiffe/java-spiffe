@@ -71,7 +71,7 @@ The master security properties file can be extended. Create a file `java.securit
 
 ```
 # Add the spiffe provider, change the <n> for the correct consecutive number
-security.provider.<n>=spiffe.provider.SpiffeProvider
+security.provider.<n>=io.spiffe.provider.SpiffeProvider
 
 # Configure the default KeyManager and TrustManager factory algorithms 
 ssl.KeyManagerFactory.algorithm=Spiffe

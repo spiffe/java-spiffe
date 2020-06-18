@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option java_package = "spiffe.workloadapi.grpc";
+option java_package = "io.spiffe.workloadapi.grpc";
 
 import "google/protobuf/struct.proto";
 
