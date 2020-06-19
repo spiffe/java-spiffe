@@ -14,12 +14,14 @@ public class ThreadUtils {
     }
 
     public static boolean await(CountDownLatch latch, long timeout, TimeUnit unit) {
+        boolean result;
         try {
-            return latch.await(timeout, unit);
+            result = latch.await(timeout, unit);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            result = false;
         }
-        return false;
+        return result;
     }
 
     private ThreadUtils() {

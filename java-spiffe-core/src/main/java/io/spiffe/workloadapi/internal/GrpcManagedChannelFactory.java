@@ -27,11 +27,13 @@ public class GrpcManagedChannelFactory {
      * @return a instance of a {@link ManagedChannelWrapper}
      */
     public static ManagedChannelWrapper newChannel(@NonNull URI address, ExecutorService executorService) {
+        ManagedChannelWrapper result;
         if ("unix".equals(address.getScheme())) {
-            return createNativeSocketChannel(address, executorService);
+            result = createNativeSocketChannel(address, executorService);
         } else {
-            return createTcpChannel(address);
+            result = createTcpChannel(address);
         }
+        return result;
     }
 
     // Create a Native Socket Channel pointing to the spiffeSocketPath

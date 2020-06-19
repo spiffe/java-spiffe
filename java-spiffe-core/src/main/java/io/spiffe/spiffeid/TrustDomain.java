@@ -17,7 +17,7 @@ public class TrustDomain {
 
     String name;
 
-    private TrustDomain(String trustDomain) {
+    private TrustDomain(final String trustDomain) {
         this.name = trustDomain;
     }
 
@@ -28,7 +28,7 @@ public class TrustDomain {
      * @return an instance of a {@link TrustDomain}
      * @throws IllegalArgumentException if the given string is blank or cannot be parsed
      */
-    public static TrustDomain of(@NonNull String trustDomain) {
+    public static TrustDomain of(@NonNull final String trustDomain) {
         if (StringUtils.isBlank(trustDomain)) {
             throw new IllegalArgumentException("Trust domain cannot be empty");
         }
@@ -39,7 +39,7 @@ public class TrustDomain {
             uri = new URI(normalized);
             validateUri(uri);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage(), e);
         }
 
         val host = uri.getHost();
@@ -53,7 +53,7 @@ public class TrustDomain {
      * @param segments path segments
      * @return a {@link SpiffeId} with the current trust domain and the given path segments
      */
-    public SpiffeId newSpiffeId(String... segments) {
+    public SpiffeId newSpiffeId(final String... segments) {
         return SpiffeId.of(this, segments);
     }
 
@@ -67,13 +67,13 @@ public class TrustDomain {
         return name;
     }
 
-    private static void validateHost(String host) {
+    private static void validateHost(final String host) {
         if (StringUtils.isBlank(host)) {
             throw new IllegalArgumentException("Trust domain cannot be empty");
         }
     }
 
-    private static void validateUri(URI uri) {
+    private static void validateUri(final URI uri) {
         val scheme = uri.getScheme();
         if (!SpiffeId.SPIFFE_SCHEME.equals(scheme)) {
             throw new IllegalArgumentException("Invalid scheme");
@@ -86,10 +86,10 @@ public class TrustDomain {
     }
 
     private static String normalize(String s) {
-        s = s.toLowerCase().trim();
-        if (!s.contains("://")) {
-            s = SpiffeId.SPIFFE_SCHEME.concat("://").concat(s);
+        String result = s.toLowerCase().trim();
+        if (!result.contains("://")) {
+            result = SpiffeId.SPIFFE_SCHEME.concat("://").concat(result);
         }
-        return s;
+        return result;
     }
 }

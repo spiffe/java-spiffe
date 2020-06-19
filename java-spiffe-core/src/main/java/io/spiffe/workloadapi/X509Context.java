@@ -18,7 +18,7 @@ public class X509Context {
     List<X509Svid> x509Svid;
     X509BundleSet x509BundleSet;
 
-    public X509Context(@NonNull List<X509Svid> x509Svid, @NonNull X509BundleSet x509BundleSet) {
+    public X509Context(@NonNull final List<X509Svid> x509Svid, @NonNull final X509BundleSet x509BundleSet) {
         this.x509Svid = x509Svid;
         this.x509BundleSet = x509BundleSet;
     }

@@ -87,7 +87,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
-    public static X509Source newSource(@NonNull Duration timeout) throws SocketEndpointAddressException, X509SourceException {
+    public static X509Source newSource(@NonNull final Duration timeout) throws SocketEndpointAddressException, X509SourceException {
         X509SourceOptions x509SourceOptions = X509SourceOptions.builder().build();
         return newSource(x509SourceOptions, timeout);
     }
@@ -105,7 +105,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
-    public static X509Source newSource(@NonNull X509SourceOptions options) throws SocketEndpointAddressException, X509SourceException {
+    public static X509Source newSource(@NonNull final X509SourceOptions options) throws SocketEndpointAddressException, X509SourceException {
         return newSource(options, DEFAULT_TIMEOUT);
     }
 
@@ -123,7 +123,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
-    public static X509Source newSource(@NonNull X509SourceOptions options, @NonNull Duration timeout) throws SocketEndpointAddressException, X509SourceException {
+    public static X509Source newSource(@NonNull final X509SourceOptions options, @NonNull final Duration timeout) throws SocketEndpointAddressException, X509SourceException {
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }
@@ -192,7 +192,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
     private X509Source() {
     }
 
-    private static WorkloadApiClient createClient(@NonNull X509SourceOptions options) throws SocketEndpointAddressException {
+    private static WorkloadApiClient createClient(@NonNull final X509SourceOptions options) throws SocketEndpointAddressException {
         val clientOptions = WorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)

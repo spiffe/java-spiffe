@@ -5,11 +5,11 @@ package io.spiffe.exception;
  * found in the Bundle Source.
  */
 public class AuthorityNotFoundException extends Exception {
-    public AuthorityNotFoundException(String message) {
+    public AuthorityNotFoundException(final String message) {
         super(message);
     }
 
-    public AuthorityNotFoundException(String message, Throwable cause) {
+    public AuthorityNotFoundException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

@@ -88,7 +88,7 @@ public class SpiffeId {
         return String.format("%s://%s%s", SPIFFE_SCHEME, this.trustDomain.toString(), this.path);
     }
 
-    private static String normalize(String s) {
+    private static String normalize(final String s) {
         return s.toLowerCase().trim();
     }
 }

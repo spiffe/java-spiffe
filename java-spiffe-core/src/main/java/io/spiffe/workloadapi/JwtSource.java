@@ -74,7 +74,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException            if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull Duration timeout) throws JwtSourceException, SocketEndpointAddressException {
+    public static JwtSource newSource(@NonNull final Duration timeout) throws JwtSourceException, SocketEndpointAddressException {
         JwtSourceOptions options = JwtSourceOptions.builder().build();
         return newSource(options, timeout);
     }
@@ -92,7 +92,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException            if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull JwtSourceOptions options) throws JwtSourceException, SocketEndpointAddressException {
+    public static JwtSource newSource(@NonNull final JwtSourceOptions options) throws JwtSourceException, SocketEndpointAddressException {
         return newSource(options, DEFAULT_TIMEOUT);
     }
 
@@ -111,7 +111,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull JwtSourceOptions options, @NonNull Duration timeout) throws SocketEndpointAddressException, JwtSourceException {
+    public static JwtSource newSource(@NonNull final JwtSourceOptions options, @NonNull final Duration timeout) throws SocketEndpointAddressException, JwtSourceException {
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }
@@ -136,7 +136,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudiences) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(final SpiffeId subject, final String audience, final String... extraAudiences) throws JwtSvidException {
         if (isClosed()) {
             throw new IllegalStateException("JWT SVID source is closed");
         }
@@ -153,7 +153,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
             throw new IllegalStateException("JWT bundle source is closed");
         }
@@ -177,7 +177,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
     }
 
 
-    private void init(Duration timeout) throws TimeoutException {
+    private void init(final Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
         setJwtBundlesWatcher(done);
 
@@ -193,17 +193,17 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
-    private void setJwtBundlesWatcher(CountDownLatch done) {
+    private void setJwtBundlesWatcher(final CountDownLatch done) {
         workloadApiClient.watchJwtBundles(new Watcher<JwtBundleSet>() {
             @Override
-            public void onUpdate(JwtBundleSet update) {
+            public void onUpdate(final JwtBundleSet update) {
                 log.log(Level.INFO, "Received JwtBundleSet update");
                 setJwtBundleSet(update);
                 done.countDown();
             }
 
             @Override
-            public void onError(Throwable error) {
+            public void onError(final Throwable error) {
                 log.log(Level.SEVERE, String.format("Error in JwtBundleSet watcher: %s", ExceptionUtils.getStackTrace(error)));
                 done.countDown();
             }
@@ -222,7 +222,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
-    private static WorkloadApiClient createClient(@NonNull JwtSourceOptions options) throws SocketEndpointAddressException {
+    private static WorkloadApiClient createClient(@NonNull final JwtSourceOptions options) throws SocketEndpointAddressException {
         val clientOptions = WorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)
@@ -248,7 +248,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         WorkloadApiClient workloadApiClient;
 
         @Builder
-        public JwtSourceOptions(String spiffeSocketPath, WorkloadApiClient workloadApiClient) {
+        public JwtSourceOptions(final String spiffeSocketPath, final WorkloadApiClient workloadApiClient) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.workloadApiClient = workloadApiClient;
         }

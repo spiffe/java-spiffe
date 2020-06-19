@@ -107,7 +107,7 @@ class JwtSvidParseInsecureTest {
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), null))
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1")))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("malformed")

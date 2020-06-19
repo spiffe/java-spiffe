@@ -55,7 +55,7 @@ public class CertificateUtils {
      * @param input as byte array representing a list of X.509 certificates, as a DER or PEM
      * @return a List of {@link X509Certificate}
      */
-    public static List<X509Certificate> generateCertificates(@NonNull byte[] input) throws CertificateParsingException {
+    public static List<X509Certificate> generateCertificates(@NonNull final byte[] input) throws CertificateParsingException {
         if (input.length == 0) {
             throw new CertificateParsingException("No certificates found");
         }
@@ -71,7 +71,7 @@ public class CertificateUtils {
         try {
             certificates = certificateFactory.generateCertificates(new ByteArrayInputStream(input));
         } catch (CertificateException e) {
-            throw new CertificateParsingException("Certificate could not be parsed from cert bytes");
+            throw new CertificateParsingException("Certificate could not be parsed from cert bytes", e);
         }
 
         return certificates.stream()
@@ -87,7 +87,7 @@ public class CertificateUtils {
      * @throws InvalidKeySpecException
      * @throws NoSuchAlgorithmException
      */
-    public static PrivateKey generatePrivateKey(byte[] privateKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+    public static PrivateKey generatePrivateKey(final byte[] privateKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(privateKeyBytes);
         PrivateKey privateKey = null;
         try {
@@ -108,7 +108,7 @@ public class CertificateUtils {
      * @throws CertificateException
      * @throws CertPathValidatorException
      */
-    public static void validate(List<X509Certificate> chain, List<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
+    public static void validate(final List<X509Certificate> chain, final List<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
         val certificateFactory = getCertificateFactory();
         PKIXParameters pkixParameters = null;
         try {
@@ -131,7 +131,7 @@ public class CertificateUtils {
      * @throws CertificateException if the certificate contains multiple SPIFFE IDs, or does not contain any, or
      *                              the SAN extension cannot be decoded
      */
-    public static SpiffeId getSpiffeId(X509Certificate certificate) throws CertificateException {
+    public static SpiffeId getSpiffeId(final X509Certificate certificate) throws CertificateException {
         val spiffeIds = getSpiffeIds(certificate);
 
         if (spiffeIds.size() > 1) {
@@ -152,7 +152,7 @@ public class CertificateUtils {
      * @return a {@link TrustDomain}
      * @throws CertificateException
      */
-    public static TrustDomain getTrustDomain(List<X509Certificate> chain) throws CertificateException {
+    public static TrustDomain getTrustDomain(final List<X509Certificate> chain) throws CertificateException {
         val spiffeId = getSpiffeId(chain.get(0));
         return spiffeId.getTrustDomain();
     }
@@ -163,7 +163,7 @@ public class CertificateUtils {
      *
      * @throws InvalidKeyException if the keys don't match
      */
-    public static void validatePrivateKey(PrivateKey privateKey, X509Certificate x509Certificate) throws InvalidKeyException {
+    public static void validatePrivateKey(final PrivateKey privateKey, final X509Certificate x509Certificate) throws InvalidKeyException {
         Algorithm.Family algorithm = Algorithm.Family.parse(privateKey.getAlgorithm());
         if (Algorithm.Family.RSA.equals(algorithm)) {
             verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_RSA);
@@ -174,26 +174,26 @@ public class CertificateUtils {
         }
     }
 
-    public static boolean isCA(X509Certificate cert) {
+    public static boolean isCA(final X509Certificate cert) {
         return cert.getBasicConstraints() != -1;
     }
 
-    public static boolean hasKeyUsageCertSign(X509Certificate cert) {
+    public static boolean hasKeyUsageCertSign(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
         return keyUsage[KEY_CERT_SIGN];
     }
 
-    public static boolean hasKeyUsageDigitalSignature(X509Certificate cert) {
+    public static boolean hasKeyUsageDigitalSignature(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
         return keyUsage[DIGITAL_SIGNATURE];
     }
 
-    public static boolean hasKeyUsageCRLSign(X509Certificate cert) {
+    public static boolean hasKeyUsageCRLSign(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
         return keyUsage[CRL_SIGN];
     }
 
-    private static void verifyKeys(PrivateKey privateKey, PublicKey publicKey, String algorithm) throws InvalidKeyException {
+    private static void verifyKeys(final PrivateKey privateKey, final PublicKey publicKey, final String algorithm) throws InvalidKeyException {
         final String randomString = RandomStringUtils.random(100, 0, 0, true, true, null, new SecureRandom());
         byte[] challenge = randomString.getBytes();
 
@@ -208,11 +208,11 @@ public class CertificateUtils {
                 throw new InvalidKeyException("Private Key does not match Certificate Public Key");
             }
         } catch (NoSuchAlgorithmException | SignatureException e) {
-            throw new InvalidKeyException("Private and Public Keys could not be verified");
+            throw new InvalidKeyException("Private and Public Keys could not be verified", e);
         }
     }
 
-    private static List<String> getSpiffeIds(X509Certificate certificate) throws CertificateParsingException {
+    private static List<String> getSpiffeIds(final X509Certificate certificate) throws CertificateParsingException {
         if (certificate.getSubjectAlternativeNames() == null) {
             return EMPTY_LIST;
         }
@@ -223,7 +223,7 @@ public class CertificateUtils {
                 .collect(Collectors.toList());
     }
 
-    private static PrivateKey generatePrivateKeyWithSpec(PKCS8EncodedKeySpec kspec) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private static PrivateKey generatePrivateKeyWithSpec(final PKCS8EncodedKeySpec kspec) throws NoSuchAlgorithmException, InvalidKeySpecException {
         try {
             return KeyFactory.getInstance("EC").generatePrivate(kspec);
         } catch (InvalidKeySpecException e) {
@@ -232,7 +232,7 @@ public class CertificateUtils {
     }
 
     // Create an instance of PKIXParameters used as input for the PKIX CertPathValidator
-    private static PKIXParameters toPkixParameters(List<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException {
+    private static PKIXParameters toPkixParameters(final List<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException {
         if (trustedCerts == null || trustedCerts.isEmpty()) {
             throw new CertificateException("No trusted Certs");
         }
@@ -255,7 +255,7 @@ public class CertificateUtils {
     }
 
     // Given a private key in PEM format, encode it as DER
-    private static byte[] toDerFormat(byte[] privateKeyPem) throws InvalidKeyException {
+    private static byte[] toDerFormat(final byte[] privateKeyPem) throws InvalidKeyException {
         String privateKeyAsString = new String(privateKeyPem);
         privateKeyAsString = privateKeyAsString.replaceAll("(-+BEGIN PRIVATE KEY-+\\r?\\n|-+END PRIVATE KEY-+\\r?\\n?)", "");
         privateKeyAsString = privateKeyAsString.replaceAll("\n", "");

@@ -5,11 +5,11 @@ package io.spiffe.exception;
  * found in the Bundle Source.
  */
 public class BundleNotFoundException extends Exception {
-    public BundleNotFoundException(String message) {
+    public BundleNotFoundException(final String message) {
         super(message);
     }
 
-    public BundleNotFoundException(String message, Throwable cause) {
+    public BundleNotFoundException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

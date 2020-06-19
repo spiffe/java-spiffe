@@ -127,7 +127,7 @@ class JwtSvidParseAndValidateTest {
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), null))
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1") ))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("2. success using RSA signature")
@@ -139,7 +139,7 @@ class JwtSvidParseAndValidateTest {
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), null))
+                                claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3")))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("3. malformed")

@@ -30,8 +30,8 @@ public class X509SvidValidator {
      * @throws NullPointerException if the given chain or 509BundleSource are null
      */
     public static void verifyChain(
-            @NonNull List<X509Certificate> chain,
-            @NonNull BundleSource<X509Bundle> x509BundleSource)
+            @NonNull final List<X509Certificate> chain,
+            @NonNull final BundleSource<X509Bundle> x509BundleSource)
             throws CertificateException, BundleNotFoundException {
 
         val trustDomain = CertificateUtils.getTrustDomain(chain);
@@ -53,8 +53,8 @@ public class X509SvidValidator {
      *                              or if the SPIFFE ID cannot be parsed from the x509Certificate
      * @throws NullPointerException if the given x509Certificate or acceptedSpiffedIdsSupplier are null
      */
-    public static void verifySpiffeId(@NonNull X509Certificate x509Certificate,
-                                      @NonNull Supplier<List<SpiffeId>> acceptedSpiffedIdsSupplier)
+    public static void verifySpiffeId(@NonNull final X509Certificate x509Certificate,
+                                      @NonNull final Supplier<List<SpiffeId>> acceptedSpiffedIdsSupplier)
             throws CertificateException {
         val spiffeIdList = acceptedSpiffedIdsSupplier.get();
         val spiffeId = CertificateUtils.getSpiffeId(x509Certificate);

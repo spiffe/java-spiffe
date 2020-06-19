@@ -58,7 +58,20 @@ public class JwtSvid {
      */
     String token;
 
-    JwtSvid(SpiffeId spiffeId, List<String> audience, Date expiry, Map<String, Object> claims, String token) {
+    /**
+     * Constructor
+     *
+     * @param spiffeId {@link SpiffeId} of the JWT-SVID
+     * @param audience list of audiences
+     * @param expiry the Date of expiration
+     * @param claims map of claims
+     * @param token the token as string
+     */
+    JwtSvid(@NonNull final SpiffeId spiffeId,
+            @NonNull final List<String> audience,
+            @NonNull final Date expiry,
+            @NonNull final Map<String, Object> claims,
+            @NonNull final String token) {
         this.spiffeId = spiffeId;
         this.audience = audience;
         this.expiry = expiry;
@@ -86,7 +99,7 @@ public class JwtSvid {
      */
     public static JwtSvid parseAndValidate(@NonNull final String token,
                                            @NonNull final BundleSource<JwtBundle> jwtBundleSource,
-                                           @NonNull List<String> audience)
+                                           @NonNull final List<String> audience)
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
 
         if (StringUtils.isBlank(token)) {
@@ -131,7 +144,7 @@ public class JwtSvid {
      *                                           the 'aud' has an audience that is not in the audience provided as parameter
      * @throws IllegalArgumentException          when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull List<String> audience) throws JwtSvidException {
+    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final List<String> audience) throws JwtSvidException {
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }
@@ -173,7 +186,7 @@ public class JwtSvid {
     }
 
 
-    private static void verifySignature(SignedJWT signedJwt, PublicKey jwtAuthority, String algorithm, String keyId) throws JwtSvidException {
+    private static void verifySignature(final SignedJWT signedJwt, final PublicKey jwtAuthority, final String algorithm, final String keyId) throws JwtSvidException {
         boolean verify;
         try {
             val verifier = getJwsVerifier(jwtAuthority, algorithm);
@@ -187,7 +200,7 @@ public class JwtSvid {
         }
     }
 
-    private static JWSVerifier getJwsVerifier(PublicKey jwtAuthority, String algorithm) throws JOSEException, JwtSvidException {
+    private static JWSVerifier getJwsVerifier(final PublicKey jwtAuthority, final String algorithm) throws JOSEException, JwtSvidException {
         JWSVerifier verifier;
         if (Algorithm.Family.EC.contains(Algorithm.parse(algorithm))) {
             verifier = new ECDSAVerifier((ECPublicKey) jwtAuthority);
@@ -199,7 +212,7 @@ public class JwtSvid {
         return verifier;
     }
 
-    private static String getKeyId(JWSHeader header) throws JwtSvidException {
+    private static String getKeyId(final JWSHeader header) throws JwtSvidException {
         val keyId = header.getKeyID();
         if (StringUtils.isBlank(keyId)) {
             throw new JwtSvidException("Token header missing key id");
@@ -207,7 +220,7 @@ public class JwtSvid {
         return keyId;
     }
 
-    private static void validateExpiration(Date expirationTime) throws JwtSvidException {
+    private static void validateExpiration(final Date expirationTime) throws JwtSvidException {
         if (expirationTime == null) {
             throw new JwtSvidException("Token missing expiration claim");
         }
@@ -217,7 +230,7 @@ public class JwtSvid {
         }
     }
 
-    private static SpiffeId getSpiffeId(JWTClaimsSet claimsSet) throws JwtSvidException {
+    private static SpiffeId getSpiffeId(final JWTClaimsSet claimsSet) throws JwtSvidException {
         val subject = claimsSet.getSubject();
         if (StringUtils.isBlank(subject)) {
             throw new JwtSvidException("Token missing subject claim");
@@ -231,7 +244,7 @@ public class JwtSvid {
 
     }
 
-    private static void validateAudience(List<String> audClaim, List<String> audience) throws JwtSvidException {
+    private static void validateAudience(final List<String> audClaim, final List<String> audience) throws JwtSvidException {
         for (String aud : audClaim) {
             if (!audience.contains(aud)) {
                 throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", audience, audClaim));

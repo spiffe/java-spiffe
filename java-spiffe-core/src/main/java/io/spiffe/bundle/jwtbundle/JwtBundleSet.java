@@ -8,7 +8,6 @@ import lombok.Value;
 import lombok.val;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +20,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
 
     Map<TrustDomain, JwtBundle> bundles;
 
-    private JwtBundleSet(Map<TrustDomain, JwtBundle> bundles) {
+    private JwtBundleSet(final Map<TrustDomain, JwtBundle> bundles) {
         this.bundles = new ConcurrentHashMap<>(bundles);
     }
 
@@ -32,7 +31,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      * @return a {@link JwtBundleSet}
      */
     public static JwtBundleSet of(@NonNull final List<JwtBundle> bundles) {
-        Map<TrustDomain, JwtBundle> bundleMap = new HashMap<>();
+        Map<TrustDomain, JwtBundle> bundleMap = new ConcurrentHashMap<>();
         for (JwtBundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
@@ -68,7 +67,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      *
      * @param jwtBundle an instance of a JwtBundle.
      */
-    public void put(@NonNull JwtBundle jwtBundle) {
+    public void put(@NonNull final JwtBundle jwtBundle) {
         bundles.put(jwtBundle.getTrustDomain(), jwtBundle);
     }
 }

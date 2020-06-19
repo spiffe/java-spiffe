@@ -22,7 +22,6 @@ import java.security.KeyException;
 import java.security.PublicKey;
 import java.text.ParseException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +40,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      */
-    public JwtBundle(@NonNull TrustDomain trustDomain) {
+    public JwtBundle(@NonNull final TrustDomain trustDomain) {
         this.trustDomain = trustDomain;
         this.jwtAuthorities = new ConcurrentHashMap<>();
     }
@@ -52,7 +51,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param trustDomain    a {@link TrustDomain} to associate to the JwtBundle
      * @param jwtAuthorities a Map of public Keys
      */
-    public JwtBundle(@NonNull TrustDomain trustDomain, @NonNull Map<String, PublicKey> jwtAuthorities) {
+    public JwtBundle(@NonNull final TrustDomain trustDomain, @NonNull final Map<String, PublicKey> jwtAuthorities) {
         this.trustDomain = trustDomain;
         this.jwtAuthorities = new ConcurrentHashMap<>(jwtAuthorities);
     }
@@ -106,7 +105,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @throws BundleNotFoundException if there is no bundle for the given trust domain
      */
     @Override
-    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
         if (this.trustDomain.equals(trustDomain)) {
             return this;
         }
@@ -127,7 +126,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @return {@link PublicKey} representing the Authority associated to the KeyID.
      * @throws AuthorityNotFoundException if no Authority is found associated to the Key ID
      */
-    public PublicKey findJwtAuthority(String keyId) throws AuthorityNotFoundException {
+    public PublicKey findJwtAuthority(final String keyId) throws AuthorityNotFoundException {
         PublicKey key = jwtAuthorities.get(keyId);
         if (key != null) {
             return key;
@@ -141,7 +140,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param keyId id of a JWT Authority
      * @return true if the bundle has a JWT authority with the given key ID.
      */
-    public boolean hasJwtAuthority(String keyId) {
+    public boolean hasJwtAuthority(final String keyId) {
         return jwtAuthorities.containsKey(keyId);
     }
 
@@ -152,7 +151,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param keyId Key ID to associate to the jwtAuthority
      * @param jwtAuthority a PublicKey
      */
-    public void putJwtAuthority(@NonNull String keyId, @NonNull PublicKey jwtAuthority) {
+    public void putJwtAuthority(@NonNull final String keyId, @NonNull final PublicKey jwtAuthority) {
         if (StringUtils.isBlank(keyId)) {
             throw new IllegalArgumentException("KeyId cannot be empty");
         }
@@ -164,12 +163,12 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      *
      * @param keyId The key id of the JWT authority to be removed
      */
-    public void removeJwtAuthority(String keyId) {
+    public void removeJwtAuthority(final String keyId) {
         jwtAuthorities.remove(keyId);
     }
 
-    private static JwtBundle toJwtBundle(TrustDomain trustDomain, JWKSet jwkSet) throws JwtBundleException, JOSEException, ParseException, KeyException {
-        Map<String, PublicKey> authorities = new HashMap<>();
+    private static JwtBundle toJwtBundle(final TrustDomain trustDomain, final JWKSet jwkSet) throws JwtBundleException, JOSEException, ParseException, KeyException {
+        Map<String, PublicKey> authorities = new ConcurrentHashMap<>();
         for (JWK jwk : jwkSet.getKeys()) {
             String keyId = getKeyId(jwk);
             PublicKey publicKey = getPublicKey(jwk);
@@ -178,7 +177,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
         return new JwtBundle(trustDomain, authorities);
     }
 
-    private static String getKeyId(JWK jwk) throws JwtBundleException {
+    private static String getKeyId(final JWK jwk) throws JwtBundleException {
         val keyId = jwk.getKeyID();
         if (StringUtils.isBlank(keyId)) {
             throw new JwtBundleException("Error adding authority of JWKS: keyID cannot be empty");
@@ -186,17 +185,23 @@ public class JwtBundle implements BundleSource<JwtBundle> {
         return keyId;
     }
 
-    private static PublicKey getPublicKey(JWK jwk) throws JOSEException, ParseException, KeyException {
+    private static PublicKey getPublicKey(final JWK jwk) throws JOSEException, ParseException, KeyException {
         val family = Algorithm.Family.parse(jwk.getKeyType().getValue());
 
+        PublicKey publicKey = null;
         if (Algorithm.Family.EC.equals(family)) {
-            return ECKey.parse(jwk.toJSONString()).toPublicKey();
+            publicKey = ECKey.parse(jwk.toJSONString()).toPublicKey();
         }
 
         if (Algorithm.Family.RSA.equals(family)) {
-            return RSAKey.parse(jwk.toJSONString()).toPublicKey();
+            publicKey = RSAKey.parse(jwk.toJSONString()).toPublicKey();
         }
 
-        throw new KeyException(String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
+        if (publicKey == null) {
+            throw new KeyException(String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
+        }
+
+        return publicKey;
+
     }
 }

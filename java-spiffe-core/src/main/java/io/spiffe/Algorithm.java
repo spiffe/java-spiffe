@@ -80,7 +80,7 @@ public enum Algorithm {
         private final String name;
         private final Set<Algorithm> algorithms;
 
-        Family(String name, final Algorithm... algs) {
+        Family(final String name, final Algorithm... algs) {
             this.name = name;
             algorithms = new HashSet<>();
             Collections.addAll(algorithms, algs);
@@ -90,42 +90,46 @@ public enum Algorithm {
             return name;
         }
 
-        public boolean contains(Algorithm a) {
+        public boolean contains(final Algorithm a) {
             return algorithms.contains(a);
         }
 
         public static Family parse(final String s) {
+            Family family;
             if (s.equals(RSA.getName())) {
-                return RSA;
+                family = RSA;
             } else if (s.equals(EC.getName())) {
-                return EC;
+                family = EC;
             } else {
-                return OTHER;
+                family = OTHER;
             }
+            return family;
         }
     }
 
     public static Algorithm parse(final String s) {
+        Algorithm algorithm;
         if (s.equals(RS256.getName())) {
-            return RS256;
+            algorithm = RS256;
         } else if (s.equals(RS384.getName())) {
-            return RS384;
+            algorithm = RS384;
         } else if (s.equals(RS512.getName())) {
-            return RS512;
+            algorithm = RS512;
         } else if (s.equals(ES256.getName())) {
-            return ES256;
+            algorithm = ES256;
         } else if (s.equals(ES384.getName())) {
-            return ES384;
+            algorithm = ES384;
         } else if (s.equals(ES512.getName())) {
-            return ES512;
+            algorithm = ES512;
         } else if (s.equals(PS256.getName())) {
-            return PS256;
+            algorithm = PS256;
         } else if (s.equals(PS384.getName())) {
-            return PS384;
+            algorithm = PS384;
         } else if (s.equals(PS512.getName())) {
-            return PS512;
+            algorithm = PS512;
         } else {
-            return OTHER;
+            algorithm = OTHER;
         }
+        return algorithm;
     }
 }

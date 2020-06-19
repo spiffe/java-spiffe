@@ -83,7 +83,7 @@ public class WorkloadApiClient implements Closeable {
      * @return a {@link WorkloadApiClient}
      * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
      */
-    public static WorkloadApiClient newClient(@NonNull ClientOptions options) throws SocketEndpointAddressException {
+    public static WorkloadApiClient newClient(@NonNull final ClientOptions options) throws SocketEndpointAddressException {
         String spiffeSocketPath;
         if (StringUtils.isNotBlank(options.spiffeSocketPath)) {
             spiffeSocketPath = options.spiffeSocketPath;
@@ -187,7 +187,7 @@ public class WorkloadApiClient implements Closeable {
      * @return an instance of a {@link JwtSvid}
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    public JwtSvid fetchJwtSvid(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
         List<String> audParam = new ArrayList<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
@@ -221,7 +221,7 @@ public class WorkloadApiClient implements Closeable {
      * @return a {@link JwtSvid} if the token and audience could be validated.
      * @throws JwtSvidException when the token cannot be validated with the audience
      */
-    public JwtSvid validateJwtSvid(@NonNull String token, @NonNull String audience) throws JwtSvidException {
+    public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience) throws JwtSvidException {
         Workload.ValidateJWTSVIDRequest request = Workload.ValidateJWTSVIDRequest
                 .newBuilder()
                 .setSvid(token)
@@ -242,7 +242,7 @@ public class WorkloadApiClient implements Closeable {
      *
      * @param watcher receives the update for JwtBundles.
      */
-    public void watchJwtBundles(@NonNull Watcher<JwtBundleSet> watcher) {
+    public void watchJwtBundles(@NonNull final Watcher<JwtBundleSet> watcher) {
         val retryHandler = new RetryHandler(backoffPolicy, retryExecutor);
         val cancellableContext = Context.current().withCancellation();
 

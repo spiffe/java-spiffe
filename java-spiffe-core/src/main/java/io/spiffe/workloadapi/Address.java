@@ -48,7 +48,7 @@ public class Address {
      * @return an instance of a {@link URI}
      * @throws SocketEndpointAddressException if the address could not be parsed or if it is not valid
      */
-    public static URI parseAddress(String address) throws SocketEndpointAddressException {
+    public static URI parseAddress(final String address) throws SocketEndpointAddressException {
 
         URI parsedAddress;
 
@@ -79,7 +79,7 @@ public class Address {
         return parsedAddress;
     }
 
-    private static String validateUnixAddress(URI parsedAddress) {
+    private static String validateUnixAddress(final URI parsedAddress) {
         if (parsedAddress.isOpaque() && parsedAddress.isAbsolute()) {
             return "Workload endpoint unix socket URI must not be opaque: %s";
         }
@@ -98,7 +98,7 @@ public class Address {
         return "";
     }
 
-    private static String validateTcpAddress(URI parsedAddress) {
+    private static String validateTcpAddress(final URI parsedAddress) {
         if (parsedAddress.isOpaque() && parsedAddress.isAbsolute()) {
             return "Workload endpoint tcp socket URI must not be opaque: %s";
         }
@@ -135,11 +135,11 @@ public class Address {
         return "";
     }
 
-    private static boolean isValid(String scheme) {
-        return (StringUtils.isNotBlank(scheme) && VALID_SCHEMES.contains(scheme));
+    private static boolean isValid(final String scheme) {
+        return StringUtils.isNotBlank(scheme) && VALID_SCHEMES.contains(scheme);
     }
 
-    private static String parseIp(String host) {
+    private static String parseIp(final String host) {
         try {
             InetAddress ip = InetAddress.getByName(host);
             return ip.getHostAddress();

@@ -38,9 +38,9 @@ public class X509Svid implements X509SvidSource {
     PrivateKey privateKey;
 
     private X509Svid(
-            SpiffeId spiffeId,
-            List<X509Certificate> chain,
-            PrivateKey privateKey) {
+            final SpiffeId spiffeId,
+            final List<X509Certificate> chain,
+            final PrivateKey privateKey) {
         this.spiffeId = spiffeId;
         this.chain = chain;
         this.privateKey = privateKey;
@@ -54,16 +54,15 @@ public class X509Svid implements X509SvidSource {
      * @return an instance of {@link X509Svid}
      * @throws X509SvidException if there is an error parsing the given certsFilePath or the privateKeyFilePath
      */
-    public static X509Svid load(@NonNull Path certsFilePath, @NonNull Path privateKeyFilePath) throws X509SvidException {
+    public static X509Svid load(@NonNull final Path certsFilePath, @NonNull final Path privateKeyFilePath) throws X509SvidException {
         byte[] certsBytes;
-        byte[] privateKeyBytes;
-
         try {
             certsBytes = Files.readAllBytes(certsFilePath);
         } catch (IOException e) {
             throw new X509SvidException("Cannot read certificate file", e);
         }
 
+        byte[] privateKeyBytes;
         try {
             privateKeyBytes = Files.readAllBytes(privateKeyFilePath);
         } catch (IOException e) {
@@ -81,7 +80,7 @@ public class X509Svid implements X509SvidSource {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parse(@NonNull byte[] certsBytes, @NonNull byte[] privateKeyBytes) throws X509SvidException {
+    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes) throws X509SvidException {
         return createX509Svid(certsBytes, privateKeyBytes);
     }
 
@@ -92,23 +91,23 @@ public class X509Svid implements X509SvidSource {
         return chain.toArray(new X509Certificate[0]);
     }
 
-    private static X509Svid createX509Svid(byte[] certsBytes, byte[] privateKeyBytes) throws X509SvidException {
-        List<X509Certificate> x509Certificates;
-        PrivateKey privateKey;
-        SpiffeId spiffeId;
+    private static X509Svid createX509Svid(final byte[] certsBytes, final byte[] privateKeyBytes) throws X509SvidException {
 
+        List<X509Certificate> x509Certificates;
         try {
             x509Certificates = CertificateUtils.generateCertificates(certsBytes);
         } catch (CertificateParsingException e) {
             throw new X509SvidException("Certificate could not be parsed from cert bytes", e);
         }
 
+        PrivateKey privateKey;
         try {
             privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes);
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
             throw new X509SvidException("Private Key could not be parsed from key bytes", e);
         }
 
+        SpiffeId spiffeId;
         try {
             spiffeId = CertificateUtils.getSpiffeId(x509Certificates.get(0));
         } catch (CertificateException e) {
@@ -125,7 +124,7 @@ public class X509Svid implements X509SvidSource {
         return new X509Svid(spiffeId, x509Certificates, privateKey);
     }
 
-    private static void validateSigningCertificates(List<X509Certificate> certificates) throws X509SvidException {
+    private static void validateSigningCertificates(final List<X509Certificate> certificates) throws X509SvidException {
         for (X509Certificate cert : certificates) {
             if (!CertificateUtils.isCA(cert)) {
                 throw new X509SvidException("Signing certificate must have CA flag set to true");
@@ -136,14 +135,14 @@ public class X509Svid implements X509SvidSource {
         }
     }
 
-    private static void validateLeafCertificate(X509Certificate leaf) throws X509SvidException {
+    private static void validateLeafCertificate(final X509Certificate leaf) throws X509SvidException {
         if (CertificateUtils.isCA(leaf)) {
             throw new X509SvidException("Leaf certificate must not have CA flag set to true");
         }
         validateKeyUsage(leaf);
     }
 
-    private static void validateKeyUsage(X509Certificate leaf) throws X509SvidException {
+    private static void validateKeyUsage(final X509Certificate leaf) throws X509SvidException {
         if (!CertificateUtils.hasKeyUsageDigitalSignature(leaf)) {
             throw new X509SvidException("Leaf certificate must have 'digitalSignature' as key usage");
         }
@@ -155,7 +154,7 @@ public class X509Svid implements X509SvidSource {
         }
     }
 
-    private static void validatePrivateKey(PrivateKey privateKey, List<X509Certificate> x509Certificates) throws X509SvidException {
+    private static void validatePrivateKey(final PrivateKey privateKey, final List<X509Certificate> x509Certificates) throws X509SvidException {
         try {
             CertificateUtils.validatePrivateKey(privateKey, x509Certificates.get(0));
         } catch (InvalidKeyException e) {

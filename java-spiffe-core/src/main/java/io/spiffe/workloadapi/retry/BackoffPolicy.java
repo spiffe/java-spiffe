@@ -41,6 +41,8 @@ public class BackoffPolicy {
     UnaryOperator<Duration> backoffFunction = d -> d.multipliedBy(BACKOFF_MULTIPLIER);
 
     /**
+     * Constructor.
+     *
      * Build backoff policy with defaults
      */
     public BackoffPolicy() {
@@ -77,6 +79,6 @@ public class BackoffPolicy {
      * @return false if the number of retries did not reach the max number of retries, true otherwise
      */
     public boolean didNotReachMaxRetries(int retriesCount) {
-        return (maxRetries == UNLIMITED_RETRIES || retriesCount < maxRetries);
+        return maxRetries == UNLIMITED_RETRIES || retriesCount < maxRetries;
     }
 }

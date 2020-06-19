@@ -5,11 +5,11 @@ package io.spiffe.exception;
  * could not be parsed or is not valid.
  */
 public class SocketEndpointAddressException extends Exception {
-    public SocketEndpointAddressException(String message) {
+    public SocketEndpointAddressException(final String message) {
         super(message);
     }
 
-    public SocketEndpointAddressException(String message, Throwable cause) {
+    public SocketEndpointAddressException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

@@ -5,11 +5,11 @@ package io.spiffe.exception;
  */
 public class JwtSourceException extends Exception {
 
-    public JwtSourceException(String message) {
+    public JwtSourceException(final String message) {
         super(message);
     }
 
-    public JwtSourceException(String message, Throwable cause) {
+    public JwtSourceException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

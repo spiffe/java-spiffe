@@ -6,11 +6,11 @@ package io.spiffe.exception;
  */
 public class JwtSvidException extends Exception {
 
-    public JwtSvidException(String message) {
+    public JwtSvidException(final String message) {
         super(message);
     }
 
-    public JwtSvidException(String message, Throwable cause) {
+    public JwtSvidException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

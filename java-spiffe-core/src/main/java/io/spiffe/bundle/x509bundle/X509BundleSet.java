@@ -8,7 +8,6 @@ import lombok.Value;
 import lombok.val;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +31,7 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      * @return a {@link X509BundleSet} initialized with the list of bundles
      */
     public static X509BundleSet of(@NonNull final List<X509Bundle> bundles) {
-        Map<TrustDomain, X509Bundle> bundleMap = new HashMap<>();
+        Map<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
         for (X509Bundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
@@ -45,7 +44,7 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      *
      * @param x509Bundle a {@link X509Bundle}
      */
-    public void put(@NonNull X509Bundle x509Bundle){
+    public void put(@NonNull final X509Bundle x509Bundle){
         bundles.put(x509Bundle.getTrustDomain(), x509Bundle);
     }
 
