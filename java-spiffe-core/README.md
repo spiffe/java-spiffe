@@ -42,7 +42,7 @@ It allows to configure another SVID picker. By default, the first SVID is used.
 
 ### Configure a timeout for X509Source initialization 
 
-The `X509Source newSource()` method blocks waiting until a X.509 context is fetched. The X.509 context fetch is retried
+The `X509Source newSource()` method blocks waiting until an X.509 context is fetched. The X.509 context fetch is retried
 using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
 It retries indefinitely unless a timeout is configured. 
 

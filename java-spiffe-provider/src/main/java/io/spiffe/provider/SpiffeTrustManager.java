@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Implementation of a X.509 TrustManager for the SPIFFE Provider.
+ * Implementation of an X.509 TrustManager for the SPIFFE Provider.
  * <p>
  * Provides methods to validate the X.509 certificate chain using trusted certs provided by a {@link BundleSource}
  * maintained via the Workload API and to verify the SPIFFE ID against a List of accepted SPIFFE IDs provided by a Supplier.
@@ -32,7 +32,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     /**
      * Constructor.
      * <p>
-     * Creates a SpiffeTrustManager with a X.509 bundle source used to provide the trusted bundles,
+     * Creates a SpiffeTrustManager with an X.509 bundle source used to provide the trusted bundles,
      * and a {@link Supplier} of a List of accepted {@link SpiffeId} to be used during peer SVID validation.
      *
      * @param x509BundleSource          an implementation of a {@link BundleSource}
@@ -48,7 +48,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     /**
      * Constructor.
      * <p>
-     * Creates a SpiffeTrustManager with a X.509 bundle source used to provide the trusted bundles,
+     * Creates a SpiffeTrustManager with an X.509 bundle source used to provide the trusted bundles,
      * and a flag to indicate that any SPIFFE ID will be accepted.
      *
      * @param x509BundleSource  an implementation of a {@link BundleSource}

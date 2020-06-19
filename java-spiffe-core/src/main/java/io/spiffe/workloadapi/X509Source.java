@@ -59,7 +59,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * Creates a new X.509 source. It blocks until the initial update
      * has been received from the Workload API or until the timeout configured
      * through the system property `spiffe.newX509Source.timeout` expires.
-     * If no timeout is configured, it blocks until it gets a X.509 update from the Workload API.
+     * If no timeout is configured, it blocks until it gets an X.509 update from the Workload API.
      * <p>
      * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      * <p>

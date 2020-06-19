@@ -121,7 +121,7 @@ public class CertificateUtils {
     }
 
     /**
-     * Extracts the SPIFE ID from a X.509 certificate.
+     * Extracts the SPIFE ID from an X.509 certificate.
      * <p>
      * It iterates over the list of SubjectAlternativesNames, read each entry, takes the value from the index
      * defined in SAN_VALUE_INDEX and filters the entries that starts with the SPIFFE_PREFIX and returns the first.

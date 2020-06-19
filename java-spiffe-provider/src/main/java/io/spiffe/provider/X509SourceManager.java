@@ -7,7 +7,7 @@ import io.spiffe.workloadapi.X509Source;
 /**
  * Singleton that handles an instance of a {@link X509Source}.
  * <p>
- * The default SPIFFE socket endpoint address is used to create a X.509 Source backed by the
+ * The default SPIFFE socket endpoint address is used to create an X.509 Source backed by the
  * Workload API.
  * <p>
  * If the environment variable is not defined, it will throw an <code>IllegalStateException</code>.

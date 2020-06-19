@@ -44,7 +44,7 @@ public final class SpiffeSslContextFactory {
         }
 
         if (options.x509Source == null) {
-            throw new IllegalArgumentException("x509Source option cannot be null, a X.509 Source must be provided");
+            throw new IllegalArgumentException("x509Source option cannot be null, an X.509 Source must be provided");
         }
 
         TrustManager[] trustManager;
