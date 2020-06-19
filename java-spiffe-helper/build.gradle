@@ -5,7 +5,7 @@ plugins {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'spiffe.helper.cli.Runner'
+        attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
     }
 }
 
