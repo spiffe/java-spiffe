@@ -1,5 +1,6 @@
 package io.spiffe.helper.keystore;
 
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.workloadapi.Watcher;
@@ -11,8 +12,8 @@ import lombok.NonNull;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import io.spiffe.bundle.x509bundle.X509Bundle;
 
+import java.io.Closeable;
 import java.nio.file.Path;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
@@ -31,7 +32,7 @@ import java.util.logging.Level;
  * when the connection is lost.
  */
 @Log
-public class KeyStoreHelper {
+public class KeyStoreHelper implements Closeable {
 
     // case insensitive private key default alias
     static final String DEFAULT_ALIAS = "spiffe";
@@ -48,6 +49,8 @@ public class KeyStoreHelper {
     // alias of the private key entry (case-insensitive)
     private final String keyAlias;
 
+    private final WorkloadApiClient workloadApiClient;
+
 
     /**
      * Constructor.
@@ -61,7 +64,7 @@ public class KeyStoreHelper {
      * @throws SocketEndpointAddressException is the socket endpoint address is not valid
      * @throws KeyStoreException              is the entry cannot be stored in the KeyStore
      */
-    public KeyStoreHelper(@NonNull KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreException {
+    public KeyStoreHelper(@NonNull final KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreException {
 
         KeyStoreType keyStoreType;
         if (options.keyStoreType == null) {
@@ -94,17 +97,16 @@ public class KeyStoreHelper {
                 .keyStorePassword(options.trustStorePass)
                 .build();
 
-        WorkloadApiClient client;
         if (options.client != null) {
-            client = options.client;
+            workloadApiClient = options.client;
         } else {
-            client = createNewClient(options.spiffeSocketPath);
+            workloadApiClient = createNewClient(options.spiffeSocketPath);
         }
 
-        setX509ContextWatcher(client);
+        setX509ContextWatcher(workloadApiClient);
     }
 
-    private WorkloadApiClient createNewClient(String spiffeSocketPath) throws SocketEndpointAddressException {
+    private WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
         WorkloadApiClient.ClientOptions clientOptions = WorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
         return WorkloadApiClient.newClient(clientOptions);
     }
@@ -171,6 +173,11 @@ public class KeyStoreHelper {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    @Override
+    public void close() {
+        workloadApiClient.close();
     }
 
     /**

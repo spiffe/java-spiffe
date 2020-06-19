@@ -9,19 +9,16 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.workloadapi.WorkloadApiClient;
+import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
+import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
+import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
-import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
-import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -182,7 +179,7 @@ class KeyStoreHelperTest {
 
         val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
-        keyStore.load(new FileInputStream(new File(keyStoreFilePath.toUri())), keyStorePassword.toCharArray());
+        keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
         val chain = keyStore.getCertificateChain(alias);
         val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) chain[0]);
         val privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword.toCharArray());
@@ -199,12 +196,12 @@ class KeyStoreHelperTest {
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
 
         val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
-        keyStore.load(new FileInputStream(new File(keyStoreFilePath.toUri())), keyStorePassword.toCharArray());
+        keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
         val certificate = keyStore.getCertificate(alias);
         assertNotNull(certificate);
 
         val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
-        Assertions.assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
+        assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
     }
 
     private void deleteFile(Path file) {

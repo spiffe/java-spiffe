@@ -23,13 +23,24 @@ public enum KeyStoreType {
       return PKCS12;
    }
 
+   /**
+    * Parses an object to a KeyStoreType
+    *
+    * @param type an object representing a keystore type
+    * @return an instance of a KeyStoreType
+    * @throws IllegalArgumentException if the keystore type is unknown
+    */
    public static KeyStoreType parse(Object type) {
+      KeyStoreType keyStoreType = null;
       if (String.valueOf(type).equalsIgnoreCase(JKS.value)) {
-         return JKS;
+         keyStoreType = JKS;
       } else if (String.valueOf(type).equalsIgnoreCase(PKCS12.value)) {
-         return PKCS12;
-      } else {
-          throw new IllegalArgumentException(String.format("KeyStore type not supported: %s", type));
+         keyStoreType = PKCS12;
       }
+
+      if (keyStoreType == null) {
+         throw new IllegalArgumentException(String.format("KeyStore type not supported: %s", type));
+      }
+      return keyStoreType;
    }
 }

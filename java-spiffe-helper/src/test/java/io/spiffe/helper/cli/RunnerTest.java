@@ -21,7 +21,7 @@ class RunnerTest {
     void test_Main_KeyStorePathIsMissing() throws KeyStoreException, SocketEndpointAddressException, URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-keystorepath.conf"));
         try {
-            Runner.main(new String[]{"-c", path.toString()});
+            Runner.main("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (IllegalArgumentException e) {
             assertEquals("keyStorePath config is missing", e.getMessage());
@@ -32,7 +32,7 @@ class RunnerTest {
     void test_Main_KeyStorePassIsMissing() throws KeyStoreException, SocketEndpointAddressException, URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-keystorepass.conf"));
         try {
-            Runner.main(new String[]{"-c", path.toString()});
+            Runner.main("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (IllegalArgumentException e) {
             assertEquals("keyStorePass config is missing", e.getMessage());
@@ -43,7 +43,7 @@ class RunnerTest {
     void test_Main_KeyPassIsMissing() throws KeyStoreException, SocketEndpointAddressException, URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-keypass.conf"));
         try {
-            Runner.main(new String[]{"-c", path.toString()});
+            Runner.main("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (IllegalArgumentException e) {
             assertEquals("keyPass config is missing", e.getMessage());
@@ -54,7 +54,7 @@ class RunnerTest {
     void test_Main_TrustStorePathIsMissing() throws KeyStoreException, SocketEndpointAddressException, URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-truststorepath.conf"));
         try {
-            Runner.main(new String[]{"-c", path.toString()});
+            Runner.main("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (IllegalArgumentException e) {
             assertEquals("trustStorePath config is missing", e.getMessage());
@@ -65,7 +65,7 @@ class RunnerTest {
     void test_Main_TrustStorePassIsMissing() throws KeyStoreException, SocketEndpointAddressException, URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-truststorepass.conf"));
         try {
-            Runner.main(new String[]{"-c", path.toString()});
+            Runner.main("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (IllegalArgumentException e) {
             assertEquals("trustStorePass config is missing", e.getMessage());
@@ -76,7 +76,7 @@ class RunnerTest {
     void testGetCliConfigOption_abbreviated() {
         String option = null;
         try {
-            option = Runner.getCliConfigOption(new String[]{"-c", "example"});
+            option = Runner.getCliConfigOption("-c", "example");
         } catch (ParseException e) {
             fail(e);
         }
@@ -87,7 +87,7 @@ class RunnerTest {
     void testGetCliConfigOption() {
         String option = null;
         try {
-            option = Runner.getCliConfigOption(new String[]{"--config", "example"});
+            option = Runner.getCliConfigOption("--config", "example");
         } catch (ParseException e) {
             fail(e);
         }
@@ -96,9 +96,8 @@ class RunnerTest {
 
     @Test
     void testGetCliConfigOption_nonExistent() {
-        final String option;
         try {
-            option = Runner.getCliConfigOption(new String[]{"--unknown", "example"});
+            Runner.getCliConfigOption("--unknown", "example");
             fail("expected parse exception");
         } catch (ParseException e) {
             assertEquals("Unrecognized option: --unknown", e.getMessage());
@@ -108,7 +107,7 @@ class RunnerTest {
     @Test
     void test_ParseConfigFile() throws URISyntaxException, IOException {
         final Path path = Paths.get(toUri("testdata/cli/correct.conf"));
-        final Properties properties = Runner.parseConfigFile(path.toString());
+        final Properties properties = Runner.parseConfigFile(path);
 
         assertEquals("keystore123.p12", properties.getProperty("keyStorePath"));
         assertEquals("example123", properties.getProperty("keyStorePass"));

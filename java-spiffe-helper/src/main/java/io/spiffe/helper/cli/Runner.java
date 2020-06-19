@@ -1,16 +1,17 @@
 package io.spiffe.helper.cli;
 
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.helper.keystore.KeyStoreHelper;
+import io.spiffe.helper.keystore.KeyStoreType;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.StringUtils;
-import io.spiffe.helper.keystore.KeyStoreHelper;
-import io.spiffe.helper.keystore.KeyStoreType;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStoreException;
 import java.util.Properties;
@@ -21,13 +22,21 @@ import java.util.Properties;
 @Log
 public class Runner {
 
-    public static void main(String[] args) {
-        Properties parameters;
+    /**
+     * Entry method of the CLI to run the KeyStoreHelper.
+     * <p>
+     * In the args needs to be passed the config file option as: "-c" and "path_to_config_file"
+     *
+     * @param args contains the option with the config file path
+     */
+    public static void main(final String ...args) {
         String configFilePath = null;
         try {
             configFilePath = getCliConfigOption(args);
-            parameters = parseConfigFile(configFilePath);
-            KeyStoreHelper.KeyStoreOptions options = toKeyStoreOptions(parameters);
+            val parameters = parseConfigFile(Paths.get(configFilePath));
+            val options = toKeyStoreOptions(parameters);
+
+            // run KeyStoreHelper
             new KeyStoreHelper(options);
         } catch (IOException e) {
             log.severe(String.format("Cannot open config file: %s %n %s", configFilePath, e.getMessage()));
@@ -40,15 +49,15 @@ public class Runner {
         }
     }
 
-    static Properties parseConfigFile(String configFile) throws IOException {
+    static Properties parseConfigFile(final Path configFilePath) throws IOException {
         Properties prop = new Properties();
-        try (InputStream in = new FileInputStream(configFile)){
+        try (InputStream in = Files.newInputStream(configFilePath)) {
             prop.load(in);
         }
         return prop;
     }
 
-    static String getCliConfigOption(String[] args) throws ParseException {
+    static String getCliConfigOption(final String ...args) throws ParseException {
         final Options cliOptions = new Options();
         final Option confOption = new Option("c", "config", true, "config file");
         confOption.setRequired(true);
@@ -58,7 +67,7 @@ public class Runner {
         return cmd.getOptionValue("config");
     }
 
-    private static KeyStoreHelper.KeyStoreOptions toKeyStoreOptions(Properties properties) {
+    private static KeyStoreHelper.KeyStoreOptions toKeyStoreOptions(final Properties properties) {
 
         val keyStorePath = getString(properties, "keyStorePath");
         if (StringUtils.isBlank(keyStorePath)) {
@@ -106,7 +115,7 @@ public class Runner {
                 .build();
     }
 
-    private static String getString(Properties properties, String propName) {
+    private static String getString(final Properties properties, final String propName) {
         final String property = properties.getProperty(propName);
         if (property == null) {
             return "";

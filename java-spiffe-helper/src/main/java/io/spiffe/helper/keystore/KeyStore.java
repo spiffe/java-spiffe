@@ -5,10 +5,9 @@ import lombok.NonNull;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStoreException;
@@ -25,34 +24,32 @@ class KeyStore {
     private final Path keyStoreFilePath;
     private final KeyStoreType keyStoreType;
     private final String keyStorePassword;
-
     private final java.security.KeyStore javaKeyStore;
-    private final File keyStoreFile;
 
     @Builder
     KeyStore(
             @NonNull final Path keyStoreFilePath,
             @NonNull final KeyStoreType keyStoreType,
-            @NonNull final String keyStorePassword) throws KeyStoreException {
+            @NonNull final String keyStorePassword)
+            throws KeyStoreException {
+
         this.keyStoreFilePath = keyStoreFilePath;
         this.keyStoreType = keyStoreType;
-
         if (StringUtils.isBlank(keyStorePassword)) {
             throw new IllegalArgumentException("keyStorePassword cannot be blank");
         }
         this.keyStorePassword = keyStorePassword;
-        this.keyStoreFile = new File(keyStoreFilePath.toUri());
-        this.javaKeyStore = loadKeyStore(keyStoreFile);
+        this.javaKeyStore = loadKeyStore();
     }
 
-    private java.security.KeyStore loadKeyStore(final File keyStoreFile) throws KeyStoreException {
+    private java.security.KeyStore loadKeyStore() throws KeyStoreException {
         try {
             val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
             // Initialize KeyStore
             if (Files.exists(keyStoreFilePath)) {
-                try (final FileInputStream fileInputStream = new FileInputStream(keyStoreFile)) {
-                    keyStore.load(fileInputStream, keyStorePassword.toCharArray());
+                try (final InputStream inputStream = Files.newInputStream(keyStoreFilePath)) {
+                    keyStore.load(inputStream, keyStorePassword.toCharArray());
                 }
             } else {
                 //create new keyStore
@@ -85,7 +82,7 @@ class KeyStore {
     /**
      * Store an Authority Entry in the KeyStore.
      */
-    void storeAuthorityEntry(AuthorityEntry authorityEntry) throws KeyStoreException {
+    void storeAuthorityEntry(final AuthorityEntry authorityEntry) throws KeyStoreException {
         // Store Bundle Entry in KeyStore
         this.javaKeyStore.setCertificateEntry(
                 authorityEntry.getAlias(),
@@ -96,8 +93,8 @@ class KeyStore {
 
     // Flush KeyStore to disk, to the configured keyStoreFilePath
     private void flush() throws KeyStoreException {
-        try (FileOutputStream fileOutputStream = new FileOutputStream(keyStoreFile)){
-            javaKeyStore.store(fileOutputStream, keyStorePassword.toCharArray());
+        try (OutputStream outputStream = Files.newOutputStream(keyStoreFilePath)){
+            javaKeyStore.store(outputStream, keyStorePassword.toCharArray());
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new KeyStoreException(e);
         }

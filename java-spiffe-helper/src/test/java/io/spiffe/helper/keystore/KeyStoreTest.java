@@ -1,20 +1,17 @@
 package io.spiffe.helper.keystore;
 
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.svid.x509svid.X509Svid;
 import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.spiffe.bundle.x509bundle.X509Bundle;
-import io.spiffe.svid.x509svid.X509Svid;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -197,13 +194,13 @@ public class KeyStoreTest {
 
         val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
-        keyStore.load(new FileInputStream(new File(keyStoreFilePath.toUri())), keyStorePassword.toCharArray());
+        keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
         val chain = keyStore.getCertificateChain(alias);
         val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) chain[0]);
         val privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword.toCharArray());
 
         assertEquals(1, chain.length);
-        Assertions.assertEquals("spiffe://example.org/workload-server", spiffeId.toString());
+        assertEquals("spiffe://example.org/workload-server", spiffeId.toString());
         assertNotNull(privateKey);
     }
 
@@ -214,12 +211,12 @@ public class KeyStoreTest {
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
 
         val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
-        keyStore.load(new FileInputStream(new File(keyStoreFilePath.toUri())), keyStorePassword.toCharArray());
+        keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
         val certificate = keyStore.getCertificate(alias);
         assertNotNull(certificate);
 
         val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
-        Assertions.assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
+        assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
     }
 
     private URI toUri(String path) throws URISyntaxException {
