@@ -24,42 +24,42 @@ public final class SpiffeKeyStore extends KeyStoreSpi {
     private static final int NUMBER_OF_ENTRIES = 1;
 
     @Override
-    public Key engineGetKey(String alias, char[] password) {
+    public Key engineGetKey(final String alias, final char[] password) {
         return null;
     }
 
     @Override
-    public Certificate[] engineGetCertificateChain(String alias) {
+    public Certificate[] engineGetCertificateChain(final String alias) {
         return new Certificate[0];
     }
 
     @Override
-    public Certificate engineGetCertificate(String alias) {
+    public Certificate engineGetCertificate(final String alias) {
         return null;
     }
 
     @Override
-    public Date engineGetCreationDate(String alias) {
+    public Date engineGetCreationDate(final String alias) {
         return Date.from(Instant.now());
     }
 
     @Override
-    public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain) {
+    public void engineSetKeyEntry(final String alias, final Key key, final char[] password, final Certificate[] chain) {
         //no implementation needed
     }
 
     @Override
-    public void engineSetKeyEntry(String alias, byte[] key, Certificate[] chain) {
+    public void engineSetKeyEntry(final String alias, final byte[] key, final Certificate[] chain) {
         //no implementation needed
     }
 
     @Override
-    public void engineSetCertificateEntry(String alias, Certificate cert) {
+    public void engineSetCertificateEntry(final String alias, final Certificate cert) {
         //no implementation needed
     }
 
     @Override
-    public void engineDeleteEntry(String alias) {
+    public void engineDeleteEntry(final String alias) {
         //no implementation needed
     }
 
@@ -69,7 +69,7 @@ public final class SpiffeKeyStore extends KeyStoreSpi {
     }
 
     @Override
-    public boolean engineContainsAlias(String alias) {
+    public boolean engineContainsAlias(final String alias) {
         return Objects.equals(alias, DEFAULT_ALIAS);
     }
 
@@ -79,27 +79,27 @@ public final class SpiffeKeyStore extends KeyStoreSpi {
     }
 
     @Override
-    public boolean engineIsKeyEntry(String alias) {
+    public boolean engineIsKeyEntry(final String alias) {
         return Objects.equals(alias, DEFAULT_ALIAS);
     }
 
     @Override
-    public boolean engineIsCertificateEntry(String alias) {
+    public boolean engineIsCertificateEntry(final String alias) {
         return Objects.equals(alias, DEFAULT_ALIAS);
     }
 
     @Override
-    public String engineGetCertificateAlias(Certificate cert) {
+    public String engineGetCertificateAlias(final Certificate cert) {
         return DEFAULT_ALIAS;
     }
 
     @Override
-    public void engineStore(OutputStream stream, char[] password) {
+    public void engineStore(final OutputStream stream, final char[] password) {
         //no implementation needed
     }
 
     @Override
-    public void engineLoad(InputStream stream, char[] password) {
+    public void engineLoad(final InputStream stream, final char[] password) {
         //no implementation needed
     }
 }

@@ -34,7 +34,6 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      */
     @Override
     protected KeyManager[] engineGetKeyManagers() {
-        SpiffeKeyManager spiffeKeyManager;
         X509Source x509Source;
         try {
             x509Source = X509SourceManager.getX509Source();
@@ -44,7 +43,7 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
             throw new SpiffeProviderException("The Workload API Socket endpoint address configured is not valid", e);
         }
 
-        spiffeKeyManager = new SpiffeKeyManager(x509Source);
+        val spiffeKeyManager = new SpiffeKeyManager(x509Source);
         return new KeyManager[]{spiffeKeyManager};
     }
 
@@ -54,18 +53,18 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      * @param x509SvidSource an instance of a {@link X509SvidSource}
      * @return an array with an instance of a {@link KeyManager}
      */
-    public KeyManager[] engineGetKeyManagers(@NonNull X509SvidSource x509SvidSource) {
+    public KeyManager[] engineGetKeyManagers(@NonNull final X509SvidSource x509SvidSource) {
         val spiffeKeyManager = new SpiffeKeyManager(x509SvidSource);
         return new KeyManager[]{spiffeKeyManager};
     }
 
     @Override
-    protected void engineInit(KeyStore keyStore, char[] chars) {
+    protected void engineInit(final KeyStore keyStore, final char[] chars) {
         //no implementation needed
     }
 
     @Override
-    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) {
+    protected void engineInit(final ManagerFactoryParameters managerFactoryParameters) {
         //no implementation needed
     }
 

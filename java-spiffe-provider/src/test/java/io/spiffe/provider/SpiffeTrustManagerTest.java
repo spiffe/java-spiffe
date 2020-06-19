@@ -207,6 +207,6 @@ public class SpiffeTrustManagerTest {
     }
 
     private static URI toUri(String path) throws URISyntaxException {
-        return SpiffeTrustManagerTest.class.getClassLoader().getResource(path).toURI();
+        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 }

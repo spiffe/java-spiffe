@@ -1,8 +1,8 @@
 package io.spiffe.provider;
 
-import lombok.val;
-import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.svid.x509svid.X509SvidSource;
+import lombok.NonNull;
+import lombok.val;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -29,7 +29,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
      *
      * @param x509SvidSource source of X.509 SVIDs
      */
-    public SpiffeKeyManager(X509SvidSource x509SvidSource) {
+    public SpiffeKeyManager(@NonNull final X509SvidSource x509SvidSource) {
         this.x509SvidSource = x509SvidSource;
     }
 
@@ -39,11 +39,11 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
      * @return the certificate chain as an array of {@link X509Certificate}
      */
     @Override
-    public X509Certificate[] getCertificateChain(String alias) {
+    public X509Certificate[] getCertificateChain(final String alias) {
         if (!Objects.equals(alias, DEFAULT_ALIAS)) {
             return new X509Certificate[0];
         }
-        X509Svid x509Svid = x509SvidSource.getX509Svid();
+        val x509Svid = x509SvidSource.getX509Svid();
         return x509Svid.getChainArray();
     }
 
@@ -51,55 +51,54 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
      * Returns the private key handled by this key manager.
      *
      * @param alias a key entry, as this KeyManager only handles one identity, i.e. one SVID,
-     * it will return the PrivateKey if the given alias is 'Spiffe'.
-     *
+     *              it will return the PrivateKey if the given alias is 'Spiffe'.
      * @return the {@link PrivateKey} handled by this key manager
      */
     @Override
-    public PrivateKey getPrivateKey(String alias) {
+    public PrivateKey getPrivateKey(final String alias) {
         // if the alias specified is not the alias handled by the current KeyManager, return null
         if (!Objects.equals(alias, DEFAULT_ALIAS)) {
             return null;
         }
 
-        X509Svid x509Svid = x509SvidSource.getX509Svid();
+        val x509Svid = x509SvidSource.getX509Svid();
         return x509Svid.getPrivateKey();
     }
 
 
     @Override
-    public String[] getClientAliases(String keyType, Principal[] issuers) {
+    public String[] getClientAliases(final String keyType, final Principal[] issuers) {
         return getAliases(keyType);
     }
 
     @Override
-    public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket) {
+    public String chooseClientAlias(final String[] keyTypes, final Principal[] issuers, final Socket socket) {
         return getAlias(keyTypes);
     }
 
     @Override
-    public String chooseEngineClientAlias(String[] keyTypes, Principal[] issuers, SSLEngine sslEngine) {
+    public String chooseEngineClientAlias(final String[] keyTypes, final Principal[] issuers, final SSLEngine sslEngine) {
         return getAlias(keyTypes);
     }
 
     @Override
-    public String[] getServerAliases(String keyType, Principal[] issuers) {
+    public String[] getServerAliases(final String keyType, final Principal[] issuers) {
         return getAliases(keyType);
     }
 
     @Override
-    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine sslEngine) {
+    public String chooseEngineServerAlias(final String keyType, final Principal[] issuers, final SSLEngine sslEngine) {
         return getAlias(keyType);
     }
 
     @Override
-    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+    public String chooseServerAlias(final String keyType, final Principal[] issuers, final Socket socket) {
         return getAlias(keyType);
     }
 
     // If the algorithm of the PrivateKey is supported (is in the list of keyTypes), then returns
     // the ALIAS handled by the current KeyManager, if it's not supported returns null
-    private String getAlias(String... keyTypes) {
+    private String getAlias(final String... keyTypes) {
         val x509Svid = x509SvidSource.getX509Svid();
 
         val privateKeyAlgorithm = x509Svid.getPrivateKey().getAlgorithm();
@@ -109,7 +108,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
         return null;
     }
 
-    private String[] getAliases(String keyType) {
+    private String[] getAliases(final String keyType) {
         val alias = getAlias(keyType);
         return new String[]{alias};
     }

@@ -1,5 +1,6 @@
 package io.spiffe.provider;
 
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.Security;
@@ -7,7 +8,7 @@ import java.security.Security;
 /**
  * Utility class to get value from the environment.
  */
-class EnvironmentUtils {
+final class EnvironmentUtils {
 
     /**
      * Looks for a variable name defined in the environment.
@@ -19,7 +20,7 @@ class EnvironmentUtils {
      * @return a String with a value
      */
     static String getProperty(String variableName, String defaultValue) {
-        String value = getProperty(variableName);
+        val value = getProperty(variableName);
         if (StringUtils.isNotBlank(value)) {
             return value;
         }

@@ -17,7 +17,7 @@ import io.spiffe.workloadapi.X509Source;
  * to be used by the {@link SpiffeKeyManagerFactory} and {@link SpiffeTrustManagerFactory} to inject it
  * in the {@link SpiffeKeyManager} and {@link SpiffeTrustManager} instances.
  */
-public class X509SourceManager {
+public final class X509SourceManager {
 
     private static X509Source x509Source;
 

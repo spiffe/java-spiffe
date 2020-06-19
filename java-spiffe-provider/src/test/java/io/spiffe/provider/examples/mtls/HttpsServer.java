@@ -36,7 +36,7 @@ public class HttpsServer {
         try {
             httpsServer.run();
         } catch (IOException | KeyManagementException | NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error starting HttpsServer");
+            throw new RuntimeException("Error starting HttpsServer", e);
         }
     }
 

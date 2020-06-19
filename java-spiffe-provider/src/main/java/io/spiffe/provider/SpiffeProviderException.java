@@ -5,11 +5,11 @@ package io.spiffe.provider;
  */
 public class SpiffeProviderException extends RuntimeException {
 
-    public SpiffeProviderException(String message) {
+    public SpiffeProviderException(final String message) {
         super(message);
     }
 
-    public SpiffeProviderException(String message, Throwable cause) {
+    public SpiffeProviderException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

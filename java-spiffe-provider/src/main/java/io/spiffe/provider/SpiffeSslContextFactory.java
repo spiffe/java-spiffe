@@ -33,9 +33,9 @@ public final class SpiffeSslContextFactory {
      * @return a {@link SSLContext}
      * @throws IllegalArgumentException if the X509Source is not provided in the options
      * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
-     * @throws KeyManagementException if there is a problem initializing the SSL context
+     * @throws KeyManagementException   if there is a problem initializing the SSL context
      */
-    public static SSLContext getSslContext(@NonNull SslContextOptions options) throws NoSuchAlgorithmException, KeyManagementException {
+    public static SSLContext getSslContext(@NonNull final SslContextOptions options) throws NoSuchAlgorithmException, KeyManagementException {
         SSLContext sslContext;
         if (StringUtils.isNotBlank(options.sslProtocol)) {
             sslContext = SSLContext.getInstance(options.sslProtocol);
@@ -50,10 +50,12 @@ public final class SpiffeSslContextFactory {
         TrustManager[] trustManager;
         if (options.acceptAnySpiffeId) {
             trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(options.x509Source);
-        } else if (options.acceptedSpiffeIdsSupplier != null)  {
-            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
         } else {
-            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source);
+            if (options.acceptedSpiffeIdsSupplier != null) {
+                trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
+            } else {
+                trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source);
+            }
         }
 
         sslContext.init(
@@ -75,10 +77,10 @@ public final class SpiffeSslContextFactory {
 
         @Builder
         public SslContextOptions(
-                String sslProtocol,
-                X509Source x509Source,
-                Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier,
-                boolean acceptAnySpiffeId) {
+                final String sslProtocol,
+                final X509Source x509Source,
+                final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier,
+                final boolean acceptAnySpiffeId) {
             this.x509Source = x509Source;
             this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
             this.sslProtocol = sslProtocol;
@@ -86,5 +88,6 @@ public final class SpiffeSslContextFactory {
         }
     }
 
-    private SpiffeSslContextFactory() {}
+    private SpiffeSslContextFactory() {
+    }
 }

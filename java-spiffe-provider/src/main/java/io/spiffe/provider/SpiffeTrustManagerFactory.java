@@ -84,7 +84,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @param x509BundleSource a source of X.509 bundles
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
-    public TrustManager[] engineGetTrustManagers(@NonNull BundleSource<X509Bundle> x509BundleSource) {
+    public TrustManager[] engineGetTrustManagers(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
         SpiffeTrustManager spiffeTrustManager;
 
         if (ACCEPT_ANY_SPIFFE_ID) {
@@ -103,7 +103,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @param x509BundleSource a source of X.509 bundles
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
-    public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull BundleSource<X509Bundle> x509BundleSource) {
+    public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
         SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
         return new TrustManager[]{spiffeTrustManager};
     }
@@ -117,20 +117,20 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagers(
-            @NonNull BundleSource<X509Bundle> x509BundleSource,
-            @NonNull Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
+            @NonNull final BundleSource<X509Bundle> x509BundleSource,
+            @NonNull final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
 
         SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, acceptedSpiffeIdsSupplier);
         return new TrustManager[]{spiffeTrustManager};
     }
 
     @Override
-    protected void engineInit(KeyStore keyStore) {
+    protected void engineInit(final KeyStore keyStore) {
         // no implementation needed
     }
 
     @Override
-    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) {
+    protected void engineInit(final ManagerFactoryParameters managerFactoryParameters) {
         // no implementation needed
     }
 }

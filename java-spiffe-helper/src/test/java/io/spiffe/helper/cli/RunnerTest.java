@@ -120,6 +120,6 @@ class RunnerTest {
     }
 
     private URI toUri(String path) throws URISyntaxException {
-        return getClass().getClassLoader().getResource(path).toURI();
+        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 }

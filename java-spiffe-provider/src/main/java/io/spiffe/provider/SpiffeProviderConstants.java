@@ -3,7 +3,7 @@ package io.spiffe.provider;
 /**
  * SPIFFE Provider constants.
  */
-public class SpiffeProviderConstants {
+public final class SpiffeProviderConstants {
 
     /**
      * Name of the property to get the list of accepted SPIFFE IDs.

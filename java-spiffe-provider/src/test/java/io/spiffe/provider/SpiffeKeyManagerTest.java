@@ -2,14 +2,13 @@ package io.spiffe.provider;
 
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
+import io.spiffe.svid.x509svid.X509Svid;
+import io.spiffe.svid.x509svid.X509SvidSource;
 import lombok.val;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import io.spiffe.svid.x509svid.X509Svid;
-import io.spiffe.svid.x509svid.X509SvidSource;
 
 import javax.net.ssl.X509KeyManager;
 import java.net.URI;
@@ -17,9 +16,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 
+import static io.spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-import static io.spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
 
 public class SpiffeKeyManagerTest {
 
@@ -48,7 +47,7 @@ public class SpiffeKeyManagerTest {
 
         assertAll(
                 () -> assertEquals(1, certificateChain.length),
-                () -> Assertions.assertEquals("spiffe://example.org/test", spiffeId.toString())
+                () -> assertEquals("spiffe://example.org/test", spiffeId.toString())
         );
     }
 
@@ -62,6 +61,6 @@ public class SpiffeKeyManagerTest {
     }
 
     private URI toUri(String path) throws URISyntaxException {
-        return getClass().getClassLoader().getResource(path).toURI();
+        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 }
