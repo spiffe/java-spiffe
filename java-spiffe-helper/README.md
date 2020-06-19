@@ -55,7 +55,7 @@ It is **strongly recommended** to set restrictive file permissions for KeyStore 
 
 `chmod 600 keystore_file_name`
 
-Make sure that the process running the JAVA-SPIFFE Helper has _write_ permission on the KeyStores files. 
+Make sure the process running the JAVA-SPIFFE Helper has _write_ permission on the KeyStores files. 
 
 ### Debug
 
@@ -63,7 +63,7 @@ To check that the certs are being stored in the KeyStore:
 
 `keytool -list -v -keystore keystore.path -storepass example123`
 
-The ouput should a `PrivateKeyEntry`:
+The output should be a `Private Key Entry`:
 
 ```
 Keystore type: PKCS12

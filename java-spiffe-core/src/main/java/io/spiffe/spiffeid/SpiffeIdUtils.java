@@ -61,7 +61,7 @@ public class SpiffeIdUtils {
     /**
      * Return the list of the SPIFFE IDs parsed from the String parameter, using the default separator (comma)
      *
-     * @param spiffeIds a String representing a list of SPIFFE IDs separeated by comma
+     * @param spiffeIds a String representing a list of SPIFFE IDs separated by comma
      * @return a list of {@link SpiffeId} instances
      * @throws IllegalArgumentException is the string provided is blank
      */

@@ -29,7 +29,7 @@ public final class SpiffeSslContextFactory {
      * @param options {@link SslContextOptions}. The option {@link X509Source} must be not null.
      *                If the option acceptedSpiffeIdsSupplier is not provided, the list of accepted SPIFFE IDs
      *                is read from the Security or System Property ssl.spiffe.accept.
-     *                If the sslProcotol is not provided, the default TLSv1.2 is used.
+     *                If the sslProtocol is not provided, the default TLSv1.2 is used.
      * @return a {@link SSLContext}
      * @throws IllegalArgumentException if the X509Source is not provided in the options
      * @throws NoSuchAlgorithmException if there is a problem creating the SSL context

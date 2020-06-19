@@ -100,7 +100,7 @@ The property `ssl.spiffe.accept` can also be defined through a System property p
 
 #### Accept all SPIFFE IDs
 
-By default, only the SPIFFE IDs defined in the property `ssl.spiffe.accept` are accepted for a TLS connection. Thus
+By default, only the SPIFFE IDs defined in the property `ssl.spiffe.accept` are accepted for a TLS connection. Thus,
 if the property is empty or not defined, no SPIFFE ID will be accepted. To accept all SPIFFE IDs it should be used
 the property `ssl.spiffe.acceptAll` and set as `true` in the Security properties file:
 
@@ -153,7 +153,7 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
 
 Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
 
-A `GRPC Server` using a SSL context backed by the Workload API:
+A `GRPC Server` using an SSL context backed by the Workload API:
 
 ```
     KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM, SpiffeProviderConstants.PROVIDER_NAME);
