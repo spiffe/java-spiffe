@@ -1,11 +1,12 @@
 package io.spiffe.internal;
 
 import com.nimbusds.jose.jwk.Curve;
+import io.spiffe.Algorithm;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.utils.TestUtils;
 import lombok.val;
 import org.junit.jupiter.api.Test;
-import io.spiffe.utils.TestUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,9 +24,11 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class CertificateUtilsTest {
 
@@ -71,7 +74,7 @@ public class CertificateUtilsTest {
         val keyBytes = Files.readAllBytes(keyPath);
 
         try {
-            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes);
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, Algorithm.Family.RSA, KeyFileFormat.PEM);
             assertNotNull(privateKey);
             assertEquals("RSA", privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
@@ -85,7 +88,7 @@ public class CertificateUtilsTest {
         byte[] keyBytes = ecKeyPair.getPrivate().getEncoded();
 
         try {
-            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes);
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, Algorithm.Family.EC, KeyFileFormat.DER);
             assertNotNull(privateKey);
             assertEquals("EC", privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {

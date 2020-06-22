@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class SpiffeId {
 
     public static final String SPIFFE_SCHEME = "spiffe";
+    public static final int SPIFFE_ID_MAX_LENGTH = 2048;
 
     TrustDomain trustDomain;
 
@@ -59,10 +60,7 @@ public class SpiffeId {
         }
 
         val uri = URI.create(normalize(spiffeIdAsString));
-
-        if (!SPIFFE_SCHEME.equals(uri.getScheme())) {
-            throw new IllegalArgumentException("Invalid SPIFFE schema");
-        }
+        validateUri(uri);
 
         val trustDomain = TrustDomain.of(uri.getHost());
         val path = uri.getPath();
@@ -90,5 +88,36 @@ public class SpiffeId {
 
     private static String normalize(final String s) {
         return s.toLowerCase().trim();
+    }
+
+    private static void validateUri(final URI uri) {
+        val scheme = uri.getScheme();
+        if (!SpiffeId.SPIFFE_SCHEME.equals(scheme)) {
+            throw new IllegalArgumentException("SPIFFE ID: invalid scheme");
+        }
+
+        if (uri.getUserInfo() != null) {
+            throw new IllegalArgumentException("SPIFFE ID: user info is not allowed");
+        }
+
+        if (StringUtils.isBlank(uri.getHost())) {
+            throw new IllegalArgumentException("SPIFFE ID: trust domain is empty");
+        }
+
+        if (uri.getPort() != -1) {
+            throw new IllegalArgumentException("SPIFFE ID: port is not allowed");
+        }
+
+        if (StringUtils.isNotBlank(uri.getFragment())) {
+            throw new IllegalArgumentException("SPIFFE ID: fragment is not allowed");
+        }
+
+        if (StringUtils.isNotBlank(uri.getRawQuery())) {
+            throw new IllegalArgumentException("SPIFFE ID: query is not allowed");
+        }
+
+        if (uri.toString().length() > SPIFFE_ID_MAX_LENGTH) {
+            throw new IllegalArgumentException("SPIFFE ID: too long, maximum is 2048 bytes");
+        }
     }
 }

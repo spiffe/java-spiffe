@@ -5,7 +5,12 @@ import io.spiffe.helper.keystore.KeyStoreHelper;
 import io.spiffe.helper.keystore.KeyStoreType;
 import lombok.extern.java.Log;
 import lombok.val;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;

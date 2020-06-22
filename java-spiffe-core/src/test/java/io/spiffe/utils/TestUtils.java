@@ -11,11 +11,18 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
 import java.lang.reflect.Field;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Stream.generate;
 
 /**
  * Util methods for generating KeyPairs, tokens, and other functionality used only to be used in testing.
@@ -94,6 +101,10 @@ public class TestUtils {
                 .expirationTime((Date) claims.get("exp"))
                 .audience((List<String>) claims.get("aud"))
                 .build();
+    }
+
+    public static String getLongString(int nBytes) {
+        return generate(() -> "a").limit(nBytes).collect(joining());
     }
 
     public static void setEnvironmentVariable(String variableName, String value) throws Exception {

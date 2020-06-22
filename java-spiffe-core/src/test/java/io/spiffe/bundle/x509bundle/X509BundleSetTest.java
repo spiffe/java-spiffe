@@ -1,15 +1,18 @@
 package io.spiffe.bundle.x509bundle;
 
 import io.spiffe.exception.BundleNotFoundException;
-import org.junit.jupiter.api.Test;
 import io.spiffe.internal.DummyX509Certificate;
 import io.spiffe.spiffeid.TrustDomain;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class X509BundleSetTest {
 

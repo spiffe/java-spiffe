@@ -9,11 +9,11 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.spiffe.exception.JwtSvidException;
-import org.junit.platform.commons.util.StringUtils;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase;
 import io.spiffe.workloadapi.grpc.Workload;
+import org.junit.platform.commons.util.StringUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,13 +22,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
-    final String privateKey = "testdata/workloadapi/svid.key";
-    final String svid = "testdata/workloadapi/svid.pem";
-    final String x509Bundle = "testdata/workloadapi/bundle.pem";
+    final String privateKey = "testdata/workloadapi/svid.key.der";
+    final String svid = "testdata/workloadapi/svid.der";
+    final String x509Bundle = "testdata/workloadapi/bundle.der";
     final String jwtBundle = "testdata/workloadapi/bundle.json";
 
 

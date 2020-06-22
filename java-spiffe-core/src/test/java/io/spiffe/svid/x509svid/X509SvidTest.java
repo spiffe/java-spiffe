@@ -1,6 +1,8 @@
 package io.spiffe.svid.x509svid;
 
 import io.spiffe.exception.X509SvidException;
+import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.spiffeid.TrustDomain;
 import lombok.Builder;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
@@ -8,9 +10,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
-import io.spiffe.spiffeid.SpiffeId;
-import io.spiffe.spiffeid.TrustDomain;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -19,7 +20,9 @@ import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class X509SvidTest {
 
@@ -37,6 +40,8 @@ public class X509SvidTest {
     static String certMultiple = "testdata/x509svid/good-leaf-and-intermediate.pem";
     static String corrupted = "testdata/x509svid/corrupted";
     static String keyECDSAOther = "testdata/x509svid/key-ecdsa-other.pem";
+    static String keyDER = "testdata/x509svid/keyEC.der";
+    static String certDER = "testdata/x509svid/cert.der";
 
     static Stream<Arguments> provideX509SvidScenarios() {
         return Stream.of(
@@ -175,6 +180,22 @@ public class X509SvidTest {
         try {
             X509Svid x509Svid = X509Svid.load(certPath, keyPath);
             assertEquals("spiffe://example.org/workload-1", x509Svid.getSpiffeId().toString());
+        } catch (X509SvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testParseRaw() throws URISyntaxException, IOException {
+        Path certPath = Paths.get(toUri(certDER));
+        Path keyPath = Paths.get(toUri(keyDER));
+
+        byte[] certBytes = Files.readAllBytes(certPath);
+        byte[] keyBytes = Files.readAllBytes(keyPath);
+
+        try {
+            X509Svid x509Svid = X509Svid.parseRaw(certBytes, keyBytes);
+            assertEquals("spiffe://example.org/workload-server", x509Svid.getSpiffeId().toString());
         } catch (X509SvidException e) {
             fail(e);
         }

@@ -7,8 +7,8 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,10 +27,10 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
     /**
      * Creates a JWT bundle set from the list of JWT bundles.
      *
-     * @param bundles List of {@link JwtBundle}
+     * @param bundles Collection of {@link JwtBundle}
      * @return a {@link JwtBundleSet}
      */
-    public static JwtBundleSet of(@NonNull final List<JwtBundle> bundles) {
+    public static JwtBundleSet of(@NonNull final Collection<JwtBundle> bundles) {
         Map<TrustDomain, JwtBundle> bundleMap = new ConcurrentHashMap<>();
         for (JwtBundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);

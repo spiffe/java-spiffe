@@ -17,7 +17,9 @@ import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 
 import static io.spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 public class SpiffeKeyManagerTest {

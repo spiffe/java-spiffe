@@ -7,8 +7,8 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,10 +27,10 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
     /**
      * Creates a new X.509 bundle set from a list of X.509 bundles.
      *
-     * @param bundles a list of {@link X509Bundle}
+     * @param bundles Collection of {@link X509Bundle}
      * @return a {@link X509BundleSet} initialized with the list of bundles
      */
-    public static X509BundleSet of(@NonNull final List<X509Bundle> bundles) {
+    public static X509BundleSet of(@NonNull final Collection<X509Bundle> bundles) {
         Map<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
         for (X509Bundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);

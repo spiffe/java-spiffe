@@ -188,20 +188,17 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     private static PublicKey getPublicKey(final JWK jwk) throws JOSEException, ParseException, KeyException {
         val family = Algorithm.Family.parse(jwk.getKeyType().getValue());
 
-        PublicKey publicKey = null;
-        if (Algorithm.Family.EC.equals(family)) {
-            publicKey = ECKey.parse(jwk.toJSONString()).toPublicKey();
+        PublicKey publicKey;
+        switch (family) {
+            case EC:
+                publicKey = ECKey.parse(jwk.toJSONString()).toPublicKey();
+                break;
+            case RSA:
+                publicKey = RSAKey.parse(jwk.toJSONString()).toPublicKey();
+                break;
+            default:
+                throw new KeyException(String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
         }
-
-        if (Algorithm.Family.RSA.equals(family)) {
-            publicKey = RSAKey.parse(jwk.toJSONString()).toPublicKey();
-        }
-
-        if (publicKey == null) {
-            throw new KeyException(String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
-        }
-
         return publicKey;
-
     }
 }

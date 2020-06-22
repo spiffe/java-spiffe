@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
 @Value
 public class TrustDomain {
 
+    public static final int TRUST_DOMAIN_MAX_LENGTH = 255;
     String name;
 
     private TrustDomain(final String trustDomain) {
@@ -37,11 +38,11 @@ public class TrustDomain {
         try {
             val normalized = normalize(trustDomain);
             uri = new URI(normalized);
-            validateUri(uri);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
 
+        validateUri(uri);
         val host = uri.getHost();
         validateHost(host);
         return new TrustDomain(host);
@@ -81,7 +82,11 @@ public class TrustDomain {
 
         val port = uri.getPort();
         if (port != -1) {
-            throw new IllegalArgumentException("Port is not allowed");
+            throw new IllegalArgumentException("Trust Domain: port is not allowed");
+        }
+
+        if (uri.toString().length() > TRUST_DOMAIN_MAX_LENGTH) {
+            throw new IllegalArgumentException("Trust Domain: too long, maximum is 255 bytes");
         }
     }
 

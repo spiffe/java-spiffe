@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.EMPTY_LIST;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
@@ -49,7 +49,7 @@ public class SpiffeIdUtils {
      */
     public static List<SpiffeId> toListOfSpiffeIds(final String spiffeIds, final char separator) {
         if (isBlank(spiffeIds)) {
-            return EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         val array = spiffeIds.split(String.valueOf(separator));

@@ -6,33 +6,39 @@ import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import io.spiffe.bundle.jwtbundle.JwtBundle;
+import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import org.junit.Rule;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import io.spiffe.bundle.jwtbundle.JwtBundle;
-import io.spiffe.bundle.jwtbundle.JwtBundleSet;
-import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
 import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 import io.spiffe.workloadapi.retry.BackoffPolicy;
+import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.security.KeyPair;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class WorkloadApiClientTest {
 

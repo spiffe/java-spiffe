@@ -14,9 +14,9 @@ import java.nio.file.Paths;
 
 class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
-    final String privateKey = "testdata/svid.key";
-    final String svid = "testdata/svid.pem";
-    final String x509Bundle = "testdata/bundle.pem";
+    final String privateKey = "testdata/svid.key.der";
+    final String svid = "testdata/svid.der";
+    final String x509Bundle = "testdata/bundle.der";
 
 
     // Loads cert, bundle and key from files and generates a X509SVIDResponse.

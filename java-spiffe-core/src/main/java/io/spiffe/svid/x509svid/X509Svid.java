@@ -1,7 +1,9 @@
 package io.spiffe.svid.x509svid;
 
+import io.spiffe.Algorithm;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
+import io.spiffe.internal.KeyFileFormat;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
 import lombok.Value;
@@ -68,7 +70,7 @@ public class X509Svid implements X509SvidSource {
         } catch (IOException e) {
             throw new X509SvidException("Cannot read private key file", e);
         }
-        return createX509Svid(certsBytes, privateKeyBytes);
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM);
     }
 
     /**
@@ -81,7 +83,20 @@ public class X509Svid implements X509SvidSource {
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
     public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes) throws X509SvidException {
-        return createX509Svid(certsBytes, privateKeyBytes);
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM);
+    }
+
+    /**
+     * Parses the X509-SVID from certificate and key bytes. The certificate must be ASN.1 DER (concatenated with
+     * no intermediate padding if there are more than one certificate). The key must be a PKCS#8 ASN.1 DER.
+     *
+     * @param certsBytes      chain of certificates as a byte array
+     * @param privateKeyBytes private key as byte array
+     * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
+     * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
+     */
+    public static X509Svid parseRaw(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes) throws X509SvidException {
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER);
     }
 
     /**
@@ -91,7 +106,7 @@ public class X509Svid implements X509SvidSource {
         return chain.toArray(new X509Certificate[0]);
     }
 
-    private static X509Svid createX509Svid(final byte[] certsBytes, final byte[] privateKeyBytes) throws X509SvidException {
+    private static X509Svid createX509Svid(final byte[] certsBytes, final byte[] privateKeyBytes, KeyFileFormat keyFileFormat) throws X509SvidException {
 
         List<X509Certificate> x509Certificates;
         try {
@@ -100,9 +115,10 @@ public class X509Svid implements X509SvidSource {
             throw new X509SvidException("Certificate could not be parsed from cert bytes", e);
         }
 
+        Algorithm.Family algorithm = Algorithm.Family.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
         PrivateKey privateKey;
         try {
-            privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes);
+            privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes, algorithm, keyFileFormat);
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
             throw new X509SvidException("Private Key could not be parsed from key bytes", e);
         }

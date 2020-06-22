@@ -57,9 +57,7 @@ class GrpcConversionUtils {
         List<X509Svid> x509SvidList = new ArrayList<>();
 
         for (Workload.X509SVID x509SVID : x509SVIDResponse.getSvidsList()) {
-            val svid = X509Svid.parse(
-                    x509SVID.getX509Svid().toByteArray(),
-                    x509SVID.getX509SvidKey().toByteArray());
+            val svid = X509Svid.parseRaw(x509SVID.getX509Svid().toByteArray(), x509SVID.getX509SvidKey().toByteArray());
             x509SvidList.add(svid);
 
             if (!x509SVID.getSpiffeId().equals(svid.getSpiffeId().toString())) {

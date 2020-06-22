@@ -5,20 +5,38 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import lombok.NonNull;
 import lombok.val;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.ByteArrayInputStream;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
-import java.security.cert.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
+import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.EMPTY_LIST;
+import static io.spiffe.internal.KeyUsages.CRL_SIGN;
+import static io.spiffe.internal.KeyUsages.DIGITAL_SIGNATURE;
+import static io.spiffe.internal.KeyUsages.KEY_CERT_SIGN;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -35,17 +53,6 @@ public class CertificateUtils {
     private static final String PUBLIC_KEY_INFRASTRUCTURE_ALGORITHM = "PKIX";
     private static final String X509_CERTIFICATE_TYPE = "X.509";
 
-    // X509Certificate Key Usage indexes
-    private static final int DIGITAL_SIGNATURE = 0;
-    private static final int NON_REPUDIATION = 1;
-    private static final int KEY_ENCIPHERMENT = 2;
-    private static final int DATA_ENCIPHERMENT = 3;
-    private static final int KEY_AGREEMENT = 4;
-    private static final int KEY_CERT_SIGN = 5;
-    private static final int CRL_SIGN = 6;
-    private static final int ENCIPHER_ONLY = 7;
-    private static final int DECIPHER_ONLY = 8;
-
     private CertificateUtils() {
     }
 
@@ -60,12 +67,7 @@ public class CertificateUtils {
             throw new CertificateParsingException("No certificates found");
         }
 
-        CertificateFactory certificateFactory = null;
-        try {
-            certificateFactory = getCertificateFactory();
-        } catch (CertificateException e) {
-            throw new IllegalStateException("Could not create Certificate Factory", e);
-        }
+        val certificateFactory = getCertificateFactory();
 
         Collection<? extends Certificate> certificates;
         try {
@@ -87,17 +89,9 @@ public class CertificateUtils {
      * @throws InvalidKeySpecException
      * @throws NoSuchAlgorithmException
      */
-    public static PrivateKey generatePrivateKey(final byte[] privateKeyBytes) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
-        PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(privateKeyBytes);
-        PrivateKey privateKey = null;
-        try {
-            privateKey = generatePrivateKeyWithSpec(kspec);
-        } catch (InvalidKeySpecException e) {
-            byte[] keyDer = toDerFormat(privateKeyBytes);
-            kspec = new PKCS8EncodedKeySpec(keyDer);
-            privateKey = generatePrivateKeyWithSpec(kspec);
-        }
-        return privateKey;
+    public static PrivateKey generatePrivateKey(final byte[] privateKeyBytes, Algorithm.Family algorithm, KeyFileFormat keyFileFormat) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+        EncodedKeySpec kspec = getEncodedKeySpec(privateKeyBytes, keyFileFormat);
+        return generatePrivateKeyWithSpec(kspec, algorithm);
     }
 
     /**
@@ -110,7 +104,7 @@ public class CertificateUtils {
      */
     public static void validate(final List<X509Certificate> chain, final List<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
         val certificateFactory = getCertificateFactory();
-        PKIXParameters pkixParameters = null;
+        PKIXParameters pkixParameters;
         try {
             pkixParameters = toPkixParameters(trustedCerts);
             val certPath = certificateFactory.generateCertPath(chain);
@@ -121,7 +115,7 @@ public class CertificateUtils {
     }
 
     /**
-     * Extracts the SPIFE ID from an X.509 certificate.
+     * Extracts the SPIFFE ID from an X.509 certificate.
      * <p>
      * It iterates over the list of SubjectAlternativesNames, read each entry, takes the value from the index
      * defined in SAN_VALUE_INDEX and filters the entries that starts with the SPIFFE_PREFIX and returns the first.
@@ -165,12 +159,16 @@ public class CertificateUtils {
      */
     public static void validatePrivateKey(final PrivateKey privateKey, final X509Certificate x509Certificate) throws InvalidKeyException {
         Algorithm.Family algorithm = Algorithm.Family.parse(privateKey.getAlgorithm());
-        if (Algorithm.Family.RSA.equals(algorithm)) {
-            verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_RSA);
-        } else if (Algorithm.Family.EC.equals(algorithm)) {
-            verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_ECDSA);
-        } else {
-            throw new InvalidKeyException(String.format("Private Key algorithm not supported: %s", algorithm));
+
+        switch (algorithm) {
+            case RSA:
+                verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_RSA);
+                break;
+            case EC:
+                verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_ECDSA);
+                break;
+            default:
+                throw new InvalidKeyException(String.format("Private Key algorithm not supported: %s", algorithm));
         }
     }
 
@@ -180,23 +178,32 @@ public class CertificateUtils {
 
     public static boolean hasKeyUsageCertSign(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
-        return keyUsage[KEY_CERT_SIGN];
+        return keyUsage[KEY_CERT_SIGN.index()];
     }
 
     public static boolean hasKeyUsageDigitalSignature(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
-        return keyUsage[DIGITAL_SIGNATURE];
+        return keyUsage[DIGITAL_SIGNATURE.index()];
     }
 
     public static boolean hasKeyUsageCRLSign(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
-        return keyUsage[CRL_SIGN];
+        return keyUsage[CRL_SIGN.index()];
+    }
+
+    private static EncodedKeySpec getEncodedKeySpec(final byte[] privateKeyBytes, KeyFileFormat keyFileFormat) throws InvalidKeyException {
+        EncodedKeySpec keySpec;
+        if (keyFileFormat == KeyFileFormat.PEM) {
+            byte[] keyDer = toDerFormat(privateKeyBytes);
+            keySpec = new PKCS8EncodedKeySpec(keyDer);
+        } else {
+            keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+        }
+        return keySpec;
     }
 
     private static void verifyKeys(final PrivateKey privateKey, final PublicKey publicKey, final String algorithm) throws InvalidKeyException {
-        final String randomString = RandomStringUtils.random(100, 0, 0, true, true, null, new SecureRandom());
-        byte[] challenge = randomString.getBytes();
-
+        final byte[] challenge = new SecureRandom().generateSeed(100);
         try {
             Signature sig = Signature.getInstance(algorithm);
             sig.initSign(privateKey);
@@ -214,7 +221,7 @@ public class CertificateUtils {
 
     private static List<String> getSpiffeIds(final X509Certificate certificate) throws CertificateParsingException {
         if (certificate.getSubjectAlternativeNames() == null) {
-            return EMPTY_LIST;
+            return Collections.emptyList();
         }
         return certificate.getSubjectAlternativeNames()
                 .stream()
@@ -223,12 +230,19 @@ public class CertificateUtils {
                 .collect(Collectors.toList());
     }
 
-    private static PrivateKey generatePrivateKeyWithSpec(final PKCS8EncodedKeySpec kspec) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        try {
-            return KeyFactory.getInstance("EC").generatePrivate(kspec);
-        } catch (InvalidKeySpecException e) {
-            return KeyFactory.getInstance("RSA").generatePrivate(kspec);
+    private static PrivateKey generatePrivateKeyWithSpec(final EncodedKeySpec keySpec, Algorithm.Family algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        PrivateKey privateKey;
+        switch (algorithm) {
+            case EC:
+                privateKey = KeyFactory.getInstance("EC").generatePrivate(keySpec);
+                break;
+            case RSA:
+                privateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+                break;
+            default:
+                throw new NoSuchAlgorithmException(String.format("Private Key algorithm is not supported: %s", algorithm));
         }
+        return privateKey;
     }
 
     // Create an instance of PKIXParameters used as input for the PKIX CertPathValidator
@@ -250,8 +264,12 @@ public class CertificateUtils {
     }
 
     // Get the X.509 Certificate Factory
-    private static CertificateFactory getCertificateFactory() throws CertificateException {
-        return CertificateFactory.getInstance(X509_CERTIFICATE_TYPE);
+    private static CertificateFactory getCertificateFactory() {
+        try {
+            return CertificateFactory.getInstance(X509_CERTIFICATE_TYPE);
+        } catch (CertificateException e) {
+            throw new IllegalStateException("Could not create Certificate Factory", e);
+        }
     }
 
     // Given a private key in PEM format, encode it as DER
