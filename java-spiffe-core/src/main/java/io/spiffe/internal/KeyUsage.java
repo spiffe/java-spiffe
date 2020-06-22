@@ -1,6 +1,9 @@
 package io.spiffe.internal;
 
-public enum KeyUsages {
+/**
+ * Key Usages associated to their index in the X.509 key usage array.
+ */
+public enum KeyUsage {
 
     DIGITAL_SIGNATURE(0),
     NON_REPUDIATION(1),
@@ -18,7 +21,7 @@ public enum KeyUsages {
         return index;
     }
 
-    KeyUsages(final int index) {
+    KeyUsage(final int index) {
         this.index = index;
     }
 }

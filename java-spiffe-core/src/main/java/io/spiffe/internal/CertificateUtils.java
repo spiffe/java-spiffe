@@ -34,9 +34,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static io.spiffe.internal.KeyUsages.CRL_SIGN;
-import static io.spiffe.internal.KeyUsages.DIGITAL_SIGNATURE;
-import static io.spiffe.internal.KeyUsages.KEY_CERT_SIGN;
+import static io.spiffe.internal.KeyUsage.CRL_SIGN;
+import static io.spiffe.internal.KeyUsage.DIGITAL_SIGNATURE;
+import static io.spiffe.internal.KeyUsage.KEY_CERT_SIGN;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
