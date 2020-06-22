@@ -40,7 +40,7 @@ public class TrustDomainTest {
     }
     @Test
     void testFromMaxLength() {
-        final String longString = getLongString(246); // 246 = 255(max) - 9('spiffe://' bytes)
+        final String longString = getLongString(255);
         TrustDomain trustDomain = TrustDomain.of(longString);
         assertEquals(longString, trustDomain.toString());
     }
