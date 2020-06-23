@@ -2,24 +2,24 @@ package io.spiffe.svid.jwtsvid;
 
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jwt.JWTClaimsSet;
+import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.utils.TestUtils;
 import lombok.Builder;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import io.spiffe.bundle.jwtbundle.JwtBundle;
-import io.spiffe.spiffeid.SpiffeId;
-import io.spiffe.spiffeid.TrustDomain;
-import io.spiffe.utils.TestUtils;
 
 import java.security.KeyPair;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -43,7 +43,7 @@ class JwtSvidParseAndValidateTest {
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
-            assertEquals(token, jwtSvid.marshall());
+            assertEquals(token, jwtSvid.marshal());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
             assertEquals(testCase.expectedException.getMessage(), e.getMessage());
@@ -54,7 +54,7 @@ class JwtSvidParseAndValidateTest {
     void testParseAndValidate_nullToken_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
 
         try {
             JwtSvid.parseAndValidate(null, jwtBundle, audience);
@@ -67,7 +67,7 @@ class JwtSvidParseAndValidateTest {
     void testParseAndValidate_emptyToken_throwsIllegalArgumentException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
 
         try {
             JwtSvid.parseAndValidate("", jwtBundle, audience);
@@ -78,7 +78,7 @@ class JwtSvidParseAndValidateTest {
 
     @Test
     void testParseAndValidate_nullBundle_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
         try {
             JwtSvid.parseAndValidate("token", null, audience);
         } catch (NullPointerException e) {
@@ -90,7 +90,6 @@ class JwtSvidParseAndValidateTest {
     void testParseAndValidate_nullAudience_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
-        List<String> audience = Collections.singletonList("audience");
 
         try {
             JwtSvid.parseAndValidate("token", jwtBundle, null);
@@ -112,7 +111,7 @@ class JwtSvidParseAndValidateTest {
 
         SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
 
         JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
 
@@ -179,7 +178,7 @@ class JwtSvidParseAndValidateTest {
                 Arguments.of(TestCase.builder()
                         .name("8. unexpected audience")
                         .jwtBundle(jwtBundle)
-                        .expectedAudience(Collections.singletonList("another"))
+                        .expectedAudience(Collections.singleton("another"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience])"))
                         .build()),
@@ -194,32 +193,39 @@ class JwtSvidParseAndValidateTest {
                         .name("10. missing key id")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
-                        .generateToken(() -> TestUtils.generateToken(claims, key1, ""))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, null))
                         .expectedException(new JwtSvidException("Token header missing key id"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("11. no bundle for trust domain")
+                        .name("11. key id contains an empty value")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "   "))
+                        .expectedException(new JwtSvidException("Token header key id contains an empty value"))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("12. no bundle for trust domain")
                         .jwtBundle(new JwtBundle(TrustDomain.of("other.domain")))
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new BundleNotFoundException("No JWT bundle found for trust domain test.domain"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("12. no authority found for key id")
+                        .name("13. no authority found for key id")
                         .jwtBundle(new JwtBundle(TrustDomain.of("test.domain")))
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new AuthorityNotFoundException("No authority found for the trust domain test.domain and key id authority1"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("13. signature cannot be verified with authority")
+                        .name("14. signature cannot be verified with authority")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key2, "authority1"))
                         .expectedException(new JwtSvidException("Signature invalid: cannot be verified with the authority with keyId=authority1"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("14. authority algorithm mismatch")
+                        .name("15. authority algorithm mismatch")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority1"))
@@ -232,13 +238,13 @@ class JwtSvidParseAndValidateTest {
     static class TestCase {
         String name;
         JwtBundle jwtBundle;
-        List<String> audience;
+        Set<String> audience;
         Supplier<String> generateToken;
         Exception expectedException;
         JwtSvid expectedJwtSvid;
 
         @Builder
-        public TestCase(String name, JwtBundle jwtBundle, List<String> expectedAudience, Supplier<String> generateToken,
+        public TestCase(String name, JwtBundle jwtBundle, Set<String> expectedAudience, Supplier<String> generateToken,
                         Exception expectedException, JwtSvid expectedJwtSvid) {
             this.name = name;
             this.jwtBundle = jwtBundle;

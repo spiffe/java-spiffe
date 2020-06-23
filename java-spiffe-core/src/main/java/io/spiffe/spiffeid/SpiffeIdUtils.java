@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,11 +30,11 @@ public class SpiffeIdUtils {
      * @throws IOException              if the given spiffeIdsFile cannot be read
      * @throws IllegalArgumentException if any of the SPIFFE IDs in the file cannot be parsed
      */
-    public static List<SpiffeId> getSpiffeIdListFromFile(final Path spiffeIdsFile) throws IOException {
+    public static Set<SpiffeId> getSpiffeIdSetFromFile(final Path spiffeIdsFile) throws IOException {
         try (Stream<String> lines = Files.lines(spiffeIdsFile)) {
             return lines
                     .map(SpiffeId::parse)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toSet());
         }
     }
 
@@ -47,15 +47,15 @@ public class SpiffeIdUtils {
      * @return a list of {@link SpiffeId} instances.
      * @throws IllegalArgumentException is the string provided is blank
      */
-    public static List<SpiffeId> toListOfSpiffeIds(final String spiffeIds, final char separator) {
+    public static Set<SpiffeId> toSetOfSpiffeIds(final String spiffeIds, final char separator) {
         if (isBlank(spiffeIds)) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
 
         val array = spiffeIds.split(String.valueOf(separator));
         return Arrays.stream(array)
                 .map(SpiffeId::parse)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -65,8 +65,8 @@ public class SpiffeIdUtils {
      * @return a list of {@link SpiffeId} instances
      * @throws IllegalArgumentException is the string provided is blank
      */
-    public static List<SpiffeId> toListOfSpiffeIds(final String spiffeIds) {
-        return toListOfSpiffeIds(spiffeIds, DEFAULT_CHAR_SEPARATOR);
+    public static Set<SpiffeId> toSetOfSpiffeIds(final String spiffeIds) {
+        return toSetOfSpiffeIds(spiffeIds, DEFAULT_CHAR_SEPARATOR);
     }
 
     private SpiffeIdUtils() {

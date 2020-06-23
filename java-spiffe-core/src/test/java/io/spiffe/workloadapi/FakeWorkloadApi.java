@@ -129,7 +129,7 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
         JwtSvid jwtSvid = null;
         try {
-            jwtSvid = JwtSvid.parseInsecure(token, Collections.singletonList(audience));
+            jwtSvid = JwtSvid.parseInsecure(token, Collections.singleton(audience));
         } catch (JwtSvidException e) {
             responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription(e.getMessage())));
         }

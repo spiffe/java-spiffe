@@ -1,28 +1,28 @@
 package io.spiffe.workloadapi;
 
+import com.google.common.collect.Sets;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSourceException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import org.junit.Rule;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
 import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
+import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -98,7 +98,7 @@ class JwtSourceTest {
             JwtSvid svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
-            assertEquals(Arrays.asList("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
         } catch (JwtSvidException e) {
             fail(e);
         }

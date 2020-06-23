@@ -1,18 +1,18 @@
 package io.spiffe.provider;
 
 import io.spiffe.bundle.BundleSource;
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.svid.x509svid.X509Svid;
 import lombok.val;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import io.spiffe.bundle.x509bundle.X509Bundle;
-import io.spiffe.svid.x509svid.X509Svid;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -36,7 +36,7 @@ public class SpiffeTrustManagerTest {
     static X509Bundle x509Bundle;
     static X509Svid x509Svid;
     static X509Svid otherX509Svid;
-    List<SpiffeId> acceptedSpiffeIds;
+    Set<SpiffeId> acceptedSpiffeIds;
     X509TrustManager trustManager;
 
     @BeforeAll
@@ -59,19 +59,12 @@ public class SpiffeTrustManagerTest {
     void setupMocks() {
         MockitoAnnotations.initMocks(this);
         trustManager = (X509TrustManager)
-                new SpiffeTrustManagerFactory()
-                        .engineGetTrustManagers(
-                                bundleSource,
-                                () -> acceptedSpiffeIds)[0];
+                new SpiffeTrustManagerFactory().engineGetTrustManagers(bundleSource, () -> acceptedSpiffeIds)[0];
     }
 
     @Test
     void checkClientTrusted_passAExpiredCertificate_throwsException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://example.org/test")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
         val chain = x509Svid.getChainArray();
 
@@ -87,11 +80,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkClientTrusted_noBundleForTrustDomain_ThrowCertificateException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://example.org/test")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
         val chain = x509Svid.getChainArray();
 
@@ -107,11 +96,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkClientTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://example.org/other")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
 
         X509Certificate[] chain = x509Svid.getChainArray();
 
@@ -128,11 +113,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkClientTrusted_passCertificateThatDoesntChainToBundle_ThrowCertificateException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://other.org/test")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://other.org/test"));
 
         val chain = otherX509Svid.getChainArray();
 
@@ -148,11 +129,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkServerTrusted_passAnExpiredCertificate_ThrowsException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://example.org/test")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
         val chain = x509Svid.getChainArray();
 
@@ -168,11 +145,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkServerTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://example.org/other")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
 
         val chain = x509Svid.getChainArray();
 
@@ -188,11 +161,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkServerTrusted_passCertificateThatDoesntChainToBundle_ThrowCertificateException() throws BundleNotFoundException {
-        acceptedSpiffeIds =
-                Collections
-                        .singletonList(
-                                SpiffeId.parse("spiffe://other.org/test")
-                        );
+        acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://other.org/test"));
 
         val chain = otherX509Svid.getChainArray();
 

@@ -17,9 +17,11 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.ECGenParameterSpec;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.generate;
@@ -87,11 +89,11 @@ public class TestUtils {
         }
     }
 
-    public static JWTClaimsSet buildJWTClaimSet(List<String> audience, String spiffeId, Date expiration) {
+    public static JWTClaimsSet buildJWTClaimSet(Set<String> audience, String spiffeId, Date expiration) {
         return new JWTClaimsSet.Builder()
                 .subject(spiffeId)
                 .expirationTime(expiration)
-                .audience(audience)
+                .audience(new ArrayList<>(audience))
                 .build();
     }
 

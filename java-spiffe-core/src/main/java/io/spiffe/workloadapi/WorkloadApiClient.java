@@ -32,8 +32,10 @@ import java.security.KeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -192,7 +194,7 @@ public class WorkloadApiClient implements Closeable {
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
     public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
-        List<String> audParam = new ArrayList<>();
+        Set<String> audParam = new HashSet<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
 
@@ -238,7 +240,7 @@ public class WorkloadApiClient implements Closeable {
             throw new JwtSvidException("Error validating JWT SVID", e);
         }
 
-        return JwtSvid.parseInsecure(token, Collections.singletonList(audience));
+        return JwtSvid.parseInsecure(token, Collections.singleton(audience));
     }
 
     /**
@@ -388,7 +390,7 @@ public class WorkloadApiClient implements Closeable {
         throw new X509ContextException("Error processing X509Context: x509SVIDResponse is empty");
     }
 
-    private JwtSvid callFetchJwtSvid(SpiffeId subject, List<String> audience) throws JwtSvidException {
+    private JwtSvid callFetchJwtSvid(SpiffeId subject, Set<String> audience) throws JwtSvidException {
         Workload.JWTSVIDRequest jwtsvidRequest = Workload.JWTSVIDRequest
                 .newBuilder()
                 .setSpiffeId(subject.toString())

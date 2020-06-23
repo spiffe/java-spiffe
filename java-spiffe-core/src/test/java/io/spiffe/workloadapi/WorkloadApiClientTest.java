@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class WorkloadApiClientTest {
@@ -163,7 +164,7 @@ class WorkloadApiClientTest {
             JwtSvid jwtSvid = workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
             assertNotNull(jwtSvid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvid.getSpiffeId());
-            assertEquals("aud1", jwtSvid.getAudience().get(0));
+            assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(3, jwtSvid.getAudience().size());
         } catch (JwtSvidException e) {
             fail(e);
@@ -177,7 +178,7 @@ class WorkloadApiClientTest {
             JwtSvid jwtSvid = workloadApiClient.validateJwtSvid(token, "aud1");
             assertNotNull(jwtSvid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvid.getSpiffeId());
-            assertEquals("aud1", jwtSvid.getAudience().get(0));
+            assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(1, jwtSvid.getAudience().size());
         } catch (JwtSvidException e) {
             fail(e);

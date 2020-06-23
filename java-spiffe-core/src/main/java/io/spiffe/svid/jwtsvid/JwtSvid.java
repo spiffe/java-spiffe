@@ -24,8 +24,9 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a SPIFFE JWT-SVID.
@@ -41,7 +42,7 @@ public class JwtSvid {
     /**
      * Audience is the intended recipients of JWT-SVID as present in the 'aud' claim.
      */
-    List<String> audience;
+    Set<String> audience;
 
     /**
      * Expiration time of JWT-SVID as present in 'exp' claim.
@@ -68,7 +69,7 @@ public class JwtSvid {
      * @param token the token as string
      */
     JwtSvid(@NonNull final SpiffeId spiffeId,
-            @NonNull final List<String> audience,
+            @NonNull final Set<String> audience,
             @NonNull final Date expiry,
             @NonNull final Map<String, Object> claims,
             @NonNull final String token) {
@@ -99,36 +100,38 @@ public class JwtSvid {
      */
     public static JwtSvid parseAndValidate(@NonNull final String token,
                                            @NonNull final BundleSource<JwtBundle> jwtBundleSource,
-                                           @NonNull final List<String> audience)
+                                           @NonNull final Set<String> audience)
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
 
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }
 
+        final SignedJWT signedJwt;
+        final JWTClaimsSet claimsSet;
         try {
-            val signedJwt = SignedJWT.parse(token);
-            val claimsSet = signedJwt.getJWTClaimsSet();
-
-            List<String> claimAudience = claimsSet.getAudience();
-            validateAudience(claimAudience, audience);
-
-            val expirationTime = claimsSet.getExpirationTime();
-            validateExpiration(expirationTime);
-
-            val spiffeId = getSpiffeId(claimsSet);
-            val jwtBundle = jwtBundleSource.getBundleForTrustDomain(spiffeId.getTrustDomain());
-
-            val keyId = getKeyId(signedJwt.getHeader());
-            val jwtAuthority = jwtBundle.findJwtAuthority(keyId);
-
-            val algorithm = signedJwt.getHeader().getAlgorithm().getName();
-            verifySignature(signedJwt, jwtAuthority, algorithm, keyId);
-
-            return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
+            signedJwt = SignedJWT.parse(token);
+            claimsSet = signedJwt.getJWTClaimsSet();
         } catch (ParseException e) {
             throw new IllegalArgumentException("Unable to parse JWT token", e);
         }
+
+        Set<String> claimAudience = new HashSet<>(claimsSet.getAudience());
+        validateAudience(claimAudience, audience);
+
+        val expirationTime = claimsSet.getExpirationTime();
+        validateExpiration(expirationTime);
+
+        val spiffeId = getSpiffeIdOfSubject(claimsSet);
+        val jwtBundle = jwtBundleSource.getBundleForTrustDomain(spiffeId.getTrustDomain());
+
+        val keyId = getKeyId(signedJwt.getHeader());
+        val jwtAuthority = jwtBundle.findJwtAuthority(keyId);
+
+        val algorithm = signedJwt.getHeader().getAlgorithm().getName();
+        verifySignature(signedJwt, jwtAuthority, algorithm, keyId);
+
+        return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
     }
 
     /**
@@ -144,27 +147,29 @@ public class JwtSvid {
      *                                           the 'aud' has an audience that is not in the audience provided as parameter
      * @throws IllegalArgumentException          when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final List<String> audience) throws JwtSvidException {
+    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience) throws JwtSvidException {
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }
 
+        final SignedJWT signedJwt;
+        final JWTClaimsSet claimsSet;
         try {
-            val signedJwt = SignedJWT.parse(token);
-            val claimsSet = signedJwt.getJWTClaimsSet();
-
-            List<String> claimAudience = claimsSet.getAudience();
-            validateAudience(claimAudience, audience);
-
-            val expirationTime = claimsSet.getExpirationTime();
-            validateExpiration(expirationTime);
-
-            val spiffeId = getSpiffeId(claimsSet);
-
-            return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
+            signedJwt = SignedJWT.parse(token);
+            claimsSet = signedJwt.getJWTClaimsSet();
         } catch (ParseException e) {
             throw new IllegalArgumentException("Unable to parse JWT token", e);
         }
+
+        Set<String> claimAudience = new HashSet<>(claimsSet.getAudience());
+        validateAudience(claimAudience, audience);
+
+        val expirationTime = claimsSet.getExpirationTime();
+        validateExpiration(expirationTime);
+
+        val spiffeId = getSpiffeIdOfSubject(claimsSet);
+
+        return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
     }
 
     /**
@@ -173,7 +178,7 @@ public class JwtSvid {
      *
      * @return the token as String
      */
-    public String marshall() {
+    public String marshal() {
         return token;
     }
 
@@ -202,9 +207,10 @@ public class JwtSvid {
 
     private static JWSVerifier getJwsVerifier(final PublicKey jwtAuthority, final String algorithm) throws JOSEException, JwtSvidException {
         JWSVerifier verifier;
-        if (Algorithm.Family.EC.contains(Algorithm.parse(algorithm))) {
+        final Algorithm alg = Algorithm.parse(algorithm);
+        if (Algorithm.Family.EC.contains(alg)) {
             verifier = new ECDSAVerifier((ECPublicKey) jwtAuthority);
-        } else if (Algorithm.Family.RSA.contains(Algorithm.parse(algorithm))) {
+        } else if (Algorithm.Family.RSA.contains(alg)) {
             verifier = new RSASSAVerifier((RSAPublicKey) jwtAuthority);
         } else {
             throw new JwtSvidException(String.format("Unsupported token signature algorithm %s", algorithm));
@@ -214,8 +220,11 @@ public class JwtSvid {
 
     private static String getKeyId(final JWSHeader header) throws JwtSvidException {
         val keyId = header.getKeyID();
-        if (StringUtils.isBlank(keyId)) {
+        if (keyId == null) {
             throw new JwtSvidException("Token header missing key id");
+        }
+        if (StringUtils.isBlank(keyId)) {
+            throw new JwtSvidException("Token header key id contains an empty value");
         }
         return keyId;
     }
@@ -230,7 +239,7 @@ public class JwtSvid {
         }
     }
 
-    private static SpiffeId getSpiffeId(final JWTClaimsSet claimsSet) throws JwtSvidException {
+    private static SpiffeId getSpiffeIdOfSubject(final JWTClaimsSet claimsSet) throws JwtSvidException {
         val subject = claimsSet.getSubject();
         if (StringUtils.isBlank(subject)) {
             throw new JwtSvidException("Token missing subject claim");
@@ -244,7 +253,7 @@ public class JwtSvid {
 
     }
 
-    private static void validateAudience(final List<String> audClaim, final List<String> audience) throws JwtSvidException {
+    private static void validateAudience(final Set<String> audClaim, final Set<String> audience) throws JwtSvidException {
         for (String aud : audClaim) {
             if (!audience.contains(aud)) {
                 throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", audience, audClaim));

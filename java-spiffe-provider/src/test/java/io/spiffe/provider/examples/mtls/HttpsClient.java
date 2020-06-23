@@ -3,13 +3,13 @@ package io.spiffe.provider.examples.mtls;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
 import io.spiffe.provider.SpiffeKeyManager;
+import io.spiffe.provider.SpiffeSslContextFactory;
+import io.spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
 import io.spiffe.provider.SpiffeTrustManager;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.SpiffeIdUtils;
 import io.spiffe.workloadapi.X509Source;
 import lombok.val;
-import io.spiffe.provider.SpiffeSslContextFactory;
-import io.spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -35,12 +35,12 @@ import java.util.function.Supplier;
 public class HttpsClient {
 
     String spiffeSocket;
-    Supplier<List<SpiffeId>> acceptedSpiffeIdsListSupplier;
+    Supplier<Set<SpiffeId>> acceptedSpiffeIdsSetSupplier;
     int serverPort;
 
     public static void main(String[] args) {
         String spiffeSocket = "unix:/tmp/agent.sock";
-        HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, () -> new AcceptedSpiffeIds().getList());
+        HttpsClient httpsClient = new HttpsClient(4000, spiffeSocket, () -> new AcceptedSpiffeIds().getSet());
         try {
             httpsClient.run();
         } catch (KeyManagementException | NoSuchAlgorithmException | IOException | SocketEndpointAddressException | X509SourceException e) {
@@ -48,10 +48,10 @@ public class HttpsClient {
         }
     }
 
-    HttpsClient(int serverPort, String spiffeSocket, Supplier<List<SpiffeId>> acceptedSpiffeIdsListSupplier) {
+    HttpsClient(int serverPort, String spiffeSocket, Supplier<Set<SpiffeId>> acceptedSpiffeIdsSetSupplier) {
         this.serverPort = serverPort;
         this.spiffeSocket = spiffeSocket;
-        this.acceptedSpiffeIdsListSupplier = acceptedSpiffeIdsListSupplier;
+        this.acceptedSpiffeIdsSetSupplier = acceptedSpiffeIdsSetSupplier;
     }
 
     void run() throws IOException, SocketEndpointAddressException, KeyManagementException, NoSuchAlgorithmException, X509SourceException {
@@ -64,7 +64,7 @@ public class HttpsClient {
 
         SslContextOptions sslContextOptions = SslContextOptions
                 .builder()
-                .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsListSupplier)
+                .acceptedSpiffeIdsSupplier(acceptedSpiffeIdsSetSupplier)
                 .x509Source(x509Source)
                 .build();
         SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
@@ -76,9 +76,9 @@ public class HttpsClient {
     }
 
     private static class AcceptedSpiffeIds {
-        List<SpiffeId> getList() {
+        Set<SpiffeId> getSet() {
             try {
-                return SpiffeIdUtils.getSpiffeIdListFromFile(Paths.get(toUri("testdata/spiffeIds.txt")));
+                return SpiffeIdUtils.getSpiffeIdSetFromFile(Paths.get(toUri("testdata/spiffeIds.txt")));
             } catch (IOException | URISyntaxException e) {
                 throw new RuntimeException("Error getting list of spiffeIds", e);
             }

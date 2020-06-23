@@ -1,27 +1,28 @@
 package io.spiffe.svid.x509svid;
 
-import io.spiffe.exception.BundleNotFoundException;
-import lombok.val;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.google.common.collect.Sets;
 import io.spiffe.bundle.x509bundle.X509Bundle;
+import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.X509CertificateTestUtils.CertAndKeyPair;
+import lombok.val;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import static java.util.Collections.EMPTY_LIST;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class X509SvidValidatorTest {
 
@@ -84,19 +85,19 @@ public class X509SvidValidatorTest {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
-        val spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
+        val spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
 
-        X509SvidValidator.verifySpiffeId(leaf.getCertificate(), () -> spiffeIdList);
+        X509SvidValidator.verifySpiffeId(leaf.getCertificate(), () -> spiffeIdSet);
     }
 
     @Test
     void checkSpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
-        List<SpiffeId> spiffeIdList = Arrays.asList(spiffeId1, spiffeId2);
+        val spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
 
         try {
-            X509SvidValidator.verifySpiffeId(leaf.getCertificate(), () -> spiffeIdList);
+            X509SvidValidator.verifySpiffeId(leaf.getCertificate(), () -> spiffeIdSet);
             fail("Should have thrown CertificateException");
         } catch (CertificateException e) {
             assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
@@ -106,7 +107,7 @@ public class X509SvidValidatorTest {
     @Test
     void checkSpiffeId_nullX509Certificate_throwsNullPointerException() throws CertificateException {
         try {
-            X509SvidValidator.verifySpiffeId(null, () -> EMPTY_LIST);
+            X509SvidValidator.verifySpiffeId(null, Collections::emptySet);
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
             assertEquals("x509Certificate is marked non-null but is null", e.getMessage());
@@ -119,7 +120,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifySpiffeId(leaf.getCertificate(), null);
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
-            assertEquals("acceptedSpiffedIdsSupplier is marked non-null but is null", e.getMessage());
+            assertEquals("acceptedSpiffeIdsSupplier is marked non-null but is null", e.getMessage());
         }
     }
 

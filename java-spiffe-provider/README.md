@@ -33,11 +33,11 @@ Alternatively, a different Workload API address can be used by passing it to the
 
     X509Source x509Source = X509Source.newSource(sourceOptions);
 
-    Supplier<List<SpiffeId>> spiffeIdListSupplier = () -> Collections.singletonList(SpiffeId.parse("spiffe://example.org/test"));
+    Supplier<Set<SpiffeId>> spiffeIdSetSupplier = () -> Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
     SslContextOptions sslContextOptions = SslContextOptions
             .builder()
-            .acceptedSpiffeIdsSupplier(spiffeIdListSupplier)
+            .acceptedSpiffeIdsSupplier(spiffeIdSetSupplier)
             .x509Source(x509Source)
             .build();
 

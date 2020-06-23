@@ -264,11 +264,11 @@ public class X509SvidTest {
     }
 
     @Test
-    void testGetX509Svid() throws URISyntaxException, X509SvidException {
+    void testGetLeaf() throws URISyntaxException, X509SvidException {
         Path certPath = Paths.get(toUri(certSingle));
         Path keyPath = Paths.get(toUri(keyRSA));
         X509Svid x509Svid = X509Svid.load(certPath, keyPath);
-        assertEquals(x509Svid, x509Svid.getX509Svid());
+        assertEquals(x509Svid.getChain().get(0), x509Svid.getLeaf());
     }
 
     @Test

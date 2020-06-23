@@ -11,7 +11,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -72,14 +72,14 @@ public final class SpiffeSslContextFactory {
     public static class SslContextOptions {
         String sslProtocol;
         X509Source x509Source;
-        Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
+        Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
         boolean acceptAnySpiffeId;
 
         @Builder
         public SslContextOptions(
                 final String sslProtocol,
                 final X509Source x509Source,
-                final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier,
+                final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier,
                 final boolean acceptAnySpiffeId) {
             this.x509Source = x509Source;
             this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;

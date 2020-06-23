@@ -1,18 +1,19 @@
 package io.spiffe.svid.x509svid;
 
 import io.spiffe.bundle.BundleSource;
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
 import lombok.val;
-import io.spiffe.bundle.x509bundle.X509Bundle;
 
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -48,17 +49,17 @@ public class X509SvidValidator {
      * Checks that the X.509 SVID provided has a SPIFFE ID that is in the list of accepted SPIFFE IDs supplied.
      *
      * @param x509Certificate            a {@link X509Svid} with a SPIFFE ID to be verified
-     * @param acceptedSpiffedIdsSupplier a {@link Supplier} of a list os SPIFFE IDs that are accepted
-     * @throws CertificateException is the SPIFFE ID in x509Certificate is not in the list supplied by acceptedSpiffedIdsSupplier,
+     * @param acceptedSpiffeIdsSupplier a {@link Supplier} of a Set of SPIFFE IDs that are accepted
+     * @throws CertificateException if the SPIFFE ID in x509Certificate is not in the Set supplied by acceptedSpiffeIdsSupplier,
      *                              or if the SPIFFE ID cannot be parsed from the x509Certificate
-     * @throws NullPointerException if the given x509Certificate or acceptedSpiffedIdsSupplier are null
+     * @throws NullPointerException if the given x509Certificate or acceptedSpiffeIdsSupplier are null
      */
     public static void verifySpiffeId(@NonNull final X509Certificate x509Certificate,
-                                      @NonNull final Supplier<List<SpiffeId>> acceptedSpiffedIdsSupplier)
+                                      @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier)
             throws CertificateException {
-        val spiffeIdList = acceptedSpiffedIdsSupplier.get();
+        val spiffeIdSet = acceptedSpiffeIdsSupplier.get();
         val spiffeId = CertificateUtils.getSpiffeId(x509Certificate);
-        if (!spiffeIdList.contains(spiffeId)) {
+        if (!spiffeIdSet.contains(spiffeId)) {
             throw new CertificateException(String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId));
         }
     }

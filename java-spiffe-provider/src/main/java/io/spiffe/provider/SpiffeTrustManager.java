@@ -1,9 +1,9 @@
 package io.spiffe.provider;
 
 import io.spiffe.bundle.BundleSource;
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.spiffeid.SpiffeId;
-import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.svid.x509svid.X509SvidValidator;
 import lombok.NonNull;
 
@@ -12,9 +12,9 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
     private final BundleSource<X509Bundle> x509BundleSource;
-    private final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier;
+    private final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
     private final boolean acceptAnySpiffeId;
 
     /**
@@ -36,10 +36,10 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * and a {@link Supplier} of a List of accepted {@link SpiffeId} to be used during peer SVID validation.
      *
      * @param x509BundleSource          an implementation of a {@link BundleSource}
-     * @param acceptedSpiffeIdsSupplier a {@link Supplier} of a list of accepted SPIFFE IDs.
+     * @param acceptedSpiffeIdsSupplier a {@link Supplier} of a Set of accepted SPIFFE IDs.
      */
     public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
-                              @NonNull final Supplier<List<SpiffeId>> acceptedSpiffeIdsSupplier) {
+                              @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
         this.x509BundleSource = x509BundleSource;
         this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
         this.acceptAnySpiffeId = false;
@@ -57,7 +57,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
                               final boolean acceptAnySpiffeId) {
         this.x509BundleSource = x509BundleSource;
-        this.acceptedSpiffeIdsSupplier = ArrayList::new;
+        this.acceptedSpiffeIdsSupplier = Collections::emptySet;
         this.acceptAnySpiffeId = acceptAnySpiffeId;
     }
 

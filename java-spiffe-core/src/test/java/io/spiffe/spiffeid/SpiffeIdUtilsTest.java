@@ -1,5 +1,6 @@
 package io.spiffe.spiffeid;
 
+import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -8,36 +9,37 @@ import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class SpiffeIdUtilsTest {
 
     @Test
-    void getSpiffeIdListFromFile() throws URISyntaxException {
+    void getSpiffeIdSetFromFile() throws URISyntaxException {
         Path path = Paths.get(toUri("testdata/spiffeid/spiffeIds.txt"));
 
         try {
-            List<SpiffeId> spiffeIdList = SpiffeIdUtils.getSpiffeIdListFromFile(path);
-            assertNotNull(spiffeIdList);
-            assertEquals(3, spiffeIdList.size());
-            assertEquals(SpiffeId.parse("spiffe://example.org/workload1"), spiffeIdList.get(0));
-            assertEquals(SpiffeId.parse("spiffe://example.org/workload2"), spiffeIdList.get(1));
-            assertEquals(SpiffeId.parse("spiffe://example2.org/workload1"), spiffeIdList.get(2));
+            Set<SpiffeId> spiffeIdSet = SpiffeIdUtils.getSpiffeIdSetFromFile(path);
+            assertNotNull(spiffeIdSet);
+            assertEquals(3, spiffeIdSet.size());
+            assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload1")));
+            assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload2")));
+            assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example2.org/workload1")));
         } catch (IOException e) {
             fail(e);
         }
     }
 
     @Test
-    void getSpiffeIdListFromNonExistenFile_throwsException() throws IOException {
+    void getSpiffeIdSetFromNonExistenFile_throwsException() throws IOException {
         Path path = Paths.get("testdata/spiffeid/non-existent-file");
 
         try {
-            SpiffeIdUtils.getSpiffeIdListFromFile(path);
+            SpiffeIdUtils.getSpiffeIdSetFromFile(path);
             fail("should have thrown exception");
         } catch (NoSuchFileException e) {
             assertEquals("testdata/spiffeid/non-existent-file", e.getMessage());
@@ -45,15 +47,14 @@ class SpiffeIdUtilsTest {
     }
 
     @Test
-    void toListOfSpiffeIds() {
-        String spiffeIdsAsString = " spiffe://example.org/workload1, spiffe://example.org/workload2 ";
+    void toSetOfSpiffeIds() {
+        val spiffeIdsAsString = " spiffe://example.org/workload1, spiffe://example.org/workload2 ";
+        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ',');
 
-        List<SpiffeId> spiffeIdList = SpiffeIdUtils.toListOfSpiffeIds(spiffeIdsAsString, ',');
-
-        assertNotNull(spiffeIdList);
-        assertEquals(2, spiffeIdList.size());
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload1"), spiffeIdList.get(0));
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload2"), spiffeIdList.get(1));
+        assertNotNull(spiffeIdSet);
+        assertEquals(2, spiffeIdSet.size());
+        assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload1")));
+        assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload2")));
     }
 
     private URI toUri(String path) throws URISyntaxException {

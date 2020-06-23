@@ -2,22 +2,22 @@ package io.spiffe.svid.jwtsvid;
 
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jwt.JWTClaimsSet;
+import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.utils.TestUtils;
 import lombok.Builder;
 import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import io.spiffe.bundle.jwtbundle.JwtBundle;
-import io.spiffe.spiffeid.SpiffeId;
-import io.spiffe.spiffeid.TrustDomain;
-import io.spiffe.utils.TestUtils;
 
 import java.security.KeyPair;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -46,7 +46,7 @@ class JwtSvidParseInsecureTest {
 
     @Test
     void testParseInsecure_nullToken_throwsNullPointerException() throws JwtSvidException {
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
 
         try {
             JwtSvid.parseInsecure(null, audience);
@@ -57,7 +57,7 @@ class JwtSvidParseInsecureTest {
 
     @Test
     void testParseAndValidate_emptyToken_throwsIllegalArgumentException() throws JwtSvidException {
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
         try {
             JwtSvid.parseInsecure("", audience);
         } catch (IllegalArgumentException e) {
@@ -71,7 +71,7 @@ class JwtSvidParseInsecureTest {
             KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
             TrustDomain trustDomain = TrustDomain.of("test.domain");
             SpiffeId spiffeId = trustDomain.newSpiffeId("host");
-            List<String> audience = Collections.singletonList("audience");
+            Set<String> audience = Collections.singleton("audience");
             Date expiration = new Date(System.currentTimeMillis() + 3600000);
             JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
 
@@ -93,7 +93,7 @@ class JwtSvidParseInsecureTest {
 
         SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
-        List<String> audience = Collections.singletonList("audience");
+        Set<String> audience = Collections.singleton("audience");
 
         JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
 
@@ -135,7 +135,7 @@ class JwtSvidParseInsecureTest {
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("unexpected audience")
-                        .expectedAudience(Collections.singletonList("another"))
+                        .expectedAudience(Collections.singleton("another"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience])"))
                         .build()),
@@ -151,13 +151,13 @@ class JwtSvidParseInsecureTest {
     @Value
     static class TestCase {
         String name;
-        List<String> audience;
+        Set<String> audience;
         Supplier<String> generateToken;
         Exception expectedException;
         JwtSvid expectedJwtSvid;
 
         @Builder
-        public TestCase(String name, List<String> expectedAudience, Supplier<String> generateToken,
+        public TestCase(String name, Set<String> expectedAudience, Supplier<String> generateToken,
                         Exception expectedException, JwtSvid expectedJwtSvid) {
             this.name = name;
             this.audience = expectedAudience;
