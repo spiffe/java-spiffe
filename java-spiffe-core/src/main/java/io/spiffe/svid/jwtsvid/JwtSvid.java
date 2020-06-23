@@ -107,16 +107,10 @@ public class JwtSvid {
             throw new IllegalArgumentException("Token cannot be blank");
         }
 
-        final SignedJWT signedJwt;
-        final JWTClaimsSet claimsSet;
-        try {
-            signedJwt = SignedJWT.parse(token);
-            claimsSet = signedJwt.getJWTClaimsSet();
-        } catch (ParseException e) {
-            throw new IllegalArgumentException("Unable to parse JWT token", e);
-        }
+        val signedJwt = getSignedJWT(token);
+        val claimsSet = getJwtClaimsSet(signedJwt);
 
-        Set<String> claimAudience = new HashSet<>(claimsSet.getAudience());
+        val claimAudience = new HashSet<>(claimsSet.getAudience());
         validateAudience(claimAudience, audience);
 
         val expirationTime = claimsSet.getExpirationTime();
@@ -152,16 +146,10 @@ public class JwtSvid {
             throw new IllegalArgumentException("Token cannot be blank");
         }
 
-        final SignedJWT signedJwt;
-        final JWTClaimsSet claimsSet;
-        try {
-            signedJwt = SignedJWT.parse(token);
-            claimsSet = signedJwt.getJWTClaimsSet();
-        } catch (ParseException e) {
-            throw new IllegalArgumentException("Unable to parse JWT token", e);
-        }
+        val signedJwt = getSignedJWT(token);
+        val claimsSet = getJwtClaimsSet(signedJwt);
 
-        Set<String> claimAudience = new HashSet<>(claimsSet.getAudience());
+        val claimAudience = new HashSet<>(claimsSet.getAudience());
         validateAudience(claimAudience, audience);
 
         val expirationTime = claimsSet.getExpirationTime();
@@ -186,10 +174,29 @@ public class JwtSvid {
      * @return a copy of the expiration date time of the JWT SVID.
      */
     public Date getExpiry() {
-        // defensive copying to prevent exposing a mutable object
+        // defensive copy to prevent exposing a mutable object
         return new Date(expiry.getTime());
     }
 
+    private static JWTClaimsSet getJwtClaimsSet(final SignedJWT signedJwt) {
+        final JWTClaimsSet claimsSet;
+        try {
+            claimsSet = signedJwt.getJWTClaimsSet();
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Unable to parse JWT token", e);
+        }
+        return claimsSet;
+    }
+
+    private static SignedJWT getSignedJWT(final String token) {
+        final SignedJWT signedJwt;
+        try {
+            signedJwt = SignedJWT.parse(token);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Unable to parse JWT token", e);
+        }
+        return signedJwt;
+    }
 
     private static void verifySignature(final SignedJWT signedJwt, final PublicKey jwtAuthority, final String algorithm, final String keyId) throws JwtSvidException {
         boolean verify;

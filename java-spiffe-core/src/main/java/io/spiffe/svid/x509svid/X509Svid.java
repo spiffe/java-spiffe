@@ -120,14 +120,32 @@ public class X509Svid {
     }
 
     private static X509Svid createX509Svid(final byte[] certsBytes, final byte[] privateKeyBytes, KeyFileFormat keyFileFormat) throws X509SvidException {
+        List<X509Certificate> x509Certificates = generateX509Certificates(certsBytes);
+        PrivateKey privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
+        SpiffeId spiffeId = getSpiffeId(x509Certificates);
 
-        List<X509Certificate> x509Certificates;
-        try {
-            x509Certificates = CertificateUtils.generateCertificates(certsBytes);
-        } catch (CertificateParsingException e) {
-            throw new X509SvidException("Certificate could not be parsed from cert bytes", e);
+        validatePrivateKey(privateKey, x509Certificates);
+        validateLeafCertificate(x509Certificates.get(0));
+
+        // there is intermediate CA certificates
+        if (x509Certificates.size() > 1) {
+            validateSigningCertificates(x509Certificates);
         }
 
+        return new X509Svid(spiffeId, x509Certificates, privateKey);
+    }
+
+    private static SpiffeId getSpiffeId(final List<X509Certificate> x509Certificates) throws X509SvidException {
+        SpiffeId spiffeId;
+        try {
+            spiffeId = CertificateUtils.getSpiffeId(x509Certificates.get(0));
+        } catch (CertificateException e) {
+            throw new X509SvidException(e.getMessage(), e);
+        }
+        return spiffeId;
+    }
+
+    private static PrivateKey generatePrivateKey(final byte[] privateKeyBytes, final KeyFileFormat keyFileFormat, final List<X509Certificate> x509Certificates) throws X509SvidException {
         PrivateKeyAlgorithm algorithm = PrivateKeyAlgorithm.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
         PrivateKey privateKey;
         try {
@@ -135,22 +153,17 @@ public class X509Svid {
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
             throw new X509SvidException("Private Key could not be parsed from key bytes", e);
         }
+        return privateKey;
+    }
 
-        SpiffeId spiffeId;
+    private static List<X509Certificate> generateX509Certificates(final byte[] certsBytes) throws X509SvidException {
+        final List<X509Certificate> x509Certificates;
         try {
-            spiffeId = CertificateUtils.getSpiffeId(x509Certificates.get(0));
-        } catch (CertificateException e) {
-            throw new X509SvidException(e.getMessage(), e);
+            x509Certificates = CertificateUtils.generateCertificates(certsBytes);
+        } catch (CertificateParsingException e) {
+            throw new X509SvidException("Certificate could not be parsed from cert bytes", e);
         }
-
-        validatePrivateKey(privateKey, x509Certificates);
-        validateLeafCertificate(x509Certificates.get(0));
-
-        if (x509Certificates.size() > 1) {
-            validateSigningCertificates(x509Certificates);
-        }
-
-        return new X509Svid(spiffeId, x509Certificates, privateKey);
+        return x509Certificates;
     }
 
     private static void validateSigningCertificates(final List<X509Certificate> certificates) throws X509SvidException {
