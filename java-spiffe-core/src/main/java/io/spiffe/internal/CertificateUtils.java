@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import static io.spiffe.internal.KeyUsage.CRL_SIGN;
 import static io.spiffe.internal.KeyUsage.DIGITAL_SIGNATURE;
 import static io.spiffe.internal.KeyUsage.KEY_CERT_SIGN;
+import static io.spiffe.internal.PrivateKeyAlgorithm.EC;
+import static io.spiffe.internal.PrivateKeyAlgorithm.RSA;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -233,10 +235,10 @@ public class CertificateUtils {
         PrivateKey privateKey;
         switch (algorithm) {
             case EC:
-                privateKey = KeyFactory.getInstance("EC").generatePrivate(keySpec);
+                privateKey = KeyFactory.getInstance(EC.value()).generatePrivate(keySpec);
                 break;
             case RSA:
-                privateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec);
+                privateKey = KeyFactory.getInstance(RSA.value()).generatePrivate(keySpec);
                 break;
             default:
                 throw new NoSuchAlgorithmException(String.format("Private Key algorithm is not supported: %s", algorithm));

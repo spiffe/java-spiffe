@@ -1,8 +1,19 @@
 package io.spiffe.internal;
 
 public enum PrivateKeyAlgorithm {
-    RSA,
-    EC;
+
+    RSA("RSA"),
+    EC("EC");
+
+    private final String value;
+
+    PrivateKeyAlgorithm(final String value) {
+        this.value = value;
+    }
+
+    public String value() {
+        return value;
+    }
 
     public static PrivateKeyAlgorithm parse(String a) {
         if ("RSA".equalsIgnoreCase(a)) {

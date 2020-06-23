@@ -23,6 +23,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.spiffe.internal.PrivateKeyAlgorithm.RSA;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,9 +74,9 @@ public class CertificateUtilsTest {
         val keyBytes = Files.readAllBytes(keyPath);
 
         try {
-            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, PrivateKeyAlgorithm.RSA, KeyFileFormat.PEM);
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, RSA, KeyFileFormat.PEM);
             assertNotNull(privateKey);
-            assertEquals("RSA", privateKey.getAlgorithm());
+            assertEquals(RSA.value(), privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
             fail("Should have generated key", e);
         }
