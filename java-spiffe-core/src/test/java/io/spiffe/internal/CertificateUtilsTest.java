@@ -1,7 +1,6 @@
 package io.spiffe.internal;
 
 import com.nimbusds.jose.jwk.Curve;
-import io.spiffe.Algorithm;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.TestUtils;
@@ -74,7 +73,7 @@ public class CertificateUtilsTest {
         val keyBytes = Files.readAllBytes(keyPath);
 
         try {
-            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, Algorithm.Family.RSA, KeyFileFormat.PEM);
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, PrivateKeyAlgorithm.RSA, KeyFileFormat.PEM);
             assertNotNull(privateKey);
             assertEquals("RSA", privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
@@ -88,7 +87,7 @@ public class CertificateUtilsTest {
         byte[] keyBytes = ecKeyPair.getPrivate().getEncoded();
 
         try {
-            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, Algorithm.Family.EC, KeyFileFormat.DER);
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, PrivateKeyAlgorithm.EC, KeyFileFormat.DER);
             assertNotNull(privateKey);
             assertEquals("EC", privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {

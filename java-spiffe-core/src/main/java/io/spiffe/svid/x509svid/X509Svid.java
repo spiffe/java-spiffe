@@ -1,9 +1,9 @@
 package io.spiffe.svid.x509svid;
 
-import io.spiffe.Algorithm;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.internal.KeyFileFormat;
+import io.spiffe.internal.PrivateKeyAlgorithm;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
 import lombok.Value;
@@ -106,6 +106,14 @@ public class X509Svid implements X509SvidSource {
         return chain.toArray(new X509Certificate[0]);
     }
 
+    /**
+     * @return this instance, implementing a X509Svid interface.
+     */
+    @Override
+    public X509Svid getX509Svid() {
+        return this;
+    }
+
     private static X509Svid createX509Svid(final byte[] certsBytes, final byte[] privateKeyBytes, KeyFileFormat keyFileFormat) throws X509SvidException {
 
         List<X509Certificate> x509Certificates;
@@ -115,7 +123,7 @@ public class X509Svid implements X509SvidSource {
             throw new X509SvidException("Certificate could not be parsed from cert bytes", e);
         }
 
-        Algorithm.Family algorithm = Algorithm.Family.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
+        PrivateKeyAlgorithm algorithm = PrivateKeyAlgorithm.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
         PrivateKey privateKey;
         try {
             privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes, algorithm, keyFileFormat);
@@ -176,10 +184,5 @@ public class X509Svid implements X509SvidSource {
         } catch (InvalidKeyException e) {
             throw new X509SvidException("Private Key does not match Certificate Public Key", e);
         }
-    }
-
-    @Override
-    public X509Svid getX509Svid() {
-        return this;
     }
 }

@@ -38,11 +38,11 @@ public class TrustDomain {
         try {
             val normalized = normalize(trustDomain);
             uri = new URI(normalized);
+            validateUri(uri);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
 
-        validateUri(uri);
         val host = uri.getHost();
         validateHost(host);
         return new TrustDomain(host);
