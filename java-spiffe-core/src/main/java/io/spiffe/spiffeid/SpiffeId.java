@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 public class SpiffeId {
 
     public static final String SPIFFE_SCHEME = "spiffe";
-    public static final int SPIFFE_ID_MAX_LENGTH = 2048;
 
     TrustDomain trustDomain;
 
@@ -114,10 +113,6 @@ public class SpiffeId {
 
         if (StringUtils.isNotBlank(uri.getRawQuery())) {
             throw new IllegalArgumentException("SPIFFE ID: query is not allowed");
-        }
-
-        if (uri.toString().length() > SPIFFE_ID_MAX_LENGTH) {
-            throw new IllegalArgumentException("SPIFFE ID: too long, maximum is 2048 bytes");
         }
     }
 }

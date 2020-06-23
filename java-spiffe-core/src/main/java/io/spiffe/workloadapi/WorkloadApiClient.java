@@ -143,6 +143,16 @@ public class WorkloadApiClient implements Closeable {
         this.executorService = executorService;
     }
 
+    /**
+     * Constructor
+     * <p>
+     * It is recommended to use the facility methods `newClient()` to get a new instance
+     * of the WorkloadApiClient.
+     *
+     * @param workloadApiAsyncStub a {@link SpiffeWorkloadAPIStub}
+     * @param workloadApiBlockingStub a {@link SpiffeWorkloadAPIBlockingStub}
+     * @param managedChannel a {@link ManagedChannelWrapper}
+     */
     public WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
                              SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
                              ManagedChannelWrapper managedChannel) {

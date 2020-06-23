@@ -8,7 +8,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-import static io.spiffe.utils.TestUtils.getLongString;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -154,19 +153,6 @@ public class SpiffeIdTest {
         );
     }
 
-    @Test
-    void parse_spiffeId_maxLength() {
-        val path = "/" + getLongString(2027);
-        val spiffeIdAsString = "spiffe://domain.test" + path;
-
-        val spiffeId = SpiffeId.parse(spiffeIdAsString);
-
-        assertAll("SpiffeId",
-                () -> assertEquals("domain.test", spiffeId.getTrustDomain().toString()),
-                () -> assertEquals(path, spiffeId.getPath())
-        );
-    }
-
     @ParameterizedTest
     @MethodSource("provideTestInvalidSpiffeIds")
     void testParseTrustDomain(String input, Object expected) {
@@ -191,8 +177,7 @@ public class SpiffeIdTest {
                 Arguments.of("spiffe://user:password@test.org/path/element", "SPIFFE ID: user info is not allowed"),
                 Arguments.of("spiffe:path/element", "SPIFFE ID: trust domain is empty"),
                 Arguments.of("spiffe:/path/element", "SPIFFE ID: trust domain is empty"),
-                Arguments.of("spiffe://domain.test/path/elem%5uent", "Malformed escape pair at index 30: spiffe://domain.test/path/elem%5uent"),
-                Arguments.of("spiffe://domain.test/"+getLongString(2028), "SPIFFE ID: too long, maximum is 2048 bytes")
+                Arguments.of("spiffe://domain.test/path/elem%5uent", "Malformed escape pair at index 30: spiffe://domain.test/path/elem%5uent")
         );
     }
 

@@ -28,7 +28,7 @@ import java.util.Properties;
 public class Runner {
 
     /**
-     * Entry method of the CLI to run the KeyStoreHelper.
+     * Entry method of the CLI to run the {@link KeyStoreHelper}.
      * <p>
      * In the args needs to be passed the config file option as: "-c" and "path_to_config_file"
      *

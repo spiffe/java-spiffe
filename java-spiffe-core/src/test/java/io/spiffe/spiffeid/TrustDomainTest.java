@@ -7,7 +7,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-import static io.spiffe.utils.TestUtils.getLongString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TrustDomainTest {
@@ -38,12 +37,6 @@ public class TrustDomainTest {
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         assertEquals("test.domain", trustDomain.toString());
     }
-    @Test
-    void testFromMaxLength() {
-        final String longString = getLongString(255);
-        TrustDomain trustDomain = TrustDomain.of(longString);
-        assertEquals(longString, trustDomain.toString());
-    }
 
     @Test
     void testGetName() {
@@ -65,8 +58,7 @@ public class TrustDomainTest {
                 Arguments.of("://domain.test", "Expected scheme name at index 0: ://domain.test"),
                 Arguments.of("spiffe:///path/element", "Trust domain cannot be empty"),
                 Arguments.of("/path/element", "Trust domain cannot be empty"),
-                Arguments.of("spiffe://domain.test:80", "Trust Domain: port is not allowed"),
-                Arguments.of(getLongString(256), "Trust Domain: too long, maximum is 255 bytes")
+                Arguments.of("spiffe://domain.test:80", "Trust Domain: port is not allowed")
         );
     }
 }

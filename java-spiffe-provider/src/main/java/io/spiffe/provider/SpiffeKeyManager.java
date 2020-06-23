@@ -18,7 +18,7 @@ import static io.spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
 /**
  * Represents an X.509 key manager for the SPIFFE provider.
  * <p>
- * Provides the chain of X.509 certificates and the private key.
+ * Provides the chain of X.509 certificates and the private key to be used in secure socket negotiations.
  */
 public final class SpiffeKeyManager extends X509ExtendedKeyManager {
 
@@ -34,9 +34,10 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     }
 
     /**
-     * Returns the certificate chain associated with the given alias.
+     * Returns the X.509 certificates chain associated with the given alias.
      *
-     * @return the certificate chain as an array of {@link X509Certificate}
+     * @return the certificate chain (ordered with the leaf certificate first and the intermediate CA certificates),
+     * or an empty Array if the alias is not 'Spiffe'.
      */
     @Override
     public X509Certificate[] getCertificateChain(final String alias) {
@@ -52,7 +53,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
      *
      * @param alias a key entry, as this KeyManager only handles one identity, i.e. one SVID,
      *              it will return the PrivateKey if the given alias is 'Spiffe'.
-     * @return the {@link PrivateKey} handled by this key manager
+     * @return the {@link PrivateKey} handled by this key manager, or null if the alias is not 'Spiffe'
      */
     @Override
     public PrivateKey getPrivateKey(final String alias) {

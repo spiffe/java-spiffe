@@ -17,19 +17,24 @@ import static io.spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  * <p>
  * To use this Provider, it is needed to add the following lines to the java.security file:
  * <pre>
- * security.provider.n=SpiffeProvider
- * ssl.KeyManagerFactory.algorithm=Spiffe
- * ssl.TrustManagerFactory.algorithm=Spiffe
+ *      security.provider.n=io.spiffe.SpiffeProvider
+ *      ssl.KeyManagerFactory.algorithm=Spiffe
+ *      ssl.TrustManagerFactory.algorithm=Spiffe
  * </pre>
  * <p>
  * Also, to configure the accepted SPIFFE IDs, add to the java.security the list of SPIFFE IDs
  * separated by commas:
  * <pre>
- * ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2, spiffe://other-domain.org/workload
+ *      ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2, spiffe://other-domain.org/workload
  * </pre>
  * This property can also be defined as a System parameter passed through <code>-Dssl.spiffe.accept</code>:
  * <pre>
- * `-Dssl.spiffe.accept=ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2
+ *      -Dssl.spiffe.accept=ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2
+ * </pre>
+ * To configure the `TrustManager` to accept any SPIFFE ID presented by a peer, the property <code>ssl.spiffe.acceptAll</code> must be
+ * set with the value <code>true</code>:
+ * <pre>
+ *     ssl.spiffe.acceptAll=true
  * </pre>
  */
 public final class SpiffeProvider extends Provider {

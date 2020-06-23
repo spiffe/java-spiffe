@@ -15,7 +15,6 @@ import java.net.URISyntaxException;
 @Value
 public class TrustDomain {
 
-    public static final int HOST_MAX_LENGTH = 255;
     String name;
 
     private TrustDomain(final String trustDomain) {
@@ -71,10 +70,6 @@ public class TrustDomain {
     private static void validateHost(final String host) {
         if (StringUtils.isBlank(host)) {
             throw new IllegalArgumentException("Trust domain cannot be empty");
-        }
-
-        if (host.length() > HOST_MAX_LENGTH) {
-            throw new IllegalArgumentException("Trust Domain: too long, maximum is 255 bytes");
         }
     }
 

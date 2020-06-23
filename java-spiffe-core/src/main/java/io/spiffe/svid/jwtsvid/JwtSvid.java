@@ -275,10 +275,10 @@ public class JwtSvid {
 
     }
 
-    private static void validateAudience(final Set<String> audClaim, final Set<String> audience) throws JwtSvidException {
+    private static void validateAudience(final Set<String> audClaim, final Set<String> expectedAudience) throws JwtSvidException {
         for (String aud : audClaim) {
-            if (!audience.contains(aud)) {
-                throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", audience, audClaim));
+            if (!expectedAudience.contains(aud)) {
+                throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudience, audClaim));
             }
         }
     }
