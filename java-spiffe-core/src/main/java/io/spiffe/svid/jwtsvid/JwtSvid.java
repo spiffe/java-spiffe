@@ -23,6 +23,7 @@ import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
@@ -176,6 +177,20 @@ public class JwtSvid {
     public Date getExpiry() {
         // defensive copy to prevent exposing a mutable object
         return new Date(expiry.getTime());
+    }
+
+    /**
+     * @return the map of claims
+     */
+    public Map<String, Object> getClaims() {
+        return Collections.unmodifiableMap(claims);
+    }
+
+    /**
+     * @return the Set of audiences
+     */
+    public Set<String> getAudience() {
+        return Collections.unmodifiableSet(audience);
     }
 
     private static JWTClaimsSet getJwtClaimsSet(final SignedJWT signedJwt) {

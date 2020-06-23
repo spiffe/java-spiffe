@@ -18,6 +18,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,10 +50,17 @@ public class X509Svid {
     }
 
     /**
-     * @return the Leaf Certificate of the chain
+     * @return the Leaf X.509 certificate of the chain
      */
     public X509Certificate getLeaf() {
         return chain.get(0);
+    }
+
+    /**
+     * @return the chain of X.509 certificates
+     */
+    public List<X509Certificate> getChain() {
+        return Collections.unmodifiableList(chain);
     }
 
     /**
@@ -127,7 +135,7 @@ public class X509Svid {
         validatePrivateKey(privateKey, x509Certificates);
         validateLeafCertificate(x509Certificates.get(0));
 
-        // there is intermediate CA certificates
+        // there are intermediate CA certificates
         if (x509Certificates.size() > 1) {
             validateSigningCertificates(x509Certificates);
         }
