@@ -23,7 +23,7 @@ will trust for TLS connections:
 See [HttpsServer example](src/main/java/spiffe/provider/examples/HttpsServer.java).
 
 Alternatively, a different Workload API address can be used by passing it to the X509Source creation method, and a
-`Supplier` of a list of accepted SPIFFE IDs can be provided as part of the `SslContextOptions`:
+`Supplier` of a Set of accepted SPIFFE IDs can be provided as part of the `SslContextOptions`:
 
 ```
     X509SourceOptions sourceOptions = X509SourceOptions
@@ -183,8 +183,8 @@ with a [X509Source instance](../java-spiffe-core/README.md#x509source).
     X509Source x509Source = X509Source.newSource();
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
 
-    // TrustManager gets the X509Source and the supplier of the list of accepted SPIFFE IDs.
-    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toListOfSpiffeIds("spiffe://example.org/workload-client", ','));
+    // TrustManager gets the X509Source and the supplier of the Set of accepted SPIFFE IDs.
+    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-client", ','));
 
     SslContextBuilder sslContextBuilder =
             SslContextBuilder
@@ -205,7 +205,7 @@ the GRPC SSL context, analogous to the config for the Server:
 ``` 
     X509Source x509Source = X509Source.newSource();
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
-    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toListOfSpiffeIds("spiffe://example.org/workload-server", ','));
+    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-server", ','));
 
     SslContextBuilder sslContextBuilder = SslContextBuilder
             .forClient()

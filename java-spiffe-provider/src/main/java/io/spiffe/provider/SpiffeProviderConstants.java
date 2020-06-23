@@ -6,7 +6,7 @@ package io.spiffe.provider;
 public final class SpiffeProviderConstants {
 
     /**
-     * Name of the property to get the list of accepted SPIFFE IDs.
+     * Name of the property to get the Set of accepted SPIFFE IDs.
      * This property is read in the java.security file or from a System property.
      */
     public static final String SSL_SPIFFE_ACCEPT_PROPERTY = "ssl.spiffe.accept";

@@ -46,7 +46,7 @@ public class X509SvidValidator {
     }
 
     /**
-     * Checks that the X.509 SVID provided has a SPIFFE ID that is in the list of accepted SPIFFE IDs supplied.
+     * Checks that the X.509 SVID provided has a SPIFFE ID that is in the Set of accepted SPIFFE IDs supplied.
      *
      * @param x509Certificate            a {@link X509Svid} with a SPIFFE ID to be verified
      * @param acceptedSpiffeIdsSupplier a {@link Supplier} of a Set of SPIFFE IDs that are accepted

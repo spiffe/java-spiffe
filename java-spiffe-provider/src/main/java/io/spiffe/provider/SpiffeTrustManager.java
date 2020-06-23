@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  * Implementation of an X.509 TrustManager for the SPIFFE Provider.
  * <p>
  * Provides methods to validate the X.509 certificate chain using trusted certs provided by a {@link BundleSource}
- * maintained via the Workload API and to verify the SPIFFE ID against a List of accepted SPIFFE IDs provided by a Supplier.
+ * maintained via the Workload API and to verify the SPIFFE ID against a Set of accepted SPIFFE IDs provided by a Supplier.
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
@@ -33,7 +33,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * Constructor.
      * <p>
      * Creates a SpiffeTrustManager with an X.509 bundle source used to provide the trusted bundles,
-     * and a {@link Supplier} of a List of accepted {@link SpiffeId} to be used during peer SVID validation.
+     * and a {@link Supplier} of a Set of accepted {@link SpiffeId} to be used during peer SVID validation.
      *
      * @param x509BundleSource          an implementation of a {@link BundleSource}
      * @param acceptedSpiffeIdsSupplier a {@link Supplier} of a Set of accepted SPIFFE IDs.
@@ -52,7 +52,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * and a flag to indicate that any SPIFFE ID will be accepted.
      *
      * @param x509BundleSource  an implementation of a {@link BundleSource}
-     * @param acceptAnySpiffeId a Supplier of a list of accepted SPIFFE IDs.
+     * @param acceptAnySpiffeId a Supplier of a Set of accepted SPIFFE IDs.
      */
     public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
                               final boolean acceptAnySpiffeId) {
@@ -67,7 +67,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * and is trusted for Client SSL authentication based on the authentication type.
      * <p>
      * Throws a {@link CertificateException} if the chain cannot be chained to a trusted bundled,
-     * or if the SPIFFE ID in the chain is not in the list of accepted SPIFFE IDs.
+     * or if the SPIFFE ID in the chain is not in the Set of accepted SPIFFE IDs.
      *
      * @param chain    the peer certificate chain
      * @param authType not used
@@ -84,7 +84,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * and is trusted for Server SSL authentication based on the authentication type.
      * <p>
      * Throws a {@link CertificateException} if the chain cannot be chained to a trusted bundled,
-     * or if the SPIFFE ID in the chain is not in the list of accepted SPIFFE IDs.
+     * or if the SPIFFE ID in the chain is not in the Set of accepted SPIFFE IDs.
      *
      * @param chain    the peer certificate chain
      * @param authType not used

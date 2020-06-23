@@ -27,7 +27,7 @@ public final class SpiffeSslContextFactory {
      * that are backed by the Workload API via a {@link X509Source}.
      *
      * @param options {@link SslContextOptions}. The option {@link X509Source} must be not null.
-     *                If the option acceptedSpiffeIdsSupplier is not provided, the list of accepted SPIFFE IDs
+     *                If the option acceptedSpiffeIdsSupplier is not provided, the Set of accepted SPIFFE IDs
      *                is read from the Security or System Property ssl.spiffe.accept.
      *                If the sslProtocol is not provided, the default TLSv1.2 is used.
      * @return a {@link SSLContext}
