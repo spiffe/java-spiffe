@@ -36,8 +36,8 @@ import java.util.stream.Collectors;
 import static io.spiffe.internal.KeyUsage.CRL_SIGN;
 import static io.spiffe.internal.KeyUsage.DIGITAL_SIGNATURE;
 import static io.spiffe.internal.KeyUsage.KEY_CERT_SIGN;
-import static io.spiffe.internal.PrivateKeyAlgorithm.EC;
-import static io.spiffe.internal.PrivateKeyAlgorithm.RSA;
+import static io.spiffe.internal.AsymmetricKeyAlgorithm.EC;
+import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -90,7 +90,7 @@ public class CertificateUtils {
      * @throws InvalidKeySpecException
      * @throws NoSuchAlgorithmException
      */
-    public static PrivateKey generatePrivateKey(final byte[] privateKeyBytes, PrivateKeyAlgorithm algorithm, KeyFileFormat keyFileFormat) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
+    public static PrivateKey generatePrivateKey(final byte[] privateKeyBytes, AsymmetricKeyAlgorithm algorithm, KeyFileFormat keyFileFormat) throws InvalidKeySpecException, NoSuchAlgorithmException, InvalidKeyException {
         EncodedKeySpec kspec = getEncodedKeySpec(privateKeyBytes, keyFileFormat);
         return generatePrivateKeyWithSpec(kspec, algorithm);
     }
@@ -159,7 +159,7 @@ public class CertificateUtils {
      * @throws InvalidKeyException if the keys don't match
      */
     public static void validatePrivateKey(final PrivateKey privateKey, final X509Certificate x509Certificate) throws InvalidKeyException {
-        PrivateKeyAlgorithm algorithm = PrivateKeyAlgorithm.parse(privateKey.getAlgorithm());
+        AsymmetricKeyAlgorithm algorithm = AsymmetricKeyAlgorithm.parse(privateKey.getAlgorithm());
 
         switch (algorithm) {
             case RSA:
@@ -231,7 +231,7 @@ public class CertificateUtils {
                 .collect(Collectors.toList());
     }
 
-    private static PrivateKey generatePrivateKeyWithSpec(final EncodedKeySpec keySpec, PrivateKeyAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private static PrivateKey generatePrivateKeyWithSpec(final EncodedKeySpec keySpec, AsymmetricKeyAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {
         PrivateKey privateKey;
         switch (algorithm) {
             case EC:

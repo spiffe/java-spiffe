@@ -23,7 +23,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.spiffe.internal.PrivateKeyAlgorithm.RSA;
+import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -88,7 +88,7 @@ public class CertificateUtilsTest {
         byte[] keyBytes = ecKeyPair.getPrivate().getEncoded();
 
         try {
-            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, PrivateKeyAlgorithm.EC, KeyFileFormat.DER);
+            PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, AsymmetricKeyAlgorithm.EC, KeyFileFormat.DER);
             assertNotNull(privateKey);
             assertEquals("EC", privateKey.getAlgorithm());
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {

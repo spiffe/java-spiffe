@@ -26,6 +26,7 @@ import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -111,8 +112,7 @@ public class JwtSvid {
         val signedJwt = getSignedJWT(token);
         val claimsSet = getJwtClaimsSet(signedJwt);
 
-        val claimAudience = new HashSet<>(claimsSet.getAudience());
-        validateAudience(claimAudience, audience);
+        validateAudience(claimsSet.getAudience(), audience);
 
         val expirationTime = claimsSet.getExpirationTime();
         validateExpiration(expirationTime);
@@ -126,6 +126,7 @@ public class JwtSvid {
         val algorithm = signedJwt.getHeader().getAlgorithm().getName();
         verifySignature(signedJwt, jwtAuthority, algorithm, keyId);
 
+        val claimAudience = new HashSet<>(claimsSet.getAudience());
         return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
     }
 
@@ -150,14 +151,14 @@ public class JwtSvid {
         val signedJwt = getSignedJWT(token);
         val claimsSet = getJwtClaimsSet(signedJwt);
 
-        val claimAudience = new HashSet<>(claimsSet.getAudience());
-        validateAudience(claimAudience, audience);
+        validateAudience(claimsSet.getAudience(), audience);
 
         val expirationTime = claimsSet.getExpirationTime();
         validateExpiration(expirationTime);
 
         val spiffeId = getSpiffeIdOfSubject(claimsSet);
 
+        val claimAudience = new HashSet<>(claimsSet.getAudience());
         return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
     }
 
@@ -275,7 +276,7 @@ public class JwtSvid {
 
     }
 
-    private static void validateAudience(final Set<String> audClaim, final Set<String> expectedAudience) throws JwtSvidException {
+    private static void validateAudience(final List<String> audClaim, final Set<String> expectedAudience) throws JwtSvidException {
         for (String aud : audClaim) {
             if (!expectedAudience.contains(aud)) {
                 throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudience, audClaim));

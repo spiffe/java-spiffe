@@ -3,7 +3,7 @@ package io.spiffe.svid.x509svid;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.internal.KeyFileFormat;
-import io.spiffe.internal.PrivateKeyAlgorithm;
+import io.spiffe.internal.AsymmetricKeyAlgorithm;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
 import lombok.Value;
@@ -154,7 +154,7 @@ public class X509Svid {
     }
 
     private static PrivateKey generatePrivateKey(final byte[] privateKeyBytes, final KeyFileFormat keyFileFormat, final List<X509Certificate> x509Certificates) throws X509SvidException {
-        PrivateKeyAlgorithm algorithm = PrivateKeyAlgorithm.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
+        AsymmetricKeyAlgorithm algorithm = AsymmetricKeyAlgorithm.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
         PrivateKey privateKey;
         try {
             privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes, algorithm, keyFileFormat);

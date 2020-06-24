@@ -1,13 +1,13 @@
 package io.spiffe.internal;
 
-public enum PrivateKeyAlgorithm {
+public enum AsymmetricKeyAlgorithm {
 
     RSA("RSA"),
     EC("EC");
 
     private final String value;
 
-    PrivateKeyAlgorithm(final String value) {
+    AsymmetricKeyAlgorithm(final String value) {
         this.value = value;
     }
 
@@ -15,7 +15,7 @@ public enum PrivateKeyAlgorithm {
         return value;
     }
 
-    public static PrivateKeyAlgorithm parse(String a) {
+    public static AsymmetricKeyAlgorithm parse(String a) {
         if ("RSA".equalsIgnoreCase(a)) {
             return RSA;
         } else if ("EC".equalsIgnoreCase(a)) {
