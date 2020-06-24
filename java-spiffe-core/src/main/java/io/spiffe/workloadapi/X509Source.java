@@ -98,7 +98,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
         }
 
         val x509Source = new X509Source();
-        x509Source.picker = options.picker;
+        x509Source.picker = options.svidPicker;
         x509Source.workloadApiClient = options.workloadApiClient;
 
         try {
@@ -154,6 +154,38 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
                     closed = true;
                 }
             }
+        }
+    }
+
+    /**
+     * Options for creating a new {@link X509Source}
+     * <p>
+     * <code>spiffeSocketPath</code> Address to the Workload API, if it is not set, the default address will be used.
+     * <p>
+     * <code>initTimeout</code> Timeout for initializing the instance.
+     * <p>
+     * <code>svidPicker</code>  Function to choose the X.509 SVID from the list returned by the Workload API. If it is not set,
+     * the default svid is picked.
+     * <p>
+     * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set, a new client will be created.
+     */
+    @Data
+    public static class X509SourceOptions {
+
+        String spiffeSocketPath;
+        Duration initTimeout;
+        Function<List<X509Svid>, X509Svid> svidPicker;
+        WorkloadApiClient workloadApiClient;
+
+        @Builder
+        public X509SourceOptions(String spiffeSocketPath,
+                                 Duration initTimeout,
+                                 Function<List<X509Svid>, X509Svid> svidPicker,
+                                 WorkloadApiClient workloadApiClient) {
+            this.spiffeSocketPath = spiffeSocketPath;
+            this.initTimeout = initTimeout;
+            this.svidPicker = svidPicker;
+            this.workloadApiClient = workloadApiClient;
         }
     }
 
@@ -218,45 +250,6 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
     private boolean isClosed() {
         synchronized (this) {
             return closed;
-        }
-    }
-
-    /**
-     * Options for creating a new {@link X509Source}
-     */
-    @Data
-    public static class X509SourceOptions {
-
-        /**
-         * Address to the Workload API, if it is not set, the default address will be used.
-         */
-        String spiffeSocketPath;
-
-        /**
-         * Timeout for initializing the {@link X509Source}.
-         */
-        Duration initTimeout;
-
-        /**
-         * Function to choose the X.509 SVID from the list returned by the Workload API
-         * If it is not set, the default svid is picked.
-         */
-        Function<List<X509Svid>, X509Svid> picker;
-
-        /**
-         * A custom instance of a {@link WorkloadApiClient}, if it is not set, a new instance will be created
-         */
-        WorkloadApiClient workloadApiClient;
-
-        @Builder
-        public X509SourceOptions(String spiffeSocketPath,
-                                 Duration initTimeout,
-                                 Function<List<X509Svid>, X509Svid> picker,
-                                 WorkloadApiClient workloadApiClient) {
-            this.spiffeSocketPath = spiffeSocketPath;
-            this.initTimeout = initTimeout;
-            this.picker = picker;
-            this.workloadApiClient = workloadApiClient;
         }
     }
 }

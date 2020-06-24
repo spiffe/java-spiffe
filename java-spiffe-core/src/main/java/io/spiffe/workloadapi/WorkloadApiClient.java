@@ -292,6 +292,32 @@ public class WorkloadApiClient implements Closeable {
         log.log(Level.INFO, "WorkloadAPI client is closed");
     }
 
+    /**
+     * Options for creating a new {@link WorkloadApiClient}.
+     * <p>
+     * <code>spiffeSocketPath</code> Workload API Socket Endpoint address.
+     * <p>
+     * <code>backoffPolicy</code> A custom instance of a {@link BackoffPolicy} to configure the retries to reconnect to the Workload API.
+     * <p>
+     * <code>executorService</code> A custom {@link ExecutorService} to configure the Grpc stubs and channels.
+     * If it is not provided, a Executors.newCachedThreadPool() is used by default.
+     * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
+     */
+    @Data
+    public static class ClientOptions {
+
+        String spiffeSocketPath;
+        BackoffPolicy backoffPolicy;
+        ExecutorService executorService;
+
+        @Builder
+        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy, ExecutorService executorService) {
+            this.spiffeSocketPath = spiffeSocketPath;
+            this.backoffPolicy = backoffPolicy;
+            this.executorService = executorService;
+        }
+    }
+
     private StreamObserver<Workload.X509SVIDResponse> getX509ContextStreamObserver(Watcher<X509Context> watcher, RetryHandler retryHandler, Context.CancellableContext cancellableContext) {
         return new StreamObserver<Workload.X509SVIDResponse>() {
             @Override
@@ -425,38 +451,5 @@ public class WorkloadApiClient implements Closeable {
             }
         }
         throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
-    }
-
-
-    /**
-     * Options for creating a new {@link WorkloadApiClient}.
-     */
-    @Data
-    public static class ClientOptions {
-
-        /**
-         * Workload API socket endpoint address
-         */
-        String spiffeSocketPath;
-
-        /**
-         * A custom instance of a {@link BackoffPolicy} to configure the retries to reconnect to the Workload API.
-         */
-        BackoffPolicy backoffPolicy;
-
-        /**
-         * A custom {@link ExecutorService} to configure the Grpc stubs and channels.
-         * If it is not provided, a Executors.newCachedThreadPool() is used by default.
-         * <p>
-         * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
-         */
-        ExecutorService executorService;
-
-        @Builder
-        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy, ExecutorService executorService) {
-            this.spiffeSocketPath = spiffeSocketPath;
-            this.backoffPolicy = backoffPolicy;
-            this.executorService = executorService;
-        }
     }
 }

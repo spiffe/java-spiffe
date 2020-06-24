@@ -144,6 +144,30 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
+    /**
+     * Options to configure a {@link JwtSource}.
+     * <p>
+     * <code>spiffeSocketPath</code> Address to the Workload API, if it is not set, the default address will be used.
+     * <p>
+     * <code>initTimeout</code> Timeout for initializing the instance.
+     * <p>
+     * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set, a new client will be created.
+     */
+    @Data
+    public static class JwtSourceOptions {
+
+        String spiffeSocketPath;
+        Duration initTimeout;
+        WorkloadApiClient workloadApiClient;
+
+        @Builder
+        public JwtSourceOptions(final String spiffeSocketPath, final WorkloadApiClient workloadApiClient, final Duration initTimeout) {
+            this.spiffeSocketPath = spiffeSocketPath;
+            this.workloadApiClient = workloadApiClient;
+            this.initTimeout = initTimeout;
+        }
+    }
+
 
     private void init(final Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
@@ -200,34 +224,5 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
 
     // private constructor
     private JwtSource() {
-    }
-
-    /**
-     * Options to configure a {@link JwtSource}.
-     */
-    @Data
-    public static class JwtSourceOptions {
-
-        /**
-         * Address to the Workload API, if it is not set, the default address will be used.
-         */
-        String spiffeSocketPath;
-
-        /**
-         * Timeout for initializing the {@link JwtSource}.
-         */
-        Duration initTimeout;
-
-        /**
-         * A custom instance of a {@link WorkloadApiClient}, if it is not set, a new instance will be created.
-         */
-        WorkloadApiClient workloadApiClient;
-
-        @Builder
-        public JwtSourceOptions(final String spiffeSocketPath, final WorkloadApiClient workloadApiClient, final Duration initTimeout) {
-            this.spiffeSocketPath = spiffeSocketPath;
-            this.workloadApiClient = workloadApiClient;
-            this.initTimeout = initTimeout;
-        }
     }
 }

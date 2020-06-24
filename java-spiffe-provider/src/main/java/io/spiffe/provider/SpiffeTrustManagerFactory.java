@@ -34,13 +34,11 @@ import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPE
  */
 public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
 
-    private static final boolean ACCEPT_ANY_SPIFFE_ID;
-    private static final Supplier<Set<SpiffeId>> DEFAULT_SPIFFE_ID_LIST_SUPPLIER;
+    private static final boolean ACCEPT_ANY_SPIFFE_ID =
+            Boolean.parseBoolean(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_ALL_PROPERTY, "false"));
 
-    static {
-        ACCEPT_ANY_SPIFFE_ID = Boolean.parseBoolean(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_ALL_PROPERTY, "false"));
-        DEFAULT_SPIFFE_ID_LIST_SUPPLIER = () -> SpiffeIdUtils.toSetOfSpiffeIds(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY));
-    }
+    private static final Supplier<Set<SpiffeId>> DEFAULT_SPIFFE_ID_SET_SUPPLIER =
+            () -> SpiffeIdUtils.toSetOfSpiffeIds(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY));
 
     /**
      * Creates a {@link TrustManager} initialized with the {@link X509Source} instance
@@ -69,7 +67,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
         if (ACCEPT_ANY_SPIFFE_ID) {
             spiffeTrustManager = new SpiffeTrustManager(x509Source, true);
         } else {
-            spiffeTrustManager = new SpiffeTrustManager(x509Source, DEFAULT_SPIFFE_ID_LIST_SUPPLIER);
+            spiffeTrustManager = new SpiffeTrustManager(x509Source, DEFAULT_SPIFFE_ID_SET_SUPPLIER);
         }
         return new TrustManager[]{spiffeTrustManager};
     }
@@ -91,7 +89,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
             // make explicit that all SPIFFE IDs will be accepted
             spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
         } else {
-            spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, DEFAULT_SPIFFE_ID_LIST_SUPPLIER);
+            spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, DEFAULT_SPIFFE_ID_SET_SUPPLIER);
         }
         return new TrustManager[]{spiffeTrustManager};
     }

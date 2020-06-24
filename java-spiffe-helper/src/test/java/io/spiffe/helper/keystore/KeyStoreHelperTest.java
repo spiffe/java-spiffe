@@ -92,7 +92,7 @@ class KeyStoreHelperTest {
                 .trustStorePass(trustStorePass)
                 .keyPass(keyPass)
                 .keyAlias(alias)
-                .client(workloadApiClient)
+                .workloadApiClient(workloadApiClient)
                 .build();
 
         // run KeyStoreHelper
@@ -123,7 +123,7 @@ class KeyStoreHelperTest {
                 .trustStorePath(trustStoreFilePath)
                 .trustStorePass(trustStorePass)
                 .keyPass(keyPass)
-                .client(workloadApiClient)
+                .workloadApiClient(workloadApiClient)
                 .build();
 
         // run KeyStoreHelper
@@ -153,7 +153,7 @@ class KeyStoreHelperTest {
                 .trustStorePass(trustStorePass)
                 .keyPass(keyPass)
                 .keyAlias(alias)
-                .client(workloadApiClient)
+                .workloadApiClient(workloadApiClient)
                 .build();
 
         try {
@@ -166,7 +166,7 @@ class KeyStoreHelperTest {
     }
 
     @AfterEach
-    void tearDown() throws IOException {
+    void tearDown() {
         deleteFile(keyStoreFilePath);
         deleteFile(trustStoreFilePath);
         workloadApiClient.close();

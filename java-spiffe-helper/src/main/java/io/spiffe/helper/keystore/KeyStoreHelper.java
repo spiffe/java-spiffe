@@ -97,13 +97,78 @@ public class KeyStoreHelper implements Closeable {
                 .keyStorePassword(options.trustStorePass)
                 .build();
 
-        if (options.client != null) {
-            workloadApiClient = options.client;
+        if (options.workloadApiClient != null) {
+            workloadApiClient = options.workloadApiClient;
         } else {
             workloadApiClient = createNewClient(options.spiffeSocketPath);
         }
 
         setX509ContextWatcher(workloadApiClient);
+    }
+
+    @Override
+    public void close() {
+        workloadApiClient.close();
+    }
+
+    /**
+     * Options for creating a {@link KeyStoreHelper}.
+     * <p>
+     * <code>keyStorePath</code> Absolute path to File storing the Key Store. Cannot be null.
+     * <p>
+     * <code>trustStorePath</code> Absolute path to File storing the Trust Store. Cannot be null.
+     * <p>
+     * <code>keyStoreType</code>
+     * The type of keystore. Only JKS and PKCS12 are supported. If it's not provided, PKCS12 is used
+     * See the KeyStore section in the <a href=
+     * "https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard keystore types.
+     * <p>
+     * The same type is used for both the KeyStore and the TrustStore.
+     *
+     * Optional. Default is PKCS12.
+     * <p>
+     * <code>keyStorePass</code> The password to generate the keystore integrity check.
+     * <p>
+     * <code>trustStorePass</code> The password to generate the truststore integrity check.
+     * <p>
+     * <code>keyPass</code> The password to protect the key.
+     * <p>
+     * <code>keyAlias</code> Alias of the keyEntry. Default: spiffe
+     * Note: java keystore aliases are case-insensitive.
+     * <p>
+     * <code>spiffeSocketPath</code> Optional SPIFFE Endpoint Socket address, if absent, SPIFFE_ENDPOINT_SOCKET env variable is used.
+     * <p>
+     * <code>client</code> Optional. The a {@link WorkloadApiClient} to fetch the X.509 materials from the Workload API.
+     */
+    @Data
+    public static class KeyStoreOptions {
+
+        Path keyStorePath;
+        Path trustStorePath;
+        KeyStoreType keyStoreType;
+        String keyStorePass;
+        String trustStorePass;
+        String keyPass;
+        String keyAlias;
+        String spiffeSocketPath;
+        WorkloadApiClient workloadApiClient;
+
+        @Builder
+        public KeyStoreOptions(@NonNull Path keyStorePath, @NonNull Path trustStorePath, @NonNull String keyStorePass,
+                               @NonNull String trustStorePass, @NonNull String keyPass, KeyStoreType keyStoreType,
+                               String keyAlias, WorkloadApiClient workloadApiClient, String spiffeSocketPath) {
+            this.keyStorePath = keyStorePath;
+            this.trustStorePath = trustStorePath;
+            this.keyStoreType = keyStoreType;
+            this.keyStorePass = keyStorePass;
+            this.trustStorePass = trustStorePass;
+            this.keyPass = keyPass;
+            this.keyAlias = keyAlias;
+            this.workloadApiClient = workloadApiClient;
+            this.spiffeSocketPath = spiffeSocketPath;
+        }
     }
 
     private WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
@@ -172,87 +237,6 @@ public class KeyStoreHelper implements Closeable {
             latch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    @Override
-    public void close() {
-        workloadApiClient.close();
-    }
-
-    /**
-     * Options for creating a {@link KeyStoreHelper}.
-     */
-    @Data
-    public static class KeyStoreOptions {
-
-        /**
-         * Absolute path to File storing the Key Store. Cannot be null.
-         */
-        Path keyStorePath;
-
-        /**
-         * Absolute path to File storing the Trust Store. Cannot be null.
-         */
-        Path trustStorePath;
-
-        /**
-         * The type of keystore. Only JKS and PKCS12 are supported. If it's not provided, PKCS12 is used
-         * See the KeyStore section in the <a href=
-         * "https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore">
-         * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
-         * for information about standard keystore types.
-         * <p>
-         * The same type is used for both the KeyStore and the TrustStore.
-         *
-         * Optional. Default is PKCS12.
-         */
-        KeyStoreType keyStoreType;
-
-        /**
-         * The password to generate the keystore integrity check.
-         */
-        String keyStorePass;
-
-        /**
-         * The password to generate the truststore integrity check.
-         */
-        String trustStorePass;
-
-        /**
-         * The password to protect the key.
-         */
-        String keyPass;
-
-        /**
-         * Alias of the keyEntry. Default: spiffe
-         * Note: java keystore aliases are case-insensitive.
-         */
-        String keyAlias;
-
-        /**
-         * Optional spiffeSocketPath, if absent, SPIFFE_ENDPOINT_SOCKET env variable is used.
-         */
-        String spiffeSocketPath;
-
-        /**
-         * Optional. The workload api client to fetch the X.509 materials from the Workload API.
-         */
-        WorkloadApiClient client;
-
-        @Builder
-        public KeyStoreOptions(@NonNull Path keyStorePath, @NonNull Path trustStorePath, @NonNull String keyStorePass,
-                               @NonNull String trustStorePass, @NonNull String keyPass, KeyStoreType keyStoreType,
-                               String keyAlias, WorkloadApiClient client, String spiffeSocketPath) {
-            this.keyStorePath = keyStorePath;
-            this.trustStorePath = trustStorePath;
-            this.keyStoreType = keyStoreType;
-            this.keyStorePass = keyStorePass;
-            this.trustStorePass = trustStorePass;
-            this.keyPass = keyPass;
-            this.keyAlias = keyAlias;
-            this.client = client;
-            this.spiffeSocketPath = spiffeSocketPath;
         }
     }
 }

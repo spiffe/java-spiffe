@@ -67,29 +67,22 @@ public final class SpiffeSslContextFactory {
 
     /**
      * Options for creating a new {@link SSLContext}.
+     * <p>
+     * <code>sslProtocol</code> The SSL Protocol. Default: TLSv1.2
+     * <p>
+     * <code>x509Source</code> A {@link X509Source} that provides the X.509 materials.
+     * <p>
+     * <code>acceptedSpiffeIdsSupplier</code> A supplier of a set of {@link SpiffeId} that will be accepted for a secure socket connection.
+     * <p>
+     * <code>acceptAnySpiffeId</code> Flag that indicates that any {@link SpiffeId} will be accepted for a secure socket connection. This config overrules
+     * the <code>acceptedSpiffeIdsSupplier</code> property.
      */
     @Data
     public static class SslContextOptions {
 
-        /**
-         * The SSL Protocol. Default: TLSv1.2
-         */
         String sslProtocol;
-
-        /**
-         * A {@link X509Source} that provides the X.509 materials.
-         */
         X509Source x509Source;
-
-        /**
-         * A supplier of a set of {@link SpiffeId} that will be accepted for a secure socket connection.
-         */
         Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
-
-        /**
-         * Flag that indicates that any {@link SpiffeId} will be accepted for a secure socket connection, overrules
-         * the <code>acceptedSpiffeIdsSupplier</code> property.
-         */
         boolean acceptAnySpiffeId;
 
         @Builder
