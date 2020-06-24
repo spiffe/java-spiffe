@@ -34,18 +34,15 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 @Log
 public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closeable {
 
-    private static final Duration DEFAULT_TIMEOUT;
-
-    static {
-        DEFAULT_TIMEOUT = Duration.parse(System.getProperty("spiffe.newJwtSource.timeout", "PT0S"));
-    }
+    private static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
+    private static final Duration DEFAULT_TIMEOUT = Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
     private JwtBundleSet bundles;
     private WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
 
     /**
-     * Creates a new JWT source. It blocks until the initial update
+     * Creates a new JWT source. It blocks until the initial update with the JWT bundles
      * has been received from the Workload API or until the timeout configured
      * through the system property `spiffe.newJwtSource.timeout` expires.
      * If no timeout is configured, it blocks until it gets a JWT update from the Workload API.
@@ -57,70 +54,41 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws JwtSourceException            if the source could not be initialized
      */
     public static JwtSource newSource() throws JwtSourceException, SocketEndpointAddressException {
-        JwtSourceOptions options = JwtSourceOptions.builder().build();
-        return newSource(options, DEFAULT_TIMEOUT);
+        JwtSourceOptions options = JwtSourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
+        return newSource(options);
     }
 
     /**
-     * Creates a new JWT source. It blocks until the initial update
-     * has been received from the Workload API or until the timeout configured
-     * through the system property `spiffe.newJwtSource.timeout` expires.
-     * If no timeout is configured, it blocks until it gets a JWT update from the Workload API.
-     * <p>
-     * It uses the default address socket endpoint from the environment variable to get the Workload API address.
-     *
-     * @param timeout Time to wait for the JWT bundles update. If the timeout is Zero, it will wait indefinitely.
-     * @return an instance of {@link JwtSource}, with the JWT bundles initialized
-     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws JwtSourceException            if the source could not be initialized
-     */
-    public static JwtSource newSource(@NonNull final Duration timeout) throws JwtSourceException, SocketEndpointAddressException {
-        JwtSourceOptions options = JwtSourceOptions.builder().build();
-        return newSource(options, timeout);
-    }
-
-    /**
-     * Creates a new JWT source. It blocks until the initial update
-     * has been received from the Workload API or until the timeout configured
-     * through the system property `spiffe.newJwtSource.timeout` expires.
-     * If no timeout is configured, it blocks until it gets a JWT update from the Workload API.
-     * <p>
-     * It uses the default address socket endpoint from the environment variable to get the Workload API address.
-     *
-     * @param options {@link JwtSourceOptions}
-     * @return an instance of {@link JwtSource}, with the JWT bundles initialized
-     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws JwtSourceException            if the source could not be initialized
-     */
-    public static JwtSource newSource(@NonNull final JwtSourceOptions options) throws JwtSourceException, SocketEndpointAddressException {
-        return newSource(options, DEFAULT_TIMEOUT);
-    }
-
-
-    /**
-     * Creates a new JWT source. It blocks until the initial update
+     * Creates a new JWT source. It blocks until the initial update with the JWT bundles
      * has been received from the Workload API, doing retries with a backoff exponential policy,
-     * or the timeout has expired.
+     * or the initTimeout has expired.
+     * <p>
+     * If the timeout is not provided in the options, the default timeout is read from the
+     * system property `spiffe.newJwtSource.timeout`. If none is configured, this method will
+     * block until the JWT bundles can be retrieved from the Workload API.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
      *
-     * @param timeout Time to wait for the JWT bundles update. If the timeout is Zero, it will wait indefinitely.
      * @param options {@link JwtSourceOptions}
      * @return an instance of {@link JwtSource}, with the JWT bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull final JwtSourceOptions options, @NonNull final Duration timeout) throws SocketEndpointAddressException, JwtSourceException {
+    public static JwtSource newSource(@NonNull final JwtSourceOptions options) throws SocketEndpointAddressException, JwtSourceException {
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
+        }
+
+        if (options.initTimeout == null) {
+            options.initTimeout = DEFAULT_TIMEOUT;
         }
 
         JwtSource jwtSource = new JwtSource();
         jwtSource.workloadApiClient = options.workloadApiClient;
 
         try {
-            jwtSource.init(timeout);
+            jwtSource.init(options.initTimeout);
         } catch (Exception e) {
             jwtSource.close();
             throw new JwtSourceException("Error creating JWT source", e);
@@ -234,6 +202,9 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
     private JwtSource() {
     }
 
+    /**
+     * Options to configure a {@link JwtSource}.
+     */
     @Data
     public static class JwtSourceOptions {
 
@@ -243,14 +214,20 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         String spiffeSocketPath;
 
         /**
+         * Timeout for initializing the {@link JwtSource}.
+         */
+        Duration initTimeout;
+
+        /**
          * A custom instance of a {@link WorkloadApiClient}, if it is not set, a new instance will be created.
          */
         WorkloadApiClient workloadApiClient;
 
         @Builder
-        public JwtSourceOptions(final String spiffeSocketPath, final WorkloadApiClient workloadApiClient) {
+        public JwtSourceOptions(final String spiffeSocketPath, final WorkloadApiClient workloadApiClient, final Duration initTimeout) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.workloadApiClient = workloadApiClient;
+            this.initTimeout = initTimeout;
         }
     }
 }

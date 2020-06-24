@@ -42,11 +42,8 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 @Log
 public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Closeable {
 
-    private static final Duration DEFAULT_TIMEOUT;
-
-    static {
-        DEFAULT_TIMEOUT = Duration.parse(System.getProperty("spiffe.newX509Source.timeout", "PT0S"));
-    }
+    private static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newX509Source.timeout";
+    private static final Duration DEFAULT_TIMEOUT = Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
     private X509Svid svid;
     private X509BundleSet bundles;
@@ -56,7 +53,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
     private volatile boolean closed;
 
     /**
-     * Creates a new X.509 source. It blocks until the initial update
+     * Creates a new X.509 source. It blocks until the initial update with the X.509 materials
      * has been received from the Workload API or until the timeout configured
      * through the system property `spiffe.newX509Source.timeout` expires.
      * If no timeout is configured, it blocks until it gets an X.509 update from the Workload API.
@@ -70,35 +67,21 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * @throws X509SourceException            if the source could not be initialized
      */
     public static X509Source newSource() throws SocketEndpointAddressException, X509SourceException {
-        X509SourceOptions x509SourceOptions = X509SourceOptions.builder().build();
-        return newSource(x509SourceOptions, DEFAULT_TIMEOUT);
+        X509SourceOptions x509SourceOptions = X509SourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
+        return newSource(x509SourceOptions);
     }
 
     /**
-     * Creates a new X.509 source. It blocks until the initial update
-     * has been received from the Workload API or until the timeout provided expires
+     * Creates a new X.509 source. It blocks until the initial update with the X.509 materials
+     * has been received from the Workload API, doing retries with a backoff exponential policy,
+     * or the timeout has expired.
      * <p>
-     * It uses the default address socket endpoint from the environment variable to get the Workload API address.
+     * If the timeout is not provided in the options, the default timeout is read from the
+     * system property `spiffe.newX509Source.timeout`. If none is configured, this method will
+     * block until the X.509 materials can be retrieved from the Workload API.
      * <p>
-     * It uses the default X.509 SVID (picks the first SVID that comes in the Workload API response).
-     *
-     * @param timeout Time to wait for the X.509 context update. If the timeout is Zero, it will wait indefinitely.
-     * @return an instance of {@link X509Source}, with the SVID and bundles initialized
-     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws X509SourceException            if the source could not be initialized
-     */
-    public static X509Source newSource(@NonNull final Duration timeout) throws SocketEndpointAddressException, X509SourceException {
-        X509SourceOptions x509SourceOptions = X509SourceOptions.builder().build();
-        return newSource(x509SourceOptions, timeout);
-    }
-
-    /**
-     * Creates a new X.509 source. It blocks until the initial update
-     * has been received from the Workload API or until the timeout configured
-     * through the system property `spiffe.newX509Source.timeout` expires.
-     * If no timeout is configured, it blocks until it gets an X.509 update from the Workload API.
-     * <p>
-     * The {@link WorkloadApiClient} can be provided in the options, if it is not, a new client is created.
+     * The {@link WorkloadApiClient} can be provided in the options, if it is not,
+     * a new client is created.
      *
      * @param options {@link X509SourceOptions}
      * @return an instance of {@link X509Source}, with the svid and bundles initialized
@@ -106,26 +89,12 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
      * @throws X509SourceException            if the source could not be initialized
      */
     public static X509Source newSource(@NonNull final X509SourceOptions options) throws SocketEndpointAddressException, X509SourceException {
-        return newSource(options, DEFAULT_TIMEOUT);
-    }
-
-    /**
-     * Creates a new X.509 source. It blocks until the initial update
-     * has been received from the Workload API, doing retries with a backoff exponential policy,
-     * or the timeout has expired.
-     * <p>
-     * The {@link WorkloadApiClient} can be provided in the options, if it is not,
-     * a new client is created.
-     *
-     * @param timeout Time to wait for the X.509 context update. If the timeout is Zero, it will wait indefinitely.
-     * @param options {@link X509SourceOptions}
-     * @return an instance of {@link X509Source}, with the svid and bundles initialized
-     * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws X509SourceException            if the source could not be initialized
-     */
-    public static X509Source newSource(@NonNull final X509SourceOptions options, @NonNull final Duration timeout) throws SocketEndpointAddressException, X509SourceException {
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
+        }
+
+        if (options.initTimeout == null) {
+            options.initTimeout = DEFAULT_TIMEOUT;
         }
 
         val x509Source = new X509Source();
@@ -133,7 +102,7 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
         x509Source.workloadApiClient = options.workloadApiClient;
 
         try {
-            x509Source.init(timeout);
+            x509Source.init(options.initTimeout);
         } catch (Exception e) {
             x509Source.close();
             throw new X509SourceException("Error creating X.509 source", e);
@@ -264,6 +233,11 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
         String spiffeSocketPath;
 
         /**
+         * Timeout for initializing the {@link X509Source}.
+         */
+        Duration initTimeout;
+
+        /**
          * Function to choose the X.509 SVID from the list returned by the Workload API
          * If it is not set, the default svid is picked.
          */
@@ -275,8 +249,12 @@ public class X509Source implements X509SvidSource, BundleSource<X509Bundle>, Clo
         WorkloadApiClient workloadApiClient;
 
         @Builder
-        public X509SourceOptions(String spiffeSocketPath, Function<List<X509Svid>, X509Svid> picker, WorkloadApiClient workloadApiClient) {
+        public X509SourceOptions(String spiffeSocketPath,
+                                 Duration initTimeout,
+                                 Function<List<X509Svid>, X509Svid> picker,
+                                 WorkloadApiClient workloadApiClient) {
             this.spiffeSocketPath = spiffeSocketPath;
+            this.initTimeout = initTimeout;
             this.picker = picker;
             this.workloadApiClient = workloadApiClient;
         }

@@ -181,7 +181,7 @@ public class KeyStoreHelper implements Closeable {
     }
 
     /**
-     * Options for creating a KeyStoreHelper.
+     * Options for creating a {@link KeyStoreHelper}.
      */
     @Data
     public static class KeyStoreOptions {

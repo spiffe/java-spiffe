@@ -429,13 +429,27 @@ public class WorkloadApiClient implements Closeable {
 
 
     /**
-     * Options for creating a new {@link WorkloadApiClient}. The {@link BackoffPolicy}  is used
-     * to configure a {@link RetryHandler} to perform retries to reconnect to the Workload API.
+     * Options for creating a new {@link WorkloadApiClient}.
      */
     @Data
     public static class ClientOptions {
+
+        /**
+         * Workload API socket endpoint address
+         */
         String spiffeSocketPath;
+
+        /**
+         * A custom instance of a {@link BackoffPolicy} to configure the retries to reconnect to the Workload API.
+         */
         BackoffPolicy backoffPolicy;
+
+        /**
+         * A custom {@link ExecutorService} to configure the Grpc stubs and channels.
+         * If it is not provided, a Executors.newCachedThreadPool() is used by default.
+         * <p>
+         * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
+         */
         ExecutorService executorService;
 
         @Builder

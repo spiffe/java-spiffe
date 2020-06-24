@@ -50,8 +50,8 @@ public class Address {
      * @param address the Workload API socket address as a string
      * @return an instance of a {@link URI}
      * @throws SocketEndpointAddressException if the address could not be parsed or if it doesn't complain to the rules
-     *                                        defined in the SPIFFE Standard.
-     * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE_Workload_Endpoint.md#4-locating-the-endpoint">SPIFFE Workload Endpoint</a>
+     *                                        defined in the SPIFFE Worload Endpoint Standard.
+     * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE_Workload_Endpoint.md#4-locating-the-endpoint">SPIFFE Workload Endpoint Standard</a>
      */
     public static URI parseAddress(final String address) throws SocketEndpointAddressException {
 
