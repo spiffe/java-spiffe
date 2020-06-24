@@ -20,7 +20,7 @@ will trust for TLS connections:
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
  ```
 
-See [HttpsServer example](src/main/java/spiffe/provider/examples/HttpsServer.java).
+See [HttpsServer example](src/test/java/io/spiffe/provider/examples/mtls/HttpsServer.java).
 
 Alternatively, a different Workload API address can be used by passing it to the X509Source creation method, and a
 `Supplier` of a Set of accepted SPIFFE IDs can be provided as part of the `SslContextOptions`:
@@ -44,7 +44,7 @@ Alternatively, a different Workload API address can be used by passing it to the
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
 ```
 
-See [HttpsClient example](src/test/java/spiffe/provider/examples/mtls/HttpsClient.java) that defines a Supplier for providing
+See [HttpsClient example](src/test/java/io/spiffe/provider/examples/mtls/HttpsClient.java) that defines a Supplier for providing
 the list of SPIFFE IDs from a file.
 
 ## Plug Java SPIFFE Provider into Java Security architecture
@@ -176,7 +176,7 @@ A `GRPC Server` using an SSL context backed by the Workload API:
 #### Configure it programmatically:
 
 The `SpiffeKeyManager` and `SpiffeTrustManager` can be created without resorting to factories, providing the constructors
-with a [X509Source instance](../java-spiffe-core/README.md#x509source).
+with a [X509Source instance](../java-spiffe-core/README.md#x509-source).
 
 ```
     // create a new X.509 source using the default socket endpoint address
