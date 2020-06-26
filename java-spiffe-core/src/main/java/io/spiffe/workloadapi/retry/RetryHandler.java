@@ -15,7 +15,7 @@ public class RetryHandler {
 
     private int retryCount;
 
-    public RetryHandler(BackoffPolicy backoffPolicy, ScheduledExecutorService executor) {
+    public RetryHandler(final BackoffPolicy backoffPolicy, final ScheduledExecutorService executor) {
         this.nextDelay = backoffPolicy.getInitialDelay();
         this.backoffPolicy = backoffPolicy;
         this.executor = executor;

@@ -1,8 +1,6 @@
 package io.spiffe.workloadapi;
 
 import io.grpc.Context;
-import io.grpc.Status;
-import io.grpc.stub.StreamObserver;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
@@ -35,13 +33,15 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
+
+import static io.spiffe.workloadapi.StreamObservers.getJwtBundleStreamObserver;
+import static io.spiffe.workloadapi.StreamObservers.getX509ContextStreamObserver;
 
 /**
  * Represents a client to interact with the Workload API.
@@ -52,9 +52,7 @@ import java.util.logging.Level;
  * the stream connection to the Workload API.
  */
 @Log
-public class WorkloadApiClient implements Closeable {
-
-    private static final String INVALID_ARGUMENT = "INVALID_ARGUMENT";
+public final class WorkloadApiClient implements Closeable {
 
     private final SpiffeWorkloadAPIStub workloadApiAsyncStub;
     private final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub;
@@ -70,12 +68,12 @@ public class WorkloadApiClient implements Closeable {
 
     private boolean closed;
 
-    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                              SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                              ManagedChannelWrapper managedChannel,
-                              BackoffPolicy backoffPolicy,
-                              ScheduledExecutorService retryExecutor,
-                              ExecutorService executorService) {
+    private WorkloadApiClient(final SpiffeWorkloadAPIStub workloadApiAsyncStub,
+                              final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                              final ManagedChannelWrapper managedChannel,
+                              final BackoffPolicy backoffPolicy,
+                              final ScheduledExecutorService retryExecutor,
+                              final ExecutorService executorService) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
         this.managedChannel = managedChannel;
@@ -95,9 +93,9 @@ public class WorkloadApiClient implements Closeable {
      * @param workloadApiBlockingStub a {@link SpiffeWorkloadAPIBlockingStub}
      * @param managedChannel          a {@link ManagedChannelWrapper}
      */
-    public WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                             SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                             ManagedChannelWrapper managedChannel) {
+    public WorkloadApiClient(final SpiffeWorkloadAPIStub workloadApiAsyncStub,
+                             final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                             final ManagedChannelWrapper managedChannel) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
         this.backoffPolicy = new BackoffPolicy();
@@ -187,11 +185,12 @@ public class WorkloadApiClient implements Closeable {
      *
      * @param watcher an instance that implements a {@link Watcher}.
      */
-    public void watchX509Context(@NonNull Watcher<X509Context> watcher) {
+    public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
         val retryHandler = new RetryHandler(backoffPolicy, retryExecutor);
         val cancellableContext = Context.current().withCancellation();
 
-        val streamObserver = getX509ContextStreamObserver(watcher, retryHandler, cancellableContext);
+        val streamObserver =
+                getX509ContextStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
 
         cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver));
         this.cancellableContexts.add(cancellableContext);
@@ -206,10 +205,9 @@ public class WorkloadApiClient implements Closeable {
      * @return an instance of a {@link JwtSvid}
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    public JwtSvid fetchJwtSvid(
-            @NonNull final SpiffeId subject,
-            @NonNull final String audience,
-            final String... extraAudience)
+    public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject,
+                                @NonNull final String audience,
+                                final String... extraAudience)
             throws JwtSvidException {
 
         final Set<String> audParam = new HashSet<>();
@@ -271,7 +269,7 @@ public class WorkloadApiClient implements Closeable {
         val retryHandler = new RetryHandler(backoffPolicy, retryExecutor);
         val cancellableContext = Context.current().withCancellation();
 
-        val streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext);
+        val streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
 
         cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(), streamObserver));
         this.cancellableContexts.add(cancellableContext);
@@ -302,116 +300,9 @@ public class WorkloadApiClient implements Closeable {
     }
 
 
-    private StreamObserver<Workload.X509SVIDResponse> getX509ContextStreamObserver(
-            Watcher<X509Context> watcher,
-            RetryHandler retryHandler,
-            Context.CancellableContext cancellableContext) {
-        return new StreamObserver<Workload.X509SVIDResponse>() {
-            @Override
-            public void onNext(Workload.X509SVIDResponse value) {
-                try {
-                    val x509Context = GrpcConversionUtils.toX509Context(value);
-                    validateX509Context(x509Context);
-                    watcher.onUpdate(x509Context);
-                    retryHandler.reset();
-                } catch (CertificateException | X509SvidException | X509ContextException e) {
-                    watcher.onError(new X509ContextException("Error processing X.509 Context update", e));
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                log.log(Level.SEVERE, "X.509 context observer error", t);
-                handleWatchX509ContextError(t);
-            }
-
-            private void handleWatchX509ContextError(Throwable t) {
-                if (INVALID_ARGUMENT.equals(Status.fromThrowable(t).getCode().name())) {
-                    watcher.onError(new X509ContextException("Canceling X.509 Context watch", t));
-                } else {
-                    log.log(Level.INFO, "Retrying connecting to Workload API to register X.509 context watcher");
-                    retryHandler.scheduleRetry(() ->
-                            cancellableContext.run(
-                                    () -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(),
-                                            this)));
-                }
-            }
-
-            @Override
-            public void onCompleted() {
-                cancellableContext.close();
-                log.info("Workload API stream is completed");
-            }
-        };
-    }
-
-    private StreamObserver<Workload.JWTBundlesResponse> getJwtBundleStreamObserver(
-            Watcher<JwtBundleSet> watcher,
-            RetryHandler retryHandler,
-            Context.CancellableContext cancellableContext) {
-        return new StreamObserver<Workload.JWTBundlesResponse>() {
-
-            @Override
-            public void onNext(Workload.JWTBundlesResponse value) {
-                try {
-                    val jwtBundleSet = GrpcConversionUtils.toBundleSet(value);
-                    watcher.onUpdate(jwtBundleSet);
-                    retryHandler.reset();
-                } catch (KeyException | JwtBundleException e) {
-                    watcher.onError(new JwtBundleException("Error processing JWT bundles update", e));
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                log.log(Level.SEVERE, "JWT observer error", t);
-                handleWatchJwtBundleError(t);
-            }
-
-            private void handleWatchJwtBundleError(Throwable t) {
-                if (INVALID_ARGUMENT.equals(Status.fromThrowable(t).getCode().name())) {
-                    watcher.onError(new JwtBundleException("Canceling JWT Bundles watch", t));
-                } else {
-                    log.log(Level.INFO, "Retrying connecting to Workload API to register JWT Bundles watcher");
-                    retryHandler.scheduleRetry(() ->
-                            cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(),
-                                    this)));
-                }
-            }
-
-            @Override
-            public void onCompleted() {
-                cancellableContext.close();
-                log.info("Workload API stream is completed");
-            }
-        };
-    }
-
-    // validates that the X.509 context has both the SVID and the bundles
-    private void validateX509Context(X509Context x509Context) throws X509ContextException {
-        if (x509Context.getX509BundleSet() == null
-                || x509Context.getX509BundleSet().getBundles() == null
-                || x509Context.getX509BundleSet().getBundles().isEmpty()) {
-            throw new X509ContextException("X.509 context error: no X.509 bundles found");
-        }
-
-        if (x509Context.getX509Svid() == null || x509Context.getX509Svid().isEmpty()) {
-            throw new X509ContextException("X.509 context error: no X.509 SVID found");
-        }
-    }
-
-    private Workload.X509SVIDRequest newX509SvidRequest() {
-        return Workload.X509SVIDRequest.newBuilder().build();
-    }
-
-    private Workload.JWTBundlesRequest newJwtBundlesRequest() {
-        return Workload.JWTBundlesRequest.newBuilder().build();
-    }
-
     private X509Context processX509Context() throws X509ContextException {
         try {
-            final Iterator<Workload.X509SVIDResponse> x509SvidResponse =
-                    workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
+            val x509SvidResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
             if (x509SvidResponse.hasNext()) {
                 return GrpcConversionUtils.toX509Context(x509SvidResponse.next());
             }
@@ -421,22 +312,18 @@ public class WorkloadApiClient implements Closeable {
         throw new X509ContextException("Error processing X509Context: x509SVIDResponse is empty");
     }
 
-    private JwtSvid callFetchJwtSvid(SpiffeId subject, Set<String> audience) throws JwtSvidException {
-        final Workload.JWTSVIDRequest jwtsvidRequest = Workload.JWTSVIDRequest
-                .newBuilder()
+    private JwtSvid callFetchJwtSvid(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
+        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
                 .addAllAudience(audience)
                 .build();
-        final Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtsvidRequest);
-
+        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
         return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
     }
 
     private JwtBundleSet callFetchBundles() throws JwtBundleException {
-        final Workload.JWTBundlesRequest request = Workload.JWTBundlesRequest
-                .newBuilder()
-                .build();
-        final Iterator<Workload.JWTBundlesResponse> bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
+        val request = Workload.JWTBundlesRequest.newBuilder().build();
+        val bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
 
         if (bundlesResponse.hasNext()) {
             try {
@@ -446,6 +333,14 @@ public class WorkloadApiClient implements Closeable {
             }
         }
         throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
+    }
+
+    private Workload.X509SVIDRequest newX509SvidRequest() {
+        return Workload.X509SVIDRequest.newBuilder().build();
+    }
+
+    private Workload.JWTBundlesRequest newJwtBundlesRequest() {
+        return Workload.JWTBundlesRequest.newBuilder().build();
     }
 
     /**
@@ -473,7 +368,9 @@ public class WorkloadApiClient implements Closeable {
         private ExecutorService executorService;
 
         @Builder
-        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy, ExecutorService executorService) {
+        public ClientOptions(final String spiffeSocketPath,
+                             final BackoffPolicy backoffPolicy,
+                             final ExecutorService executorService) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.backoffPolicy = backoffPolicy;
             this.executorService = executorService;

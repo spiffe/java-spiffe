@@ -50,7 +50,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
 
     private Function<List<X509Svid>, X509Svid> picker;
     private WorkloadApiClient workloadApiClient;
-    private volatile boolean closed;
+    private boolean closed;
 
     // private constructor
     private X509Source() {
@@ -171,7 +171,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
         return WorkloadApiClient.newClient(clientOptions);
     }
 
-    private void init(Duration timeout) throws TimeoutException {
+    private void init(final Duration timeout) throws TimeoutException {
         val done = new CountDownLatch(1);
         setX509ContextWatcher(done);
 
@@ -187,17 +187,17 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
         }
     }
 
-    private void setX509ContextWatcher(CountDownLatch done) {
+    private void setX509ContextWatcher(final CountDownLatch done) {
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
-            public void onUpdate(X509Context update) {
+            public void onUpdate(final X509Context update) {
                 log.log(Level.INFO, "Received X509Context update");
                 setX509Context(update);
                 done.countDown();
             }
 
             @Override
-            public void onError(Throwable error) {
+            public void onError(final Throwable error) {
                 log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s",
                         ExceptionUtils.getStackTrace(error)));
                 done.countDown();
@@ -246,10 +246,10 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
         private WorkloadApiClient workloadApiClient;
 
         @Builder
-        public X509SourceOptions(String spiffeSocketPath,
-                                 Duration initTimeout,
-                                 Function<List<X509Svid>, X509Svid> svidPicker,
-                                 WorkloadApiClient workloadApiClient) {
+        public X509SourceOptions(final String spiffeSocketPath,
+                                 final Duration initTimeout,
+                                 final Function<List<X509Svid>, X509Svid> svidPicker,
+                                 final WorkloadApiClient workloadApiClient) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.initTimeout = initTimeout;
             this.svidPicker = svidPicker;
