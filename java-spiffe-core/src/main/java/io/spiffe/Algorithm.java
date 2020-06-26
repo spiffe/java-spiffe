@@ -55,7 +55,7 @@ public enum Algorithm {
     PS512("PS512"),
 
     /**
-     * Non-Supported algorithm
+     * Non-Supported algorithm.
      */
     OTHER("OTHER");
 
@@ -95,7 +95,7 @@ public enum Algorithm {
         }
 
         public static Family parse(final String s) {
-            Family family;
+            final Family family;
             if (s.equals(RSA.getName())) {
                 family = RSA;
             } else if (s.equals(EC.getName())) {
@@ -108,7 +108,7 @@ public enum Algorithm {
     }
 
     public static Algorithm parse(final String s) {
-        Algorithm algorithm;
+        final Algorithm algorithm;
         if (s.equals(RS256.getName())) {
             algorithm = RS256;
         } else if (s.equals(RS384.getName())) {

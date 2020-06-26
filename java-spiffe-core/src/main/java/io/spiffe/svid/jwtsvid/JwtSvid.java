@@ -88,17 +88,22 @@ public class JwtSvid {
      * The JWT-SVID signature is verified using the JWT bundle source.
      *
      * @param token           a token as a string that is parsed and validated
-     * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the JWT authorities to verify the signature
+     * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the JWT authorities to
+     *                        verify the signature
      * @param audience        audience as a list of strings used to validate the 'aud' claim
      * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
      * @throws JwtSvidException when the token expired or the expiration claim is missing,
-     *                                           when the algorithm is not supported, when the header 'kid' is missing, when the signature cannot be verified, or
-     *                                           when the 'aud' claim has an audience that is not in the audience list provided as parameter
+     *                                           when the algorithm is not supported, when the header 'kid' is missing,
+     *                                           when the signature cannot be verified, or
+     *                                           when the 'aud' claim has an audience that is not in the audience list
+     *                                           provided as parameter
      * @throws IllegalArgumentException          when the token is blank or cannot be parsed
-     * @throws BundleNotFoundException           if the bundle for the trust domain of the spiffe id from the 'sub' cannot be found
+     * @throws BundleNotFoundException           if the bundle for the trust domain of the spiffe id from the 'sub'
+     * cannot be found
      *                                           in the JwtBundleSource
-     * @throws AuthorityNotFoundException        if the authority cannot be found in the bundle using the value from the 'kid' header
+     * @throws AuthorityNotFoundException        if the authority cannot be found in the bundle using the value from
+     * the 'kid' header
      */
     public static JwtSvid parseAndValidate(@NonNull final String token,
                                            @NonNull final BundleSource<JwtBundle> jwtBundleSource,
@@ -230,7 +235,7 @@ public class JwtSvid {
 
     private static JWSVerifier getJwsVerifier(final PublicKey jwtAuthority, final String algorithm) throws JOSEException, JwtSvidException {
         JWSVerifier verifier;
-        final Algorithm alg = Algorithm.parse(algorithm);
+        val alg = Algorithm.parse(algorithm);
         if (Algorithm.Family.EC.contains(alg)) {
             verifier = new ECDSAVerifier((ECPublicKey) jwtAuthority);
         } else if (Algorithm.Family.RSA.contains(alg)) {

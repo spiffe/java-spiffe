@@ -24,6 +24,9 @@ public class Address {
     private static final String TCP_SCHEME = "tcp";
     private static final Set<String> VALID_SCHEMES = Sets.newHashSet(UNIX_SCHEME, TCP_SCHEME);
 
+    private Address() {
+    }
+
     /**
      * @return the default Workload API address hold by the system environment variable
      * defined by SOCKET_ENV_VARIABLE.
@@ -43,7 +46,8 @@ public class Address {
      * The scheme and path components are mandatory, and no other component may be set.
      * <p>
      * If the scheme is set to tcp, then the host component of the authority MUST be set to an IP address,
-     * and the port component of the authority MUST be set to the TCP port number of the SPIFFE Workload Endpoint TCP listen socket.
+     * and the port component of the authority MUST be set to the TCP port number of the
+     * SPIFFE Workload Endpoint TCP listen socket.
      * The scheme, host, and port components are mandatory, and no other component may be set.
      * As an example, tcp://127.0.0.1:8000 is valid, and tcp://127.0.0.1:8000/foo is not.
      *
@@ -58,7 +62,8 @@ public class Address {
         val parsedAddress = parseUri(address);
         val scheme = parsedAddress.getScheme();
         if (isSchemeNotValid(scheme)) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint socket URI must have a tcp:// or unix:// scheme: %s", address));
+            val error = "Workload endpoint socket URI must have a tcp:// or unix:// scheme: %s";
+            throw new SocketEndpointAddressException(String.format(error, address));
         }
 
         if (UNIX_SCHEME.equals(scheme)) {
@@ -75,77 +80,88 @@ public class Address {
         try {
             parsedAddress = new URI(address);
         } catch (URISyntaxException e) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint socket is not a valid URI: %s", address), e);
+            val error = "Workload endpoint socket is not a valid URI: %s";
+            throw new SocketEndpointAddressException(String.format(error, address), e);
         }
         return parsedAddress;
     }
 
     private static void validateUnixAddress(final URI parsedAddress) throws SocketEndpointAddressException {
         if (parsedAddress.isOpaque()) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint unix socket URI must not be opaque: %s", parsedAddress));
+            val error = "Workload endpoint unix socket URI must not be opaque: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getRawAuthority())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint unix socket URI must not include authority component: %s", parsedAddress));
+            val error = "Workload endpoint unix socket URI must not include authority component: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (hasEmptyPath(parsedAddress.getPath())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint unix socket path cannot be blank: %s", parsedAddress));
+            val error = "Workload endpoint unix socket path cannot be blank: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint unix socket URI must not include query values: %s", parsedAddress));
+            val error = "Workload endpoint unix socket URI must not include query values: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getFragment())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint unix socket URI must not include a fragment: %s", parsedAddress));
+            val error = "Workload endpoint unix socket URI must not include a fragment: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
     }
 
     private static void validateTcpAddress(final URI parsedAddress) throws SocketEndpointAddressException {
         if (parsedAddress.isOpaque()) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI must not be opaque: %s", parsedAddress));
+            val error = "Workload endpoint tcp socket URI must not be opaque: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getUserInfo())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI must not include user info: %s", parsedAddress));
+            val error = "Workload endpoint tcp socket URI must not include user info: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isBlank(parsedAddress.getHost())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI must include a host: %s", parsedAddress));
+            final String error = "Workload endpoint tcp socket URI must include a host: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getPath())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI must not include a path: %s", parsedAddress));
+            val error = "Workload endpoint tcp socket URI must not include a path: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getRawQuery())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI must not include query values: %s", parsedAddress));
+            val error = "Workload endpoint tcp socket URI must not include query values: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         if (StringUtils.isNotBlank(parsedAddress.getFragment())) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI must not include a fragment: %s", parsedAddress));
+            val error = "Workload endpoint tcp socket URI must not include a fragment: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         val ipValid = InetAddressValidator.getInstance().isValid(parsedAddress.getHost());
         if (!ipValid) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI host component must be an IP:port: %s", parsedAddress));
+            val error = "Workload endpoint tcp socket URI host component must be an IP:port: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
         int port = parsedAddress.getPort();
         if (port == -1) {
-            throw new SocketEndpointAddressException(String.format("Workload endpoint tcp socket URI host component must include a port: %s", parsedAddress));
+            final String error = "Workload endpoint tcp socket URI host component must include a port: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
     }
 
     private static boolean hasEmptyPath(final String path) {
-        return StringUtils.isBlank(path) || path.equals("/");
+        return StringUtils.isBlank(path) || "/".equals(path);
     }
 
     private static boolean isSchemeNotValid(final String scheme) {
         return !VALID_SCHEMES.contains(scheme);
-    }
-
-    private Address() {
     }
 }

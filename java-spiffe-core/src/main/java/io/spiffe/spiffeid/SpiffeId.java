@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md">https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md</a>
  */
 @Value
-public class SpiffeId {
+public final class SpiffeId {
 
     public static final String SPIFFE_SCHEME = "spiffe";
 
@@ -70,7 +70,8 @@ public class SpiffeId {
      * Returns true if the trust domain of this SPIFFE ID is the same as trust domain given as parameter.
      *
      * @param trustDomain an instance of a {@link TrustDomain}
-     * @return <code>true</code> if the given trust domain equals the trust domain of this object, <code>false</code> otherwise
+     * @return <code>true</code> if the given trust domain equals the trust domain of this object,
+     * <code>false</code> otherwise
      */
     public boolean memberOf(final TrustDomain trustDomain) {
         return this.trustDomain.equals(trustDomain);

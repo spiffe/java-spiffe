@@ -1,12 +1,13 @@
 package io.spiffe.svid.x509svid;
 
 import io.spiffe.exception.X509SvidException;
+import io.spiffe.internal.AsymmetricKeyAlgorithm;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.internal.KeyFileFormat;
-import io.spiffe.internal.AsymmetricKeyAlgorithm;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
 import lombok.Value;
+import lombok.val;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -73,15 +74,16 @@ public class X509Svid {
      * @return an instance of {@link X509Svid}
      * @throws X509SvidException if there is an error parsing the given certsFilePath or the privateKeyFilePath
      */
-    public static X509Svid load(@NonNull final Path certsFilePath, @NonNull final Path privateKeyFilePath) throws X509SvidException {
-        byte[] certsBytes;
+    public static X509Svid load(@NonNull final Path certsFilePath, @NonNull final Path privateKeyFilePath)
+            throws X509SvidException {
+        final byte[] certsBytes;
         try {
             certsBytes = Files.readAllBytes(certsFilePath);
         } catch (IOException e) {
             throw new X509SvidException("Cannot read certificate file", e);
         }
 
-        byte[] privateKeyBytes;
+        final byte[] privateKeyBytes;
         try {
             privateKeyBytes = Files.readAllBytes(privateKeyFilePath);
         } catch (IOException e) {
@@ -101,7 +103,8 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes) throws X509SvidException {
+    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes)
+            throws X509SvidException {
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM);
     }
 
@@ -116,7 +119,8 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parseRaw(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes) throws X509SvidException {
+    public static X509Svid parseRaw(@NonNull final byte[] certsBytes,
+                                    @NonNull final byte[] privateKeyBytes) throws X509SvidException {
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER);
     }
 
@@ -127,10 +131,13 @@ public class X509Svid {
         return chain.toArray(new X509Certificate[0]);
     }
 
-    private static X509Svid createX509Svid(final byte[] certsBytes, final byte[] privateKeyBytes, KeyFileFormat keyFileFormat) throws X509SvidException {
-        List<X509Certificate> x509Certificates = generateX509Certificates(certsBytes);
-        PrivateKey privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
-        SpiffeId spiffeId = getSpiffeId(x509Certificates);
+    private static X509Svid createX509Svid(final byte[] certsBytes,
+                                           final byte[] privateKeyBytes,
+                                           final KeyFileFormat keyFileFormat) throws X509SvidException {
+
+        val x509Certificates = generateX509Certificates(certsBytes);
+        val privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
+        val spiffeId = getSpiffeId(x509Certificates);
 
         validatePrivateKey(privateKey, x509Certificates);
         validateLeafCertificate(x509Certificates.get(0));
@@ -144,7 +151,7 @@ public class X509Svid {
     }
 
     private static SpiffeId getSpiffeId(final List<X509Certificate> x509Certificates) throws X509SvidException {
-        SpiffeId spiffeId;
+        final SpiffeId spiffeId;
         try {
             spiffeId = CertificateUtils.getSpiffeId(x509Certificates.get(0));
         } catch (CertificateException e) {
@@ -153,9 +160,14 @@ public class X509Svid {
         return spiffeId;
     }
 
-    private static PrivateKey generatePrivateKey(final byte[] privateKeyBytes, final KeyFileFormat keyFileFormat, final List<X509Certificate> x509Certificates) throws X509SvidException {
-        AsymmetricKeyAlgorithm algorithm = AsymmetricKeyAlgorithm.parse(x509Certificates.get(0).getPublicKey().getAlgorithm());
-        PrivateKey privateKey;
+    private static PrivateKey generatePrivateKey(final byte[] privateKeyBytes,
+                                                 final KeyFileFormat keyFileFormat,
+                                                 final List<X509Certificate> x509Certificates)
+            throws X509SvidException {
+
+        val publicKeyCertAlgorithm = x509Certificates.get(0).getPublicKey().getAlgorithm();
+        val algorithm = AsymmetricKeyAlgorithm.parse(publicKeyCertAlgorithm);
+        final PrivateKey privateKey;
         try {
             privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes, algorithm, keyFileFormat);
         } catch (InvalidKeySpecException | InvalidKeyException | NoSuchAlgorithmException e) {
@@ -208,7 +220,8 @@ public class X509Svid {
         }
     }
 
-    private static void validatePrivateKey(final PrivateKey privateKey, final List<X509Certificate> x509Certificates) throws X509SvidException {
+    private static void validatePrivateKey(final PrivateKey privateKey, final List<X509Certificate> x509Certificates)
+            throws X509SvidException {
         try {
             CertificateUtils.validatePrivateKey(privateKey, x509Certificates.get(0));
         } catch (InvalidKeyException e) {

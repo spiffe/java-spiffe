@@ -9,16 +9,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Utility class with methods to read SPIFFE IDs using different mechanisms.
  */
-public class SpiffeIdUtils {
+public final class SpiffeIdUtils {
 
     private static final char DEFAULT_CHAR_SEPARATOR = ',';
+
+    private SpiffeIdUtils() {
+    }
 
     /**
      * Reads a file containing a list of SPIFFE IDs and parses them to {@link SpiffeId} instances.
@@ -31,7 +33,7 @@ public class SpiffeIdUtils {
      * @throws IllegalArgumentException if any of the SPIFFE IDs in the file cannot be parsed
      */
     public static Set<SpiffeId> getSpiffeIdSetFromFile(final Path spiffeIdsFile) throws IOException {
-        try (Stream<String> lines = Files.lines(spiffeIdsFile)) {
+        try (val lines = Files.lines(spiffeIdsFile)) {
             return lines
                     .map(SpiffeId::parse)
                     .collect(Collectors.toSet());
@@ -67,8 +69,5 @@ public class SpiffeIdUtils {
      */
     public static Set<SpiffeId> toSetOfSpiffeIds(final String spiffeIds) {
         return toSetOfSpiffeIds(spiffeIds, DEFAULT_CHAR_SEPARATOR);
-    }
-
-    private SpiffeIdUtils() {
     }
 }

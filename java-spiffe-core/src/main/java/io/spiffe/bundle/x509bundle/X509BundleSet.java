@@ -31,7 +31,7 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      * @return a {@link X509BundleSet} initialized with the list of bundles
      */
     public static X509BundleSet of(@NonNull final Collection<X509Bundle> bundles) {
-        Map<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
+        final Map<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
         for (X509Bundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
@@ -58,7 +58,7 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
     @Override
     public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
         val bundle = bundles.get(trustDomain);
-        if (bundle == null){
+        if (bundle == null) {
             throw new BundleNotFoundException(String.format("No X.509 bundle for trust domain %s", trustDomain));
         }
         return bundle;

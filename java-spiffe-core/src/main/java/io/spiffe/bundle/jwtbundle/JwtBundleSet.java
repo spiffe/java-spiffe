@@ -31,7 +31,7 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      * @return a {@link JwtBundleSet}
      */
     public static JwtBundleSet of(@NonNull final Collection<JwtBundle> bundles) {
-        Map<TrustDomain, JwtBundle> bundleMap = new ConcurrentHashMap<>();
+        final Map<TrustDomain, JwtBundle> bundleMap = new ConcurrentHashMap<>();
         for (JwtBundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }

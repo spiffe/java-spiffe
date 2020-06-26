@@ -67,12 +67,14 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
      * @throws KeyException       if the bundle file contains a key type that is not supported
      */
-    public static JwtBundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) throws KeyException, JwtBundleException {
+    public static JwtBundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath)
+            throws KeyException, JwtBundleException {
         try {
             val jwkSet = JWKSet.load(bundlePath.toFile());
             return toJwtBundle(trustDomain, jwkSet);
         } catch (IOException | ParseException | JOSEException e) {
-            throw new JwtBundleException(String.format("Could not load bundle from file: %s", bundlePath.toString()), e);
+            val error = "Could not load bundle from file: %s";
+            throw new JwtBundleException(String.format(error, bundlePath.toString()), e);
         }
     }
 
@@ -127,7 +129,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @throws AuthorityNotFoundException if no Authority is found associated to the Key ID
      */
     public PublicKey findJwtAuthority(final String keyId) throws AuthorityNotFoundException {
-        PublicKey key = jwtAuthorities.get(keyId);
+        val key = jwtAuthorities.get(keyId);
         if (key != null) {
             return key;
         }
@@ -168,7 +170,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     private static JwtBundle toJwtBundle(final TrustDomain trustDomain, final JWKSet jwkSet) throws JwtBundleException, JOSEException, ParseException, KeyException {
-        Map<String, PublicKey> authorities = new ConcurrentHashMap<>();
+        final Map<String, PublicKey> authorities = new ConcurrentHashMap<>();
         for (JWK jwk : jwkSet.getKeys()) {
             String keyId = getKeyId(jwk);
             PublicKey publicKey = getPublicKey(jwk);
@@ -188,7 +190,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     private static PublicKey getPublicKey(final JWK jwk) throws JOSEException, ParseException, KeyException {
         val family = Algorithm.Family.parse(jwk.getKeyType().getValue());
 
-        PublicKey publicKey;
+        final PublicKey publicKey;
         switch (family) {
             case EC:
                 publicKey = ECKey.parse(jwk.toJSONString()).toPublicKey();

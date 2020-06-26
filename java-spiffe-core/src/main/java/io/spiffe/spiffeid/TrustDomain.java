@@ -85,7 +85,7 @@ public class TrustDomain {
         }
     }
 
-    private static String normalize(String s) {
+    private static String normalize(final String s) {
         String result = s.toLowerCase().trim();
         if (!result.contains("://")) {
             result = SpiffeId.SPIFFE_SCHEME.concat("://").concat(result);

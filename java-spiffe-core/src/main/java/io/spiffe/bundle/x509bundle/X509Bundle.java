@@ -61,13 +61,16 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      * @throws IOException in case of failure accessing the given bundle path
      * @throws CertificateException if the bundle cannot be parsed
      */
-    public static X509Bundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) throws IOException, CertificateException {
-        byte[] bundleBytes;
+    public static X509Bundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath)
+            throws IOException, CertificateException {
+
+        final byte[] bundleBytes;
         try {
             bundleBytes = Files.readAllBytes(bundlePath);
         } catch (NoSuchFileException e) {
             throw new IOException("Unable to load X.509 bundle file", e);
         }
+
         val x509Certificates = CertificateUtils.generateCertificates(bundleBytes);
         val x509CertificateSet = new HashSet<>(x509Certificates);
         return new X509Bundle(trustDomain, x509CertificateSet);
@@ -84,7 +87,8 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @throws CertificateException if the bundle cannot be parsed
      */
-    public static X509Bundle parse(@NonNull final TrustDomain trustDomain, @NonNull final byte[] bundleBytes) throws CertificateException {
+    public static X509Bundle parse(@NonNull final TrustDomain trustDomain, @NonNull final byte[] bundleBytes)
+            throws CertificateException {
         val x509Certificates = CertificateUtils.generateCertificates(bundleBytes);
         val x509CertificateSet = new HashSet<>(x509Certificates);
         return new X509Bundle(trustDomain, x509CertificateSet);

@@ -22,31 +22,32 @@ import java.util.Map;
 /**
  * Utility methods for converting GRPC objects to JAVA-SPIFFE domain objects.
  */
-class GrpcConversionUtils {
+final class GrpcConversionUtils {
 
-    private GrpcConversionUtils() {}
+    private GrpcConversionUtils() {
+    }
 
-    static X509Context toX509Context(final Workload.X509SVIDResponse x509SVIDResponse)
+    static X509Context toX509Context(final Workload.X509SVIDResponse x509SvidResponse)
             throws CertificateException, X509SvidException {
 
-        val  x509SvidList = getListOfX509Svid(x509SVIDResponse);
-        val x509BundleList = getListOfX509Bundles(x509SVIDResponse);
+        val  x509SvidList = getListOfX509Svid(x509SvidResponse);
+        val x509BundleList = getListOfX509Bundles(x509SvidResponse);
         val bundleSet = X509BundleSet.of(x509BundleList);
         return new X509Context(x509SvidList, bundleSet);
     }
 
-    static List<X509Bundle> getListOfX509Bundles(final Workload.X509SVIDResponse x509SVIDResponse)
+    static List<X509Bundle> getListOfX509Bundles(final Workload.X509SVIDResponse x509SvidResponse)
             throws CertificateException {
 
         final List<X509Bundle> x509BundleList = new ArrayList<>();
-        for (Workload.X509SVID x509Svid : x509SVIDResponse.getSvidsList()) {
+        for (Workload.X509SVID x509Svid : x509SvidResponse.getSvidsList()) {
             val spiffeId = SpiffeId.parse(x509Svid.getSpiffeId());
             val bundle = X509Bundle.parse(spiffeId.getTrustDomain(), x509Svid.getBundle().toByteArray());
             x509BundleList.add(bundle);
         }
 
         // Process federated bundles
-        for (Map.Entry<String, ByteString> bundleEntry : x509SVIDResponse.getFederatedBundlesMap().entrySet()) {
+        for (Map.Entry<String, ByteString> bundleEntry : x509SvidResponse.getFederatedBundlesMap().entrySet()) {
             val bundle = X509Bundle.parse(TrustDomain.of(bundleEntry.getKey()), bundleEntry.getValue().toByteArray());
             x509BundleList.add(bundle);
         }
@@ -54,12 +55,12 @@ class GrpcConversionUtils {
         return x509BundleList;
     }
 
-    private static List<X509Svid> getListOfX509Svid(final Workload.X509SVIDResponse x509SVIDResponse)
+    private static List<X509Svid> getListOfX509Svid(final Workload.X509SVIDResponse x509SvidResponse)
             throws X509SvidException {
 
         final List<X509Svid> x509SvidList = new ArrayList<>();
 
-        for (Workload.X509SVID x509SVID : x509SVIDResponse.getSvidsList()) {
+        for (Workload.X509SVID x509SVID : x509SvidResponse.getSvidsList()) {
             val svid = X509Svid.parseRaw(x509SVID.getX509Svid().toByteArray(), x509SVID.getX509SvidKey().toByteArray());
             x509SvidList.add(svid);
 
