@@ -9,10 +9,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class RetryHandler {
 
-    final ScheduledExecutorService executor;
-    final BackoffPolicy backoffPolicy;
-    Duration nextDelay;
-    int retryCount;
+    private final ScheduledExecutorService executor;
+    private final BackoffPolicy backoffPolicy;
+    private Duration nextDelay;
+
+    private int retryCount;
 
     public RetryHandler(BackoffPolicy backoffPolicy, ScheduledExecutorService executor) {
         this.nextDelay = backoffPolicy.getInitialDelay();
@@ -22,11 +23,11 @@ public class RetryHandler {
 
     /**
      * Schedule to execute a Runnable, based on the backoff policy
-     * Updates the next delay and retries count
+     * Updates the next delay and retries count.
      *
      * @param runnable the task to be scheduled for execution
      */
-    public void scheduleRetry(Runnable runnable) {
+    public void scheduleRetry(final Runnable runnable) {
         if (backoffPolicy.didNotReachMaxRetries(retryCount)) {
             executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
             nextDelay = backoffPolicy.nextDelay(nextDelay);
@@ -35,10 +36,18 @@ public class RetryHandler {
     }
 
     /**
-     * Reset state of RetryHandle to initial values
+     * Reset state of RetryHandle to initial values.
      */
     public void reset() {
         nextDelay = backoffPolicy.getInitialDelay();
         retryCount = 0;
+    }
+
+    public Duration getNextDelay() {
+        return nextDelay;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
     }
 }

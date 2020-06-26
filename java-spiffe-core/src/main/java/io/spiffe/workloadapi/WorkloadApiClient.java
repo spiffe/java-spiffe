@@ -20,9 +20,11 @@ import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
 import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 import io.spiffe.workloadapi.retry.BackoffPolicy;
 import io.spiffe.workloadapi.retry.RetryHandler;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +70,43 @@ public class WorkloadApiClient implements Closeable {
 
     private boolean closed;
 
+    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
+                              SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                              ManagedChannelWrapper managedChannel,
+                              BackoffPolicy backoffPolicy,
+                              ScheduledExecutorService retryExecutor,
+                              ExecutorService executorService) {
+        this.workloadApiAsyncStub = workloadApiAsyncStub;
+        this.workloadApiBlockingStub = workloadApiBlockingStub;
+        this.managedChannel = managedChannel;
+        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
+        this.backoffPolicy = backoffPolicy;
+        this.retryExecutor = retryExecutor;
+        this.executorService = executorService;
+    }
+
+    /**
+     * Constructor
+     * <p>
+     * It is recommended to use the facility methods `newClient()` to get a new instance
+     * of the WorkloadApiClient.
+     *
+     * @param workloadApiAsyncStub    a {@link SpiffeWorkloadAPIStub}
+     * @param workloadApiBlockingStub a {@link SpiffeWorkloadAPIBlockingStub}
+     * @param managedChannel          a {@link ManagedChannelWrapper}
+     */
+    public WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
+                             SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                             ManagedChannelWrapper managedChannel) {
+        this.workloadApiAsyncStub = workloadApiAsyncStub;
+        this.workloadApiBlockingStub = workloadApiBlockingStub;
+        this.backoffPolicy = new BackoffPolicy();
+        this.executorService = Executors.newCachedThreadPool();
+        this.retryExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
+        this.managedChannel = managedChannel;
+    }
+
     /**
      * Creates a new Workload API client using the default socket endpoint address.
      *
@@ -89,8 +128,9 @@ public class WorkloadApiClient implements Closeable {
      * @return a {@link WorkloadApiClient}
      * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
      */
-    public static WorkloadApiClient newClient(@NonNull final ClientOptions options) throws SocketEndpointAddressException {
-        String spiffeSocketPath;
+    public static WorkloadApiClient newClient(@NonNull final ClientOptions options)
+            throws SocketEndpointAddressException {
+        final String spiffeSocketPath;
         if (StringUtils.isNotBlank(options.spiffeSocketPath)) {
             spiffeSocketPath = options.spiffeSocketPath;
         } else {
@@ -126,43 +166,6 @@ public class WorkloadApiClient implements Closeable {
                 options.backoffPolicy,
                 retryExecutor,
                 options.executorService);
-    }
-
-    private WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                              SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                              ManagedChannelWrapper managedChannel,
-                              BackoffPolicy backoffPolicy,
-                              ScheduledExecutorService retryExecutor,
-                              ExecutorService executorService) {
-        this.workloadApiAsyncStub = workloadApiAsyncStub;
-        this.workloadApiBlockingStub = workloadApiBlockingStub;
-        this.managedChannel = managedChannel;
-        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
-        this.backoffPolicy = backoffPolicy;
-        this.retryExecutor = retryExecutor;
-        this.executorService = executorService;
-    }
-
-    /**
-     * Constructor
-     * <p>
-     * It is recommended to use the facility methods `newClient()` to get a new instance
-     * of the WorkloadApiClient.
-     *
-     * @param workloadApiAsyncStub a {@link SpiffeWorkloadAPIStub}
-     * @param workloadApiBlockingStub a {@link SpiffeWorkloadAPIBlockingStub}
-     * @param managedChannel a {@link ManagedChannelWrapper}
-     */
-    public WorkloadApiClient(SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                             SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                             ManagedChannelWrapper managedChannel) {
-        this.workloadApiAsyncStub = workloadApiAsyncStub;
-        this.workloadApiBlockingStub = workloadApiBlockingStub;
-        this.backoffPolicy = new BackoffPolicy();
-        this.executorService = Executors.newCachedThreadPool();
-        this.retryExecutor = Executors.newSingleThreadScheduledExecutor();
-        this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
-        this.managedChannel = managedChannel;
     }
 
     /**
@@ -203,8 +206,13 @@ public class WorkloadApiClient implements Closeable {
      * @return an instance of a {@link JwtSvid}
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
-        Set<String> audParam = new HashSet<>();
+    public JwtSvid fetchJwtSvid(
+            @NonNull final SpiffeId subject,
+            @NonNull final String audience,
+            final String... extraAudience)
+            throws JwtSvidException {
+
+        final Set<String> audParam = new HashSet<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
 
@@ -237,8 +245,9 @@ public class WorkloadApiClient implements Closeable {
      * @return a {@link JwtSvid} if the token and audience could be validated.
      * @throws JwtSvidException when the token cannot be validated with the audience
      */
-    public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience) throws JwtSvidException {
-        Workload.ValidateJWTSVIDRequest request = Workload.ValidateJWTSVIDRequest
+    public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience)
+            throws JwtSvidException {
+        val request = Workload.ValidateJWTSVIDRequest
                 .newBuilder()
                 .setSvid(token)
                 .setAudience(audience)
@@ -292,33 +301,11 @@ public class WorkloadApiClient implements Closeable {
         log.log(Level.INFO, "WorkloadAPI client is closed");
     }
 
-    /**
-     * Options for creating a new {@link WorkloadApiClient}.
-     * <p>
-     * <code>spiffeSocketPath</code> Workload API Socket Endpoint address.
-     * <p>
-     * <code>backoffPolicy</code> A custom instance of a {@link BackoffPolicy} to configure the retries to reconnect to the Workload API.
-     * <p>
-     * <code>executorService</code> A custom {@link ExecutorService} to configure the Grpc stubs and channels.
-     * If it is not provided, a Executors.newCachedThreadPool() is used by default.
-     * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
-     */
-    @Data
-    public static class ClientOptions {
 
-        String spiffeSocketPath;
-        BackoffPolicy backoffPolicy;
-        ExecutorService executorService;
-
-        @Builder
-        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy, ExecutorService executorService) {
-            this.spiffeSocketPath = spiffeSocketPath;
-            this.backoffPolicy = backoffPolicy;
-            this.executorService = executorService;
-        }
-    }
-
-    private StreamObserver<Workload.X509SVIDResponse> getX509ContextStreamObserver(Watcher<X509Context> watcher, RetryHandler retryHandler, Context.CancellableContext cancellableContext) {
+    private StreamObserver<Workload.X509SVIDResponse> getX509ContextStreamObserver(
+            Watcher<X509Context> watcher,
+            RetryHandler retryHandler,
+            Context.CancellableContext cancellableContext) {
         return new StreamObserver<Workload.X509SVIDResponse>() {
             @Override
             public void onNext(Workload.X509SVIDResponse value) {
@@ -344,7 +331,9 @@ public class WorkloadApiClient implements Closeable {
                 } else {
                     log.log(Level.INFO, "Retrying connecting to Workload API to register X.509 context watcher");
                     retryHandler.scheduleRetry(() ->
-                            cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), this)));
+                            cancellableContext.run(
+                                    () -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(),
+                                            this)));
                 }
             }
 
@@ -356,7 +345,10 @@ public class WorkloadApiClient implements Closeable {
         };
     }
 
-    private StreamObserver<Workload.JWTBundlesResponse> getJwtBundleStreamObserver(Watcher<JwtBundleSet> watcher, RetryHandler retryHandler, Context.CancellableContext cancellableContext) {
+    private StreamObserver<Workload.JWTBundlesResponse> getJwtBundleStreamObserver(
+            Watcher<JwtBundleSet> watcher,
+            RetryHandler retryHandler,
+            Context.CancellableContext cancellableContext) {
         return new StreamObserver<Workload.JWTBundlesResponse>() {
 
             @Override
@@ -382,7 +374,8 @@ public class WorkloadApiClient implements Closeable {
                 } else {
                     log.log(Level.INFO, "Retrying connecting to Workload API to register JWT Bundles watcher");
                     retryHandler.scheduleRetry(() ->
-                            cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(), this)));
+                            cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(),
+                                    this)));
                 }
             }
 
@@ -396,8 +389,9 @@ public class WorkloadApiClient implements Closeable {
 
     // validates that the X.509 context has both the SVID and the bundles
     private void validateX509Context(X509Context x509Context) throws X509ContextException {
-        if (x509Context.getX509BundleSet() == null || x509Context.getX509BundleSet().getBundles() == null ||
-                x509Context.getX509BundleSet().getBundles().isEmpty()) {
+        if (x509Context.getX509BundleSet() == null
+                || x509Context.getX509BundleSet().getBundles() == null
+                || x509Context.getX509BundleSet().getBundles().isEmpty()) {
             throw new X509ContextException("X.509 context error: no X.509 bundles found");
         }
 
@@ -416,9 +410,10 @@ public class WorkloadApiClient implements Closeable {
 
     private X509Context processX509Context() throws X509ContextException {
         try {
-            Iterator<Workload.X509SVIDResponse> x509SVIDResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
-            if (x509SVIDResponse.hasNext()) {
-                return GrpcConversionUtils.toX509Context(x509SVIDResponse.next());
+            final Iterator<Workload.X509SVIDResponse> x509SvidResponse =
+                    workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
+            if (x509SvidResponse.hasNext()) {
+                return GrpcConversionUtils.toX509Context(x509SvidResponse.next());
             }
         } catch (CertificateException | X509SvidException e) {
             throw new X509ContextException("Error processing X509Context", e);
@@ -427,21 +422,21 @@ public class WorkloadApiClient implements Closeable {
     }
 
     private JwtSvid callFetchJwtSvid(SpiffeId subject, Set<String> audience) throws JwtSvidException {
-        Workload.JWTSVIDRequest jwtsvidRequest = Workload.JWTSVIDRequest
+        final Workload.JWTSVIDRequest jwtsvidRequest = Workload.JWTSVIDRequest
                 .newBuilder()
                 .setSpiffeId(subject.toString())
                 .addAllAudience(audience)
                 .build();
-        Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtsvidRequest);
+        final Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtsvidRequest);
 
         return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
     }
 
     private JwtBundleSet callFetchBundles() throws JwtBundleException {
-        Workload.JWTBundlesRequest request = Workload.JWTBundlesRequest
+        final Workload.JWTBundlesRequest request = Workload.JWTBundlesRequest
                 .newBuilder()
                 .build();
-        Iterator<Workload.JWTBundlesResponse> bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
+        final Iterator<Workload.JWTBundlesResponse> bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
 
         if (bundlesResponse.hasNext()) {
             try {
@@ -451,5 +446,37 @@ public class WorkloadApiClient implements Closeable {
             }
         }
         throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
+    }
+
+    /**
+     * Options for creating a new {@link WorkloadApiClient}.
+     * <p>
+     * <code>spiffeSocketPath</code> Workload API Socket Endpoint address.
+     * <p>
+     * <code>backoffPolicy</code> A custom instance of a {@link BackoffPolicy} to configure the retries to reconnect
+     * to the Workload API.
+     * <p>
+     * <code>executorService</code> A custom {@link ExecutorService} to configure the Grpc stubs and channels.
+     * If it is not provided, a Executors.newCachedThreadPool() is used by default.
+     * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
+     */
+    @Data
+    public static class ClientOptions {
+
+        @Setter(AccessLevel.NONE)
+        private String spiffeSocketPath;
+
+        @Setter(AccessLevel.NONE)
+        private BackoffPolicy backoffPolicy;
+
+        @Setter(AccessLevel.NONE)
+        private ExecutorService executorService;
+
+        @Builder
+        public ClientOptions(String spiffeSocketPath, BackoffPolicy backoffPolicy, ExecutorService executorService) {
+            this.spiffeSocketPath = spiffeSocketPath;
+            this.backoffPolicy = backoffPolicy;
+            this.executorService = executorService;
+        }
     }
 }

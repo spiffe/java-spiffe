@@ -9,9 +9,11 @@ import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -35,11 +37,17 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closeable {
 
     private static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
-    private static final Duration DEFAULT_TIMEOUT = Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
+
+    private static final Duration DEFAULT_TIMEOUT =
+            Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
     private JwtBundleSet bundles;
     private WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
+
+    // private constructor
+    private JwtSource() {
+    }
 
     /**
      * Creates a new JWT source. It blocks until the initial update with the JWT bundles
@@ -75,7 +83,8 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull final JwtSourceOptions options) throws SocketEndpointAddressException, JwtSourceException {
+    public static JwtSource newSource(@NonNull final JwtSourceOptions options)
+            throws SocketEndpointAddressException, JwtSourceException {
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }
@@ -104,7 +113,8 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public JwtSvid fetchJwtSvid(final SpiffeId subject, final String audience, final String... extraAudiences) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(final SpiffeId subject, final String audience, final String... extraAudiences)
+            throws JwtSvidException {
         if (isClosed()) {
             throw new IllegalStateException("JWT SVID source is closed");
         }
@@ -144,29 +154,6 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
-    /**
-     * Options to configure a {@link JwtSource}.
-     * <p>
-     * <code>spiffeSocketPath</code> Address to the Workload API, if it is not set, the default address will be used.
-     * <p>
-     * <code>initTimeout</code> Timeout for initializing the instance.
-     * <p>
-     * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set, a new client will be created.
-     */
-    @Data
-    public static class JwtSourceOptions {
-
-        String spiffeSocketPath;
-        Duration initTimeout;
-        WorkloadApiClient workloadApiClient;
-
-        @Builder
-        public JwtSourceOptions(final String spiffeSocketPath, final WorkloadApiClient workloadApiClient, final Duration initTimeout) {
-            this.spiffeSocketPath = spiffeSocketPath;
-            this.workloadApiClient = workloadApiClient;
-            this.initTimeout = initTimeout;
-        }
-    }
 
 
     private void init(final Duration timeout) throws TimeoutException {
@@ -196,7 +183,8 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
 
             @Override
             public void onError(final Throwable error) {
-                log.log(Level.SEVERE, String.format("Error in JwtBundleSet watcher: %s", ExceptionUtils.getStackTrace(error)));
+                log.log(Level.SEVERE, String.format("Error in JwtBundleSet watcher: %s",
+                        ExceptionUtils.getStackTrace(error)));
                 done.countDown();
             }
         });
@@ -214,7 +202,8 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
-    private static WorkloadApiClient createClient(@NonNull final JwtSourceOptions options) throws SocketEndpointAddressException {
+    private static WorkloadApiClient createClient(@NonNull final JwtSourceOptions options)
+            throws SocketEndpointAddressException {
         val clientOptions = WorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)
@@ -222,7 +211,36 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         return WorkloadApiClient.newClient(clientOptions);
     }
 
-    // private constructor
-    private JwtSource() {
+    /**
+     * Options to configure a {@link JwtSource}.
+     * <p>
+     * <code>spiffeSocketPath</code> Address to the Workload API, if it is not set, the default address will be used.
+     * <p>
+     * <code>initTimeout</code> Timeout for initializing the instance.
+     * <p>
+     * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set,
+     * a new client will be created.
+     */
+    @Data
+    public static class JwtSourceOptions {
+
+        @Setter(AccessLevel.NONE)
+        private String spiffeSocketPath;
+
+        @Setter(AccessLevel.NONE)
+        private Duration initTimeout;
+
+        @Setter(AccessLevel.NONE)
+        private WorkloadApiClient workloadApiClient;
+
+        @Builder
+        public JwtSourceOptions(
+                final String spiffeSocketPath,
+                final WorkloadApiClient workloadApiClient,
+                final Duration initTimeout) {
+            this.spiffeSocketPath = spiffeSocketPath;
+            this.workloadApiClient = workloadApiClient;
+            this.initTimeout = initTimeout;
+        }
     }
 }

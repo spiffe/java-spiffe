@@ -34,21 +34,21 @@ class RetryHandlerTest {
         retryHandler.scheduleRetry(runnable);
 
         verify(scheduledExecutorService).schedule(runnable, 1, TimeUnit.SECONDS);
-        assertEquals(1, retryHandler.retryCount);
+        assertEquals(1, retryHandler.getRetryCount());
 
         // second retry
         retryHandler.scheduleRetry(runnable);
-        assertEquals(2, retryHandler.retryCount);
+        assertEquals(2, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 2, TimeUnit.SECONDS);
 
         // third retry
         retryHandler.scheduleRetry(runnable);
-        assertEquals(3, retryHandler.retryCount);
+        assertEquals(3, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 4, TimeUnit.SECONDS);
 
         // fourth retry
         retryHandler.scheduleRetry(runnable);
-        assertEquals(4, retryHandler.retryCount);
+        assertEquals(4, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 8, TimeUnit.SECONDS);
     }
 
@@ -62,16 +62,16 @@ class RetryHandlerTest {
         retryHandler.scheduleRetry(runnable);
 
         verify(scheduledExecutorService).schedule(runnable, 1, TimeUnit.SECONDS);
-        assertEquals(1, retryHandler.retryCount);
+        assertEquals(1, retryHandler.getRetryCount());
 
         // second retry
         retryHandler.scheduleRetry(runnable);
-        assertEquals(2, retryHandler.retryCount);
+        assertEquals(2, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 2, TimeUnit.SECONDS);
 
         // third retry
         retryHandler.scheduleRetry(runnable);
-        assertEquals(3, retryHandler.retryCount);
+        assertEquals(3, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 4, TimeUnit.SECONDS);
 
         Mockito.reset(scheduledExecutorService);
@@ -88,19 +88,19 @@ class RetryHandlerTest {
         RetryHandler retryHandler = new RetryHandler(backoffPolicy, scheduledExecutorService);
 
         // check initial delay
-        assertEquals(Duration.ofSeconds(20), retryHandler.nextDelay);
+        assertEquals(Duration.ofSeconds(20), retryHandler.getNextDelay());
 
         // schedule a retry
         retryHandler.scheduleRetry(() -> {});
 
         // check that the next delay was updated
-        assertEquals(Duration.ofSeconds(40), retryHandler.nextDelay);
+        assertEquals(Duration.ofSeconds(40), retryHandler.getNextDelay());
 
         // reset the retry handler
         retryHandler.reset();
 
         // check that the nextDelay was reset to initialDelay
-        assertEquals(Duration.ofSeconds(20), retryHandler.nextDelay);
+        assertEquals(Duration.ofSeconds(20), retryHandler.getNextDelay());
     }
 
 }

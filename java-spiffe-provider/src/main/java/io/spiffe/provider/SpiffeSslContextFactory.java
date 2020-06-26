@@ -2,9 +2,11 @@ package io.spiffe.provider;
 
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.workloadapi.X509Source;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.SSLContext;
@@ -21,6 +23,9 @@ import java.util.function.Supplier;
 public final class SpiffeSslContextFactory {
 
     private static final String DEFAULT_SSL_PROTOCOL = "TLSv1.2";
+
+    private SpiffeSslContextFactory() {
+    }
 
     /**
      * Creates an {@link SSLContext} initialized with a {@link SpiffeKeyManager} and {@link SpiffeTrustManager}
@@ -80,10 +85,17 @@ public final class SpiffeSslContextFactory {
     @Data
     public static class SslContextOptions {
 
-        String sslProtocol;
-        X509Source x509Source;
-        Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
-        boolean acceptAnySpiffeId;
+        @Setter(AccessLevel.NONE)
+        private String sslProtocol;
+
+        @Setter(AccessLevel.NONE)
+        private X509Source x509Source;
+
+        @Setter(AccessLevel.NONE)
+        private Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
+
+        @Setter(AccessLevel.NONE)
+        private boolean acceptAnySpiffeId;
 
         @Builder
         public SslContextOptions(
@@ -96,8 +108,5 @@ public final class SpiffeSslContextFactory {
             this.sslProtocol = sslProtocol;
             this.acceptAnySpiffeId = acceptAnySpiffeId;
         }
-    }
-
-    private SpiffeSslContextFactory() {
     }
 }

@@ -3,7 +3,10 @@ package io.spiffe.workloadapi.internal;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class ThreadUtils {
+public final class ThreadUtils {
+
+    private ThreadUtils() {
+    }
 
     public static void await(CountDownLatch latch) {
         try {
@@ -24,6 +27,4 @@ public class ThreadUtils {
         return result;
     }
 
-    private ThreadUtils() {
-    }
 }
