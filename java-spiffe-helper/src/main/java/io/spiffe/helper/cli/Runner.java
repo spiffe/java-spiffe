@@ -27,6 +27,9 @@ import java.util.Properties;
 @Log
 public class Runner {
 
+    private Runner() {
+    }
+
     /**
      * Entry method of the CLI to run the {@link KeyStoreHelper}.
      * <p>
@@ -121,7 +124,7 @@ public class Runner {
     }
 
     private static String getString(final Properties properties, final String propName) {
-        final String property = properties.getProperty(propName);
+        val property = properties.getProperty(propName);
         if (property == null) {
             return "";
         }

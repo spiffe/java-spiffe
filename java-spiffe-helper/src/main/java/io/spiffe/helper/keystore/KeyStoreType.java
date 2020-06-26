@@ -30,7 +30,7 @@ public enum KeyStoreType {
     * @return an instance of a KeyStoreType
     * @throws IllegalArgumentException if the keystore type is unknown
     */
-   public static KeyStoreType parse(Object type) {
+   public static KeyStoreType parse(final Object type) {
       KeyStoreType keyStoreType = null;
       if (String.valueOf(type).equalsIgnoreCase(JKS.value)) {
          keyStoreType = JKS;

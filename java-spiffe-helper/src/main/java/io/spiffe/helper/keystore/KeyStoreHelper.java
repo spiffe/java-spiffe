@@ -18,8 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.Closeable;
 import java.nio.file.Path;
 import java.security.KeyStoreException;
-import java.security.cert.X509Certificate;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
@@ -66,9 +64,10 @@ public class KeyStoreHelper implements Closeable {
      * @throws SocketEndpointAddressException is the socket endpoint address is not valid
      * @throws KeyStoreException              is the entry cannot be stored in the KeyStore
      */
-    public KeyStoreHelper(@NonNull final KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreException {
+    public KeyStoreHelper(@NonNull final KeyStoreOptions options)
+            throws SocketEndpointAddressException, KeyStoreException {
 
-        KeyStoreType keyStoreType;
+        final KeyStoreType keyStoreType;
         if (options.keyStoreType == null) {
             keyStoreType = KeyStoreType.getDefaultType();
         } else {
@@ -115,12 +114,12 @@ public class KeyStoreHelper implements Closeable {
 
 
     private WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
-        WorkloadApiClient.ClientOptions clientOptions = WorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
+        val clientOptions = WorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
         return WorkloadApiClient.newClient(clientOptions);
     }
 
-    private void setX509ContextWatcher(WorkloadApiClient workloadApiClient) {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+    private void setX509ContextWatcher(final WorkloadApiClient workloadApiClient) {
+        val countDownLatch = new CountDownLatch(1);
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
             public void onUpdate(X509Context update) {
@@ -151,7 +150,7 @@ public class KeyStoreHelper implements Closeable {
 
         keyStore.storePrivateKeyEntry(privateKeyEntry);
 
-        for (Map.Entry<TrustDomain, X509Bundle> entry : update.getX509BundleSet().getBundles().entrySet()) {
+        for (val entry : update.getX509BundleSet().getBundles().entrySet()) {
             TrustDomain trustDomain = entry.getKey();
             X509Bundle bundle = entry.getValue();
             storeBundle(trustDomain, bundle);
@@ -160,9 +159,9 @@ public class KeyStoreHelper implements Closeable {
         log.log(Level.INFO, "Stored X.509 context update in Java KeyStore");
     }
 
-    private void storeBundle(TrustDomain trustDomain, X509Bundle bundle) throws KeyStoreException {
+    private void storeBundle(final TrustDomain trustDomain, final X509Bundle bundle) throws KeyStoreException {
         int index = 0;
-        for (X509Certificate certificate : bundle.getX509Authorities()) {
+        for (val certificate : bundle.getX509Authorities()) {
             final AuthorityEntry authorityEntry = AuthorityEntry.builder()
                     .alias(generateAlias(trustDomain, index))
                     .certificate(certificate)
@@ -171,11 +170,11 @@ public class KeyStoreHelper implements Closeable {
         }
     }
 
-    private String generateAlias(TrustDomain trustDomain, int index) {
+    private String generateAlias(final TrustDomain trustDomain, int index) {
         return trustDomain.getName().concat(".").concat(String.valueOf(index));
     }
 
-    private void await(CountDownLatch latch) {
+    private void await(final CountDownLatch latch) {
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -210,7 +209,8 @@ public class KeyStoreHelper implements Closeable {
      * <code>keyAlias</code> Alias of the keyEntry. Default: spiffe
      * Note: java keystore aliases are case-insensitive.
      * <p>
-     * <code>spiffeSocketPath</code> Optional SPIFFE Endpoint Socket address, if absent, SPIFFE_ENDPOINT_SOCKET env variable is used.
+     * <code>spiffeSocketPath</code> Optional SPIFFE Endpoint Socket address,
+     * if absent, SPIFFE_ENDPOINT_SOCKET env variable is used.
      * <p>
      * <code>client</code> Optional. The a {@link WorkloadApiClient} to fetch the X.509 materials from the Workload API.
      */
@@ -245,9 +245,15 @@ public class KeyStoreHelper implements Closeable {
         private WorkloadApiClient workloadApiClient;
 
         @Builder
-        public KeyStoreOptions(@NonNull Path keyStorePath, @NonNull Path trustStorePath, @NonNull String keyStorePass,
-                               @NonNull String trustStorePass, @NonNull String keyPass, KeyStoreType keyStoreType,
-                               String keyAlias, WorkloadApiClient workloadApiClient, String spiffeSocketPath) {
+        public KeyStoreOptions(@NonNull final Path keyStorePath,
+                               @NonNull final Path trustStorePath,
+                               @NonNull final String keyStorePass,
+                               @NonNull final String trustStorePass,
+                               @NonNull final String keyPass,
+                               final KeyStoreType keyStoreType,
+                               final String keyAlias,
+                               final WorkloadApiClient workloadApiClient,
+                               final String spiffeSocketPath) {
             this.keyStorePath = keyStorePath;
             this.trustStorePath = trustStorePath;
             this.keyStoreType = keyStoreType;

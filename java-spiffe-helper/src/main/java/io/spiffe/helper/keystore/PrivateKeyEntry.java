@@ -18,7 +18,7 @@ class PrivateKeyEntry {
             final String alias,
             final Key privateKey,
             final String password,
-            final X509Certificate ...certificateChain) {
+            final X509Certificate... certificateChain) {
         this.alias = alias;
         this.privateKey = privateKey;
         this.password = password;
