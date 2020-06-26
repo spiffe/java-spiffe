@@ -40,8 +40,10 @@ public final class SpiffeSslContextFactory {
      * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
      * @throws KeyManagementException   if there is a problem initializing the SSL context
      */
-    public static SSLContext getSslContext(@NonNull final SslContextOptions options) throws NoSuchAlgorithmException, KeyManagementException {
-        SSLContext sslContext;
+    public static SSLContext getSslContext(@NonNull final SslContextOptions options)
+            throws NoSuchAlgorithmException, KeyManagementException {
+
+        final SSLContext sslContext;
         if (StringUtils.isNotBlank(options.sslProtocol)) {
             sslContext = SSLContext.getInstance(options.sslProtocol);
         } else {
@@ -52,12 +54,13 @@ public final class SpiffeSslContextFactory {
             throw new IllegalArgumentException("x509Source option cannot be null, an X.509 Source must be provided");
         }
 
-        TrustManager[] trustManager;
+        final TrustManager[] trustManager;
         if (options.acceptAnySpiffeId) {
             trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(options.x509Source);
         } else {
             if (options.acceptedSpiffeIdsSupplier != null) {
-                trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
+                trustManager = new SpiffeTrustManagerFactory()
+                        .engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
             } else {
                 trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source);
             }
@@ -77,9 +80,11 @@ public final class SpiffeSslContextFactory {
      * <p>
      * <code>x509Source</code> A {@link X509Source} that provides the X.509 materials.
      * <p>
-     * <code>acceptedSpiffeIdsSupplier</code> A supplier of a set of {@link SpiffeId} that will be accepted for a secure socket connection.
+     * <code>acceptedSpiffeIdsSupplier</code> A supplier of a set of {@link SpiffeId} that will be accepted
+     * for a secure socket connection.
      * <p>
-     * <code>acceptAnySpiffeId</code> Flag that indicates that any {@link SpiffeId} will be accepted for a secure socket connection. This config overrules
+     * <code>acceptAnySpiffeId</code> Flag that indicates that any {@link SpiffeId} will be accepted for a
+     * secure socket connection. This config overrules
      * the <code>acceptedSpiffeIdsSupplier</code> property.
      */
     @Data

@@ -25,7 +25,8 @@ public class SpiffeSslSocketFactory extends SSLSocketFactory {
      * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
      * @throws KeyManagementException if there is a problem initializing the SSL context
      */
-    public SpiffeSslSocketFactory(SslContextOptions contextOptions) throws KeyManagementException, NoSuchAlgorithmException {
+    public SpiffeSslSocketFactory(final SslContextOptions contextOptions)
+            throws KeyManagementException, NoSuchAlgorithmException {
         val sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
         delegate = sslContext.getSocketFactory();
     }

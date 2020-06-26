@@ -10,6 +10,9 @@ import java.security.Security;
  */
 final class EnvironmentUtils {
 
+    private EnvironmentUtils() {
+    }
+
     /**
      * Looks for a variable name defined in the environment.
      * It first looks in the {@link Security} environment, if it is not defined or is a blank value,
@@ -19,7 +22,7 @@ final class EnvironmentUtils {
      * @param defaultValue the value that is returned if the variable has no value in the environment
      * @return a String with a value
      */
-    static String getProperty(String variableName, String defaultValue) {
+    static String getProperty(final String variableName, final String defaultValue) {
         val value = getProperty(variableName);
         if (StringUtils.isNotBlank(value)) {
             return value;
@@ -35,7 +38,7 @@ final class EnvironmentUtils {
      * @param variableName the key of the variable to look for in the environment
      * @return a String with a value
      */
-    static String getProperty(String variableName) {
+    static String getProperty(final String variableName) {
         String value;
         value = Security.getProperty(variableName);
         if (StringUtils.isNotBlank(value)) {
@@ -46,8 +49,5 @@ final class EnvironmentUtils {
             return value;
         }
         return "";
-    }
-
-    private EnvironmentUtils() {
     }
 }

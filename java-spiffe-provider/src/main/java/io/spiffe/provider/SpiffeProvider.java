@@ -12,7 +12,8 @@ import static io.spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  * SPIFFE X.509-SVID and Bundle retrieval from the Workload API and SPIFFE ID validation.
  * <p>
  * It registers a {@link javax.net.ssl.KeyManagerFactory} for creating a {@link javax.net.ssl.KeyManager}
- * that handles an X.509-SVID Certificate to probe identity. It also registers a {@link javax.net.ssl.TrustManagerFactory}
+ * that handles an X.509-SVID Certificate to probe identity. It also registers
+ * a {@link javax.net.ssl.TrustManagerFactory}
  * for creating a {@link javax.net.ssl.TrustManager} for trust chain and SPIFFE ID validation.
  * <p>
  * To use this Provider, it is needed to add the following lines to the java.security file:
@@ -25,13 +26,14 @@ import static io.spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  * Also, to configure the accepted SPIFFE IDs, add to the java.security the list of SPIFFE IDs
  * separated by commas:
  * <pre>
- *      ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2, spiffe://other-domain.org/workload
+ *      ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2,
  * </pre>
  * This property can also be defined as a System parameter passed through <code>-Dssl.spiffe.accept</code>:
  * <pre>
  *      -Dssl.spiffe.accept=ssl.spiffe.accept=spiffe://example.org/workload1, spiffe://example.org/workload2
  * </pre>
- * To configure the `TrustManager` to accept any SPIFFE ID presented by a peer, the property <code>ssl.spiffe.acceptAll</code> must be
+ * To configure the `TrustManager` to accept any SPIFFE ID presented by a peer,
+ * the property <code>ssl.spiffe.acceptAll</code> must be
  * set with the value <code>true</code>:
  * <pre>
  *     ssl.spiffe.acceptAll=true
@@ -39,8 +41,12 @@ import static io.spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  */
 public final class SpiffeProvider extends Provider {
 
-    private static final String SPIFFE_KEY_MANAGER_FACTORY = String.format("KeyManagerFactory.%s", SpiffeProviderConstants.ALGORITHM);
-    private static final String SPIFFE_TRUST_MANAGER_FACTORY = String.format("TrustManagerFactory.%s", SpiffeProviderConstants.ALGORITHM);
+    private static final String SPIFFE_KEY_MANAGER_FACTORY =
+            String.format("KeyManagerFactory.%s", SpiffeProviderConstants.ALGORITHM);
+
+    private static final String SPIFFE_TRUST_MANAGER_FACTORY =
+            String.format("TrustManagerFactory.%s", SpiffeProviderConstants.ALGORITHM);
+
     private static final String SPIFFE_KEYSTORE = String.format("KeyStore.%s", SpiffeProviderConstants.ALGORITHM);
 
     /**

@@ -21,7 +21,8 @@ import java.util.function.Supplier;
  * Implementation of an X.509 TrustManager for the SPIFFE Provider.
  * <p>
  * Provides methods to validate X.509 certificates chains using trusted certs provided by a {@link BundleSource}
- * maintained via the Workload API and to verify the SPIFFE IDs against a Set of accepted SPIFFE IDs provided by a Supplier.
+ * maintained via the Workload API and to verify the SPIFFE IDs against a Set of accepted SPIFFE IDs
+ * provided by a Supplier.
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
@@ -74,7 +75,8 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * @throws CertificateException when the chain or the SPIFFE ID presented are not trusted.
      */
     @Override
-    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType) throws CertificateException {
+    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType)
+            throws CertificateException {
         validatePeerChain(chain);
     }
 
@@ -91,7 +93,8 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * @throws CertificateException when the chain or the SPIFFE ID presented are not trusted.
      */
     @Override
-    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType) throws CertificateException {
+    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType)
+            throws CertificateException {
         validatePeerChain(chain);
     }
 
@@ -104,7 +107,8 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkClientTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType, final Socket socket) throws CertificateException {
+    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType, final Socket socket)
+            throws CertificateException {
         checkClientTrusted(chain, authType);
     }
 
@@ -112,7 +116,8 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkServerTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType, final Socket socket) throws CertificateException {
+    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType, final Socket socket)
+            throws CertificateException {
         checkServerTrusted(chain, authType);
     }
 
@@ -120,7 +125,8 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkClientTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkClientTrusted(@NonNull X509Certificate[] chain, final String authType, final SSLEngine sslEngine) throws CertificateException {
+    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType, final SSLEngine sslEngine)
+            throws CertificateException {
         checkClientTrusted(chain, authType);
     }
 
@@ -128,12 +134,14 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkServerTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkServerTrusted(@NonNull X509Certificate[] chain, final String authType, final SSLEngine sslEngine) throws CertificateException {
+    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType, final SSLEngine sslEngine)
+            throws CertificateException {
         checkServerTrusted(chain, authType);
     }
 
-    // Check that the SPIFFE ID in the peer's certificate is accepted and the chain can be validated with a root CA in the bundle source
-    private void validatePeerChain(X509Certificate ...chain) throws CertificateException {
+    // Check that the SPIFFE ID in the peer's certificate is accepted and the chain can be validated with a
+    // root CA in the bundle source
+    private void validatePeerChain(final X509Certificate... chain) throws CertificateException {
         if (!acceptAnySpiffeId) {
             X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
         }

@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 public class SpiffeTrustManagerTest {
 
     @Mock
-    BundleSource bundleSource;
+    BundleSource<X509Bundle> bundleSource;
 
     static X509Bundle x509Bundle;
     static X509Svid x509Svid;
