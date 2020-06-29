@@ -5,7 +5,7 @@ import io.spiffe.exception.X509SourceException;
 import io.spiffe.workloadapi.X509Source;
 
 /**
- * Singleton that handles an instance of a {@link X509Source}.
+ * Singleton that handles an instance of an {@link X509Source}.
  * <p>
  * The default SPIFFE socket endpoint address is used to create an X.509 Source backed by the
  * Workload API.

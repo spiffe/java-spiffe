@@ -37,7 +37,7 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
     final String jwtBundle = "testdata/workloadapi/bundle.json";
 
 
-    // Loads cert, bundle and key from files and generates a X509SVIDResponse.
+    // Loads cert, bundle and key from files and generates an X509SVIDResponse.
     @Override
     public void fetchX509SVID(Workload.X509SVIDRequest request, StreamObserver<Workload.X509SVIDResponse> responseObserver) {
         try {

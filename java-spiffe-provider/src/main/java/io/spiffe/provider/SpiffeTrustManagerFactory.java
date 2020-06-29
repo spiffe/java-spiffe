@@ -25,7 +25,7 @@ import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPE
  * {@link X509Source} that is maintained via the Workload API.
  * <p>
  * The Java Security API will call <code>engineGetTrustManagers()</code> to get an instance of a {@link TrustManager}.
- * This TrustManager instance gets injected a {@link X509Source}, which implements {@link BundleSource} and
+ * This TrustManager instance gets injected an {@link X509Source}, which implements {@link BundleSource} and
  * keeps bundles updated.
  * The TrustManager also gets a Supplier of a Set of accepted SPIFFE IDs used to validate the SPIFFE ID from the SVIDs
  * presented by a peer during the secure socket handshake.

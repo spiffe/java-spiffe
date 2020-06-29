@@ -29,7 +29,7 @@ public final class SpiffeSslContextFactory {
 
     /**
      * Creates an {@link SSLContext} initialized with a {@link SpiffeKeyManager} and {@link SpiffeTrustManager}
-     * that are backed by the Workload API via a {@link X509Source}.
+     * that are backed by the Workload API via an {@link X509Source}.
      *
      * @param options {@link SslContextOptions}. The option {@link X509Source} must be not null.
      *                If the option <code>acceptedSpiffeIdsSupplier</code> is not provided, the Set of accepted SPIFFE IDs
@@ -78,7 +78,7 @@ public final class SpiffeSslContextFactory {
      * <p>
      * <code>sslProtocol</code> The SSL Protocol. Default: TLSv1.2
      * <p>
-     * <code>x509Source</code> A {@link X509Source} that provides the X.509 materials.
+     * <code>x509Source</code> An {@link X509Source} that provides the X.509 materials.
      * <p>
      * <code>acceptedSpiffeIdsSupplier</code> A supplier of a set of {@link SpiffeId} that will be accepted
      * for a secure socket connection.

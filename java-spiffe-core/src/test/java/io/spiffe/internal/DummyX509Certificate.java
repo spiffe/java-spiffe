@@ -15,7 +15,7 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Set;
 
-// Dummy implementation of a X509Certificate used for testing purposes
+// Dummy implementation of an X509Certificate used for testing purposes
 public class DummyX509Certificate extends X509Certificate {
     @Override
     public void checkValidity() throws CertificateExpiredException, CertificateNotYetValidException {
