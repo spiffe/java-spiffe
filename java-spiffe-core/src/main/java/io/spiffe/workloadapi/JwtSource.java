@@ -43,7 +43,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
 
     private JwtBundleSet bundles;
     private WorkloadApiClient workloadApiClient;
-    private boolean closed;
+    private volatile boolean closed;
 
     // private constructor
     private JwtSource() {

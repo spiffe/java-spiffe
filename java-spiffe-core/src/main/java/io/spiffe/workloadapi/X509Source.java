@@ -50,7 +50,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
 
     private Function<List<X509Svid>, X509Svid> picker;
     private WorkloadApiClient workloadApiClient;
-    private boolean closed;
+    private volatile boolean closed;
 
     // private constructor
     private X509Source() {

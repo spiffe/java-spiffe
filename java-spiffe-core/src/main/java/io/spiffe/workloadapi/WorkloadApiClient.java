@@ -66,7 +66,7 @@ public final class WorkloadApiClient implements Closeable {
 
     private final ExecutorService executorService;
 
-    private boolean closed;
+    private volatile boolean closed;
 
     private WorkloadApiClient(final SpiffeWorkloadAPIStub workloadApiAsyncStub,
                               final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
