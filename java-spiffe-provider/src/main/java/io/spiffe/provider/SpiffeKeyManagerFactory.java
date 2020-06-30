@@ -34,15 +34,7 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      */
     @Override
     protected KeyManager[] engineGetKeyManagers() {
-        final X509Source x509Source;
-        try {
-            x509Source = X509SourceManager.getX509Source();
-        } catch (X509SourceException e) {
-            throw new SpiffeProviderException("The X.509 source could not be created", e);
-        } catch (SocketEndpointAddressException e) {
-            throw new SpiffeProviderException("The Workload API Socket endpoint address configured is not valid", e);
-        }
-
+        val x509Source = createX509Source();
         val spiffeKeyManager = new SpiffeKeyManager(x509Source);
         return new KeyManager[]{spiffeKeyManager};
     }
@@ -66,5 +58,15 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
     @Override
     protected void engineInit(final ManagerFactoryParameters managerFactoryParameters) {
         //no implementation needed
+    }
+
+    private X509Source createX509Source() {
+        try {
+            return X509SourceManager.getX509Source();
+        } catch (X509SourceException e) {
+            throw new SpiffeProviderException("The X.509 source could not be created", e);
+        } catch (SocketEndpointAddressException e) {
+            throw new SpiffeProviderException("The Workload API Socket endpoint address configured is not valid", e);
+        }
     }
 }

@@ -1,20 +1,19 @@
 package io.spiffe.workloadapi;
 
+import io.spiffe.bundle.BundleSource;
+import io.spiffe.bundle.x509bundle.X509Bundle;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
+import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.svid.x509svid.X509Svid;
+import io.spiffe.svid.x509svid.X509SvidSource;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.java.Log;
 import lombok.val;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import io.spiffe.bundle.BundleSource;
-import io.spiffe.bundle.x509bundle.X509Bundle;
-import io.spiffe.bundle.x509bundle.X509BundleSet;
-import io.spiffe.spiffeid.TrustDomain;
-import io.spiffe.svid.x509svid.X509Svid;
-import io.spiffe.svid.x509svid.X509SvidSource;
 
 import java.io.Closeable;
 import java.time.Duration;
@@ -48,12 +47,15 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
     private X509Svid svid;
     private X509BundleSet bundles;
 
-    private Function<List<X509Svid>, X509Svid> picker;
-    private WorkloadApiClient workloadApiClient;
+    private final Function<List<X509Svid>, X509Svid> picker;
+    private final WorkloadApiClient workloadApiClient;
+
     private volatile boolean closed;
 
     // private constructor
-    private X509Source() {
+    private X509Source(final Function<List<X509Svid>, X509Svid> svidPicker, final WorkloadApiClient workloadApiClient) {
+        this.picker = svidPicker;
+        this.workloadApiClient = workloadApiClient;
     }
 
     /**
@@ -66,7 +68,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
      * <p>
      * It uses the default X.509 SVID (picks the first SVID that comes in the Workload API response).
      *
-     * @return an instance of {@link X509Source}, with the svid and bundles initialized
+     * @return an instance of {@link X509Source}, with the SVID and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
@@ -78,7 +80,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
     /**
      * Creates a new X.509 source. It blocks until the initial update with the X.509 materials
      * has been received from the Workload API, doing retries with a backoff exponential policy,
-     * or the timeout has expired.
+     * or until the timeout has expired.
      * <p>
      * If the timeout is not provided in the options, the default timeout is read from the
      * system property `spiffe.newX509Source.timeout`. If none is configured, this method will
@@ -86,9 +88,12 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
+     * <p>
+     * If no SVID Picker is provided in the options, it uses the default X.509 SVID (picks the first SVID that comes
+     * in the Workload API response).
      *
      * @param options {@link X509SourceOptions}
-     * @return an instance of {@link X509Source}, with the svid and bundles initialized
+     * @return an instance of {@link X509Source}, with the SVID and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
@@ -102,9 +107,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
             options.initTimeout = DEFAULT_TIMEOUT;
         }
 
-        val x509Source = new X509Source();
-        x509Source.picker = options.svidPicker;
-        x509Source.workloadApiClient = options.workloadApiClient;
+        val x509Source = new X509Source(options.svidPicker, options.workloadApiClient);
 
         try {
             x509Source.init(options.initTimeout);
@@ -198,8 +201,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
 
             @Override
             public void onError(final Throwable error) {
-                log.log(Level.SEVERE, String.format("Error in X509Context watcher: %s",
-                        ExceptionUtils.getStackTrace(error)));
+                log.log(Level.SEVERE, "Error in X509Context watcher", error);
                 done.countDown();
             }
         });
@@ -229,10 +231,11 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
      * <p>
      * <code>spiffeSocketPath</code> Address to the Workload API, if it is not set, the default address will be used.
      * <p>
-     * <code>initTimeout</code> Timeout for initializing the instance.
+     * <code>initTimeout</code> Timeout for initializing the instance. If it is not defined, the timeout is read
+     * from the System property `spiffe.newX509Source.timeout'. If this is also not defined, no default timeout is applied.
      * <p>
      * <code>svidPicker</code>  Function to choose the X.509 SVID from the list returned by the Workload API.
-     * If it is not set, the default svid is picked.
+     * If it is not set, the default SVID is picked.
      * <p>
      * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set, a new client
      * will be created.

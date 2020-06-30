@@ -27,9 +27,9 @@ class RetryHandlerTest {
     @Test
     void testScheduleRetry_defaultPolicy() {
         Runnable runnable = () -> { };
-        BackoffPolicy backoffPolicy = new BackoffPolicy();
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
 
-        RetryHandler retryHandler = new RetryHandler(backoffPolicy, scheduledExecutorService);
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
 
         retryHandler.scheduleRetry(runnable);
 
@@ -55,9 +55,9 @@ class RetryHandlerTest {
     @Test
     void testScheduleRetry_maxRetries() {
         Runnable runnable = () -> { };
-        BackoffPolicy backoffPolicy = BackoffPolicy.builder().maxRetries(3).build();
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.builder().maxRetries(3).build();
 
-        RetryHandler retryHandler = new RetryHandler(backoffPolicy, scheduledExecutorService);
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
 
         retryHandler.scheduleRetry(runnable);
 
@@ -83,9 +83,9 @@ class RetryHandlerTest {
 
     @Test
     void testReset() {
-        BackoffPolicy backoffPolicy = BackoffPolicy.builder().initialDelay(Duration.ofSeconds(20)).build();
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.builder().initialDelay(Duration.ofSeconds(20)).build();
 
-        RetryHandler retryHandler = new RetryHandler(backoffPolicy, scheduledExecutorService);
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
 
         // check initial delay
         assertEquals(Duration.ofSeconds(20), retryHandler.getNextDelay());

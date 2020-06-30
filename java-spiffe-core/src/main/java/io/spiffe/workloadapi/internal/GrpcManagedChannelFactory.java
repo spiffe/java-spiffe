@@ -8,19 +8,27 @@ import io.grpc.netty.shaded.io.netty.channel.EventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress;
+import io.spiffe.workloadapi.AddressScheme;
 import lombok.NonNull;
+import lombok.val;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
 
+import static io.spiffe.workloadapi.AddressScheme.UNIX_SCHEME;
+
 /**
  * Factory for creating ManagedChannel instances.
+ * <p>
+ * Only Linux is supported since the recommended grpc-netty-shaded library only supports <code>EpollEventLoopGroup</code>.
+ * @see <a href="https://github.com/grpc/grpc-java">Grpc Java Library</a>
+ * @see <a href="https://github.com/spiffe/java-spiffe/issues/32">Support MacOS</a>
  */
 public class GrpcManagedChannelFactory {
 
     /**
-     * Returns a ManagedChannelWrapper that contains a {@link ManagedChannel }to the Spiffe Socket Endpoint provided.
+     * Returns a ManagedChannelWrapper that contains a {@link ManagedChannel} to the SPIFFE Socket Endpoint provided.
      *
      * @param address         URI representing the Workload API endpoint.
      * @param executorService the executor to configure the event loop group
@@ -28,7 +36,8 @@ public class GrpcManagedChannelFactory {
      */
     public static ManagedChannelWrapper newChannel(@NonNull URI address, ExecutorService executorService) {
         ManagedChannelWrapper result;
-        if ("unix".equals(address.getScheme())) {
+        val scheme = AddressScheme.parseScheme(address.getScheme());
+        if (scheme == UNIX_SCHEME) {
             result = createNativeSocketChannel(address, executorService);
         } else {
             result = createTcpChannel(address);

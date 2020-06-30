@@ -16,7 +16,7 @@ import io.spiffe.workloadapi.grpc.Workload;
 import io.spiffe.workloadapi.internal.GrpcManagedChannelFactory;
 import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
 import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import io.spiffe.workloadapi.retry.BackoffPolicy;
+import io.spiffe.workloadapi.retry.ExponentialBackoffPolicy;
 import io.spiffe.workloadapi.retry.RetryHandler;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -58,7 +58,7 @@ public final class WorkloadApiClient implements Closeable {
     private final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub;
     private final ManagedChannelWrapper managedChannel;
     private final List<Context.CancellableContext> cancellableContexts;
-    private final BackoffPolicy backoffPolicy;
+    private final ExponentialBackoffPolicy exponentialBackoffPolicy;
 
     // using a scheduled executor service to be able to schedule retries
     // it is injected in each of the retryHandlers in the watch methods
@@ -71,14 +71,14 @@ public final class WorkloadApiClient implements Closeable {
     private WorkloadApiClient(final SpiffeWorkloadAPIStub workloadApiAsyncStub,
                               final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
                               final ManagedChannelWrapper managedChannel,
-                              final BackoffPolicy backoffPolicy,
+                              final ExponentialBackoffPolicy exponentialBackoffPolicy,
                               final ScheduledExecutorService retryExecutor,
                               final ExecutorService executorService) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
         this.managedChannel = managedChannel;
         this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
-        this.backoffPolicy = backoffPolicy;
+        this.exponentialBackoffPolicy = exponentialBackoffPolicy;
         this.retryExecutor = retryExecutor;
         this.executorService = executorService;
     }
@@ -98,7 +98,7 @@ public final class WorkloadApiClient implements Closeable {
                              final ManagedChannelWrapper managedChannel) {
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
-        this.backoffPolicy = new BackoffPolicy();
+        this.exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
         this.executorService = Executors.newCachedThreadPool();
         this.retryExecutor = Executors.newSingleThreadScheduledExecutor();
         this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
@@ -107,10 +107,10 @@ public final class WorkloadApiClient implements Closeable {
 
     /**
      * Creates a new Workload API client using the default socket endpoint address.
+     * {@link Address#getDefaultAddress()}
      *
      * @return a {@link WorkloadApiClient}
      * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
-     * @see Address#getDefaultAddress()
      */
     public static WorkloadApiClient newClient() throws SocketEndpointAddressException {
         val options = ClientOptions.builder().build();
@@ -121,6 +121,7 @@ public final class WorkloadApiClient implements Closeable {
      * Creates a new Workload API client configured with the given client options.
      * <p>
      * If the SPIFFE socket endpoint address is not provided in the options, it uses the default address.
+     * {@link Address#getDefaultAddress()}
      *
      * @param options {@link ClientOptions}
      * @return a {@link WorkloadApiClient}
@@ -128,15 +129,13 @@ public final class WorkloadApiClient implements Closeable {
      */
     public static WorkloadApiClient newClient(@NonNull final ClientOptions options)
             throws SocketEndpointAddressException {
-        final String spiffeSocketPath;
-        if (StringUtils.isNotBlank(options.spiffeSocketPath)) {
-            spiffeSocketPath = options.spiffeSocketPath;
-        } else {
-            spiffeSocketPath = Address.getDefaultAddress();
-        }
 
-        if (options.backoffPolicy == null) {
-            options.backoffPolicy = new BackoffPolicy();
+        val spiffeSocketPath = StringUtils.isNotBlank(options.spiffeSocketPath)
+                ? options.spiffeSocketPath
+                : Address.getDefaultAddress();
+
+        if (options.exponentialBackoffPolicy == null) {
+            options.exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
         }
 
         if (options.executorService == null) {
@@ -145,15 +144,16 @@ public final class WorkloadApiClient implements Closeable {
 
         val socketEndpointAddress = Address.parseAddress(spiffeSocketPath);
         val managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress, options.executorService);
+        val securityHeaderInterceptor = new SecurityHeaderInterceptor();
         val workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
                 .newStub(managedChannel.getChannel())
                 .withExecutor(options.executorService)
-                .withInterceptors(new SecurityHeaderInterceptor());
+                .withInterceptors(securityHeaderInterceptor);
 
         val workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
                 .newBlockingStub(managedChannel.getChannel())
                 .withExecutor(options.executorService)
-                .withInterceptors(new SecurityHeaderInterceptor());
+                .withInterceptors(securityHeaderInterceptor);
 
         val retryExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -161,7 +161,7 @@ public final class WorkloadApiClient implements Closeable {
                 workloadAPIAsyncStub,
                 workloadAPIBlockingStub,
                 managedChannel,
-                options.backoffPolicy,
+                options.exponentialBackoffPolicy,
                 retryExecutor,
                 options.executorService);
     }
@@ -186,7 +186,7 @@ public final class WorkloadApiClient implements Closeable {
      * @param watcher an instance that implements a {@link Watcher}.
      */
     public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
-        val retryHandler = new RetryHandler(backoffPolicy, retryExecutor);
+        val retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
         val cancellableContext = Context.current().withCancellation();
 
         val streamObserver =
@@ -266,7 +266,7 @@ public final class WorkloadApiClient implements Closeable {
      * @param watcher receives the update for JwtBundles.
      */
     public void watchJwtBundles(@NonNull final Watcher<JwtBundleSet> watcher) {
-        val retryHandler = new RetryHandler(backoffPolicy, retryExecutor);
+        val retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
         val cancellableContext = Context.current().withCancellation();
 
         val streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
@@ -284,7 +284,6 @@ public final class WorkloadApiClient implements Closeable {
         log.log(Level.FINE, "Closing WorkloadAPI client");
         synchronized (this) {
             if (!closed) {
-                closed = true;
                 for (val context : cancellableContexts) {
                     context.close();
                 }
@@ -294,6 +293,7 @@ public final class WorkloadApiClient implements Closeable {
                 }
                 retryExecutor.shutdown();
                 executorService.shutdown();
+                closed = true;
             }
         }
         log.log(Level.INFO, "WorkloadAPI client is closed");
@@ -348,11 +348,11 @@ public final class WorkloadApiClient implements Closeable {
      * <p>
      * <code>spiffeSocketPath</code> Workload API Socket Endpoint address.
      * <p>
-     * <code>backoffPolicy</code> A custom instance of a {@link BackoffPolicy} to configure the retries to reconnect
+     * <code>backoffPolicy</code> A custom instance of a {@link ExponentialBackoffPolicy} to configure the retries to reconnect
      * to the Workload API.
      * <p>
      * <code>executorService</code> A custom {@link ExecutorService} to configure the Grpc stubs and channels.
-     * If it is not provided, a Executors.newCachedThreadPool() is used by default.
+     * If it is not provided, an <code>Executors.newCachedThreadPool()</code> is used by default.
      * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
      */
     @Data
@@ -362,17 +362,17 @@ public final class WorkloadApiClient implements Closeable {
         private String spiffeSocketPath;
 
         @Setter(AccessLevel.NONE)
-        private BackoffPolicy backoffPolicy;
+        private ExponentialBackoffPolicy exponentialBackoffPolicy;
 
         @Setter(AccessLevel.NONE)
         private ExecutorService executorService;
 
         @Builder
         public ClientOptions(final String spiffeSocketPath,
-                             final BackoffPolicy backoffPolicy,
+                             final ExponentialBackoffPolicy exponentialBackoffPolicy,
                              final ExecutorService executorService) {
             this.spiffeSocketPath = spiffeSocketPath;
-            this.backoffPolicy = backoffPolicy;
+            this.exponentialBackoffPolicy = exponentialBackoffPolicy;
             this.executorService = executorService;
         }
     }

@@ -11,7 +11,6 @@ import lombok.val;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -42,7 +41,7 @@ public final class X509SvidValidator {
         val x509Bundle = x509BundleSource.getBundleForTrustDomain(trustDomain);
 
         try {
-            CertificateUtils.validate(chain, new ArrayList<>(x509Bundle.getX509Authorities()));
+            CertificateUtils.validate(chain, x509Bundle.getX509Authorities());
         } catch (CertPathValidatorException e) {
             throw new CertificateException("Cert chain cannot be verified", e);
         }

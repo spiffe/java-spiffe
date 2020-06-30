@@ -77,15 +77,16 @@ security.provider.<n>=io.spiffe.provider.SpiffeProvider
 ssl.KeyManagerFactory.algorithm=Spiffe
 ssl.TrustManagerFactory.algorithm=Spiffe
 
-# The list of spiffeIDs that will be authorized
-ssl.spiffe.accept=spiffe://example.org/workload, spiffe://example.org/workload2, spiffe://example2.org/workload
+# The list of spiffeIDs that will be authorized, separated by a pipe character
+ssl.spiffe.accept=spiffe://example.org/workload | spiffe://example.org/workload2 | spiffe://example2.org/workload
 ```
 
 In this `java.security` file: 
 
 * replace `<n>` following the order of the `# List of Providers` in the master file. 
 
-* replace the value of the custom property `ssl.spiffe.accept` with the SPIFFE IDs of the workloads that are allowed to connect.
+* replace the value of the custom property `ssl.spiffe.accept` with the SPIFFE IDs of the workloads that are 
+allowed to connect, separated by the pipe character.
 ***If the property is not present or if it's empty, no SPIFFE ID will be authorized.*** 
 
 To pass your custom security properties file through the command line via system property when starting the JVM:

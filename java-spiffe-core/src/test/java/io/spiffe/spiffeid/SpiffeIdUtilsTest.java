@@ -47,14 +47,36 @@ class SpiffeIdUtilsTest {
     }
 
     @Test
-    void toSetOfSpiffeIds() {
-        val spiffeIdsAsString = " spiffe://example.org/workload1, spiffe://example.org/workload2 ";
-        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ',');
+    void toSetOfSpiffeIdsDefaultSeparator() {
+        val spiffeIdsAsString = " spiffe://example.org/workload1 | spiffe://example.org/workload2 ";
+        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString);
 
         assertNotNull(spiffeIdSet);
         assertEquals(2, spiffeIdSet.size());
         assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload1")));
         assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload2")));
+    }
+
+    @Test
+    void toSetOfSpiffeIdsBlankSpaceSeparator() {
+        val spiffeIdsAsString = " spiffe://example.org/workload1 spiffe://example.org/workload2 ";
+        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ' ');
+
+        assertNotNull(spiffeIdSet);
+        assertEquals(2, spiffeIdSet.size());
+        assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload1")));
+        assertTrue(spiffeIdSet.contains(SpiffeId.parse("spiffe://example.org/workload2")));
+    }
+
+    @Test
+    void toSetOfSpiffeIdsInvalidSeparator() {
+        val spiffeIdsAsString = " spiffe://example.org/workload1, spiffe://example.org/workload2 ";
+        try {
+            SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ',');
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Separator character is not supported.", e.getMessage());
+        }
     }
 
     private URI toUri(String path) throws URISyntaxException {

@@ -10,6 +10,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Set;
 
+import static io.spiffe.workloadapi.AddressScheme.TCP_SCHEME;
+import static io.spiffe.workloadapi.AddressScheme.UNIX_SCHEME;
+
 /**
  * Utility class to get the default Workload API address and parse string addresses.
  */
@@ -20,9 +23,7 @@ public class Address {
      */
     public static final String SOCKET_ENV_VARIABLE = "SPIFFE_ENDPOINT_SOCKET";
 
-    private static final String UNIX_SCHEME = "unix";
-    private static final String TCP_SCHEME = "tcp";
-    private static final Set<String> VALID_SCHEMES = Sets.newHashSet(UNIX_SCHEME, TCP_SCHEME);
+    private static final Set<AddressScheme> VALID_SCHEMES = Sets.newHashSet(UNIX_SCHEME, TCP_SCHEME);
 
     private Address() {
     }
@@ -60,13 +61,9 @@ public class Address {
     public static URI parseAddress(final String address) throws SocketEndpointAddressException {
 
         val parsedAddress = parseUri(address);
-        val scheme = parsedAddress.getScheme();
-        if (isSchemeNotValid(scheme)) {
-            val error = "Workload endpoint socket URI must have a tcp:// or unix:// scheme: %s";
-            throw new SocketEndpointAddressException(String.format(error, address));
-        }
+        val scheme = getScheme(parsedAddress);
 
-        if (UNIX_SCHEME.equals(scheme)) {
+        if (scheme == UNIX_SCHEME) {
             validateUnixAddress(parsedAddress);
         } else {
             validateTcpAddress(parsedAddress);
@@ -84,6 +81,16 @@ public class Address {
             throw new SocketEndpointAddressException(String.format(error, address), e);
         }
         return parsedAddress;
+    }
+
+    private static AddressScheme getScheme(final URI parsedAddress) throws SocketEndpointAddressException {
+        try {
+            val scheme = parsedAddress.getScheme();
+            return AddressScheme.parseScheme(scheme);
+        } catch (IllegalArgumentException e) {
+            val error = "Workload endpoint socket URI must have a tcp:// or unix:// scheme: %s";
+            throw new SocketEndpointAddressException(String.format(error, parsedAddress.toString()));
+        }
     }
 
     private static void validateUnixAddress(final URI parsedAddress) throws SocketEndpointAddressException {

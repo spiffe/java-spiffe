@@ -10,14 +10,14 @@ import java.util.concurrent.TimeUnit;
 public class RetryHandler {
 
     private final ScheduledExecutorService executor;
-    private final BackoffPolicy backoffPolicy;
+    private final ExponentialBackoffPolicy exponentialBackoffPolicy;
     private Duration nextDelay;
 
     private int retryCount;
 
-    public RetryHandler(final BackoffPolicy backoffPolicy, final ScheduledExecutorService executor) {
-        this.nextDelay = backoffPolicy.getInitialDelay();
-        this.backoffPolicy = backoffPolicy;
+    public RetryHandler(final ExponentialBackoffPolicy exponentialBackoffPolicy, final ScheduledExecutorService executor) {
+        this.nextDelay = exponentialBackoffPolicy.getInitialDelay();
+        this.exponentialBackoffPolicy = exponentialBackoffPolicy;
         this.executor = executor;
     }
 
@@ -28,18 +28,19 @@ public class RetryHandler {
      * @param runnable the task to be scheduled for execution
      */
     public void scheduleRetry(final Runnable runnable) {
-        if (backoffPolicy.didNotReachMaxRetries(retryCount)) {
-            executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
-            nextDelay = backoffPolicy.nextDelay(nextDelay);
-            retryCount++;
+        if (exponentialBackoffPolicy.reachedMaxRetries(retryCount)) {
+            return;
         }
+        executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
+        nextDelay = exponentialBackoffPolicy.nextDelay(nextDelay);
+        retryCount++;
     }
 
     /**
      * Reset state of RetryHandle to initial values.
      */
     public void reset() {
-        nextDelay = backoffPolicy.getInitialDelay();
+        nextDelay = exponentialBackoffPolicy.getInitialDelay();
         retryCount = 0;
     }
 

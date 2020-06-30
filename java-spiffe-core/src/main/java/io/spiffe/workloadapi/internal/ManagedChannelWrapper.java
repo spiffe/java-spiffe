@@ -17,9 +17,9 @@ public class ManagedChannelWrapper implements Closeable {
     private final EventLoopGroup eventLoopGroup;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param  managedChannel an instance of {@link ManagedChannel}
+     * @param managedChannel an instance of {@link ManagedChannel}
      * @param eventLoopGroup an instance of {@link EventLoopGroup}
      */
     public ManagedChannelWrapper(ManagedChannel managedChannel, EventLoopGroup eventLoopGroup) {
@@ -28,7 +28,7 @@ public class ManagedChannelWrapper implements Closeable {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param managedChannel a {@link ManagedChannel}
      */

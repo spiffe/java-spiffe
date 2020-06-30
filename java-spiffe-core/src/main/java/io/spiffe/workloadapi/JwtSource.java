@@ -3,12 +3,15 @@ package io.spiffe.workloadapi;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSourceException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.svid.jwtsvid.JwtSvid;
+import io.spiffe.svid.jwtsvid.JwtSvidSource;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -16,10 +19,6 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.java.Log;
 import lombok.val;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import io.spiffe.bundle.x509bundle.X509Bundle;
-import io.spiffe.svid.jwtsvid.JwtSvid;
-import io.spiffe.svid.jwtsvid.JwtSvidSource;
 
 import java.io.Closeable;
 import java.time.Duration;
@@ -42,11 +41,13 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
             Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
     private JwtBundleSet bundles;
-    private WorkloadApiClient workloadApiClient;
+
+    private final WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
 
     // private constructor
-    private JwtSource() {
+    private JwtSource(final WorkloadApiClient workloadApiClient) {
+        this.workloadApiClient = workloadApiClient;
     }
 
     /**
@@ -69,7 +70,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
     /**
      * Creates a new JWT source. It blocks until the initial update with the JWT bundles
      * has been received from the Workload API, doing retries with a backoff exponential policy,
-     * or the initTimeout has expired.
+     * or until the initTimeout has expired.
      * <p>
      * If the timeout is not provided in the options, the default timeout is read from the
      * system property `spiffe.newJwtSource.timeout`. If none is configured, this method will
@@ -93,8 +94,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
             options.initTimeout = DEFAULT_TIMEOUT;
         }
 
-        JwtSource jwtSource = new JwtSource();
-        jwtSource.workloadApiClient = options.workloadApiClient;
+        JwtSource jwtSource = new JwtSource(options.workloadApiClient);
 
         try {
             jwtSource.init(options.initTimeout);
@@ -183,8 +183,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
 
             @Override
             public void onError(final Throwable error) {
-                log.log(Level.SEVERE, String.format("Error in JwtBundleSet watcher: %s",
-                        ExceptionUtils.getStackTrace(error)));
+                log.log(Level.SEVERE, "Error in JwtBundleSet watcher", error);
                 done.countDown();
             }
         });
@@ -216,7 +215,8 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
      * <p>
      * <code>spiffeSocketPath</code> Address to the Workload API, if it is not set, the default address will be used.
      * <p>
-     * <code>initTimeout</code> Timeout for initializing the instance.
+     * <code>initTimeout</code> Timeout for initializing the instance. If it is not defined, the timeout is read
+     * from the System property `spiffe.newJwtSource.timeout'. If this is also not defined, no default timeout is applied.
      * <p>
      * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set,
      * a new client will be created.

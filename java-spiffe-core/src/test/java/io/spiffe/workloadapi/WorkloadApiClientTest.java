@@ -20,7 +20,7 @@ import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
 import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import io.spiffe.workloadapi.retry.BackoffPolicy;
+import io.spiffe.workloadapi.retry.ExponentialBackoffPolicy;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,7 +97,7 @@ class WorkloadApiClientTest {
                             .builder()
                             .spiffeSocketPath("unix:/tmp/agent.sock")
                             .executorService(Executors.newCachedThreadPool())
-                            .backoffPolicy(new BackoffPolicy())
+                            .exponentialBackoffPolicy(ExponentialBackoffPolicy.DEFAULT)
                             .build();
 
             WorkloadApiClient client = WorkloadApiClient.newClient(options);

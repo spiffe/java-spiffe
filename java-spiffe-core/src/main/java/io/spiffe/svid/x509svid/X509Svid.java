@@ -94,7 +94,7 @@ public class X509Svid {
 
     /**
      * Parses the X.509 SVID from PEM or DER blocks containing certificate chain and key
-     * bytes. The key must be a PEM or DER block with PKCS#8.
+     * bytes. The key must be a PEM block with PKCS#8.
      * <p>
      * It is assumed that the leaf certificate is always the first certificate in the parsed chain.
      *

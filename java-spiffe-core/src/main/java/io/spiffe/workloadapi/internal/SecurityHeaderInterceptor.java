@@ -17,7 +17,7 @@ public class SecurityHeaderInterceptor implements ClientInterceptor {
     private static final String SECURITY_HEADER = "workload.spiffe.io";
 
     /**
-     * Intercepts the call to the WorkloadAPI and add the required security header.
+     * Intercepts the call to the Workload API and adds the required security header.
      */
     @Override
     public <R,S> ClientCall<R,S> interceptCall(MethodDescriptor<R,S> method, CallOptions callOptions, Channel next) {

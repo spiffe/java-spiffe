@@ -103,7 +103,7 @@ public class CertificateUtils {
      * @throws CertificateException
      * @throws CertPathValidatorException
      */
-    public static void validate(final List<X509Certificate> chain, final List<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
+    public static void validate(final List<X509Certificate> chain, final Collection<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
         val certificateFactory = getCertificateFactory();
         PKIXParameters pkixParameters;
         try {
@@ -247,7 +247,7 @@ public class CertificateUtils {
     }
 
     // Create an instance of PKIXParameters used as input for the PKIX CertPathValidator
-    private static PKIXParameters toPkixParameters(final List<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException {
+    private static PKIXParameters toPkixParameters(final Collection<X509Certificate> trustedCerts) throws CertificateException, InvalidAlgorithmParameterException {
         if (trustedCerts == null || trustedCerts.isEmpty()) {
             throw new CertificateException("No trusted Certs");
         }

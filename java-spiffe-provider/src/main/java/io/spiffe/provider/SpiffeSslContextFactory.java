@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.SSLContext;
@@ -43,34 +44,40 @@ public final class SpiffeSslContextFactory {
     public static SSLContext getSslContext(@NonNull final SslContextOptions options)
             throws NoSuchAlgorithmException, KeyManagementException {
 
-        final SSLContext sslContext;
-        if (StringUtils.isNotBlank(options.sslProtocol)) {
-            sslContext = SSLContext.getInstance(options.sslProtocol);
-        } else {
-            sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
-        }
-
         if (options.x509Source == null) {
             throw new IllegalArgumentException("x509Source option cannot be null, an X.509 Source must be provided");
         }
 
-        final TrustManager[] trustManager;
+        val sslContext = newSslContext(options);
+        val trustManagers = newTrustManager(options);
+        val keyManagers = new SpiffeKeyManagerFactory().engineGetKeyManagers(options.x509Source);
+
+        sslContext.init(keyManagers, trustManagers, null);
+        return sslContext;
+    }
+
+    private static TrustManager[] newTrustManager(final SslContextOptions options) {
         if (options.acceptAnySpiffeId) {
-            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(options.x509Source);
-        } else {
-            if (options.acceptedSpiffeIdsSupplier != null) {
-                trustManager = new SpiffeTrustManagerFactory()
-                        .engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
-            } else {
-                trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source);
-            }
+            return new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(options.x509Source);
         }
 
-        sslContext.init(
-                new SpiffeKeyManagerFactory().engineGetKeyManagers(options.x509Source),
-                trustManager,
-                null);
-        return sslContext;
+        final TrustManager[] trustManager;
+        if (options.acceptedSpiffeIdsSupplier != null) {
+            trustManager =
+                    new SpiffeTrustManagerFactory()
+                            .engineGetTrustManagers(options.x509Source, options.acceptedSpiffeIdsSupplier);
+        } else {
+            trustManager = new SpiffeTrustManagerFactory().engineGetTrustManagers(options.x509Source);
+        }
+
+        return trustManager;
+    }
+
+    private static SSLContext newSslContext(final SslContextOptions options) throws NoSuchAlgorithmException {
+        if (StringUtils.isBlank(options.sslProtocol)) {
+            options.sslProtocol = DEFAULT_SSL_PROTOCOL;
+        }
+        return SSLContext.getInstance(options.sslProtocol);
     }
 
     /**
@@ -84,8 +91,7 @@ public final class SpiffeSslContextFactory {
      * for a secure socket connection.
      * <p>
      * <code>acceptAnySpiffeId</code> Flag that indicates that any {@link SpiffeId} will be accepted for a
-     * secure socket connection. This config overrules
-     * the <code>acceptedSpiffeIdsSupplier</code> property.
+     * secure socket connection. This config overrules the <code>acceptedSpiffeIdsSupplier</code> property.
      */
     @Data
     public static class SslContextOptions {

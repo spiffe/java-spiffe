@@ -13,7 +13,9 @@ import java.util.function.UnaryOperator;
  * Represents a backoff policy for performing retries using exponential increasing delays.
  */
 @Data
-public class BackoffPolicy {
+public class ExponentialBackoffPolicy {
+
+    public static final ExponentialBackoffPolicy DEFAULT = new ExponentialBackoffPolicy();
 
     // Retry indefinitely, default behavior.
     public static final int UNLIMITED_RETRIES = 0;
@@ -32,27 +34,24 @@ public class BackoffPolicy {
     @Setter(AccessLevel.NONE)
     private int maxRetries = UNLIMITED_RETRIES;
 
-    // Function to calculate the backoff delay.
     @Setter(AccessLevel.NONE)
-    private UnaryOperator<Duration> backoffFunction = d -> d.multipliedBy(BACKOFF_MULTIPLIER);
+    private int backoffMultiplier = BACKOFF_MULTIPLIER;
 
-    /**
-     * Constructor.
-     *
-     * Build backoff policy with defaults
-     */
-    public BackoffPolicy() {
-    }
+    @Setter(AccessLevel.NONE)
+    private UnaryOperator<Duration> backoffFunction = d -> d.multipliedBy(backoffMultiplier);
 
     @Builder
-    public BackoffPolicy(final Duration initialDelay,
-                         final Duration maxDelay,
-                         final int maxRetries,
-                         final UnaryOperator<Duration> backoffFunction) {
+    public ExponentialBackoffPolicy(final Duration initialDelay,
+                                    final Duration maxDelay,
+                                    final int maxRetries,
+                                    final int backoffMultiplier) {
         this.initialDelay = initialDelay != null ? initialDelay : Duration.ofSeconds(1);
         this.maxDelay = maxDelay != null ? maxDelay : Duration.ofSeconds(60);
-        this.maxRetries = maxRetries;
-        this.backoffFunction = backoffFunction != null ? backoffFunction : d -> d.multipliedBy(BACKOFF_MULTIPLIER);
+        this.maxRetries = maxRetries != 0 ? maxRetries : UNLIMITED_RETRIES;
+        this.backoffMultiplier = backoffMultiplier != 0 ? backoffMultiplier : BACKOFF_MULTIPLIER;
+    }
+
+    private ExponentialBackoffPolicy() {
     }
 
     /**
@@ -71,13 +70,13 @@ public class BackoffPolicy {
     }
 
     /**
-     * Returns true if the RetryPolicy is configured with UNLIMITED_RETRIES
+     * Returns false if the RetryPolicy is configured with UNLIMITED_RETRIES
      * or if the retriesCount param is lower than the maxRetries.
      *
      * @param retriesCount the current number of retries
-     * @return false if the number of retries did not reach the max number of retries, true otherwise
+     * @return true if the number of retries reached the max number of retries, false otherwise
      */
-    public boolean didNotReachMaxRetries(final int retriesCount) {
-        return maxRetries == UNLIMITED_RETRIES || retriesCount < maxRetries;
+    public boolean reachedMaxRetries(final int retriesCount) {
+        return maxRetries != UNLIMITED_RETRIES && retriesCount >= maxRetries;
     }
 }

@@ -8,59 +8,59 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class BackoffPolicyTest {
+class ExponentialBackoffPolicyTest {
 
     @Test
     void testNextDelayDefaultPolicy_returnsDouble() {
-        BackoffPolicy backoffPolicy = new BackoffPolicy();
-        assertEquals(Duration.ofSeconds(10), backoffPolicy.nextDelay(Duration.ofSeconds(5)));
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
+        assertEquals(Duration.ofSeconds(10), exponentialBackoffPolicy.nextDelay(Duration.ofSeconds(5)));
     }
 
     @Test
     void testNextDelayDefaultPolicy_exceedsMaxDelay_returnsMaxDelay() {
-        BackoffPolicy backoffPolicy = BackoffPolicy
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy
                 .builder()
                 .initialDelay(Duration.ofSeconds(1))
                 .maxDelay(Duration.ofSeconds(60))
                 .build();
 
-        assertEquals(Duration.ofSeconds(60), backoffPolicy.nextDelay(Duration.ofSeconds(50)));
+        assertEquals(Duration.ofSeconds(60), exponentialBackoffPolicy.nextDelay(Duration.ofSeconds(50)));
     }
 
     @Test
     void testNextDelayCustomPolicy() {
-        BackoffPolicy backoffPolicy = BackoffPolicy
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy
                 .builder()
                 .maxDelay(Duration.ofSeconds(60))
-                .backoffFunction(d -> d.multipliedBy(5))
+                .backoffMultiplier(5)
                 .build();
 
-        assertEquals(Duration.ofSeconds(50), backoffPolicy.nextDelay(Duration.ofSeconds(10)));
+        assertEquals(Duration.ofSeconds(50), exponentialBackoffPolicy.nextDelay(Duration.ofSeconds(10)));
     }
 
     @Test
     void testDidNotReachMaxRetries() {
-        BackoffPolicy backoffPolicy = BackoffPolicy
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy
                 .builder()
                 .maxRetries(5)
                 .build();
 
-        assertTrue(backoffPolicy.didNotReachMaxRetries(4));
+        assertFalse(exponentialBackoffPolicy.reachedMaxRetries(4));
     }
 
     @Test
     void testDidNotReachMaxRetries_retriesCountEqualsMaxRetries_returnsFalse() {
-        BackoffPolicy backoffPolicy = BackoffPolicy
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy
                 .builder()
                 .maxRetries(5)
                 .build();
 
-        assertFalse(backoffPolicy.didNotReachMaxRetries(5));
+        assertTrue(exponentialBackoffPolicy.reachedMaxRetries(5));
     }
 
     @Test
     void testDidNotReachMaxRetries_UnlimitedRetries() {
-        BackoffPolicy backoffPolicy = new BackoffPolicy();
-        assertTrue(backoffPolicy.didNotReachMaxRetries(Integer.MAX_VALUE));
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
+        assertFalse(exponentialBackoffPolicy.reachedMaxRetries(Integer.MAX_VALUE));
     }
 }

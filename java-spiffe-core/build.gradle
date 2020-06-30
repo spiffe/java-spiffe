@@ -20,7 +20,7 @@ sourceSets {
 }
 
 ext {
-    grpcVersion = '1.30.0'
+    grpcVersion = '1.30.2'
 }
 
 protobuf {
@@ -43,12 +43,8 @@ dependencies {
     implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: "${grpcVersion}"
     implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
     implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
+    compileOnly group: 'org.apache.tomcat', name:'annotations-api', version: '6.0.53' // necessary for Java 9+
     testImplementation group: 'io.grpc', name: 'grpc-testing', version: "${grpcVersion}"
-
-    if (JavaVersion.current().isJava11Compatible()) {
-        // Workaround for @javax.annotation.Generated not found (Grpc generated code)
-        compileOnly group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
-    }
 
     // library for processing JWT tokens and JOSE JWK bundles
     implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '8.19'
