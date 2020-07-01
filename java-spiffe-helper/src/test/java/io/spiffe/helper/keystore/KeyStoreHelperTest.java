@@ -1,20 +1,12 @@
 package io.spiffe.helper.keystore;
 
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.workloadapi.WorkloadApiClient;
-import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
-import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
-import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
+import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,36 +28,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class KeyStoreHelperTest {
 
-    @Rule
-    public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
     private WorkloadApiClient workloadApiClient;
     private Path keyStoreFilePath;
     private Path trustStoreFilePath;
 
     @BeforeEach
-    void setUp() throws IOException {
-        // Generate a unique in-process server name.
-        String serverName = InProcessServerBuilder.generateName();
-
-        // Create a server, add service, start, and register for automatic graceful shutdown.
-        FakeWorkloadApi fakeWorkloadApi = new FakeWorkloadApi();
-        Server server = InProcessServerBuilder.forName(serverName).directExecutor().addService(fakeWorkloadApi).build().start();
-        grpcCleanup.register(server);
-
-        // Create WorkloadApiClient using Stubs that will connect to the fake WorkloadApiService.
-        ManagedChannel inProcessChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-        grpcCleanup.register(inProcessChannel);
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub = SpiffeWorkloadAPIGrpc
-                .newBlockingStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadAPIStub = SpiffeWorkloadAPIGrpc
-                .newStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        workloadApiClient = new WorkloadApiClient(workloadAPIStub, workloadApiBlockingStub, new ManagedChannelWrapper(inProcessChannel));
+    void setUp() {
+        workloadApiClient = new WorkloadApiClientStub();
     }
 
     @Test
@@ -165,6 +134,7 @@ class KeyStoreHelperTest {
 
     }
 
+    @SneakyThrows
     @AfterEach
     void tearDown() {
         deleteFile(keyStoreFilePath);
@@ -213,5 +183,4 @@ class KeyStoreHelperTest {
             //ignore
         }
     }
-
 }

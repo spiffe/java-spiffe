@@ -1,61 +1,31 @@
 package io.spiffe.workloadapi;
 
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.testing.GrpcCleanupRule;
+import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import org.junit.Rule;
+import io.spiffe.svid.x509svid.X509Svid;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.spiffe.bundle.x509bundle.X509Bundle;
-import io.spiffe.svid.x509svid.X509Svid;
-import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
-import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
-import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class X509SourceTest {
 
-    @Rule
-    public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
     private X509Source x509Source;
+    private WorkloadApiClientStub workloadApiClient;
 
     @BeforeEach
     void setUp() throws IOException, X509SourceException, SocketEndpointAddressException {
-        // Generate a unique in-process server name.
-        String serverName = InProcessServerBuilder.generateName();
-
-        // Create a server, add service, start, and register for automatic graceful shutdown.
-        FakeWorkloadApi fakeWorkloadApi = new FakeWorkloadApi();
-        Server server = InProcessServerBuilder.forName(serverName).directExecutor().addService(fakeWorkloadApi).build().start();
-        grpcCleanup.register(server);
-
-        // Create WorkloadApiClient using Stubs that will connect to the fake WorkloadApiService.
-        ManagedChannel inProcessChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-        grpcCleanup.register(inProcessChannel);
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub = SpiffeWorkloadAPIGrpc
-                .newBlockingStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadAPIStub = SpiffeWorkloadAPIGrpc
-                .newStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        WorkloadApiClient workloadApiClient = new WorkloadApiClient(workloadAPIStub, workloadApiBlockingStub, new ManagedChannelWrapper(inProcessChannel));
+        workloadApiClient = new WorkloadApiClientStub();
         X509Source.X509SourceOptions options = X509Source.X509SourceOptions.builder().workloadApiClient(workloadApiClient).build();
         x509Source = X509Source.newSource(options);
     }
@@ -84,6 +54,7 @@ class X509SourceTest {
             fail("exceptions is expected");
         } catch (IllegalStateException e) {
             assertEquals("X.509 bundle source is closed", e.getMessage());
+            assertTrue(workloadApiClient.closed);
         } catch (BundleNotFoundException e) {
             fail("not expected exception", e);
         }

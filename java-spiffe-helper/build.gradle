@@ -24,10 +24,4 @@ ext {
 dependencies {
     api (project(':java-spiffe-core'))
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
-
-    // pull grpc libraries for testing
-    testImplementation group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
-    testImplementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
-    testImplementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
-    testImplementation group: 'io.grpc', name: 'grpc-testing', version: "${grpcVersion}"
 }

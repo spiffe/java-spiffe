@@ -41,11 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class WorkloadApiClientTest {
+class DefaultWorkloadApiClientTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private WorkloadApiClient workloadApiClient;
+    private DefaultWorkloadApiClient workloadApiClient;
     private ManagedChannel inProcessChannel;
 
     @BeforeEach
@@ -70,7 +70,7 @@ class WorkloadApiClientTest {
                 .newStub(inProcessChannel)
                 .withInterceptors(new SecurityHeaderInterceptor());
 
-        workloadApiClient = new WorkloadApiClient(workloadAPIStub, workloadApiBlockingStub, new ManagedChannelWrapper(inProcessChannel));
+        workloadApiClient = new DefaultWorkloadApiClient(workloadAPIStub, workloadApiBlockingStub, new ManagedChannelWrapper(inProcessChannel));
     }
 
     @AfterEach
@@ -82,7 +82,7 @@ class WorkloadApiClientTest {
     void testNewClient_defaultOptions() throws Exception {
         try {
             TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/agent.sock" );
-            WorkloadApiClient client = WorkloadApiClient.newClient();
+            WorkloadApiClient client = DefaultWorkloadApiClient.newClient();
             assertNotNull(client);
         } catch (SocketEndpointAddressException e) {
             fail(e);
@@ -92,15 +92,15 @@ class WorkloadApiClientTest {
     @Test
     void testNewClient_customOptions() {
         try {
-            WorkloadApiClient.ClientOptions options =
-                    WorkloadApiClient.ClientOptions
+            DefaultWorkloadApiClient.ClientOptions options =
+                    DefaultWorkloadApiClient.ClientOptions
                             .builder()
                             .spiffeSocketPath("unix:/tmp/agent.sock")
                             .executorService(Executors.newCachedThreadPool())
                             .exponentialBackoffPolicy(ExponentialBackoffPolicy.DEFAULT)
                             .build();
 
-            WorkloadApiClient client = WorkloadApiClient.newClient(options);
+            WorkloadApiClient client = DefaultWorkloadApiClient.newClient(options);
             assertNotNull(client);
         } catch (SocketEndpointAddressException e) {
             fail(e);

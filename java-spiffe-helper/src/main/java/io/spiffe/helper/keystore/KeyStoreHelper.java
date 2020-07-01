@@ -3,6 +3,7 @@ package io.spiffe.helper.keystore;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.workloadapi.DefaultWorkloadApiClient;
 import io.spiffe.workloadapi.Watcher;
 import io.spiffe.workloadapi.WorkloadApiClient;
 import io.spiffe.workloadapi.X509Context;
@@ -11,6 +12,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
@@ -107,6 +109,7 @@ public class KeyStoreHelper implements Closeable {
         setX509ContextWatcher(workloadApiClient);
     }
 
+    @SneakyThrows
     @Override
     public void close() {
         workloadApiClient.close();
@@ -114,8 +117,8 @@ public class KeyStoreHelper implements Closeable {
 
 
     private WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
-        val clientOptions = WorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
-        return WorkloadApiClient.newClient(clientOptions);
+        val clientOptions = DefaultWorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
+        return DefaultWorkloadApiClient.newClient(clientOptions);
     }
 
     private void setX509ContextWatcher(final WorkloadApiClient workloadApiClient) {

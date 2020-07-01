@@ -12,6 +12,7 @@ import io.spiffe.svid.x509svid.X509SvidSource;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
 
@@ -152,7 +153,11 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
     /**
      * Closes this source, dropping the connection to the Workload API.
      * Other source methods will return an error after close has been called.
+     * <p>
+     * It is marked with {@link SneakyThrows} because it is not expected to throw
+     * the checked exception defined on the {@link Closeable} interface.
      */
+    @SneakyThrows
     @Override
     public void close() {
         if (!closed) {
@@ -167,11 +172,11 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
 
     private static WorkloadApiClient createClient(@NonNull final X509SourceOptions options)
             throws SocketEndpointAddressException {
-        val clientOptions = WorkloadApiClient.ClientOptions
+        val clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)
                 .build();
-        return WorkloadApiClient.newClient(clientOptions);
+        return DefaultWorkloadApiClient.newClient(clientOptions);
     }
 
     private void init(final Duration timeout) throws TimeoutException {

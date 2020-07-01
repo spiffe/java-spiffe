@@ -1,11 +1,6 @@
 package io.spiffe.workloadapi;
 
 import com.google.common.collect.Sets;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSourceException;
@@ -14,51 +9,23 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
-import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
-import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class JwtSourceTest {
 
-    @Rule
-    public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
     private JwtSource jwtSource;
+    private WorkloadApiClientStub workloadApiClient;
 
     @BeforeEach
-    void setUp() throws IOException, JwtSourceException, SocketEndpointAddressException {
-        // Generate a unique in-process server name.
-        String serverName = InProcessServerBuilder.generateName();
-
-        // Create a server, add service, start, and register for automatic graceful shutdown.
-        FakeWorkloadApi fakeWorkloadApi = new FakeWorkloadApi();
-        Server server = InProcessServerBuilder.forName(serverName).directExecutor().addService(fakeWorkloadApi).build().start();
-        grpcCleanup.register(server);
-
-        // Create WorkloadApiClient using Stubs that will connect to the fake WorkloadApiService.
-        ManagedChannel inProcessChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-        grpcCleanup.register(inProcessChannel);
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub = SpiffeWorkloadAPIGrpc
-                .newBlockingStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadAPIStub = SpiffeWorkloadAPIGrpc
-                .newStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        WorkloadApiClient workloadApiClient = new WorkloadApiClient(workloadAPIStub, workloadApiBlockingStub, new ManagedChannelWrapper(inProcessChannel));
-
+    void setUp() throws JwtSourceException, SocketEndpointAddressException {
+        workloadApiClient = new WorkloadApiClientStub();
         JwtSource.JwtSourceOptions options = JwtSource.JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
         jwtSource = JwtSource.newSource(options);
     }
@@ -87,6 +54,7 @@ class JwtSourceTest {
             fail("expected exception");
         } catch (IllegalStateException e) {
             assertEquals("JWT bundle source is closed", e.getMessage());
+            assertTrue(workloadApiClient.closed);
         } catch (BundleNotFoundException e) {
             fail("not expected exception", e);
         }
@@ -112,6 +80,7 @@ class JwtSourceTest {
             fail("expected exception");
         } catch (IllegalStateException e) {
             assertEquals("JWT SVID source is closed", e.getMessage());
+            assertTrue(workloadApiClient.closed);
         } catch (JwtSvidException e) {
             fail(e);
         }

@@ -17,6 +17,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
 
@@ -141,7 +142,11 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
     /**
      * Closes this source, dropping the connection to the Workload API.
      * Other source methods will return an error after close has been called.
+     * <p>
+     * It is marked with {@link SneakyThrows} because it is not expected to throw
+     * the checked exception defined on the {@link Closeable} interface.
      */
+    @SneakyThrows
     @Override
     public void close() {
         if (!closed) {
@@ -203,11 +208,11 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
 
     private static WorkloadApiClient createClient(@NonNull final JwtSourceOptions options)
             throws SocketEndpointAddressException {
-        val clientOptions = WorkloadApiClient.ClientOptions
+        val clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)
                 .build();
-        return WorkloadApiClient.newClient(clientOptions);
+        return DefaultWorkloadApiClient.newClient(clientOptions);
     }
 
     /**
