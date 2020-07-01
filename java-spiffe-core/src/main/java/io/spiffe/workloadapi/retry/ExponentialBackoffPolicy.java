@@ -62,11 +62,11 @@ public class ExponentialBackoffPolicy {
      * @return a {@link Duration} representing the next delay
      */
     public Duration nextDelay(final Duration currentDelay) {
-        val next = backoffFunction.apply(currentDelay);
-        if (next.compareTo(maxDelay) > 0) {
-            return maxDelay;
+        // current delay didn't exceed maxDelay already
+        if (currentDelay.compareTo(maxDelay) < 0) {
+            return calculateNextDelay(currentDelay);
         }
-        return next;
+        return maxDelay;
     }
 
     /**
@@ -78,5 +78,13 @@ public class ExponentialBackoffPolicy {
      */
     public boolean reachedMaxRetries(final int retriesCount) {
         return maxRetries != UNLIMITED_RETRIES && retriesCount >= maxRetries;
+    }
+
+    private Duration calculateNextDelay(final Duration currentDelay) {
+        val next = backoffFunction.apply(currentDelay);
+        if (next.compareTo(maxDelay) > 0) {
+            return maxDelay;
+        }
+        return next;
     }
 }

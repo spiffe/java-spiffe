@@ -28,6 +28,17 @@ class ExponentialBackoffPolicyTest {
     }
 
     @Test
+    void testNextDelayDefaultPolicy_currentDelayExceedsMaxDelay_returnsMaxDelay() {
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy
+                .builder()
+                .initialDelay(Duration.ofSeconds(1))
+                .maxDelay(Duration.ofSeconds(60))
+                .build();
+
+        assertEquals(Duration.ofSeconds(60), exponentialBackoffPolicy.nextDelay(Duration.ofSeconds(70)));
+    }
+
+    @Test
     void testNextDelayCustomPolicy() {
         ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy
                 .builder()
