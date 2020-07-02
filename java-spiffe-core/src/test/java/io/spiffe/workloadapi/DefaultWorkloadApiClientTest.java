@@ -46,7 +46,6 @@ class DefaultWorkloadApiClientTest {
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private DefaultWorkloadApiClient workloadApiClient;
-    private ManagedChannel inProcessChannel;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -59,7 +58,7 @@ class DefaultWorkloadApiClientTest {
         grpcCleanup.register(server);
 
         // Create WorkloadApiClient using Stubs that will connect to the fake WorkloadApiService.
-        inProcessChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+        final ManagedChannel inProcessChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
         grpcCleanup.register(inProcessChannel);
 
         SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub = SpiffeWorkloadAPIGrpc

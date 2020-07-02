@@ -190,9 +190,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                                 final String... extraAudience)
             throws JwtSvidException {
 
-        final Set<String> audParam = new HashSet<>();
-        audParam.add(audience);
-        Collections.addAll(audParam, extraAudience);
+        final Set<String> audParam = createAudienceSet(audience, extraAudience);
 
         try (val cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvid(subject, audParam));
@@ -219,11 +217,8 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     @Override
     public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience)
             throws JwtSvidException {
-        val request = Workload.ValidateJWTSVIDRequest
-                .newBuilder()
-                .setSvid(token)
-                .setAudience(audience)
-                .build();
+
+        val request = createJwtSvidRequest(token, audience);
 
         try (val cancellableContext = Context.current().withCancellation()) {
             cancellableContext.call(() -> workloadApiBlockingStub.validateJWTSVID(request));
@@ -308,12 +303,27 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
     }
 
+    private Set<String> createAudienceSet(final @NonNull String audience, final String[] extraAudience) {
+        final Set<String> audParam = new HashSet<>();
+        audParam.add(audience);
+        Collections.addAll(audParam, extraAudience);
+        return audParam;
+    }
+
     private Workload.X509SVIDRequest newX509SvidRequest() {
         return Workload.X509SVIDRequest.newBuilder().build();
     }
 
     private Workload.JWTBundlesRequest newJwtBundlesRequest() {
         return Workload.JWTBundlesRequest.newBuilder().build();
+    }
+
+    private Workload.ValidateJWTSVIDRequest createJwtSvidRequest(final @NonNull String token, final @NonNull String audience) {
+        return Workload.ValidateJWTSVIDRequest
+                .newBuilder()
+                .setSvid(token)
+                .setAudience(audience)
+                .build();
     }
 
     /**
