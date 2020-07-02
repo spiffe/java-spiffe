@@ -2,6 +2,9 @@
 
 Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundles from the Workload API.
 
+It uses the [JWT and JOSE Nimbus Library](https://connect2id.com/products/nimbus-jose-jwt) to parse and process the JWT tokens 
+and JSON Web Key (JWK) set bundles. 
+
 ## X.509 Source
 
 A `X509Source` represents a source of X.509 SVIDs and X.509 bundles maintained via the Workload API.
