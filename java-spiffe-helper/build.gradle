@@ -1,12 +1,5 @@
-
 plugins {
     id "com.github.johnrengelman.shadow" version "5.2.0"
-}
-
-jar {
-    manifest {
-        attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
-    }
 }
 
 apply plugin: 'com.github.johnrengelman.shadow'
@@ -14,11 +7,10 @@ apply plugin: 'com.github.johnrengelman.shadow'
 assemble.dependsOn shadowJar
 
 shadowJar {
-    classifier = ""
-}
-
-ext {
-    grpcVersion = '1.30.0'
+    archiveClassifier = osClassifier
+    manifest {
+        attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
+    }
 }
 
 dependencies {

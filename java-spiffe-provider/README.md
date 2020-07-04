@@ -63,7 +63,9 @@ This declares a provider, and specifies its preference order `n`.
 ### Copy the JAR to the JVM extensions
 
 For installing the JAR file containing the provider classes as a bundled extension in the java platform, 
-copy `build/libs/java-spiffe-provider-<version>-all.jar` to `<java-home>/jre/lib/ext`.
+copy `build/libs/java-spiffe-provider-<version>-all-linux-x86_64.jar` to `<java-home>/jre/lib/ext`.
+
+In the case of testing the provider in Mac OS, the name of the jar will be `java-spiffe-provider-<version>-all-osx-x86_64.jar`.
 
 #### Register the SPIFFE Provider
 

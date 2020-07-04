@@ -30,6 +30,8 @@ public class X509Context {
     }
 
     /**
+     * Returns the default SVID (the first in the list).
+     *
      * @return the default SVID (the first in the list)
      */
     public X509Svid getDefaultSvid() {

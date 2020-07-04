@@ -11,6 +11,7 @@ import java.security.Security;
 final class EnvironmentUtils {
 
     private EnvironmentUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     /**

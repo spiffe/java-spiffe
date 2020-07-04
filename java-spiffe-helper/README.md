@@ -8,7 +8,13 @@ The Helper automatically gets the SVID updates and stores them in the KeyStore a
 
 ## Usage
 
-`java -jar java-spiffe-helper-0.6.0.jar -c helper.conf`
+On Linux:
+
+`java -jar java-spiffe-helper-0.6.0-linux-x86_64.jar -c helper.conf`
+
+On Mac OS:
+
+`java -jar java-spiffe-helper-0.6.0-osx-x86_64.jar -c helper.conf`
 
 (The jar can be found in `build/libs`, after running the gradle build)
 

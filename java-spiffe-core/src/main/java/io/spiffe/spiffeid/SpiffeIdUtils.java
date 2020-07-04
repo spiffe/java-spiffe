@@ -24,6 +24,7 @@ public final class SpiffeIdUtils {
     private static final Set<Character> SUPPORTED_SEPARATORS = Sets.newHashSet(DEFAULT_CHAR_SEPARATOR, ' ');
 
     private SpiffeIdUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     /**

@@ -60,9 +60,9 @@ public class X509CertificateTestUtils {
     }
 
     @Value
-    public final static class CertAndKeyPair {
-        private final KeyPair keyPair;
-        private final X509Certificate certificate;
+    public static class CertAndKeyPair {
+        KeyPair keyPair;
+        X509Certificate certificate;
 
         public CertAndKeyPair(X509Certificate certificate, KeyPair keyPair) {
             this.keyPair = keyPair;

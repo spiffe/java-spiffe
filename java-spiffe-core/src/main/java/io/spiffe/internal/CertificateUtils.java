@@ -55,10 +55,11 @@ public class CertificateUtils {
     private static final String X509_CERTIFICATE_TYPE = "X.509";
 
     private CertificateUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     /**
-     * Generate a list of X.509 certificates from a byte array.
+     * Generates a list of X.509 certificates from a byte array.
      *
      * @param input as byte array representing a list of X.509 certificates, as a DER or PEM
      * @return a List of {@link X509Certificate}

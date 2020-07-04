@@ -1,39 +1,44 @@
 package io.spiffe.workloadapi;
 
-import com.google.common.collect.Sets;
 import io.spiffe.exception.SocketEndpointAddressException;
+import lombok.NonNull;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Set;
 
-import static io.spiffe.workloadapi.AddressScheme.TCP_SCHEME;
 import static io.spiffe.workloadapi.AddressScheme.UNIX_SCHEME;
 
 /**
- * Utility class to get the default Workload API address and parse string addresses.
+ * Parses and validates Workload API socket addresses following the SPIFFE standard and provides
+ * the default Workload API address.
+ * <p>
+ * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE_Workload_Endpoint.md#4-locating-the-endpoint">SPIFFE Workload Endpoint Standard</a>
  */
 public class Address {
-
     /**
      * Environment variable holding the default Workload API address.
      */
     public static final String SOCKET_ENV_VARIABLE = "SPIFFE_ENDPOINT_SOCKET";
 
-    private static final Set<AddressScheme> VALID_SCHEMES = Sets.newHashSet(UNIX_SCHEME, TCP_SCHEME);
-
     private Address() {
     }
 
     /**
+     * Returns the default Workload API address hold by the system environment variable.
+     *
      * @return the default Workload API address hold by the system environment variable
      * defined by SOCKET_ENV_VARIABLE.
+     * @throws IllegalStateException is the Environment variable is not set
      */
     public static String getDefaultAddress() {
-        return System.getenv(Address.SOCKET_ENV_VARIABLE);
+        String address = System.getenv(Address.SOCKET_ENV_VARIABLE);
+        if (StringUtils.isBlank(address)) {
+            throw new IllegalStateException("Endpoint Socket Address Environment Variable is not set");
+        }
+        return address;
     }
 
     /**
@@ -58,7 +63,7 @@ public class Address {
      *                                        defined in the SPIFFE Worload Endpoint Standard.
      * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE_Workload_Endpoint.md#4-locating-the-endpoint">SPIFFE Workload Endpoint Standard</a>
      */
-    public static URI parseAddress(final String address) throws SocketEndpointAddressException {
+    public static URI parseAddress(@NonNull final String address) throws SocketEndpointAddressException {
 
         val parsedAddress = parseUri(address);
         val scheme = getScheme(parsedAddress);
@@ -166,9 +171,5 @@ public class Address {
 
     private static boolean hasEmptyPath(final String path) {
         return StringUtils.isBlank(path) || "/".equals(path);
-    }
-
-    private static boolean isSchemeNotValid(final String scheme) {
-        return !VALID_SCHEMES.contains(scheme);
     }
 }

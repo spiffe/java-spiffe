@@ -28,6 +28,10 @@ import java.util.Set;
  */
 public class TestUtils {
 
+    private TestUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
     public static KeyPair generateECKeyPair(Curve curve) {
         try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");

@@ -51,6 +51,8 @@ public class X509Svid {
     }
 
     /**
+     * Returns the Leaf X.509 certificate of the chain.
+     *
      * @return the Leaf X.509 certificate of the chain
      */
     public X509Certificate getLeaf() {
@@ -58,6 +60,8 @@ public class X509Svid {
     }
 
     /**
+     * Returns the chain of X.509 certificates.
+     *
      * @return the chain of X.509 certificates
      */
     public List<X509Certificate> getChain() {
@@ -125,6 +129,8 @@ public class X509Svid {
     }
 
     /**
+     * Returns the chain of certificates as an array of {@link X509Certificate}.
+     *
      * @return the chain of certificates as an array of {@link X509Certificate}
      */
     public X509Certificate[] getChainArray() {

@@ -1,5 +1,14 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
 rootProject.name = 'java-spiffe'
 include 'java-spiffe-core'
 include 'java-spiffe-provider'
 include 'java-spiffe-helper'
+
+gradle.ext.isMacOs = Os.isFamily(Os.FAMILY_MAC)
+if (gradle.ext.isMacOs) {
+    include 'java-spiffe-core:grpc-netty-macos'
+} else {
+    include 'java-spiffe-core:grpc-netty-linux'
+}
 

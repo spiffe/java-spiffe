@@ -8,7 +8,6 @@ import io.grpc.netty.shaded.io.netty.channel.EventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.epoll.EpollDomainSocketChannel;
 import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup;
 import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress;
-import io.spiffe.workloadapi.AddressScheme;
 import lombok.NonNull;
 import lombok.val;
 import org.apache.commons.lang3.SystemUtils;
@@ -16,16 +15,17 @@ import org.apache.commons.lang3.SystemUtils;
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
 
-import static io.spiffe.workloadapi.AddressScheme.UNIX_SCHEME;
-
 /**
- * Factory for creating ManagedChannel instances.
- * <p>
- * Only Linux is supported since the recommended grpc-netty-shaded library only supports <code>EpollEventLoopGroup</code>.
- * @see <a href="https://github.com/grpc/grpc-java">Grpc Java Library</a>
- * @see <a href="https://github.com/spiffe/java-spiffe/issues/32">Support MacOS</a>
+ * Factory for creating ManagedChannel instances for Linux OS.
  */
-public class GrpcManagedChannelFactory {
+public final class GrpcManagedChannelFactory {
+
+    private static final String UNIX_SCHEME = "unix";
+    private static final String TCP_SCHEME = "tcp";
+
+    private GrpcManagedChannelFactory() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     /**
      * Returns a ManagedChannelWrapper that contains a {@link ManagedChannel} to the SPIFFE Socket Endpoint provided.
@@ -35,12 +35,17 @@ public class GrpcManagedChannelFactory {
      * @return a instance of a {@link ManagedChannelWrapper}
      */
     public static ManagedChannelWrapper newChannel(@NonNull URI address, ExecutorService executorService) {
+        val scheme = address.getScheme();
         ManagedChannelWrapper result;
-        val scheme = AddressScheme.parseScheme(address.getScheme());
-        if (scheme == UNIX_SCHEME) {
-            result = createNativeSocketChannel(address, executorService);
-        } else {
-            result = createTcpChannel(address);
+        switch (scheme) {
+            case UNIX_SCHEME:
+                result = createNativeSocketChannel(address, executorService);
+                break;
+            case TCP_SCHEME:
+                result = createTcpChannel(address);
+                break;
+            default:
+                throw new IllegalArgumentException("Address Scheme not supported: ");
         }
         return result;
     }
@@ -74,6 +79,4 @@ public class GrpcManagedChannelFactory {
 
         throw new IllegalStateException("Operating System is not supported.");
     }
-
-    private GrpcManagedChannelFactory() {}
 }

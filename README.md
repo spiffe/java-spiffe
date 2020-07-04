@@ -25,9 +25,16 @@ X.509 and JWT SVIDs and bundles.
 
 ### Build the JARs
 
+On Linux or MacOS, run:
+
 ```
  $ ./gradlew assemble
  BUILD SUCCESSFUL 
 ```
 
 All `jar` files are placed in `build/libs` folder.  
+
+Based on the OS, the jars will have a different classifier at the end of the jars names:
+
+* `-linux-x86_64` for Linux
+* `-osx-x86_64` for Mac OS

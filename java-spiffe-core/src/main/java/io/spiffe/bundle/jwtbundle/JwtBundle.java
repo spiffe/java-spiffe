@@ -115,7 +115,9 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     /**
-     * @return the JWT authorities in the bundle, keyed by key ID.
+     * Returns the JWT authorities in the bundle, keyed by key ID.
+     *
+     * @return the JWT authorities in the bundle, keyed by key ID
      */
     public Map<String, PublicKey> getJwtAuthorities() {
         return Collections.unmodifiableMap(jwtAuthorities);

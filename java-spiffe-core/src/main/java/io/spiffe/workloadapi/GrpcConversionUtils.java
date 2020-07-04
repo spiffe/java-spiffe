@@ -25,6 +25,7 @@ import java.util.Map;
 final class GrpcConversionUtils {
 
     private GrpcConversionUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     static X509Context toX509Context(final Workload.X509SVIDResponse x509SvidResponse)

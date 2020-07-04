@@ -178,7 +178,9 @@ public class JwtSvid {
     }
 
     /**
-     * @return a copy of the expiration date time of the JWT SVID.
+     * Returns a copy of the expiration date time of the JWT SVID.
+     *
+     * @return a copy of the expiration date time of the JWT SVID
      */
     public Date getExpiry() {
         // defensive copy to prevent exposing a mutable object
@@ -186,6 +188,8 @@ public class JwtSvid {
     }
 
     /**
+     * Returns the map of claims.
+     *
      * @return the map of claims
      */
     public Map<String, Object> getClaims() {
@@ -193,6 +197,8 @@ public class JwtSvid {
     }
 
     /**
+     * Returns the Set of audiences.
+     *
      * @return the Set of audiences
      */
     public Set<String> getAudience() {

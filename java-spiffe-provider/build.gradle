@@ -7,6 +7,10 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 assemble.dependsOn shadowJar
 
+shadowJar {
+    archiveClassifier = "all-".concat(osClassifier)
+}
+
 dependencies {
     api(project(":java-spiffe-core"))
 }

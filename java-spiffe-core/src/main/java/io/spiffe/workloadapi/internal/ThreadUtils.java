@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 public final class ThreadUtils {
 
     private ThreadUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     public static void await(CountDownLatch latch) {

@@ -111,7 +111,9 @@ public class X509Bundle implements BundleSource<X509Bundle> {
     }
 
     /**
-     * @return the X.509 Authorities in the bundle.
+     * Returns the X.509 Authorities in the bundle.
+     *
+     * @return the X.509 Authorities in the bundle
      */
     public Set<X509Certificate> getX509Authorities() {
         return Collections.unmodifiableSet(x509Authorities);
@@ -119,6 +121,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
 
     /**
      * Checks if the given X.509 authority exists in the bundle.
+     *
      * @param x509Authority an X.509 certificate
      * @return boolean true if the x509Authority is present in the X.509 bundle, false otherwise
      */
@@ -128,6 +131,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
 
     /**
      * Adds an X.509 authority to the bundle.
+     *
      * @param x509Authority an X.509 certificate
      */
     public void addX509Authority(@NonNull final X509Certificate x509Authority) {
@@ -136,6 +140,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
 
     /**
      * Removes an X.509 authority from the bundle.
+     *
      * @param x509Authority an X.509 certificate
      */
     public void removeX509Authority(@NonNull final X509Certificate x509Authority) {
