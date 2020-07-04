@@ -5,13 +5,17 @@ os:
   - osx
 
 jdk:
-  - openjdk8
   - oraclejdk9
   - openjdk10
   - oraclejdk11
   - oraclejdk12
   - oraclejdk13
   - oraclejdk14
+
+matrix:
+  include:
+    - os: linux
+      jdk: openjdk8
 
 after_success:
   - ./gradlew jacocoTestReport coveralls
