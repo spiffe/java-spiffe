@@ -185,6 +185,19 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
+    public JwtSvid fetchJwtSvid(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+        final Set<String> audParam = createAudienceSet(audience, extraAudience);
+        try (val cancellableContext = Context.current().withCancellation()) {
+            return cancellableContext.call(() -> callFetchJwtSvid(audParam));
+        } catch (Exception e) {
+            throw new JwtSvidException("Error fetching JWT SVID", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject,
                                 @NonNull final String audience,
                                 final String... extraAudience)
@@ -283,6 +296,14 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     private JwtSvid callFetchJwtSvid(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
         val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
+                .addAllAudience(audience)
+                .build();
+        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
+    }
+
+    private JwtSvid callFetchJwtSvid(final Set<String> audience) throws JwtSvidException {
+        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .addAllAudience(audience)
                 .build();
         val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);

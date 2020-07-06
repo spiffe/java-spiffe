@@ -39,6 +39,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     final String svid = "testdata/workloadapi/svid.der";
     final String x509Bundle = "testdata/workloadapi/bundle.der";
     final String jwtBundle = "testdata/workloadapi/bundle.json";
+    final SpiffeId subject = SpiffeId.parse("spiffe://example.org/workload-server");
 
     boolean closed;
 
@@ -51,6 +52,11 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
         val update = generateX509Context();
         watcher.onUpdate(update);
+    }
+
+    @Override
+    public JwtSvid fetchJwtSvid(@NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+        return generateJwtSvid(subject, audience, extraAudience);
     }
 
     @Override

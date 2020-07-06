@@ -43,6 +43,11 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
+    public JwtSvid fetchJwtSvid(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+        return null;
+    }
+
+    @Override
     public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
         return null;
     }

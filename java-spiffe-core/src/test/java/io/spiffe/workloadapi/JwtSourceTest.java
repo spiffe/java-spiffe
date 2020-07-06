@@ -61,9 +61,21 @@ class JwtSourceTest {
     }
 
     @Test
-    void testFetchJwtSvid() {
+    void testFetchJwtSvidWithSubject() {
         try {
             JwtSvid svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidWithoutSubject() {
+        try {
+            JwtSvid svid = jwtSource.fetchJwtSvid("aud1", "aud2", "aud3");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());

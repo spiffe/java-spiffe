@@ -39,6 +39,16 @@ public interface WorkloadApiClient extends Closeable {
     /**
      * Fetches a SPIFFE JWT-SVID on one-shot blocking call.
      *
+     * @param audience      the audience of the JWT-SVID
+     * @param extraAudience the extra audience for the JWT_SVID
+     * @return an instance of a {@link JwtSvid}
+     * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
+     */
+    JwtSvid fetchJwtSvid(@NonNull String audience, String... extraAudience) throws JwtSvidException;
+
+    /**
+     * Fetches a SPIFFE JWT-SVID on one-shot blocking call.
+     *
      * @param subject       a SPIFFE ID
      * @param audience      the audience of the JWT-SVID
      * @param extraAudience the extra audience for the JWT_SVID

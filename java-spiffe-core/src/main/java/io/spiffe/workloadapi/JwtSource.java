@@ -107,6 +107,14 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         return jwtSource;
     }
 
+    @Override
+    public JwtSvid fetchJwtSvid(String audience, String... extraAudiences) throws JwtSvidException {
+        if (isClosed()) {
+            throw new IllegalStateException("JWT SVID source is closed");
+        }
+        return workloadApiClient.fetchJwtSvid(audience, extraAudiences);
+    }
+
     /**
      * Fetches a new JWT SVID from the Workload API for the given subject SPIFFE ID and audiences.
      *
