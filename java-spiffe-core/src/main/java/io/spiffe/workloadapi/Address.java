@@ -36,7 +36,8 @@ public class Address {
     public static String getDefaultAddress() {
         String address = System.getenv(Address.SOCKET_ENV_VARIABLE);
         if (StringUtils.isBlank(address)) {
-            throw new IllegalStateException("Endpoint Socket Address Environment Variable is not set");
+            String error = String.format("Endpoint Socket Address Environment Variable is not set: %s", SOCKET_ENV_VARIABLE);
+            throw new IllegalStateException(error);
         }
         return address;
     }
