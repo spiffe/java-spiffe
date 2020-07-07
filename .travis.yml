@@ -5,9 +5,7 @@ os:
   - osx
 
 jdk:
-  - openjdk-ea
   - openjdk15
-  - openjdk14
   - openjdk11
 
 matrix:
