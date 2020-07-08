@@ -24,7 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
 /**
- * Represents a helper for storing X.509 SVIDs and bundles that are automatically fetched and rotated via the Workload API,
+ * Helper for storing X.509 SVIDs and bundles that are automatically fetched and rotated via the Workload API,
  * in a Java KeyStore and a TrustStore in files in disk.
  * <p>
  * It stores the Private Key along with the chain of X.509 certificates in a KeyStore, and the
