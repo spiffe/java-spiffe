@@ -28,7 +28,7 @@ public interface WorkloadApiClient extends Closeable {
     /**
      * Watches for X.509 context updates.
      * <p>
-     * A new Stream to the Workload API is opened for each call to this method, so that the client start getting
+     * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update based on the SVIDs TTL.
      *
@@ -78,7 +78,7 @@ public interface WorkloadApiClient extends Closeable {
     /**
      * Watches for JWT bundles updates.
      * <p>
-     * A new Stream to the Workload API is opened for each call to this method, so that the client start getting
+     * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update based on the SVIDs TTL.
      *

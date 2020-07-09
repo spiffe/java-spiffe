@@ -9,7 +9,7 @@ public enum AddressScheme {
 
     private final String name;
 
-    private AddressScheme(final String scheme) {
+    AddressScheme(final String scheme) {
         this.name = scheme;
     }
 

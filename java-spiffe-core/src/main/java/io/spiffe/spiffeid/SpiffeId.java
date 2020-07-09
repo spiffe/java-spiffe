@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md">https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md</a>
  */
 @Value
-public final class SpiffeId {
+public class SpiffeId {
 
     public static final String SPIFFE_SCHEME = "spiffe";
 
