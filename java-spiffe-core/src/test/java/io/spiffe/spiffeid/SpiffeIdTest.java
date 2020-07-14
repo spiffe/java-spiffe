@@ -64,6 +64,15 @@ public class SpiffeIdTest {
     }
 
     @Test
+    void of_NullTrustDomain_throwsException() {
+        try {
+            SpiffeId.of(null);
+        } catch (NullPointerException e) {
+            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
     void toString_SpiffeId_ReturnsTheSpiffeIdInAStringFormatIncludingTheSchema() {
         val trustDomain = TrustDomain.of("trust-domain.org");
         val spiffeId = SpiffeId.of(trustDomain, "path1", "path2", "path3");
@@ -168,6 +177,7 @@ public class SpiffeIdTest {
     static Stream<Arguments> provideTestInvalidSpiffeIds() {
         return Stream.of(
                 Arguments.of("", "SPIFFE ID cannot be empty"),
+                Arguments.of(null, "SPIFFE ID cannot be empty"),
                 Arguments.of("192.168.2.2:6688", "Illegal character in scheme name at index 0: 192.168.2.2:6688"),
                 Arguments.of("http://domain.test/path/element", "SPIFFE ID: invalid scheme"),
                 Arguments.of("spiffe:///path/element", "SPIFFE ID: trust domain is empty"),

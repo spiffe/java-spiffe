@@ -8,8 +8,4 @@ public class BundleNotFoundException extends Exception {
     public BundleNotFoundException(final String message) {
         super(message);
     }
-
-    public BundleNotFoundException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
 }

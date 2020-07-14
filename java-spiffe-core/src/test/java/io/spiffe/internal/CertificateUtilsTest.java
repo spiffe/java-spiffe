@@ -8,7 +8,6 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
+import static io.spiffe.utils.TestUtils.toUri;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -132,9 +132,4 @@ public class CertificateUtilsTest {
             fail(e);
         }
     }
-
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
-    }
-
 }

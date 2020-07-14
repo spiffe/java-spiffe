@@ -75,7 +75,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         val x509Svid = getX509Svid();
         val x509Bundle = getX509Bundle();
         val bundleSet = X509BundleSet.of(Collections.singleton(x509Bundle));
-        return new X509Context(Collections.singletonList(x509Svid), bundleSet);
+        return X509Context.of(Collections.singletonList(x509Svid), bundleSet);
     }
 
     private X509Bundle getX509Bundle() {

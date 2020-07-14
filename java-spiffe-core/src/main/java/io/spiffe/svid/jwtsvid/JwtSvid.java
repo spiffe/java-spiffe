@@ -61,20 +61,11 @@ public class JwtSvid {
      */
     String token;
 
-    /**
-     * Constructor
-     *
-     * @param spiffeId {@link SpiffeId} of the JWT-SVID
-     * @param audience list of audiences
-     * @param expiry the Date of expiration
-     * @param claims map of claims
-     * @param token the token as string
-     */
-    JwtSvid(@NonNull final SpiffeId spiffeId,
-            @NonNull final Set<String> audience,
-            @NonNull final Date expiry,
-            @NonNull final Map<String, Object> claims,
-            @NonNull final String token) {
+    private JwtSvid(final SpiffeId spiffeId,
+            final Set<String> audience,
+            final Date expiry,
+            final Map<String, Object> claims,
+            final String token) {
         this.spiffeId = spiffeId;
         this.audience = audience;
         this.expiry = expiry;

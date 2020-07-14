@@ -53,7 +53,7 @@ public class SpiffeId {
      * @return A {@link SpiffeId}
      * @throws IllegalArgumentException if the given string cannot be parsed
      */
-    public static SpiffeId parse(@NonNull final String spiffeIdAsString) {
+    public static SpiffeId parse(final String spiffeIdAsString) {
         if (StringUtils.isBlank(spiffeIdAsString)) {
             throw new IllegalArgumentException("SPIFFE ID cannot be empty");
         }

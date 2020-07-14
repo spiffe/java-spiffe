@@ -24,6 +24,10 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
         this.bundles = new ConcurrentHashMap<>(bundles);
     }
 
+    private X509BundleSet() {
+        this.bundles = new ConcurrentHashMap<>();
+    }
+
     /**
      * Creates a new X.509 bundle set from a list of X.509 bundles.
      *
@@ -31,11 +35,24 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      * @return a {@link X509BundleSet} initialized with the list of bundles
      */
     public static X509BundleSet of(@NonNull final Collection<X509Bundle> bundles) {
+        if (bundles.size() == 0) {
+            throw new IllegalArgumentException("X509Bundles collection is empty");
+        }
+
         final Map<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
         for (X509Bundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
         return new X509BundleSet(bundleMap);
+    }
+
+    /**
+     * Creates a new X.509 bundle empty.
+     *
+     * @return a {@link X509BundleSet}
+     */
+    public static X509BundleSet emptySet() {
+        return new X509BundleSet();
     }
 
     /**

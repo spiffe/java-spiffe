@@ -24,6 +24,10 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
         this.bundles = new ConcurrentHashMap<>(bundles);
     }
 
+    private JwtBundleSet() {
+        this.bundles = new ConcurrentHashMap<>();
+    }
+
     /**
      * Creates a JWT bundle set from the list of JWT bundles.
      *
@@ -31,11 +35,23 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      * @return a {@link JwtBundleSet}
      */
     public static JwtBundleSet of(@NonNull final Collection<JwtBundle> bundles) {
+        if (bundles.size() == 0) {
+            throw new IllegalArgumentException("JwtBundle collection is empty");
+        }
         final Map<TrustDomain, JwtBundle> bundleMap = new ConcurrentHashMap<>();
         for (JwtBundle bundle : bundles) {
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
         return new JwtBundleSet(bundleMap);
+    }
+
+    /**
+     * Creates a JWT bundle set empty.
+     *
+     * @return a {@link JwtBundleSet}
+     */
+    public static JwtBundleSet emptySet() {
+        return new JwtBundleSet();
     }
 
     /**

@@ -5,6 +5,7 @@ import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.WatcherException;
 import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
@@ -170,7 +171,7 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
         }
     }
 
-    private static WorkloadApiClient createClient(@NonNull final X509SourceOptions options)
+    private static WorkloadApiClient createClient(final X509SourceOptions options)
             throws SocketEndpointAddressException {
         val clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
@@ -208,16 +209,17 @@ public final class X509Source implements X509SvidSource, BundleSource<X509Bundle
             public void onError(final Throwable error) {
                 log.log(Level.SEVERE, "Error in X509Context watcher", error);
                 done.countDown();
+                throw new WatcherException("Error in X509Context watcher", error);
             }
         });
     }
 
-    private void setX509Context(@NonNull final X509Context update) {
+    private void setX509Context(final X509Context update) {
         final X509Svid svidUpdate;
         if (picker == null) {
             svidUpdate = update.getDefaultSvid();
         } else {
-            svidUpdate = picker.apply(update.getX509Svid());
+            svidUpdate = picker.apply(update.getX509Svids());
         }
         synchronized (this) {
             this.svid = svidUpdate;

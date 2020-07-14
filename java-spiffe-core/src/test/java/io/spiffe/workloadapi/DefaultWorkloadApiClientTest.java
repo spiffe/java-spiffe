@@ -1,10 +1,6 @@
 package io.spiffe.workloadapi;
 
 import com.nimbusds.jose.jwk.Curve;
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
@@ -17,9 +13,6 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.utils.TestUtils;
-import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
-import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
-import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 import io.spiffe.workloadapi.retry.ExponentialBackoffPolicy;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
@@ -35,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,27 +43,7 @@ class DefaultWorkloadApiClientTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Generate a unique in-process server name.
-        String serverName = InProcessServerBuilder.generateName();
-
-        // Create a server, add service, start, and register for automatic graceful shutdown.
-        FakeWorkloadApi fakeWorkloadApi = new FakeWorkloadApi();
-        Server server = InProcessServerBuilder.forName(serverName).directExecutor().addService(fakeWorkloadApi).build().start();
-        grpcCleanup.register(server);
-
-        // Create WorkloadApiClient using Stubs that will connect to the fake WorkloadApiService.
-        final ManagedChannel inProcessChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-        grpcCleanup.register(inProcessChannel);
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub = SpiffeWorkloadAPIGrpc
-                .newBlockingStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadAPIStub = SpiffeWorkloadAPIGrpc
-                .newStub(inProcessChannel)
-                .withInterceptors(new SecurityHeaderInterceptor());
-
-        workloadApiClient = new DefaultWorkloadApiClient(workloadAPIStub, workloadApiBlockingStub, new ManagedChannelWrapper(inProcessChannel));
+        workloadApiClient = WorkloadApiClientTestUtil.create(new FakeWorkloadApi(), grpcCleanup);
     }
 
     @AfterEach
@@ -83,6 +57,17 @@ class DefaultWorkloadApiClientTest {
             TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/agent.sock" );
             WorkloadApiClient client = DefaultWorkloadApiClient.newClient();
             assertNotNull(client);
+        } catch (SocketEndpointAddressException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testNewClient_nullOptions() {
+        try {
+            DefaultWorkloadApiClient.newClient(null);
+        } catch (NullPointerException e) {
+            assertEquals("options is marked non-null but is null", e.getMessage());
         } catch (SocketEndpointAddressException e) {
             fail(e);
         }
@@ -141,7 +126,7 @@ class DefaultWorkloadApiClientTest {
         };
 
         workloadApiClient.watchX509Context(contextWatcher);
-        done.await();
+        done.await(1, TimeUnit.SECONDS);
 
         X509Context update = x509Context[0];
         assertNotNull(update);
@@ -158,15 +143,74 @@ class DefaultWorkloadApiClientTest {
     }
 
     @Test
+    void testWatchX509ContextNullWatcher_throwsNullPointerException() {
+        try {
+            workloadApiClient.watchX509Context(null);
+        } catch (NullPointerException e) {
+            assertEquals("watcher is marked non-null but is null", e.getMessage());
+        }
+    }
+
+
+    @Test
     void testFetchJwtSvid() {
         try {
-            JwtSvid jwtSvid = workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
+            JwtSvid jwtSvid = workloadApiClient.fetchJwtSvid("aud1", "aud2", "aud3");
             assertNotNull(jwtSvid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvid.getSpiffeId());
             assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(3, jwtSvid.getAudience().size());
         } catch (JwtSvidException e) {
             fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidPassingSpiffeId() {
+        try {
+            JwtSvid jwtSvid = workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/test"), "aud1", "aud2", "aud3");
+            assertNotNull(jwtSvid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/test"), jwtSvid.getSpiffeId());
+            assertTrue(jwtSvid.getAudience().contains("aud1"));
+            assertEquals(3, jwtSvid.getAudience().size());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvid_nullAudience() {
+        try {
+            workloadApiClient.fetchJwtSvid(null, new String[]{"aud2", "aud3"});
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testFetchJwtSvid_withSpiffeIdAndNullAudience() {
+        try {
+            workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/text"), null, "aud2", "aud3");
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testFetchJwtSvid_nullSpiffeId() {
+        try {
+            workloadApiClient.fetchJwtSvid(null, "aud1", new String[]{"aud2", "aud3"});
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("subject is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
         }
     }
 
@@ -181,6 +225,28 @@ class DefaultWorkloadApiClientTest {
             assertEquals(1, jwtSvid.getAudience().size());
         } catch (JwtSvidException e) {
             fail(e);
+        }
+    }
+
+    @Test
+    void testValidateJwtSvid_nullToken() {
+        try {
+            JwtSvid jwtSvid = workloadApiClient.validateJwtSvid(null, "aud1");
+        } catch (NullPointerException e) {
+            assertEquals("token is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testValidateJwtSvid_nullAudience() {
+        try {
+            JwtSvid jwtSvid = workloadApiClient.validateJwtSvid("token", null);
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
         }
     }
 
@@ -223,7 +289,7 @@ class DefaultWorkloadApiClientTest {
         };
 
         workloadApiClient.watchJwtBundles(jwtBundleSetWatcher);
-        done.await();
+        done.await(1, TimeUnit.SECONDS);
 
         JwtBundleSet update = jwtBundleSet[0];
         assertNotNull(update);
@@ -235,6 +301,16 @@ class DefaultWorkloadApiClientTest {
             fail(e);
         }
     }
+
+    @Test
+    void testWatchSvidBundlesNullWatcher_throwsNullPointerException() {
+        try {
+            workloadApiClient.watchJwtBundles(null);
+        } catch (NullPointerException e) {
+            assertEquals("watcher is marked non-null but is null", e.getMessage());
+        }
+    }
+
 
     private String generateToken(String sub, List<String> aud) {
         Map<String, Object> claims = new HashMap<>();

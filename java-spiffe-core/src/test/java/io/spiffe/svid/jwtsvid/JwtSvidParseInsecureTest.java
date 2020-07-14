@@ -9,14 +9,17 @@ import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.TestUtils;
 import lombok.Builder;
 import lombok.Value;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.KeyPair;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -103,7 +106,7 @@ class JwtSvidParseInsecureTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(null)
-                        .expectedJwtSvid(new JwtSvid(
+                        .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
@@ -166,4 +169,19 @@ class JwtSvidParseInsecureTest {
             this.expectedJwtSvid = expectedJwtSvid;
         }
     }
+
+    static JwtSvid newJwtSvidInstance(final SpiffeId spiffeId,
+                                      final Set<String> audience,
+                                      final Date expiry,
+                                      final Map<String, Object> claims,
+                                      final String token) {
+        val constructor = JwtSvid.class.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        try {
+            return (JwtSvid) constructor.newInstance(spiffeId, audience, expiry, claims, token);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

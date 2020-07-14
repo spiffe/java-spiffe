@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static io.spiffe.svid.jwtsvid.JwtSvidParseInsecureTest.newJwtSvidInstance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JwtSvidParseAndValidateTest {
@@ -122,7 +123,7 @@ class JwtSvidParseAndValidateTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(null)
-                        .expectedJwtSvid(new JwtSvid(
+                        .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
@@ -134,7 +135,7 @@ class JwtSvidParseAndValidateTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3"))
                         .expectedException(null)
-                        .expectedJwtSvid(new JwtSvid(
+                        .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,

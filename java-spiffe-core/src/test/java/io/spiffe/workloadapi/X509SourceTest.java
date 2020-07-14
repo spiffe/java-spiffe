@@ -7,11 +7,14 @@ import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
+import io.spiffe.utils.TestUtils;
+import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,12 +25,15 @@ class X509SourceTest {
 
     private X509Source x509Source;
     private WorkloadApiClientStub workloadApiClient;
+    private WorkloadApiClientErrorStub workloadApiClientErrorStub;
 
     @BeforeEach
     void setUp() throws IOException, X509SourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
         X509Source.X509SourceOptions options = X509Source.X509SourceOptions.builder().workloadApiClient(workloadApiClient).build();
+        System.setProperty(JwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
         x509Source = X509Source.newSource(options);
+        workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
     }
 
     @AfterEach
@@ -35,8 +41,9 @@ class X509SourceTest {
         x509Source.close();
     }
 
+
     @Test
-    void testgetBundleForTrustDomain() {
+    void testGetBundleForTrustDomain() {
         try {
             X509Bundle bundle = x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
             assertNotNull(bundle);
@@ -47,7 +54,19 @@ class X509SourceTest {
     }
 
     @Test
-    void testgetBundleForTrustDomain_SourceIsClosed_ThrowsIllegalStateExceptions() {
+    void testGetBundleForTrustDomain_nullParam() {
+        try {
+            x509Source.getBundleForTrustDomain(null);
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+        } catch (BundleNotFoundException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testGetBundleForTrustDomain_SourceIsClosed_ThrowsIllegalStateExceptions() {
         x509Source.close();
         try {
             x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
@@ -75,6 +94,82 @@ class X509SourceTest {
             fail("exceptions is expected");
         } catch (IllegalStateException e) {
             assertEquals("X.509 SVID source is closed", e.getMessage());
+        }
+    }
+
+    @Test
+    void newSource_success() {
+        val options = X509Source.X509SourceOptions
+                .builder()
+                .workloadApiClient(workloadApiClient)
+                .svidPicker((list) -> list.get(0))
+                .initTimeout(Duration.ofSeconds(0))
+                .build();
+        try {
+            X509Source jwtSource = X509Source.newSource(options);
+            assertNotNull(jwtSource);
+        } catch (SocketEndpointAddressException | X509SourceException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void newSource_nullParam() {
+        try {
+            X509Source.newSource(null);
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("options is marked non-null but is null", e.getMessage());
+        } catch (SocketEndpointAddressException | X509SourceException e) {
+            fail();
+        }
+    }
+    @Test
+    void newSource_timeout() throws Exception {
+        try {
+            val options = X509Source.X509SourceOptions
+                    .builder()
+                    .initTimeout(Duration.ofSeconds(1))
+                    .spiffeSocketPath("unix:/tmp/test")
+                    .build();
+            X509Source.newSource(options);
+            fail();
+        } catch (X509SourceException e) {
+            assertEquals("Error creating X.509 source", e.getMessage());
+        } catch (SocketEndpointAddressException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void newSource_errorFetchingJwtBundles() {
+        val options = X509Source.X509SourceOptions
+                .builder()
+                .workloadApiClient(workloadApiClientErrorStub)
+                .spiffeSocketPath("unix:/tmp/test")
+                .build();
+        try {
+            X509Source.newSource(options);
+            fail();
+        } catch (X509SourceException e) {
+            assertEquals("Error creating X.509 source", e.getMessage());
+            assertEquals("Error in X509Context watcher", e.getCause().getMessage());
+        } catch (Exception e) {
+            fail();
+        }
+    }
+
+    @Test
+    void newSource_noSocketAddress() throws Exception {
+        try {
+            // just in case the variable is defined in the environment
+            TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "");
+            X509Source.newSource();
+            fail();
+        } catch (X509SourceException | SocketEndpointAddressException e) {
+            fail();
+        } catch (IllegalStateException e) {
+            assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
         }
     }
 }

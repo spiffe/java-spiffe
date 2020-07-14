@@ -6,7 +6,6 @@ import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509ContextException;
-import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
@@ -27,8 +26,6 @@ import lombok.extern.java.Log;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
-import java.security.KeyException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -83,11 +80,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     }
 
     DefaultWorkloadApiClient(final SpiffeWorkloadAPIStub workloadApiAsyncStub,
-                                    final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
-                                    final ManagedChannelWrapper managedChannel) {
+                             final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub,
+                             final ManagedChannelWrapper managedChannel,
+                             final ExponentialBackoffPolicy backoffPolicy) {
+
         this.workloadApiAsyncStub = workloadApiAsyncStub;
         this.workloadApiBlockingStub = workloadApiBlockingStub;
-        this.exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
+        this.exponentialBackoffPolicy = backoffPolicy;
         this.executorService = Executors.newCachedThreadPool();
         this.retryExecutor = Executors.newSingleThreadScheduledExecutor();
         this.cancellableContexts = Collections.synchronizedList(new ArrayList<>());
@@ -160,7 +159,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     @Override
     public X509Context fetchX509Context() throws X509ContextException {
         try (val cancellableContext = Context.current().withCancellation()) {
-            return cancellableContext.call(this::processX509Context);
+            return cancellableContext.call(this::callFetchX509Context);
         } catch (Exception e) {
             throw new X509ContextException("Error fetching X509Context", e);
         }
@@ -220,7 +219,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         try (val cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(this::callFetchBundles);
         } catch (Exception e) {
-            throw new JwtBundleException("Error fetching JWT SVID", e);
+            throw new JwtBundleException("Error fetching JWT Bundles", e);
         }
     }
 
@@ -233,12 +232,16 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
 
         val request = createJwtSvidRequest(token, audience);
 
+        Workload.ValidateJWTSVIDResponse response;
         try (val cancellableContext = Context.current().withCancellation()) {
-            cancellableContext.call(() -> workloadApiBlockingStub.validateJWTSVID(request));
+            response = cancellableContext.call(() -> workloadApiBlockingStub.validateJWTSVID(request));
         } catch (Exception e) {
             throw new JwtSvidException("Error validating JWT SVID", e);
         }
 
+        if (response == null || StringUtils.isBlank(response.getSpiffeId())) {
+            throw new JwtSvidException("Error validating JWT SVID. Empty response from Workload API");
+        }
         return JwtSvid.parseInsecure(token, Collections.singleton(audience));
     }
 
@@ -281,16 +284,9 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     }
 
 
-    private X509Context processX509Context() throws X509ContextException {
-        try {
-            val x509SvidResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
-            if (x509SvidResponse.hasNext()) {
-                return GrpcConversionUtils.toX509Context(x509SvidResponse.next());
-            }
-        } catch (CertificateException | X509SvidException e) {
-            throw new X509ContextException("Error processing X509Context", e);
-        }
-        throw new X509ContextException("Error processing X509Context: x509SVIDResponse is empty");
+    private X509Context callFetchX509Context() throws X509ContextException {
+        val x509SvidResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
+        return GrpcConversionUtils.toX509Context(x509SvidResponse);
     }
 
     private JwtSvid callFetchJwtSvid(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
@@ -299,7 +295,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 .addAllAudience(audience)
                 .build();
         val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
-        return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
+        return processJwtSvidResponse(response, audience);
     }
 
     private JwtSvid callFetchJwtSvid(final Set<String> audience) throws JwtSvidException {
@@ -307,24 +303,23 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 .addAllAudience(audience)
                 .build();
         val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        return processJwtSvidResponse(response, audience);
+    }
+
+    private JwtSvid processJwtSvidResponse(Workload.JWTSVIDResponse response, Set<String> audience) throws JwtSvidException {
+        if (response.getSvidsList() == null || response.getSvidsList().size() == 0) {
+            throw new JwtSvidException("JWT SVID response from the Workload API is empty");
+        }
         return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
     }
 
     private JwtBundleSet callFetchBundles() throws JwtBundleException {
         val request = Workload.JWTBundlesRequest.newBuilder().build();
         val bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
-
-        if (bundlesResponse.hasNext()) {
-            try {
-                return GrpcConversionUtils.toBundleSet(bundlesResponse.next());
-            } catch (KeyException | JwtBundleException e) {
-                throw new JwtBundleException("Error processing JWT Bundle response from Workload API", e);
-            }
-        }
-        throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
+        return GrpcConversionUtils.toBundleSet(bundlesResponse);
     }
 
-    private Set<String> createAudienceSet(final @NonNull String audience, final String[] extraAudience) {
+    private Set<String> createAudienceSet(final String audience, final String[] extraAudience) {
         final Set<String> audParam = new HashSet<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
@@ -339,7 +334,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         return Workload.JWTBundlesRequest.newBuilder().build();
     }
 
-    private Workload.ValidateJWTSVIDRequest createJwtSvidRequest(final @NonNull String token, final @NonNull String audience) {
+    private Workload.ValidateJWTSVIDRequest createJwtSvidRequest(final String token, final String audience) {
         return Workload.ValidateJWTSVIDRequest
                 .newBuilder()
                 .setSvid(token)

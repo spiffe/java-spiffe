@@ -4,13 +4,12 @@ import com.nimbusds.jose.jwk.Curve;
 import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtBundleException;
-import org.junit.jupiter.api.Test;
 import io.spiffe.internal.DummyPublicKey;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.TestUtils;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +19,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.HashMap;
 
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -208,7 +208,7 @@ class JwtBundleTest {
         JwtBundle jwtBundle = null;
         try {
             jwtBundle = JwtBundle.parse(TrustDomain.of("domain.test"), bundleBytes);
-        } catch (KeyException | JwtBundleException e) {
+        } catch (JwtBundleException e) {
             fail(e);
         }
 
@@ -228,7 +228,7 @@ class JwtBundleTest {
         try {
             JwtBundle.parse(trustDomain, bundleBytes);
             fail("should have thrown exception");
-        } catch (KeyException | JwtBundleException e) {
+        } catch (JwtBundleException e) {
             assertEquals("Error adding authority of JWKS: keyID cannot be empty", e.getMessage());
         }
     }
@@ -347,9 +347,5 @@ class JwtBundleTest {
         } catch (NullPointerException e) {
             assertEquals("jwtAuthority is marked non-null but is null", e.getMessage());
         }
-    }
-
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 }

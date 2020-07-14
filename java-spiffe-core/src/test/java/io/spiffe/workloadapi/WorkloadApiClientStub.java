@@ -17,12 +17,10 @@ import lombok.NonNull;
 import lombok.val;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyException;
 import java.security.KeyPair;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -32,6 +30,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static io.spiffe.utils.TestUtils.toUri;
 
 public class WorkloadApiClientStub implements WorkloadApiClient {
 
@@ -81,12 +81,12 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     private JwtBundleSet generateJwtBundleSet() {
-        val pathBundle = Paths.get(toUri(jwtBundle));
         try {
+            val pathBundle = Paths.get(toUri(jwtBundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
             val jwtBundle = JwtBundle.parse(TrustDomain.of("example.org"), bundleBytes);
             return JwtBundleSet.of(Collections.singleton(jwtBundle));
-        } catch (IOException | KeyException | JwtBundleException e) {
+        } catch (IOException | JwtBundleException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
@@ -119,7 +119,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         val x509Svid = getX509Svid();
         val x509Bundle = getX509Bundle();
         val bundleSet = X509BundleSet.of(Collections.singleton(x509Bundle));
-        return new X509Context(Collections.singletonList(x509Svid), bundleSet);
+        return X509Context.of(Collections.singletonList(x509Svid), bundleSet);
     }
 
     private X509Bundle getX509Bundle() {
@@ -127,7 +127,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
             return X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
-        } catch (IOException | CertificateException e) {
+        } catch (IOException | CertificateException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
@@ -141,16 +141,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
             byte[] keyBytes = Files.readAllBytes(pathKey);
 
             return X509Svid.parseRaw(svidBytes, keyBytes);
-        } catch (X509SvidException | IOException e) {
+        } catch (X509SvidException | IOException | URISyntaxException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private URI toUri(String path) {
-        try {
-            return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
         }
     }
 }

@@ -12,7 +12,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +19,7 @@ import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
 
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -202,6 +202,30 @@ public class X509SvidTest {
     }
 
     @Test
+    void testParseRawNullCertsBytesArgument() {
+        try {
+            X509Svid.parseRaw(null, new byte[]{});
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("certsBytes is marked non-null but is null", e.getMessage());
+        } catch (X509SvidException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testParseRawNullPrivateKeyBytesArgument() {
+        try {
+            X509Svid.parseRaw(new byte[]{}, null);
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());
+        } catch (X509SvidException e) {
+            fail();
+        }
+    }
+
+    @Test
     void testLoad_FailsCannotReadCertFile() throws URISyntaxException {
         Path keyPath = Paths.get(toUri(keyRSA));
         try {
@@ -310,10 +334,6 @@ public class X509SvidTest {
             }
             assertEquals(testCase.expectedError, e.getMessage());
         }
-    }
-
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 
     @Value

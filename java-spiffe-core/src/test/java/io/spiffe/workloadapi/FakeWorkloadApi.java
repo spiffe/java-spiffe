@@ -9,6 +9,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase;
@@ -16,7 +17,6 @@ import io.spiffe.workloadapi.grpc.Workload;
 import org.junit.platform.commons.util.StringUtils;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,11 +29,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.spiffe.utils.TestUtils.toUri;
+
 class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
     final String privateKey = "testdata/workloadapi/svid.key.der";
     final String svid = "testdata/workloadapi/svid.der";
     final String x509Bundle = "testdata/workloadapi/bundle.der";
+    final String federatedBundle = "testdata/workloadapi/federated-bundle.pem";
     final String jwtBundle = "testdata/workloadapi/bundle.json";
 
 
@@ -43,21 +46,34 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
         try {
             Path pathCert = Paths.get(toUri(svid));
             byte[] svidBytes = Files.readAllBytes(pathCert);
+            ByteString svidByteString = ByteString.copyFrom(svidBytes);
 
             Path pathKey = Paths.get(toUri(privateKey));
             byte[] keyBytes = Files.readAllBytes(pathKey);
+            ByteString keyByteString = ByteString.copyFrom(keyBytes);
 
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
+            ByteString bundleByteString = ByteString.copyFrom(bundleBytes);
+
+            Path pathFederateBundle = Paths.get(toUri(federatedBundle));
+            byte[] federatedBundleBytes = Files.readAllBytes(pathFederateBundle);
+            ByteString federatedByteString = ByteString.copyFrom(federatedBundleBytes);
 
             Workload.X509SVID svid = Workload.X509SVID
                     .newBuilder()
                     .setSpiffeId("spiffe://example.org/workload-server")
-                    .setX509Svid(ByteString.copyFrom(svidBytes))
-                    .setX509SvidKey(ByteString.copyFrom(keyBytes))
-                    .setBundle(ByteString.copyFrom(bundleBytes))
+                    .setX509Svid(svidByteString)
+                    .setX509SvidKey(keyByteString)
+                    .setBundle(bundleByteString)
                     .build();
-            Workload.X509SVIDResponse response = Workload.X509SVIDResponse.newBuilder().addSvids(svid).build();
+
+            Workload.X509SVIDResponse response = Workload.X509SVIDResponse
+                    .newBuilder()
+                    .addSvids(svid)
+                    .putFederatedBundles(TrustDomain.of("domain.test").getName(), federatedByteString)
+                    .build();
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } catch (URISyntaxException | IOException e) {
@@ -68,8 +84,12 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
     @Override
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {
+        String spiffeId = request.getSpiffeId();
+        if (StringUtils.isBlank(spiffeId)) {
+            spiffeId = "spiffe://example.org/workload-server";
+        }
         Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", request.getSpiffeId());
+        claims.put("sub", spiffeId);
         claims.put("aud", getAudienceList(request.getAudienceList()));
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
         claims.put("exp", expiration);
@@ -80,7 +100,7 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
         Workload.JWTSVID jwtsvid = Workload.JWTSVID
                 .newBuilder()
-                .setSpiffeId("spiffe://example.org/workload-server")
+                .setSpiffeId(spiffeId)
                 .setSvid(token)
                 .build();
         Workload.JWTSVIDResponse response = Workload.JWTSVIDResponse.newBuilder().addSvids(jwtsvid).build();
@@ -164,8 +184,5 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
         return Struct.newBuilder().putAllFields(valueMap).build();
     }
 
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
-    }
 }
 

@@ -37,6 +37,14 @@ public class RetryHandler {
     }
 
     /**
+     * Returns true is a new retry should be performs, according the the Retry Policy.
+     * @return true is a new retry should be performs, according the the Retry Policy
+     */
+    public boolean shouldRetry() {
+        return !exponentialBackoffPolicy.reachedMaxRetries(retryCount);
+    }
+
+    /**
      * Reset state of RetryHandle to initial values.
      */
     public void reset() {

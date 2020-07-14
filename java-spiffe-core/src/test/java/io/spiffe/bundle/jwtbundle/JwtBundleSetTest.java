@@ -1,9 +1,9 @@
 package io.spiffe.bundle.jwtbundle;
 
 import io.spiffe.exception.BundleNotFoundException;
-import org.junit.jupiter.api.Test;
 import io.spiffe.internal.DummyPublicKey;
 import io.spiffe.spiffeid.TrustDomain;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,6 +57,23 @@ class JwtBundleSetTest {
         } catch (NullPointerException e) {
             assertEquals("bundles is marked non-null but is null", e.getMessage());
         }
+    }
+
+    @Test
+    void testOf_EmptyCollection_throwsIllegalArgumentException() {
+        try {
+            JwtBundleSet.of(Collections.emptySet());
+            fail("should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("JwtBundle collection is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    void testEmptySet() {
+        JwtBundleSet jwtBundleSet = JwtBundleSet.emptySet();
+        assertNotNull(jwtBundleSet);
+        assertEquals(0, jwtBundleSet.getBundles().size());
     }
 
     @Test

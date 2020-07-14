@@ -4,13 +4,15 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URI;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Set;
 
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,7 +81,27 @@ class SpiffeIdUtilsTest {
         }
     }
 
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
+    @Test
+    void toSetOfSpiffeIdsNullString() {
+        Set<SpiffeId> result = SpiffeIdUtils.toSetOfSpiffeIds(null);
+        assertEquals(Collections.emptySet(), result);
+    }
+
+    @Test
+    void toSetOfSpiffeIdsBlankString() {
+        Set<SpiffeId> result = SpiffeIdUtils.toSetOfSpiffeIds("");
+        assertEquals(Collections.emptySet(), result);
+    }
+
+    @Test
+    void testPrivateConstructor_InstanceCannotBeCreated() throws IllegalAccessException, InstantiationException {
+        val constructor = SpiffeIdUtils.class.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        try {
+            constructor.newInstance();
+            fail();
+        } catch (InvocationTargetException e) {
+           assertEquals("This is a utility class and cannot be instantiated", e.getCause().getMessage());
+        }
     }
 }

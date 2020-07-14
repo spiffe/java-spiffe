@@ -8,6 +8,7 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSourceException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.WatcherException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
@@ -36,9 +37,9 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 @Log
 public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closeable {
 
-    private static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
+    static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
 
-    private static final Duration DEFAULT_TIMEOUT =
+    static final Duration DEFAULT_TIMEOUT =
             Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
     private JwtBundleSet bundles;
@@ -198,11 +199,12 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
             public void onError(final Throwable error) {
                 log.log(Level.SEVERE, "Error in JwtBundleSet watcher", error);
                 done.countDown();
+                throw new WatcherException("Error fetching JwtBundleSet", error);
             }
         });
     }
 
-    private void setJwtBundleSet(@NonNull final JwtBundleSet update) {
+    private void setJwtBundleSet(final JwtBundleSet update) {
         synchronized (this) {
             this.bundles = update;
         }
@@ -214,7 +216,7 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
-    private static WorkloadApiClient createClient(@NonNull final JwtSourceOptions options)
+    private static WorkloadApiClient createClient(final JwtSourceOptions options)
             throws SocketEndpointAddressException {
         val clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()

@@ -1,6 +1,7 @@
 package io.spiffe.bundle.x509bundle;
 
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.internal.DummyX509Certificate;
 import io.spiffe.spiffeid.TrustDomain;
 import lombok.Builder;
 import lombok.Value;
@@ -9,10 +10,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
-import io.spiffe.internal.DummyX509Certificate;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +21,7 @@ import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.stream.Stream;
 
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -82,13 +82,13 @@ public class X509BundleTest {
     }
 
     @Test
-    void testgetBundleForTrustDomain() throws BundleNotFoundException {
+    void testGetBundleForTrustDomain() throws BundleNotFoundException {
         X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
         assertEquals(x509Bundle, x509Bundle.getBundleForTrustDomain(TrustDomain.of("example.org")));
     }
 
     @Test
-    void testgetBundleForTrustDomain_notBundleFound_throwsBundleNotFoundException() {
+    void testGetBundleForTrustDomain_notBundleFound_throwsBundleNotFoundException() {
         X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
         try {
             x509Bundle.getBundleForTrustDomain(TrustDomain.of("other.org"));
@@ -96,6 +96,20 @@ public class X509BundleTest {
             assertEquals("No X.509 bundle found for trust domain other.org", e.getMessage());
         }
     }
+
+    @Test
+    void testGetBundleForTrustDomain_nullArgument_throwsNullPointerException() {
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        try {
+            x509Bundle.getBundleForTrustDomain(null);
+            fail();
+        } catch (BundleNotFoundException e) {
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+        }
+    }
+
 
     @Test
     void TestLoad_Succeeds() {
@@ -154,6 +168,39 @@ public class X509BundleTest {
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("bundleBytes is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testHasAuthority_nullArgument_throwsNullPointerException() {
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        try {
+            x509Bundle.hasX509Authority(null);
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("x509Authority is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testAddAuthority_nullArgument_throwsNullPointerException() {
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        try {
+            x509Bundle.addX509Authority(null);
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("x509Authority is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testRemoveAuthority_nullArgument_throwsNullPointerException() {
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        try {
+            x509Bundle.removeX509Authority(null);
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("x509Authority is marked non-null but is null", e.getMessage());
         }
     }
 
@@ -294,9 +341,5 @@ public class X509BundleTest {
             this.expectedNumberOfAuthorities = expectedNumberOfAuthorities;
             this.expectedError = expectedError;
         }
-    }
-
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 }

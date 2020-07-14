@@ -85,16 +85,15 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param bundleBytes an array of bytes representing the JWT bundle.
      * @return an instance of a {@link JwtBundle}
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
-     * @throws KeyException       if the bundle file contains a key type that is not supported
      */
     public static JwtBundle parse(
             @NonNull final TrustDomain trustDomain,
             @NonNull final byte[] bundleBytes)
-            throws KeyException, JwtBundleException {
+            throws JwtBundleException {
         try {
             val jwkSet = JWKSet.parse(new String(bundleBytes));
             return toJwtBundle(trustDomain, jwkSet);
-        } catch (ParseException | JOSEException e) {
+        } catch (ParseException | JOSEException | KeyException e) {
             throw new JwtBundleException("Could not parse bundle from bytes", e);
         }
     }

@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -35,6 +36,23 @@ class X509BundleSetTest {
         } catch (NullPointerException e) {
             assertEquals("bundles is marked non-null but is null", e.getMessage());
         }
+    }
+
+    @Test
+    void testOf_emptyCollection_throwsIllegalArgumentException() {
+        try {
+            X509BundleSet.of(Collections.emptyList());
+            fail("should have thrown exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("X509Bundles collection is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    void testEmptySet() {
+        X509BundleSet x509BundleSet = X509BundleSet.emptySet();
+        assertNotNull(x509BundleSet);
+        assertEquals(0, x509BundleSet.getBundles().size());
     }
 
     @Test
