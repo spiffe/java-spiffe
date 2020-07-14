@@ -1,8 +1,11 @@
 package io.spiffe.helper.keystore;
 
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.helper.exception.KeyStoreHelperException;
+import io.spiffe.helper.utils.TestUtils;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.workloadapi.Address;
 import io.spiffe.workloadapi.WorkloadApiClient;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -29,16 +32,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 class KeyStoreHelperTest {
 
     private WorkloadApiClient workloadApiClient;
+    private WorkloadApiClient workloadApiClientErrorStub;
     private Path keyStoreFilePath;
     private Path trustStoreFilePath;
 
     @BeforeEach
     void setUp() {
         workloadApiClient = new WorkloadApiClientStub();
+        workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
+    }
+
+    @SneakyThrows
+    @AfterEach
+    void tearDown() {
+        deleteFile(keyStoreFilePath);
+        deleteFile(trustStoreFilePath);
     }
 
     @Test
-    void testNewHelper_certs_are_stored_successfully() throws KeyStoreException, SocketEndpointAddressException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, IOException {
+    void testNewHelper_certs_are_stored_successfully() throws SocketEndpointAddressException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, IOException, KeyStoreException {
 
         val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(keyStorefileName);
@@ -65,7 +77,11 @@ class KeyStoreHelperTest {
                 .build();
 
         // run KeyStoreHelper
-        new KeyStoreHelper(options);
+        try (val keystoreHelper = KeyStoreHelper.create(options)) {
+            keystoreHelper.run(false);
+        } catch (KeyStoreHelperException e) {
+            fail();
+        }
 
         checkPrivateKeyEntry(keyStoreFilePath, keyStorePass, keyPass, keyStoreType, alias);
         val authority1Alias = "example.org.0";
@@ -95,8 +111,11 @@ class KeyStoreHelperTest {
                 .workloadApiClient(workloadApiClient)
                 .build();
 
-        // run KeyStoreHelper
-        new KeyStoreHelper(options);
+        try (val keystoreHelper = KeyStoreHelper.create(options)) {
+            keystoreHelper.run(false);
+        } catch (KeyStoreHelperException e) {
+            fail();
+        }
 
         checkPrivateKeyEntry(keyStoreFilePath, keyStorePass, keyPass, KeyStoreType.getDefaultType(), KeyStoreHelper.DEFAULT_ALIAS);
         val authority1Alias = "example.org.0";
@@ -104,7 +123,7 @@ class KeyStoreHelperTest {
     }
 
     @Test
-    void testNewHelper_keyStore_trustStore_same_file_throwsException() throws SocketEndpointAddressException {
+    void testCreateHelper_keyStore_trustStore_same_file_throwsException() throws SocketEndpointAddressException {
 
         val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(keyStorefileName);
@@ -126,21 +145,120 @@ class KeyStoreHelperTest {
                 .build();
 
         try {
-            new KeyStoreHelper(options);
+            KeyStoreHelper.create(options);
             fail("expected exception: KeyStore and TrustStore should use different files");
-        } catch (KeyStoreException e) {
+        } catch (KeyStoreHelperException e) {
             assertEquals("KeyStore and TrustStore should use different files", e.getMessage());
         }
-
     }
 
-    @SneakyThrows
-    @AfterEach
-    void tearDown() {
-        deleteFile(keyStoreFilePath);
-        deleteFile(trustStoreFilePath);
-        workloadApiClient.close();
+    @Test
+    void testCreateHelper_keyStore_cannotStoreCerts() throws SocketEndpointAddressException {
+
+        keyStoreFilePath = Paths.get("dummy://invalid");
+        trustStoreFilePath = Paths.get("dummy://otherinvalid");
+
+        val trustStorePass = "truststore123";
+        val keyStorePass = "keystore123";
+        val keyPass = "keypass123";
+        val alias = "other_alias";
+
+        final KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions
+                .builder()
+                .keyStorePath(keyStoreFilePath)
+                .keyStorePass(keyStorePass)
+                .trustStorePath(trustStoreFilePath)
+                .trustStorePass(trustStorePass)
+                .keyPass(keyPass)
+                .keyAlias(alias)
+                .workloadApiClient(workloadApiClient)
+                .build();
+
+        try {
+            KeyStoreHelper helper = KeyStoreHelper.create(options);
+            helper.run(false);
+            fail();
+        } catch (KeyStoreHelperException e) {
+            assertEquals("Error running KeyStoreHelper", e.getMessage());
+            assertEquals("java.nio.file.NoSuchFileException: dummy:/invalid", e.getCause().getCause().getMessage());
+        }
     }
+
+    @Test
+    void testCreateKeyStoreHelper_createNewClient() throws Exception {
+        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test");
+        val options = getKeyStoreValidOptions(null);
+        try {
+            KeyStoreHelper.create(options);
+        } catch (KeyStoreHelperException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testCreateKeyStoreHelper_nullParameter() {
+        try {
+            KeyStoreHelper.create(null);
+        } catch (NullPointerException e) {
+            assertEquals("options is marked non-null but is null", e.getMessage());
+        } catch (SocketEndpointAddressException | KeyStoreHelperException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testCreateKeyStoreHelper_cannotRunIfClosed() throws Exception {
+        val options = getKeyStoreValidOptions(workloadApiClient);
+        try {
+            KeyStoreHelper helper = KeyStoreHelper.create(options);
+            helper.close();
+            helper.run(true);
+        } catch (IllegalStateException e) {
+            assertEquals("KeyStoreHelper is closed", e.getMessage());
+        } catch (KeyStoreHelperException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testCreateKeyStoreHelper_throwsExceptionWhenNoUpdateCanBeFetched() throws Exception {
+        val options = getKeyStoreValidOptions(workloadApiClientErrorStub);
+        try {
+            KeyStoreHelper helper = KeyStoreHelper.create(options);
+            helper.run(false);
+            fail();
+        } catch (KeyStoreHelperException e) {
+            assertEquals("Error running KeyStoreHelper", e.getMessage());
+        }
+    }
+
+    private KeyStoreHelper.KeyStoreOptions getKeyStoreValidOptions(WorkloadApiClient workloadApiClient) {
+        val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
+        keyStoreFilePath = Paths.get(keyStorefileName);
+        val trustStorefileName = RandomStringUtils.randomAlphabetic(10);
+        trustStoreFilePath = Paths.get(trustStorefileName);
+
+        val trustStorePass = "truststore123";
+        val keyStorePass = "keystore123";
+        val keyPass = "keypass123";
+        val alias = "other_alias";
+
+        val options = KeyStoreHelper.KeyStoreOptions
+                .builder()
+                .keyStorePath(keyStoreFilePath)
+                .keyStorePass(keyStorePass)
+                .trustStorePath(trustStoreFilePath)
+                .trustStorePass(trustStorePass)
+                .keyPass(keyPass)
+                .keyAlias(alias);
+
+        if (workloadApiClient != null) {
+            options.workloadApiClient(workloadApiClient);
+        }
+
+        return options.build();
+    }
+
 
     private void checkPrivateKeyEntry(Path keyStoreFilePath,
                                       String keyStorePassword,

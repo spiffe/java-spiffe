@@ -168,8 +168,6 @@ public class JwtSource implements JwtSvidSource, BundleSource<JwtBundle>, Closea
         }
     }
 
-
-
     private void init(final Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
         setJwtBundlesWatcher(done);

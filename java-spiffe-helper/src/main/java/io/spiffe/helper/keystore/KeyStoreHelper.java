@@ -2,6 +2,8 @@ package io.spiffe.helper.keystore;
 
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.WatcherException;
+import io.spiffe.helper.exception.KeyStoreHelperException;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.workloadapi.DefaultWorkloadApiClient;
 import io.spiffe.workloadapi.Watcher;
@@ -53,90 +55,131 @@ public class KeyStoreHelper implements Closeable {
 
     private final WorkloadApiClient workloadApiClient;
 
+    private volatile boolean closed;
+    private volatile CountDownLatch countDownLatch;
 
     /**
-     * Constructor.
-     * <p>
      * Creates an instance of a KeyStoreHelper for fetching X.509 SVIDs and bundles
      * from a Workload API and store them in a binary Java KeyStore in disk.
-     * <p>
-     * It blocks until the initial update has been received from the Workload API.
      *
      * @param options an instance of {@link KeyStoreOptions}
-     * @throws SocketEndpointAddressException is the socket endpoint address is not valid
-     * @throws KeyStoreException              is the entry cannot be stored in the KeyStore
+     * @return an instance of a KeyStoreHelper
+     * @throws SocketEndpointAddressException if the socket endpoint address is not valid
+     * @throws KeyStoreHelperException        if the KeyStoreHelper cannot be created
      */
-    public KeyStoreHelper(@NonNull final KeyStoreOptions options)
-            throws SocketEndpointAddressException, KeyStoreException {
-
-        final KeyStoreType keyStoreType;
-        if (options.keyStoreType == null) {
-            keyStoreType = KeyStoreType.getDefaultType();
-        } else {
-            keyStoreType = options.keyStoreType;
-        }
-
-        this.keyPass = options.keyPass;
-
-        if (StringUtils.isBlank(options.keyAlias)) {
-            this.keyAlias = DEFAULT_ALIAS;
-        } else {
-            this.keyAlias = options.keyAlias;
-        }
+    public static KeyStoreHelper create(@NonNull final KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreHelperException {
 
         if (options.keyStorePath.equals(options.trustStorePath)) {
-            throw new KeyStoreException("KeyStore and TrustStore should use different files");
+            throw new KeyStoreHelperException("KeyStore and TrustStore should use different files");
         }
 
-        this.keyStore = KeyStore.builder()
-                .keyStoreFilePath(options.keyStorePath)
-                .keyStoreType(keyStoreType)
-                .keyStorePassword(options.keyStorePass)
-                .build();
-
-        this.trustStore = KeyStore.builder()
-                .keyStoreFilePath(options.trustStorePath)
-                .keyStoreType(keyStoreType)
-                .keyStorePassword(options.trustStorePass)
-                .build();
-
-        if (options.workloadApiClient != null) {
-            workloadApiClient = options.workloadApiClient;
-        } else {
-            workloadApiClient = createNewClient(options.spiffeSocketPath);
+        if (options.keyStoreType == null) {
+            options.keyStoreType = KeyStoreType.getDefaultType();
         }
 
-        setX509ContextWatcher(workloadApiClient);
+        if (StringUtils.isBlank(options.keyAlias)) {
+            options.keyAlias = DEFAULT_ALIAS;
+        }
+
+        val keyStore = createKeyStore(options, options.keyStorePath, options.keyStorePass);
+        val trustStore = createKeyStore(options, options.trustStorePath, options.trustStorePass);
+
+        if (options.workloadApiClient == null) {
+            options.workloadApiClient = createNewClient(options.spiffeSocketPath);
+        }
+
+        return new KeyStoreHelper(keyStore, trustStore, options.keyPass, options.keyAlias, options.workloadApiClient);
     }
 
+    /**
+     * Sets the instance to run fetching and storing the X.509 SVIDs and Bundles.
+     *
+     * @param keepRunning if true, the process will block receiving and storing updates, otherwise it blocks only until
+     *                    the first X.509 context is received and stored.
+     * @throws KeyStoreHelperException if there is an error fetching or storing the X.509 SVIDs and Bundles
+     */
+    public void run(boolean keepRunning) throws KeyStoreHelperException {
+        if (isClosed()) {
+            throw new IllegalStateException("KeyStoreHelper is closed");
+        }
+
+        try {
+            this.setX509ContextWatcher(keepRunning);
+        } catch (Exception e) {
+            throw new KeyStoreHelperException("Error running KeyStoreHelper", e);
+        }
+    }
+
+    /**
+     * Closes the KeyStoreHelper instance.
+     */
     @SneakyThrows
     @Override
     public void close() {
-        workloadApiClient.close();
+        if (!closed) {
+            synchronized (this) {
+                if (!closed) {
+                    workloadApiClient.close();
+                    countDown();
+                    closed = true;
+                    log.info("KeyStoreHelper is closed");
+                }
+            }
+        }
     }
 
+    private void countDown() {
+        if (countDownLatch != null) {
+            countDownLatch.countDown();
+        }
+    }
 
-    private WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
+    private KeyStoreHelper(KeyStore keyStore, KeyStore trustStore, String keyPass, String keyAlias, WorkloadApiClient workloadApiClient) {
+        this.keyStore = keyStore;
+        this.trustStore = trustStore;
+        this.keyPass = keyPass;
+        this.keyAlias = keyAlias;
+        this.workloadApiClient = workloadApiClient;
+    }
+
+    private static KeyStore createKeyStore(KeyStoreOptions options, Path keyStorePath, String keyStorePass) throws KeyStoreHelperException {
+        try {
+            return KeyStore.builder()
+                    .keyStoreFilePath(keyStorePath)
+                    .keyStoreType(options.keyStoreType)
+                    .keyStorePassword(keyStorePass)
+                    .build();
+        } catch (KeyStoreException e) {
+            throw new KeyStoreHelperException("Error creating KeyStore/TrustStore", e);
+        }
+    }
+
+    private static WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
         val clientOptions = DefaultWorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
         return DefaultWorkloadApiClient.newClient(clientOptions);
     }
 
-    private void setX509ContextWatcher(final WorkloadApiClient workloadApiClient) {
-        val countDownLatch = new CountDownLatch(1);
+    private void setX509ContextWatcher(boolean keepRunning) {
+        countDownLatch = new CountDownLatch(1);
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
             public void onUpdate(X509Context update) {
                 try {
                     storeX509ContextUpdate(update);
+                    if (!keepRunning) {
+                        // got a X509 update, process is complete
+                        countDownLatch.countDown();
+                    }
                 } catch (KeyStoreException e) {
                     this.onError(e);
                 }
-                countDownLatch.countDown();
             }
 
             @Override
-            public void onError(Throwable t) {
-                log.log(Level.SEVERE, "Error processing X.509 context update", t);
+            public void onError(Throwable e) {
+                log.log(Level.SEVERE, e.getMessage());
+                countDownLatch.countDown();
+                throw new WatcherException("Error processing X.509 context update", e);
             }
         });
 
@@ -177,6 +220,12 @@ public class KeyStoreHelper implements Closeable {
         return trustDomain.getName().concat(".").concat(String.valueOf(index));
     }
 
+    private boolean isClosed() {
+        synchronized (this) {
+            return closed;
+        }
+    }
+
     private void await(final CountDownLatch latch) {
         try {
             latch.await();
@@ -200,7 +249,7 @@ public class KeyStoreHelper implements Closeable {
      * for information about standard keystore types.
      * <p>
      * The same type is used for both the KeyStore and the TrustStore.
-     *
+     * <p>
      * Optional. Default is PKCS12.
      * <p>
      * <code>keyStorePass</code> The password to generate the keystore integrity check.

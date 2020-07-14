@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +24,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
+import static io.spiffe.helper.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -220,10 +220,6 @@ public class KeyStoreTest {
 
         val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
         assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
-    }
-
-    private URI toUri(String path) throws URISyntaxException {
-        return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
     }
 
     private void deleteFile(Path filePath) {

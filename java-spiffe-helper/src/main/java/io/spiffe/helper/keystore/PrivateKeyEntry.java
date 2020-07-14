@@ -1,17 +1,27 @@
 package io.spiffe.helper.keystore;
 
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.Setter;
 
 import java.security.Key;
 import java.security.cert.X509Certificate;
 
-@Value
+@Data
 class PrivateKeyEntry {
-    String alias;
-    Key privateKey;
-    String password;
-    X509Certificate[] certificateChain;
+
+    @Setter(AccessLevel.NONE)
+    private String alias;
+
+    @Setter(AccessLevel.NONE)
+    private Key privateKey;
+
+    @Setter(AccessLevel.NONE)
+    private String password;
+
+    @Setter(AccessLevel.NONE)
+    private X509Certificate[] certificateChain;
 
     @Builder
     PrivateKeyEntry(
