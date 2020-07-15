@@ -66,8 +66,9 @@ public class KeyStoreHelper implements Closeable {
      * @return an instance of a KeyStoreHelper
      * @throws SocketEndpointAddressException if the socket endpoint address is not valid
      * @throws KeyStoreHelperException        if the KeyStoreHelper cannot be created
+     * @throws KeyStoreException if the underlying java KeyStore and TrustStore cannot be created
      */
-    public static KeyStoreHelper create(@NonNull final KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreHelperException {
+    public static KeyStoreHelper create(@NonNull final KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreHelperException, KeyStoreException {
 
         if (options.keyStorePath.equals(options.trustStorePath)) {
             throw new KeyStoreHelperException("KeyStore and TrustStore should use different files");
@@ -142,16 +143,12 @@ public class KeyStoreHelper implements Closeable {
         this.workloadApiClient = workloadApiClient;
     }
 
-    private static KeyStore createKeyStore(KeyStoreOptions options, Path keyStorePath, String keyStorePass) throws KeyStoreHelperException {
-        try {
-            return KeyStore.builder()
-                    .keyStoreFilePath(keyStorePath)
-                    .keyStoreType(options.keyStoreType)
-                    .keyStorePassword(keyStorePass)
-                    .build();
-        } catch (KeyStoreException e) {
-            throw new KeyStoreHelperException("Error creating KeyStore/TrustStore", e);
-        }
+    private static KeyStore createKeyStore(KeyStoreOptions options, Path keyStorePath, String keyStorePass) throws KeyStoreException {
+        return KeyStore.builder()
+                .keyStoreFilePath(keyStorePath)
+                .keyStoreType(options.keyStoreType)
+                .keyStorePassword(keyStorePass)
+                .build();
     }
 
     private static WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {

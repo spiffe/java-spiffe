@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -144,14 +145,22 @@ public class KeyStoreTest {
     @Test
     void testNewKeyStore_nullKeyStorePath_throwsException() throws KeyStoreException {
         try {
-            KeyStore.builder()
-                    .keyStoreFilePath(null)
-                    .keyStoreType(KeyStoreType.JKS)
-                    .keyStorePassword("keyStorePassword")
-                    .build();
+            KeyStore.builder().build();
             fail("exception expected");
         } catch (NullPointerException e) {
             assertEquals("keyStoreFilePath is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testNewKeyStore_nullKeyStoreType_throwsException() throws KeyStoreException {
+        try {
+            KeyStore.builder()
+                    .keyStoreFilePath(Paths.get("anypath"))
+                    .build();
+            fail("exception expected");
+        } catch (NullPointerException e) {
+            assertEquals("keyStoreType is marked non-null but is null", e.getMessage());
         }
     }
 
@@ -161,9 +170,8 @@ public class KeyStoreTest {
             KeyStore.builder()
                     .keyStoreFilePath(Paths.get("anypath"))
                     .keyStoreType(KeyStoreType.PKCS12)
-                    .keyStorePassword(null)
                     .build();
-            fail("exception expected");
+            fail("exception expected: keyStorePassword cannot be blank");
         } catch (NullPointerException e) {
             assertEquals("keyStorePassword is marked non-null but is null", e.getMessage());
         }
@@ -180,6 +188,23 @@ public class KeyStoreTest {
             fail("exception expected: keyStorePassword cannot be blank");
         } catch (IllegalArgumentException e) {
             assertEquals("keyStorePassword cannot be blank", e.getMessage());
+        }
+    }
+
+    @Test
+    void testLoadKeyStore_invalidFile() throws IOException {
+        File file = new File("test.txt");
+        file.createNewFile();
+        try {
+            KeyStore.builder()
+                    .keyStoreFilePath(file.toPath())
+                    .keyStoreType(KeyStoreType.PKCS12)
+                    .keyStorePassword("example")
+                    .build();
+        } catch (KeyStoreException e) {
+            assertEquals("KeyStore cannot be created", e.getMessage());
+        } finally {
+            file.delete();
         }
     }
 

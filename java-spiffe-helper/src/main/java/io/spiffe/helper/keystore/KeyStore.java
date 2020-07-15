@@ -57,7 +57,7 @@ class KeyStore {
             }
             return keyStore;
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
-            throw new KeyStoreException(e);
+            throw new KeyStoreException("KeyStore cannot be created", e);
         }
     }
 

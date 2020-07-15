@@ -149,6 +149,8 @@ class KeyStoreHelperTest {
             fail("expected exception: KeyStore and TrustStore should use different files");
         } catch (KeyStoreHelperException e) {
             assertEquals("KeyStore and TrustStore should use different files", e.getMessage());
+        } catch (KeyStoreException e) {
+            fail(e);
         }
     }
 
@@ -181,6 +183,8 @@ class KeyStoreHelperTest {
         } catch (KeyStoreHelperException e) {
             assertEquals("Error running KeyStoreHelper", e.getMessage());
             assertEquals("java.nio.file.NoSuchFileException: dummy:/invalid", e.getCause().getCause().getMessage());
+        } catch (KeyStoreException e) {
+            fail(e);
         }
     }
 
@@ -201,7 +205,7 @@ class KeyStoreHelperTest {
             KeyStoreHelper.create(null);
         } catch (NullPointerException e) {
             assertEquals("options is marked non-null but is null", e.getMessage());
-        } catch (SocketEndpointAddressException | KeyStoreHelperException e) {
+        } catch (SocketEndpointAddressException | KeyStoreHelperException | KeyStoreException e) {
             fail();
         }
     }
@@ -231,6 +235,70 @@ class KeyStoreHelperTest {
             assertEquals("Error running KeyStoreHelper", e.getMessage());
         }
     }
+
+    @Test
+    void keyStoreHelperOptions_allNull() {
+        try {
+            KeyStoreHelper.KeyStoreOptions.builder().build();
+        } catch (NullPointerException e) {
+            assertEquals("keyStorePath is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void keyStoreHelperOptions_trustStorePathNull() {
+        try {
+            KeyStoreHelper.KeyStoreOptions
+                    .builder()
+                    .keyStorePath(Paths.get("test"))
+                    .build();
+        } catch (NullPointerException e) {
+            assertEquals("trustStorePath is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void keyStoreHelperOptions_keyStorePassNull() {
+        try {
+            KeyStoreHelper.KeyStoreOptions
+                    .builder()
+                    .keyStorePath(Paths.get("test"))
+                    .trustStorePath(Paths.get("example"))
+                    .build();
+        } catch (NullPointerException e) {
+            assertEquals("keyStorePass is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void keyStoreHelperOptions_trustStorePassNull() {
+        try {
+            KeyStoreHelper.KeyStoreOptions
+                    .builder()
+                    .keyStorePath(Paths.get("test"))
+                    .trustStorePath(Paths.get("example"))
+                    .keyStorePass("example1")
+                    .build();
+        } catch (NullPointerException e) {
+            assertEquals("trustStorePass is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void keyStoreHelperOptions_keyPassNull() {
+        try {
+            KeyStoreHelper.KeyStoreOptions
+                    .builder()
+                    .keyStorePath(Paths.get("test"))
+                    .trustStorePath(Paths.get("example"))
+                    .keyStorePass("example1")
+                    .trustStorePass("example2")
+                    .build();
+        } catch (NullPointerException e) {
+            assertEquals("keyPass is marked non-null but is null", e.getMessage());
+        }
+    }
+
 
     private KeyStoreHelper.KeyStoreOptions getKeyStoreValidOptions(WorkloadApiClient workloadApiClient) {
         val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
