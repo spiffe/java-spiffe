@@ -30,7 +30,7 @@ class DefaultX509SourceTest {
     void setUp() throws X509SourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
         DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions.builder().workloadApiClient(workloadApiClient).build();
-        System.setProperty(JwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
+        System.setProperty(DefaultJwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
         x509Source = DefaultX509Source.newSource(options);
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
     }

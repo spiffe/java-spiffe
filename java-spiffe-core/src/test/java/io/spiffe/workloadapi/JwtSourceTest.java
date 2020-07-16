@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,14 +32,14 @@ class JwtSourceTest {
     @BeforeEach
     void setUp() throws JwtSourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
-        JwtSource.JwtSourceOptions options = JwtSource.JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
-        System.setProperty(JwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
-        jwtSource = JwtSource.newSource(options);
+        DefaultJwtSource.JwtSourceOptions options = DefaultJwtSource.JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
+        System.setProperty(DefaultJwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
+        jwtSource = DefaultJwtSource.newSource(options);
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws IOException {
         jwtSource.close();
     }
 
@@ -66,7 +67,7 @@ class JwtSourceTest {
     }
 
     @Test
-    void testGetBundleForTrustDomain_SourceIsClosed_ThrowsIllegalStateException() {
+    void testGetBundleForTrustDomain_SourceIsClosed_ThrowsIllegalStateException() throws IOException {
         jwtSource.close();
         try {
             jwtSource.getBundleForTrustDomain(TrustDomain.of("example.org"));
@@ -104,7 +105,7 @@ class JwtSourceTest {
     }
 
     @Test
-    void testFetchJwtSvid_SourceIsClosed_ThrowsIllegalStateException() {
+    void testFetchJwtSvid_SourceIsClosed_ThrowsIllegalStateException() throws IOException {
         jwtSource.close();
         try {
             jwtSource.fetchJwtSvid("aud1", "aud2", "aud3");
@@ -118,7 +119,7 @@ class JwtSourceTest {
     }
 
     @Test
-    void testFetchJwtSvidWithSubject_SourceIsClosed_ThrowsIllegalStateException() {
+    void testFetchJwtSvidWithSubject_SourceIsClosed_ThrowsIllegalStateException() throws IOException {
         jwtSource.close();
         try {
             jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
@@ -133,13 +134,13 @@ class JwtSourceTest {
 
     @Test
     void newSource_success() {
-        val options = JwtSource.JwtSourceOptions
+        val options = DefaultJwtSource.JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .initTimeout(Duration.ofSeconds(0))
                 .build();
         try {
-            JwtSource jwtSource = JwtSource.newSource(options);
+            JwtSource jwtSource = DefaultJwtSource.newSource(options);
             assertNotNull(jwtSource);
         } catch (SocketEndpointAddressException | JwtSourceException e) {
             fail(e);
@@ -149,7 +150,7 @@ class JwtSourceTest {
     @Test
     void newSource_nullParam() {
         try {
-            JwtSource.newSource(null);
+            DefaultJwtSource.newSource(null);
             fail();
         } catch (NullPointerException e) {
             assertEquals("options is marked non-null but is null", e.getMessage());
@@ -160,13 +161,13 @@ class JwtSourceTest {
 
     @Test
     void newSource_errorFetchingJwtBundles() {
-        val options = JwtSource.JwtSourceOptions
+        val options = DefaultJwtSource.JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")
                 .build();
         try {
-            JwtSource.newSource(options);
+            DefaultJwtSource.newSource(options);
             fail();
         } catch (JwtSourceException e) {
             assertEquals("Error creating JWT source", e.getMessage());
@@ -179,11 +180,11 @@ class JwtSourceTest {
     @Test
     void newSource_FailsBecauseOfTimeOut() throws Exception {
         try {
-            val options = JwtSource.JwtSourceOptions
+            val options = DefaultJwtSource.JwtSourceOptions
                     .builder()
                     .spiffeSocketPath("unix:/tmp/test")
                     .build();
-            JwtSource.newSource(options);
+            DefaultJwtSource.newSource(options);
             fail();
         } catch (JwtSourceException e) {
             assertEquals("Error creating JWT source", e.getMessage());
@@ -197,7 +198,7 @@ class JwtSourceTest {
     void newSource_DefaultSocketAddress() throws Exception {
         try {
             TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test");
-            JwtSource.newSource();
+            DefaultJwtSource.newSource();
             fail();
         } catch (JwtSourceException e) {
             assertEquals("Error creating JWT source", e.getMessage());
@@ -211,7 +212,7 @@ class JwtSourceTest {
         try {
             // just in case it's defined in the environment
             TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "");
-            JwtSource.newSource();
+            DefaultJwtSource.newSource();
             fail();
         } catch (SocketEndpointAddressException e) {
             fail();

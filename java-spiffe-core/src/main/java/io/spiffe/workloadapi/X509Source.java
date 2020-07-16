@@ -8,6 +8,9 @@ import java.io.Closeable;
 
 /**
  * Source of X.509 SVIDs and Bundles.
+ * @see X509SvidSource
+ * @see BundleSource
+ * @see X509Bundle
  */
 public interface X509Source extends X509SvidSource, BundleSource<X509Bundle>, Closeable {
 }
