@@ -1,6 +1,7 @@
 package io.spiffe.helper.keystore;
 
 import io.spiffe.bundle.x509bundle.X509Bundle;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
@@ -25,7 +26,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-import static io.spiffe.helper.utils.TestUtils.toUri;
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -41,7 +42,7 @@ public class KeyStoreTest {
     private Path keyStoreFilePath;
 
     @BeforeEach
-    void setup() throws X509SvidException, URISyntaxException, IOException, CertificateException {
+    void setup() throws X509SvidException, URISyntaxException, X509BundleException {
         x509Svid = X509Svid.load(
                 Paths.get(toUri("testdata/svid.pem")),
                 Paths.get(toUri("testdata/svid.key")));

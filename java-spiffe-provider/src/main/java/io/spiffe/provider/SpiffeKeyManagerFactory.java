@@ -2,10 +2,12 @@ package io.spiffe.provider;
 
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
+import io.spiffe.provider.exception.SpiffeProviderException;
+import io.spiffe.svid.x509svid.X509SvidSource;
+import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
 import lombok.NonNull;
 import lombok.val;
-import io.spiffe.svid.x509svid.X509SvidSource;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
@@ -16,7 +18,7 @@ import java.security.KeyStore;
  * Implementation of a {@link KeyManagerFactorySpi} to create a {@link KeyManager} that is backed by the Workload API.
  * <p>
  * The Java Security API will call <code>engineGetKeyManagers()</code> to get an instance of a KeyManager.
- * This KeyManager instance is injected with an {@link X509Source} to obtain the latest X.509 SVIDs updates
+ * This KeyManager instance is injected with an {@link DefaultX509Source} to obtain the latest X.509 SVIDs updates
  * from the Workload API.
  *
  * @see SpiffeSslContextFactory
@@ -27,14 +29,14 @@ import java.security.KeyStore;
 public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
 
     /**
-     * Default method for creating the KeyManager, uses an {@link X509Source} instance
+     * Default method for creating the KeyManager, uses an {@link DefaultX509Source} instance
      * that is handled by the Singleton {@link X509SourceManager}
      *
      * @throws SpiffeProviderException in case there is an error setting up the X.509 source
      */
     @Override
     protected KeyManager[] engineGetKeyManagers() {
-        val x509Source = createX509Source();
+        val x509Source = getX509Source();
         val spiffeKeyManager = new SpiffeKeyManager(x509Source);
         return new KeyManager[]{spiffeKeyManager};
     }
@@ -60,7 +62,7 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
         //no implementation needed
     }
 
-    private X509Source createX509Source() {
+    private X509Source getX509Source() {
         try {
             return X509SourceManager.getX509Source();
         } catch (X509SourceException e) {

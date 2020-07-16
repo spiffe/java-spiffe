@@ -1,6 +1,5 @@
 package io.spiffe.utils;
 
-import lombok.Value;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERSequence;
@@ -57,17 +56,6 @@ public class X509CertificateTestUtils {
         addCertExtensions(builder, spiffeId, isCa);
         X509Certificate cert = getSignedX509Certificate(issuerKey, builder);
         return new CertAndKeyPair(cert, certKeyPair);
-    }
-
-    @Value
-    public static class CertAndKeyPair {
-        KeyPair keyPair;
-        X509Certificate certificate;
-
-        public CertAndKeyPair(X509Certificate certificate, KeyPair keyPair) {
-            this.keyPair = keyPair;
-            this.certificate = certificate;
-        }
     }
 
     private static KeyPair generateKeyPair() throws NoSuchAlgorithmException {

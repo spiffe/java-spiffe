@@ -17,9 +17,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
@@ -69,7 +71,67 @@ public class CertificateUtilsTest {
     }
 
     @Test
-    void testGenerateiRsaPrivateKeyFromBytes() throws URISyntaxException, IOException {
+    void validateCerts_nullTrustedCerts() throws URISyntaxException, IOException, CertificateParsingException {
+        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        val certBytes = Files.readAllBytes(certPath);
+        val chain = CertificateUtils.generateCertificates(certBytes);
+
+        try {
+            CertificateUtils.validate(chain, null);
+        } catch (CertificateException e) {
+            assertEquals("No trusted Certs", e.getMessage());
+        } catch (CertPathValidatorException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void validateCerts_emptyTrustedCerts() throws URISyntaxException, IOException, CertificateParsingException {
+        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        val certBytes = Files.readAllBytes(certPath);
+        val chain = CertificateUtils.generateCertificates(certBytes);
+
+        try {
+            CertificateUtils.validate(chain, Collections.emptyList());
+        } catch (CertificateException e) {
+            assertEquals("No trusted Certs", e.getMessage());
+        } catch (CertPathValidatorException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void validateCerts_nullChain() throws URISyntaxException, IOException, CertificateParsingException {
+        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        val certBytes = Files.readAllBytes(certPath);
+        val certificates = CertificateUtils.generateCertificates(certBytes);
+
+        try {
+            CertificateUtils.validate(null, certificates);
+        } catch (CertificateException | CertPathValidatorException e) {
+            fail(e);
+        } catch (IllegalArgumentException e) {
+            assertEquals("Chain of certificates is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    void validateCerts_emptyChain() throws URISyntaxException, IOException, CertificateParsingException {
+        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        val certBytes = Files.readAllBytes(certPath);
+        val certificates = CertificateUtils.generateCertificates(certBytes);
+
+        try {
+            CertificateUtils.validate(Collections.emptyList(), certificates);
+        } catch (CertificateException | CertPathValidatorException e) {
+            fail(e);
+        } catch (IllegalArgumentException e) {
+            assertEquals("Chain of certificates is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    void testGenerateRsaPrivateKeyFromBytes() throws URISyntaxException, IOException {
         val keyPath = Paths.get(toUri("testdata/internal/privateKeyRsa.pem"));
         val keyBytes = Files.readAllBytes(keyPath);
 

@@ -1,6 +1,7 @@
 package io.spiffe.provider;
 
 import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -30,14 +31,14 @@ public final class SpiffeSslContextFactory {
 
     /**
      * Creates an {@link SSLContext} initialized with a {@link SpiffeKeyManager} and {@link SpiffeTrustManager}
-     * that are backed by the Workload API via an {@link X509Source}.
+     * that are backed by the Workload API via an {@link DefaultX509Source}.
      *
-     * @param options {@link SslContextOptions}. The option {@link X509Source} must be not null.
+     * @param options {@link SslContextOptions}. The option {@link DefaultX509Source} must be not null.
      *                If the option <code>acceptedSpiffeIdsSupplier</code> is not provided, the Set of accepted SPIFFE IDs
      *                is read from the Security or System Property <code>ssl.spiffe.accept</code>.
      *                If the sslProtocol is not provided, the default TLSv1.2 is used.
      * @return an initialized {@link SSLContext}
-     * @throws IllegalArgumentException if the {@link X509Source} is not provided in the options
+     * @throws IllegalArgumentException if the {@link DefaultX509Source} is not provided in the options
      * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
      * @throws KeyManagementException   if there is a problem initializing the SSL context
      */
@@ -85,7 +86,7 @@ public final class SpiffeSslContextFactory {
      * <p>
      * <code>sslProtocol</code> The SSL Protocol. Default: TLSv1.2
      * <p>
-     * <code>x509Source</code> An {@link X509Source} that provides the X.509 materials.
+     * <code>x509Source</code> An {@link DefaultX509Source} that provides the X.509 materials.
      * <p>
      * <code>acceptedSpiffeIdsSupplier</code> A supplier of a set of {@link SpiffeId} that will be accepted
      * for a secure socket connection.

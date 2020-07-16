@@ -9,6 +9,7 @@ buildscript {
 }
 
 apply plugin: 'com.google.protobuf'
+apply plugin: 'java-test-fixtures'
 
 sourceSets {
     main {
@@ -48,9 +49,11 @@ dependencies {
     compileOnly group: 'org.apache.tomcat', name:'annotations-api', version: '6.0.53' // necessary for Java 9+
 
     // library for processing JWT tokens and JOSE JWK bundles
-    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '8.19'
+    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
+    testFixturesImplementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
 
     // using bouncy castle for generating X.509 certs for testing purposes
-    testImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.65'
+    testFixturesImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.65'
+    testFixturesImplementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
 }
 

@@ -4,8 +4,10 @@ import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
+import io.spiffe.provider.exception.SpiffeProviderException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.SpiffeIdUtils;
+import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
 import lombok.NonNull;
 import lombok.val;
@@ -22,10 +24,10 @@ import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPE
 
 /**
  * Implementation of a {@link javax.net.ssl.TrustManagerFactory} to create a {@link SpiffeTrustManager} backed by a
- * {@link X509Source} that is maintained via the Workload API.
+ * {@link DefaultX509Source} that is maintained via the Workload API.
  * <p>
  * The Java Security API will call <code>engineGetTrustManagers()</code> to get an instance of a {@link TrustManager}.
- * This TrustManager instance gets injected an {@link X509Source}, which implements {@link BundleSource} and
+ * This TrustManager instance gets injected an {@link DefaultX509Source}, which implements {@link BundleSource} and
  * keeps bundles updated.
  * The TrustManager also gets a Supplier of a Set of accepted SPIFFE IDs used to validate the SPIFFE ID from the SVIDs
  * presented by a peer during the secure socket handshake.
@@ -43,7 +45,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
             () -> SpiffeIdUtils.toSetOfSpiffeIds(EnvironmentUtils.getProperty(SSL_SPIFFE_ACCEPT_PROPERTY));
 
     /**
-     * Creates a {@link TrustManager} initialized with the {@link X509Source} instance
+     * Creates a {@link TrustManager} initialized with the {@link DefaultX509Source} instance
      * that is handled by the {@link X509SourceManager}, and with and a supplier of accepted SPIFFE IDs. that reads
      * the Set of {@link SpiffeId} from the System Property 'ssl.spiffe.accept'.
      * <p>

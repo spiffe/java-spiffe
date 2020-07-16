@@ -16,4 +16,6 @@ shadowJar {
 dependencies {
     api (project(':java-spiffe-core'))
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    testImplementation(testFixtures(project(":java-spiffe-core")))
 }

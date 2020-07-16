@@ -24,7 +24,6 @@ public final class GrpcManagedChannelFactory {
     private static final String TCP_SCHEME = "tcp";
 
     private GrpcManagedChannelFactory() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     /**

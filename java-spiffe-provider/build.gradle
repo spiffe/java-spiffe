@@ -13,4 +13,6 @@ shadowJar {
 
 dependencies {
     api(project(":java-spiffe-core"))
+
+    testImplementation(testFixtures(project(":java-spiffe-core")))
 }

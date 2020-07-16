@@ -4,15 +4,12 @@ import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.workloadapi.grpc.Workload;
-import lombok.val;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class GrpcConversionUtilsTest {
 
@@ -42,18 +39,6 @@ class GrpcConversionUtilsTest {
             GrpcConversionUtils.parseX509Bundle(TrustDomain.of("example.org"), "corrupted".getBytes());
         } catch (X509ContextException e) {
             assertEquals("X.509 Bundles could not be processed", e.getMessage());
-        }
-    }
-
-    @Test
-    void testPrivateConstructor_InstanceCannotBeCreated() throws IllegalAccessException, InstantiationException {
-        val constructor = GrpcConversionUtils.class.getDeclaredConstructors()[0];
-        constructor.setAccessible(true);
-        try {
-            constructor.newInstance();
-            fail();
-        } catch (InvocationTargetException e) {
-            assertEquals("This is a utility class and cannot be instantiated", e.getCause().getMessage());
         }
     }
 }

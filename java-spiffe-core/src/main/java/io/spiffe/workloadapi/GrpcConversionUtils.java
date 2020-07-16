@@ -6,6 +6,7 @@ import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.SpiffeId;
@@ -14,7 +15,6 @@ import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.workloadapi.grpc.Workload;
 import lombok.val;
 
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +27,6 @@ import java.util.Set;
 final class GrpcConversionUtils {
 
     private GrpcConversionUtils() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     static X509Context toX509Context(final Iterator<Workload.X509SVIDResponse> x509SvidResponseIterator) throws X509ContextException {
@@ -75,7 +74,7 @@ final class GrpcConversionUtils {
     static X509Bundle parseX509Bundle(TrustDomain trustDomain, byte[] bundleBytes) throws X509ContextException {
         try {
             return X509Bundle.parse(trustDomain, bundleBytes);
-        } catch (CertificateException e) {
+        } catch (X509BundleException e) {
             throw new X509ContextException("X.509 Bundles could not be processed", e);
         }
     }

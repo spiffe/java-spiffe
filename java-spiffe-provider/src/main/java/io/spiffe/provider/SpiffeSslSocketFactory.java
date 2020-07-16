@@ -1,7 +1,7 @@
 package io.spiffe.provider;
 
-import lombok.val;
 import io.spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
+import lombok.val;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
@@ -29,6 +29,10 @@ public class SpiffeSslSocketFactory extends SSLSocketFactory {
             throws KeyManagementException, NoSuchAlgorithmException {
         val sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
         delegate = sslContext.getSocketFactory();
+    }
+
+    SpiffeSslSocketFactory(final SSLSocketFactory delegate) {
+        this.delegate = delegate;
     }
 
     @Override

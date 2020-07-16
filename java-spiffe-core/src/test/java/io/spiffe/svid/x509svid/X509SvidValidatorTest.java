@@ -5,7 +5,7 @@ import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import io.spiffe.utils.X509CertificateTestUtils.CertAndKeyPair;
+import io.spiffe.utils.CertAndKeyPair;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

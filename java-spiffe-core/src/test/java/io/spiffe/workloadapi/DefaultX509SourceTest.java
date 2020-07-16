@@ -13,7 +13,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,18 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class X509SourceTest {
+class DefaultX509SourceTest {
 
-    private X509Source x509Source;
+    private DefaultX509Source x509Source;
     private WorkloadApiClientStub workloadApiClient;
     private WorkloadApiClientErrorStub workloadApiClientErrorStub;
 
     @BeforeEach
-    void setUp() throws IOException, X509SourceException, SocketEndpointAddressException {
+    void setUp() throws X509SourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
-        X509Source.X509SourceOptions options = X509Source.X509SourceOptions.builder().workloadApiClient(workloadApiClient).build();
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions.builder().workloadApiClient(workloadApiClient).build();
         System.setProperty(JwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
-        x509Source = X509Source.newSource(options);
+        x509Source = DefaultX509Source.newSource(options);
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
     }
 
@@ -99,14 +98,14 @@ class X509SourceTest {
 
     @Test
     void newSource_success() {
-        val options = X509Source.X509SourceOptions
+        val options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .svidPicker((list) -> list.get(0))
                 .initTimeout(Duration.ofSeconds(0))
                 .build();
         try {
-            X509Source jwtSource = X509Source.newSource(options);
+            DefaultX509Source jwtSource = DefaultX509Source.newSource(options);
             assertNotNull(jwtSource);
         } catch (SocketEndpointAddressException | X509SourceException e) {
             fail(e);
@@ -116,7 +115,7 @@ class X509SourceTest {
     @Test
     void newSource_nullParam() {
         try {
-            X509Source.newSource(null);
+            DefaultX509Source.newSource(null);
             fail();
         } catch (NullPointerException e) {
             assertEquals("options is marked non-null but is null", e.getMessage());
@@ -127,12 +126,12 @@ class X509SourceTest {
     @Test
     void newSource_timeout() throws Exception {
         try {
-            val options = X509Source.X509SourceOptions
+            val options = DefaultX509Source.X509SourceOptions
                     .builder()
                     .initTimeout(Duration.ofSeconds(1))
                     .spiffeSocketPath("unix:/tmp/test")
                     .build();
-            X509Source.newSource(options);
+            DefaultX509Source.newSource(options);
             fail();
         } catch (X509SourceException e) {
             assertEquals("Error creating X.509 source", e.getMessage());
@@ -143,13 +142,13 @@ class X509SourceTest {
 
     @Test
     void newSource_errorFetchingJwtBundles() {
-        val options = X509Source.X509SourceOptions
+        val options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")
                 .build();
         try {
-            X509Source.newSource(options);
+            DefaultX509Source.newSource(options);
             fail();
         } catch (X509SourceException e) {
             assertEquals("Error creating X.509 source", e.getMessage());
@@ -164,7 +163,7 @@ class X509SourceTest {
         try {
             // just in case the variable is defined in the environment
             TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "");
-            X509Source.newSource();
+            DefaultX509Source.newSource();
             fail();
         } catch (X509SourceException | SocketEndpointAddressException e) {
             fail();

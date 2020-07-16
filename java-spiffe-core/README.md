@@ -14,7 +14,7 @@ To create a new X.509 Source:
 ```
     X509Source x509Source; 
     try {
-        x509Source = X509Source.newSource();
+        x509Source = DefaultX509Source.newSource();
     } catch (SocketEndpointAddressException | X509SourceException e) {
         // handle exception
     }
@@ -38,7 +38,7 @@ configure it is by providing an `X509SourceOptions` instance to the `newSource` 
             .picker(list -> list.get(list.size()-1))
             .build();
     
-    X509Source x509Source = X509Source.newSource(x509SourceOptions);
+    X509Source x509Source = DefaultX509Source.newSource(x509SourceOptions);
 ```
 
 It allows to configure another SVID picker. By default, the first SVID is used. 

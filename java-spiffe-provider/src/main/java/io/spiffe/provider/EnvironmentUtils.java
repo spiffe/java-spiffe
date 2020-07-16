@@ -11,7 +11,6 @@ import java.security.Security;
 final class EnvironmentUtils {
 
     private EnvironmentUtils() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     /**
@@ -41,11 +40,11 @@ final class EnvironmentUtils {
      */
     static String getProperty(final String variableName) {
         String value;
-        value = Security.getProperty(variableName);
+        value = System.getProperty(variableName);
         if (StringUtils.isNotBlank(value)) {
             return value;
         }
-        value = System.getProperty(variableName);
+        value = Security.getProperty(variableName);
         if (StringUtils.isNotBlank(value)) {
             return value;
         }

@@ -7,6 +7,7 @@ import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
@@ -22,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -127,7 +127,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
             return X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
-        } catch (IOException | CertificateException | URISyntaxException e) {
+        } catch (IOException | URISyntaxException | X509BundleException e) {
             throw new RuntimeException(e);
         }
     }

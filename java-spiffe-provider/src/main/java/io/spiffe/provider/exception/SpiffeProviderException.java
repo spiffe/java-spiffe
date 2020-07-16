@@ -1,4 +1,4 @@
-package io.spiffe.provider;
+package io.spiffe.provider.exception;
 
 /**
  * Unchecked exception thrown when there is an error setting up the source of SVIDs and bundles.

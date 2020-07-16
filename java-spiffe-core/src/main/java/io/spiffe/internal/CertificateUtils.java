@@ -2,7 +2,6 @@ package io.spiffe.internal;
 
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.NonNull;
 import lombok.val;
 
 import java.io.ByteArrayInputStream;
@@ -33,11 +32,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.spiffe.internal.AsymmetricKeyAlgorithm.EC;
+import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
 import static io.spiffe.internal.KeyUsage.CRL_SIGN;
 import static io.spiffe.internal.KeyUsage.DIGITAL_SIGNATURE;
 import static io.spiffe.internal.KeyUsage.KEY_CERT_SIGN;
-import static io.spiffe.internal.AsymmetricKeyAlgorithm.EC;
-import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
@@ -55,7 +54,6 @@ public class CertificateUtils {
     private static final String X509_CERTIFICATE_TYPE = "X.509";
 
     private CertificateUtils() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     /**
@@ -64,7 +62,7 @@ public class CertificateUtils {
      * @param input as byte array representing a list of X.509 certificates, as a DER or PEM
      * @return a List of {@link X509Certificate}
      */
-    public static List<X509Certificate> generateCertificates(@NonNull final byte[] input) throws CertificateParsingException {
+    public static List<X509Certificate> generateCertificates(final byte[] input) throws CertificateParsingException {
         if (input.length == 0) {
             throw new CertificateParsingException("No certificates found");
         }
@@ -105,6 +103,9 @@ public class CertificateUtils {
      * @throws CertPathValidatorException
      */
     public static void validate(final List<X509Certificate> chain, final Collection<X509Certificate> trustedCerts) throws CertificateException, CertPathValidatorException {
+        if (chain == null || chain.size() == 0) {
+            throw new IllegalArgumentException("Chain of certificates is empty");
+        }
         val certificateFactory = getCertificateFactory();
         PKIXParameters pkixParameters;
         try {
@@ -168,9 +169,6 @@ public class CertificateUtils {
                 break;
             case EC:
                 verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_ECDSA);
-                break;
-            default:
-                throw new InvalidKeyException(String.format("Private Key algorithm not supported: %s", algorithm));
         }
     }
 
@@ -233,16 +231,13 @@ public class CertificateUtils {
     }
 
     private static PrivateKey generatePrivateKeyWithSpec(final EncodedKeySpec keySpec, AsymmetricKeyAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        PrivateKey privateKey;
+        PrivateKey privateKey = null;
         switch (algorithm) {
             case EC:
                 privateKey = KeyFactory.getInstance(EC.value()).generatePrivate(keySpec);
                 break;
             case RSA:
                 privateKey = KeyFactory.getInstance(RSA.value()).generatePrivate(keySpec);
-                break;
-            default:
-                throw new NoSuchAlgorithmException(String.format("Private Key algorithm is not supported: %s", algorithm));
         }
         return privateKey;
     }

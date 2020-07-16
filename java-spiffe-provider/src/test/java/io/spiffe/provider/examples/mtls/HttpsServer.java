@@ -3,11 +3,11 @@ package io.spiffe.provider.examples.mtls;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
 import io.spiffe.provider.SpiffeKeyManager;
-import io.spiffe.provider.SpiffeProviderException;
 import io.spiffe.provider.SpiffeSslContextFactory;
 import io.spiffe.provider.SpiffeSslContextFactory.SslContextOptions;
 import io.spiffe.provider.SpiffeTrustManager;
 import io.spiffe.provider.X509SourceManager;
+import io.spiffe.provider.exception.SpiffeProviderException;
 import io.spiffe.workloadapi.X509Source;
 import lombok.val;
 

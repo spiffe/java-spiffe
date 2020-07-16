@@ -1,6 +1,7 @@
 package io.spiffe.bundle.x509bundle;
 
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.internal.DummyX509Certificate;
 import io.spiffe.spiffeid.TrustDomain;
 import lombok.Builder;
@@ -11,12 +12,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.stream.Stream;
@@ -116,7 +115,7 @@ public class X509BundleTest {
         try {
             X509Bundle x509Bundle = X509Bundle.load(TrustDomain.of("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
             assertEquals(2, x509Bundle.getX509Authorities().size());
-        } catch (IOException | CertificateException | URISyntaxException e) {
+        } catch (URISyntaxException | X509BundleException e) {
             fail(e);
         }
     }
@@ -126,13 +125,13 @@ public class X509BundleTest {
         try {
             X509Bundle.load(TrustDomain.of("example.org"), Paths.get("testdata/x509bundle/non-existent.pem"));
             fail("should have thrown exception");
-        } catch (IOException | CertificateException e) {
+        } catch (X509BundleException e) {
             assertEquals("Unable to load X.509 bundle file", e.getMessage());
         }
     }
 
     @Test
-    void testLoad_nullTrustDomain_throwsNullPointerException() throws IOException, CertificateException {
+    void testLoad_nullTrustDomain_throwsNullPointerException() throws X509BundleException {
         try {
             X509Bundle.load(null,Paths.get("testdata/x509bundle/non-existent.pem"));
             fail("should have thrown exception");
@@ -142,7 +141,7 @@ public class X509BundleTest {
     }
 
     @Test
-    void testLoad_nullBundlePath_throwsNullPointerException() throws IOException, CertificateException {
+    void testLoad_nullBundlePath_throwsNullPointerException() throws X509BundleException {
         try {
             X509Bundle.load(TrustDomain.of("example.org"), null);
             fail("should have thrown exception");
@@ -152,7 +151,7 @@ public class X509BundleTest {
     }
 
     @Test
-    void testParse_nullTrustDomain_throwsNullPointerException() throws IOException, CertificateException {
+    void testParse_nullTrustDomain_throwsNullPointerException() throws X509BundleException {
         try {
             X509Bundle.parse(null, "bytes".getBytes());
             fail("should have thrown exception");
@@ -162,7 +161,7 @@ public class X509BundleTest {
     }
 
     @Test
-    void testParse_nullBundlePath_throwsNullPointerException() throws IOException, CertificateException {
+    void testParse_nullBundlePath_throwsNullPointerException() throws X509BundleException {
         try {
             X509Bundle.parse(TrustDomain.of("example.org"), null);
             fail("should have thrown exception");
@@ -215,7 +214,7 @@ public class X509BundleTest {
             // Load bundle2, which contains 2 certificates
             // The first certificate is the same than the one used in bundle1
             bundle2 = X509Bundle.load(TrustDomain.of("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
-        } catch (IOException | CertificateException | URISyntaxException e) {
+        } catch (URISyntaxException | X509BundleException e) {
             fail(e);
         }
 
@@ -295,7 +294,7 @@ public class X509BundleTest {
                         .name("Parse empty bytes should fail")
                         .path("testdata/x509bundle/empty.pem")
                         .trustDomain(TrustDomain.of("example.org"))
-                        .expectedError("No certificates found")
+                        .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -303,7 +302,7 @@ public class X509BundleTest {
                         .name("Parse non-PEM bytes should fail")
                         .path("testdata/x509bundle/not-pem.pem")
                         .trustDomain(TrustDomain.of("example.org"))
-                        .expectedError("Certificate could not be parsed from cert bytes")
+                        .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -311,7 +310,7 @@ public class X509BundleTest {
                         .name("Parse should fail if no certificate block is is found")
                         .path("testdata/x509bundle/key.pem")
                         .trustDomain(TrustDomain.of("example.org"))
-                        .expectedError("Certificate could not be parsed from cert bytes")
+                        .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -319,7 +318,7 @@ public class X509BundleTest {
                         .name("Parse a corrupted certificate should fail")
                         .path("testdata/x509bundle/corrupted.pem")
                         .trustDomain(TrustDomain.of("example.org"))
-                        .expectedError("Certificate could not be parsed from cert bytes")
+                        .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 )
         );

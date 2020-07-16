@@ -74,15 +74,14 @@ public class AddressTest {
 
     @Test
     void getDefaultAddress() throws Exception {
-        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/agent.sock" );
+        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test" );
         String defaultAddress = Address.getDefaultAddress();
-        assertEquals("unix:/tmp/agent.sock", defaultAddress);
+        assertEquals("unix:/tmp/test", defaultAddress);
     }
 
     @Test
     void getDefaultAddress_isBlankThrowsException() throws Exception {
         TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "");
-        String defaultAddress = null;
         try {
             Address.getDefaultAddress();
             fail();

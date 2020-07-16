@@ -2,9 +2,9 @@ package io.spiffe.helper.keystore;
 
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.helper.exception.KeyStoreHelperException;
-import io.spiffe.helper.utils.TestUtils;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.Address;
 import io.spiffe.workloadapi.WorkloadApiClient;
 import lombok.SneakyThrows;
@@ -80,7 +80,7 @@ class KeyStoreHelperTest {
         try (val keystoreHelper = KeyStoreHelper.create(options)) {
             keystoreHelper.run(false);
         } catch (KeyStoreHelperException e) {
-            fail();
+            fail(e);
         }
 
         checkPrivateKeyEntry(keyStoreFilePath, keyStorePass, keyPass, keyStoreType, alias);

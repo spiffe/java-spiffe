@@ -21,7 +21,7 @@ public enum AsymmetricKeyAlgorithm {
         } else if ("EC".equalsIgnoreCase(a)) {
             return EC;
         } else {
-            throw new IllegalArgumentException(String.format("Algorithm not recognized: %s", a));
+            throw new IllegalArgumentException(String.format("Algorithm not supported: %s", a));
         }
     }
 }
