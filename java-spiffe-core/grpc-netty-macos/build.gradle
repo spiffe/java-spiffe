@@ -1,0 +1,8 @@
+dependencies {
+    implementation group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
+    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: '4.1.50.Final', classifier: 'osx-x86_64'
+}
+
+jar {
+    archiveClassifier = ""
+}

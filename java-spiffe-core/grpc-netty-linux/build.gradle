@@ -1,0 +1,7 @@
+dependencies {
+    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: "${grpcVersion}"
+}
+
+jar {
+    archiveClassifier = ""
+}

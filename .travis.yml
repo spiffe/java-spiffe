@@ -1,9 +1,20 @@
 language: java
+
+os:
+  - linux
+  - osx
+
 jdk:
-  - openjdk8
-  - oraclejdk9
-  - openjdk10
-  - oraclejdk11
+  - openjdk15
+  - openjdk11
+
+matrix:
+  include:
+    - os: linux
+      jdk: openjdk8
+
+after_success:
+  - ./gradlew jacocoTestReport coveralls
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -23,4 +34,5 @@ deploy:
     on:
       tags: true
       condition: $GITHUB_TOKEN != ""
-      jdk: oraclejdk11
+      os: linux
+      jdk: openjdk15

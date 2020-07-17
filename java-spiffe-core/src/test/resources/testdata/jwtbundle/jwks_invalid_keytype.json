@@ -1,0 +1,11 @@
+{
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "1",
+      "x": "c2Rmc2Zk",
+      "alg": "EdDSA"
+    }
+  ]
+}
