@@ -35,4 +35,4 @@ deploy:
       tags: true
       condition: $GITHUB_TOKEN != ""
       os: linux
-      jdk: oraclejdk14
+      jdk: openjdk15
