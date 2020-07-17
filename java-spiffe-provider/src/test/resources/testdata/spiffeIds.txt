@@ -1,0 +1,3 @@
+spiffe://example.org/workload-server
+spiffe://example.org/workload-server2
+spiffe://example2.org/workload-server

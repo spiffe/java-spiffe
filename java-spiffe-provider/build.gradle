@@ -1,0 +1,18 @@
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+assemble.dependsOn shadowJar
+
+shadowJar {
+    archiveClassifier = "all-".concat(osClassifier)
+}
+
+dependencies {
+    api(project(":java-spiffe-core"))
+
+    testImplementation(testFixtures(project(":java-spiffe-core")))
+}

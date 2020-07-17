@@ -1,0 +1,28 @@
+{
+  "keys": [
+    {
+      "use": "jwt-svid",
+      "kty": "EC",
+      "kid": "IZwJU1pKXnlj8RtsCSxTiW4p3PaS3LA0",
+      "crv": "P-256",
+      "x": "mjBLEiXTajKogbCbRrsCTO5ztSPbPbDlCEj9U7UyCik",
+      "y": "UqtfGGr8ILjW_r_XhZg2pixq1ZhsY0KeN45smdlJ4Ag"
+    },
+    {
+      "use": "jwt-svid",
+      "kty": "EC",
+      "kid": "thuC5aKXK0xEijJBImdcNE8GRneaQF8a",
+      "crv": "P-256",
+      "x": "xaOEUedrdEjVxhT5sJ7lwNgsvEfBKNgfYfyNjXyAyys",
+      "y": "p0ZWrr9ZFx3tjvBHxScidaqzeNJwwvQV-f8gi6qIGB4"
+    },
+    {
+      "use": "jwt-svid",
+      "kty": "EC",
+      "kid": "lD6u4YqXBvqZkJv9IkakyjTPMOlmYdho",
+      "crv": "P-256",
+      "x": "e1b14XBkpFRG5aALyveYz0g1Gql_zT_Mxyx_4mWIyyY",
+      "y": "K-7zKhCJReI9Mv-VqxIv9CV6cMj20qkT29H35uTtrTM"
+    }
+  ]
+}

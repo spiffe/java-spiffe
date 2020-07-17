@@ -1,0 +1,59 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.8.12'
+    }
+}
+
+apply plugin: 'com.google.protobuf'
+apply plugin: 'java-test-fixtures'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.12.0'
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+dependencies {
+    if (gradle.ext.isMacOs) {
+        implementation (project(':java-spiffe-core:grpc-netty-macos'))
+    } else {
+        implementation (project(':java-spiffe-core:grpc-netty-linux'))
+    }
+
+    implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
+    implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
+    testImplementation group: 'io.grpc', name: 'grpc-testing', version: "${grpcVersion}"
+    compileOnly group: 'org.apache.tomcat', name:'annotations-api', version: '6.0.53' // necessary for Java 9+
+
+    // library for processing JWT tokens and JOSE JWK bundles
+    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
+    testFixturesImplementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
+
+    // using bouncy castle for generating X.509 certs for testing purposes
+    testFixturesImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.65'
+    testFixturesImplementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
+}
+

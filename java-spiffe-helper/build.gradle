@@ -1,0 +1,21 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+assemble.dependsOn shadowJar
+
+shadowJar {
+    archiveClassifier = osClassifier
+    manifest {
+        attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
+    }
+}
+
+dependencies {
+    api (project(':java-spiffe-core'))
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    testImplementation(testFixtures(project(":java-spiffe-core")))
+}
