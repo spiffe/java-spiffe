@@ -11,7 +11,7 @@ Security property defined in the `java.security` file containing the list of SPI
 will trust for TLS connections:
 
 ```
-    X509Source source = X509Source.newSource();
+    X509Source source = DefaultX509Source.newSource();
     SslContextOptions options = SslContextOptions
             .builder()
             .x509Source(source)
@@ -31,7 +31,7 @@ Alternatively, a different Workload API address can be used by passing it to the
             .spiffeSocketPath("unix:/tmp/agent.sock")
             .build();
 
-    X509Source x509Source = X509Source.newSource(sourceOptions);
+    X509Source x509Source = DefaultX509Source.newSource(sourceOptions);
 
     Supplier<Set<SpiffeId>> spiffeIdSetSupplier = () -> Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
@@ -183,7 +183,7 @@ with a [X509Source instance](../java-spiffe-core/README.md#x509-source).
 
 ```
     // create a new X.509 source using the default socket endpoint address
-    X509Source x509Source = X509Source.newSource();
+    X509Source x509Source = DefaultX509Source.newSource();
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
 
     // TrustManager gets the X509Source and the supplier of the Set of accepted SPIFFE IDs.
@@ -206,7 +206,7 @@ For the client, a `ManagedChannel` would be created using the `SpiffeKeyManager`
 the GRPC SSL context, analogous to the config for the Server:
 
 ``` 
-    X509Source x509Source = X509Source.newSource();
+    X509Source x509Source = DefaultX509Source.newSource();
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
     TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-server", ','));
 

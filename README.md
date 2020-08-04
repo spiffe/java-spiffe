@@ -1,9 +1,7 @@
-# JAVA-SPIFFE library
+# Java SPIFFE Library
 
 <a href='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'><img src='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'></a>
 [![Coverage Status](https://coveralls.io/repos/github/spiffe/java-spiffe/badge.svg)](https://coveralls.io/github/spiffe/java-spiffe?branch=master)
-
-**Supports Java 8+**
 
 ## Overview
 
@@ -16,12 +14,56 @@ peer's certificate and SPIFFE ID verification.
 
 This library contains three modules:
 
-[java-spiffe-core](java-spiffe-core/README.md): Core functionality to interact with the Workload API, and to process and validate 
+* [java-spiffe-core](java-spiffe-core/README.md): Core functionality to interact with the Workload API, and to process and validate 
 X.509 and JWT SVIDs and bundles.
 
-[java-spiffe-provider](java-spiffe-provider/README.md): Java Provider implementation.
+* [java-spiffe-provider](java-spiffe-provider/README.md): Java Provider implementation.
 
-[java-spiffe-helper](java-spiffe-helper/README.md): Helper to store X.509 SVIDs and Bundles in Java Keystores in disk.
+* [java-spiffe-helper](java-spiffe-helper/README.md): Helper to store X.509 SVIDs and Bundles in Java Keystores in disk.
+
+**Supports Java 8+**
+
+Download
+--------
+
+The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.6.0). 
+
+The dependencies can be added to `pom.xml`:
+```xml
+<dependency>
+  <groupId>io.spiffe</groupId>
+  <artifactId>java-spiffe-core</artifactId>
+  <version>0.6.0</version>
+</dependency>
+<dependency>
+  <groupId>io.spiffe</groupId>
+  <artifactId>java-spiffe-provider</artifactId>
+  <version>0.6.0</version>
+</dependency>
+```
+
+Using Gradle:
+```gradle
+implementation 'io.spiffe:java-spiffe-core:0.6.0'
+implementation 'io.spiffe:java-spiffe-provider:0.6.0'
+```
+
+### MacOS Support
+
+Add to your `pom.xml`:
+```xml
+<dependency>
+  <groupId>io.spiffe</groupId>
+  <artifactId>grpc-netty-macos</artifactId>
+  <version>0.6.0</version>
+  <scope>runtime</scope>
+</dependency>
+```
+
+Using Gradle:
+```gradle
+runtimeOnly 'io.spiffe:grpc-netty-macos:0.6.0'
+```
 
 ### Build the JARs
 
@@ -34,7 +76,13 @@ On Linux or MacOS, run:
 
 All `jar` files are placed in `build/libs` folder.  
 
-Based on the OS, the jars will have a different classifier at the end of the jars names:
+#### Jars that include all dependencies 
+
+For the module [java-spiffe-provider](java-spiffe-provider), a fat jar is generated with the classifier `-all-[os-classifier]`.
+
+Fhe module [java-spiffe-helper](java-spiffe-helper), a fat jar is generated with the classifier `[os-classifier]`
+
+Based on the OS where the build is run, the `[os-classifier]` will be:
 
 * `-linux-x86_64` for Linux
-* `-osx-x86_64` for Mac OS
+* `-osx-x86_64` for MacOS

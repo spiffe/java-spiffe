@@ -1,5 +1,6 @@
 plugins {
     id 'com.github.kt3k.coveralls' version '2.10.1'
+    id 'com.google.osdetector' version '1.6.2'
 }
 
 allprojects {
@@ -19,15 +20,11 @@ subprojects {
         mockitoVersion = '3.3.3'
         lombokVersion = '1.18.12'
         nimbusVersion = '8.19'
-
-        if (gradle.ext.isMacOs) {
-            osClassifier = "osx-x86_64"
-        } else {
-            osClassifier = "linux-x86_64"
-        }
     }
 
     apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -37,13 +34,64 @@ subprojects {
         withSourcesJar()
     }
 
-    jar {
-        archiveClassifier = osClassifier
-    }
-
     javadoc {
         exclude "**/grpc/**"
         exclude "**/internal/**"
+    }
+
+    publishing {
+        repositories {
+            maven {
+                credentials {
+                    username = project.properties["mavenDeployUser"]
+                    password = project.properties["mavenDeployPassword"]
+                }
+                url = project.properties["mavenDeployUrl"]
+            }
+        }
+
+        publications {
+            mavenJava(MavenPublication) {
+                groupId project.group
+                version "${project.version}"
+                from components.java
+
+                pom {
+                    name = project.name
+                    artifactId = project.name
+                    url = 'https://github.com/spiffe/java-spiffe'
+                    afterEvaluate {
+                        // description is not available until evaluated.
+                        description = project.description
+                    }
+
+                    scm {
+                        connection = 'scm:git:https://github.com/spiffe/java-spiffe.git'
+                        developerConnection = 'scm:git:git@github.com:spiffe/java-spiffe.git'
+                        url = 'https://github.com/spiffe/java-spiffe'
+                    }
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'maxlambrecht'
+                            name = 'Max Lambrecht'
+                            email = 'maxlambrecht@gmail.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.mavenJava
     }
 
     dependencies {
@@ -129,4 +177,3 @@ task clean {
     dependsOn subprojects.clean
     delete "$buildDir"
 }
-

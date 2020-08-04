@@ -2,19 +2,29 @@ plugins {
     id "com.github.johnrengelman.shadow" version "5.2.0"
 }
 
+description = "Java SPIFFE Library Helper module to store X.509 SVIDs and Bundles in a Java KeyStore in disk"
+
 apply plugin: 'com.github.johnrengelman.shadow'
 
 assemble.dependsOn shadowJar
 
 shadowJar {
-    archiveClassifier = osClassifier
+    archiveClassifier = osdetector.classifier
     manifest {
         attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
     }
 }
 
 dependencies {
-    api (project(':java-spiffe-core'))
+    api(project(':java-spiffe-core'))
+
+    // runtimeOnly grpc-netty dependency module will be included in the shadowJar
+    if (gradle.ext.isMacOsX) {
+        runtimeOnly(project(':java-spiffe-core:grpc-netty-macos'))
+    } else {
+        runtimeOnly(project(':java-spiffe-core:grpc-netty-linux'))
+    }
+
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
     testImplementation(testFixtures(project(":java-spiffe-core")))

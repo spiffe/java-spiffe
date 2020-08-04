@@ -1,18 +1,27 @@
-
 plugins {
     id "com.github.johnrengelman.shadow" version "5.2.0"
 }
+
+description = "Java Security Provider implementation supporting X.509-SVIDs and methods for " +
+              "creating SSLContexts that are backed by the Workload API."
 
 apply plugin: 'com.github.johnrengelman.shadow'
 
 assemble.dependsOn shadowJar
 
 shadowJar {
-    archiveClassifier = "all-".concat(osClassifier)
+    archiveClassifier = "all-".concat(osdetector.classifier)
 }
 
 dependencies {
     api(project(":java-spiffe-core"))
+
+    // runtimeOnly grpc-netty dependency module will be included in the shadowJar
+    if (gradle.ext.isMacOsX) {
+        runtimeOnly(project(':java-spiffe-core:grpc-netty-macos'))
+    } else {
+        runtimeOnly(project(':java-spiffe-core:grpc-netty-linux'))
+    }
 
     testImplementation(testFixtures(project(":java-spiffe-core")))
 }
