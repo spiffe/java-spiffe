@@ -278,11 +278,10 @@ public class JwtSvid {
 
     }
 
-    private static void validateAudience(final List<String> audClaim, final Set<String> expectedAudience) throws JwtSvidException {
-        for (String aud : audClaim) {
-            if (!expectedAudience.contains(aud)) {
-                throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudience, audClaim));
-            }
+    // expected audiences must be a subset of the audience claim in the token
+    private static void validateAudience(final List<String> audClaim, final Set<String> expectedAudiences) throws JwtSvidException {
+        if (!audClaim.containsAll(expectedAudiences)) {
+            throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudiences, audClaim));
         }
     }
 }

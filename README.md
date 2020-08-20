@@ -26,26 +26,26 @@ X.509 and JWT SVIDs and bundles.
 Download
 --------
 
-The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.6.0). 
+The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.6.1). 
 
 The dependencies can be added to `pom.xml`:
 ```xml
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-core</artifactId>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
 </dependency>
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-provider</artifactId>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
 </dependency>
 ```
 
 Using Gradle:
 ```gradle
-implementation 'io.spiffe:java-spiffe-core:0.6.0'
-implementation 'io.spiffe:java-spiffe-provider:0.6.0'
+implementation 'io.spiffe:java-spiffe-core:0.6.1'
+implementation 'io.spiffe:java-spiffe-provider:0.6.1'
 ```
 
 ### MacOS Support
@@ -55,14 +55,14 @@ Add to your `pom.xml`:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos</artifactId>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
   <scope>runtime</scope>
 </dependency>
 ```
 
 Using Gradle:
 ```gradle
-runtimeOnly 'io.spiffe:grpc-netty-macos:0.6.0'
+runtimeOnly 'io.spiffe:grpc-netty-macos:0.6.1'
 ```
 
 ### Build the JARs
