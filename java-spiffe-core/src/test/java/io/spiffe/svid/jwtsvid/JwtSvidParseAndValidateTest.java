@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.security.KeyPair;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -28,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JwtSvidParseAndValidateTest {
 
-    private static final String HS256TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImF1dGhvcml0eTEifQ.eyJzdWIiOiJ" +
-            "zcGlmZmU6Ly90ZXN0LmRvbWFpbi9ob3N0IiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxMjM0MzQzNTM0NTUsImlhdCI6MTUxNjIzOTAyMn0." +
-            "TWSPgMbs227cbZxSLg247Uuag0Kz72cuSpJuozcMddA";
+    private static final String HS256TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImF1dGhvcml0eTEifQ." +
+            "eyJzdWIiOiJzcGlmZmU6Ly90ZXN0LmRvbWFpbi9ob3N0IiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxMjM0MzQzNTM0NTUsImlh" +
+            "dCI6MTUxNjIzOTAyMiwiYXVkIjoiYXVkaWVuY2UifQ.wNm5pQGSLCw5N9ddgSF2hkgmQpGnG9le_gpiFmyBhao";
 
     @ParameterizedTest
     @MethodSource("provideJwtScenarios")
@@ -112,7 +113,7 @@ class JwtSvidParseAndValidateTest {
 
         SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
-        Set<String> audience = Collections.singleton("audience");
+        Set<String> audience = new HashSet<String>() {{add("audience1"); add("audience2");}};
 
         JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
 
@@ -120,7 +121,7 @@ class JwtSvidParseAndValidateTest {
                 Arguments.of(TestCase.builder()
                         .name("1. success using EC signature")
                         .jwtBundle(jwtBundle)
-                        .expectedAudience(audience)
+                        .expectedAudience(Collections.singleton("audience1"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
@@ -151,7 +152,7 @@ class JwtSvidParseAndValidateTest {
                 Arguments.of(TestCase.builder()
                         .name("4. unsupported algorithm")
                         .jwtBundle(jwtBundle)
-                        .expectedAudience(audience)
+                        .expectedAudience(Collections.singleton("audience"))
                         .generateToken(() -> HS256TOKEN)
                         .expectedException(new JwtSvidException("Unsupported token signature algorithm HS256"))
                         .build()),
@@ -181,7 +182,7 @@ class JwtSvidParseAndValidateTest {
                         .jwtBundle(jwtBundle)
                         .expectedAudience(Collections.singleton("another"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
-                        .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience])"))
+                        .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience2, audience1])"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("9. invalid subject claim")
