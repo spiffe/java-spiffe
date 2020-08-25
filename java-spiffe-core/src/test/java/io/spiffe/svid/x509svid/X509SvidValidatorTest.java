@@ -81,7 +81,7 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void checkSpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException, URISyntaxException {
+    void verifySpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException, URISyntaxException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
@@ -91,7 +91,7 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void checkSpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
+    void verifySpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
         val spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
@@ -102,6 +102,17 @@ public class X509SvidValidatorTest {
         } catch (CertificateException e) {
             assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
         }
+    }
+
+    @Test
+    void verifySpiffeId_givenAnEmptySupplier_throwsCertificateException() {
+        try {
+            X509SvidValidator.verifySpiffeId(leaf.getCertificate(), Collections::emptySet);
+            fail("Should have thrown CertificateException");
+        } catch (CertificateException e) {
+            assertEquals("The supplier of accepted SPIFFE IDs supplied an empty set", e.getMessage());
+        }
+
     }
 
     @Test

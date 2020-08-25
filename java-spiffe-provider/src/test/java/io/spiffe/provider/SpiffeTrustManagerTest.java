@@ -75,7 +75,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void testCreateSpiffeTrustManager_nullSource() {
         try {
-            new SpiffeTrustManager(null, true);
+            new SpiffeTrustManager(null);
             fail();
         } catch (Exception e) {
             assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
@@ -277,7 +277,7 @@ public class SpiffeTrustManagerTest {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
         when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
 
-        spiffeTrustManager = new SpiffeTrustManager(bundleSource, true);
+        spiffeTrustManager = new SpiffeTrustManager(bundleSource);
 
         try {
             spiffeTrustManager.checkClientTrusted(chain, "");
@@ -291,7 +291,7 @@ public class SpiffeTrustManagerTest {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
         when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
 
-        spiffeTrustManager = new SpiffeTrustManager(bundleSource, true);
+        spiffeTrustManager = new SpiffeTrustManager(bundleSource);
 
         try {
             spiffeTrustManager.checkClientTrusted(chain, "");

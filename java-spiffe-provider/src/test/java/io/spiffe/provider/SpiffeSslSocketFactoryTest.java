@@ -28,7 +28,12 @@ class SpiffeSslSocketFactoryTest {
     @BeforeEach
     void setup() throws NoSuchAlgorithmException, KeyManagementException {
         X509SourceStub x509Source = new X509SourceStub();
-        SpiffeSslContextFactory.SslContextOptions options = SpiffeSslContextFactory.SslContextOptions.builder().x509Source(x509Source).build();
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .x509Source(x509Source)
+                        .acceptAnySpiffeId()
+                        .build();
         spiffeSslSocketFactory = new SpiffeSslSocketFactory(options);
         SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
         socketFactory = sslContext.getSocketFactory();

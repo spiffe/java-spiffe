@@ -23,8 +23,12 @@ class SpiffeSslContextFactoryTest {
 
     @Test
     void getSslContext_withX509Source() {
-        SpiffeSslContextFactory.SslContextOptions options = SpiffeSslContextFactory.SslContextOptions
-                .builder().x509Source(x509Source).build();
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .x509Source(x509Source)
+                        .acceptAnySpiffeId()
+                        .build();
         try {
             assertNotNull(SpiffeSslContextFactory.getSslContext(options));
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -34,8 +38,12 @@ class SpiffeSslContextFactoryTest {
 
     @Test
     void getSslContext_withSupplierOfSpiffeIds() {
-        SpiffeSslContextFactory.SslContextOptions options = SpiffeSslContextFactory.SslContextOptions
-                .builder().x509Source(x509Source).acceptedSpiffeIdsSupplier(Collections::emptySet).build();
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .x509Source(x509Source)
+                        .acceptedSpiffeIdsSupplier(Collections::emptySet)
+                        .build();
         try {
             assertNotNull(SpiffeSslContextFactory.getSslContext(options));
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -45,8 +53,12 @@ class SpiffeSslContextFactoryTest {
 
     @Test
     void getSslContext_withAcceptAny() {
-        SpiffeSslContextFactory.SslContextOptions options = SpiffeSslContextFactory.SslContextOptions
-                .builder().x509Source(x509Source).acceptAnySpiffeId(true).build();
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .x509Source(x509Source)
+                        .acceptAnySpiffeId()
+                        .build();
         try {
             assertNotNull(SpiffeSslContextFactory.getSslContext(options));
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -56,8 +68,13 @@ class SpiffeSslContextFactoryTest {
 
     @Test
     void getSslContext_withOtherSslProtocol() {
-        SpiffeSslContextFactory.SslContextOptions options = SpiffeSslContextFactory.SslContextOptions
-                .builder().x509Source(x509Source).sslProtocol("TLSv1.1").build();
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .x509Source(x509Source)
+                        .acceptAnySpiffeId()
+                        .sslProtocol("TLSv1.1")
+                        .build();
         try {
             assertNotNull(SpiffeSslContextFactory.getSslContext(options));
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -76,11 +93,33 @@ class SpiffeSslContextFactoryTest {
 
     @Test
     void getSslContext_nullX509Source() throws KeyManagementException, NoSuchAlgorithmException {
-        SpiffeSslContextFactory.SslContextOptions options = SpiffeSslContextFactory.SslContextOptions.builder().build();
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .acceptAnySpiffeId()
+                        .build();
         try {
             SpiffeSslContextFactory.getSslContext(options);
         } catch (IllegalArgumentException e) {
             assertEquals("x509Source option cannot be null, an X.509 Source must be provided", e.getMessage());
+        }
+    }
+
+    @Test
+    void getSslContext_noSupplierAndAcceptAnyNotSet() {
+        SpiffeSslContextFactory.SslContextOptions options =
+                SpiffeSslContextFactory.SslContextOptions
+                        .builder()
+                        .x509Source(x509Source)
+                        .build();
+        try {
+            SpiffeSslContextFactory.getSslContext(options);
+            fail();
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            fail(e);
+        } catch (IllegalArgumentException e) {
+            assertEquals("SSL context should be configured either with a Supplier " +
+                    "of accepted SPIFFE IDs or with acceptAnySpiffeId=true", e.getMessage());
         }
     }
 }
