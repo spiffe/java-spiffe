@@ -26,26 +26,39 @@ X.509 and JWT SVIDs and bundles.
 Download
 --------
 
-The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.6.1). 
+The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.6.2). 
 
-The dependencies can be added to `pom.xml`:
+The dependencies can be added to `pom.xml`
+
+To import the `java-spiffe-provider` component: 
+```xml
+<dependency>
+  <groupId>io.spiffe</groupId>
+  <artifactId>java-spiffe-provider</artifactId>
+  <version>0.6.2</version>
+</dependency>
+```
+The `java-spiffe-provider` component imports the `java-spiffe-core` component.
+
+To just import the `java-spiffe-core` component:
 ```xml
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-core</artifactId>
-  <version>0.6.1</version>
-</dependency>
-<dependency>
-  <groupId>io.spiffe</groupId>
-  <artifactId>java-spiffe-provider</artifactId>
-  <version>0.6.1</version>
+  <version>0.6.2</version>
 </dependency>
 ```
 
 Using Gradle:
+
+Import `java-spiffe-provider`:
 ```gradle
-implementation 'io.spiffe:java-spiffe-core:0.6.1'
-implementation 'io.spiffe:java-spiffe-provider:0.6.1'
+implementation group: 'io.spiffe', name: 'java-spiffe-provider', version: '0.6.2'
+```
+
+Import `java-spiffe-core`:
+```gradle
+implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.6.2'
 ```
 
 ### MacOS Support
@@ -55,14 +68,14 @@ Add to your `pom.xml`:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos</artifactId>
-  <version>0.6.1</version>
+  <version>0.6.2</version>
   <scope>runtime</scope>
 </dependency>
 ```
 
 Using Gradle:
 ```gradle
-runtimeOnly 'io.spiffe:grpc-netty-macos:0.6.1'
+runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.6.2'
 ```
 
 ### Build the JARs

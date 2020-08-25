@@ -6,6 +6,7 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
+import lombok.extern.java.Log;
 import lombok.val;
 
 import java.security.cert.CertPathValidatorException;
@@ -18,6 +19,7 @@ import java.util.function.Supplier;
 /**
  * Provides methods to validate a chain of X.509 certificates using an X.509 bundle source.
  */
+@Log
 public final class X509SvidValidator {
 
     private X509SvidValidator() {
@@ -61,9 +63,16 @@ public final class X509SvidValidator {
                                       @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier)
             throws CertificateException {
         val spiffeIdSet = acceptedSpiffeIdsSupplier.get();
+        if (spiffeIdSet.isEmpty()) {
+            String error = "The supplier of accepted SPIFFE IDs supplied an empty set";
+            log.warning(error);
+            throw new CertificateException(error);
+        }
+
         val spiffeId = CertificateUtils.getSpiffeId(x509Certificate);
         if (!spiffeIdSet.contains(spiffeId)) {
-            final String error = "SPIFFE ID %s in X.509 certificate is not accepted";
+            val error = String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId);
+            log.warning(String.format("Client SPIFFE ID validation failed: %s", error));
             throw new CertificateException(String.format(error, spiffeId));
         }
     }

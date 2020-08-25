@@ -6,24 +6,23 @@ creating SSLContexts that are backed by the Workload API.
 ## Create an SSL Context backed by the Workload API
 
 To create an SSL Context that uses a `X509Source` backed by the Workload API, having the environment variable
-` SPIFFE_ENDPOINT_SOCKET` defined with the Workload API endpoint address, and the `ssl.spiffe.accept` 
-Security property defined in the `java.security` file containing the list of SPIFFE IDs that the current workload
+` SPIFFE_ENDPOINT_SOCKET` defined with the Workload API endpoint address.
+The `SSLContext` is configured with a set of SPIFFE IDs that the current workload
 will trust for TLS connections:
 
 ```
     X509Source source = DefaultX509Source.newSource();
+    Supplier<Set<SpiffeId>> acceptedSpiffeIds = () -> Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
     SslContextOptions options = SslContextOptions
             .builder()
             .x509Source(source)
+            .acceptedSpiffeIdsSupplier(acceptedSpiffeIds)
             .build();
 
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
  ```
-
-See [HttpsServer example](src/test/java/io/spiffe/provider/examples/mtls/HttpsServer.java).
-
-Alternatively, a different Workload API address can be used by passing it to the X509Source creation method, and a
-`Supplier` of a Set of accepted SPIFFE IDs can be provided as part of the `SslContextOptions`:
+    
+Alternatively, a different Workload API address can be used by passing it to the X509Source creation method.
 
 ```
     X509SourceOptions sourceOptions = X509SourceOptions
@@ -32,12 +31,11 @@ Alternatively, a different Workload API address can be used by passing it to the
             .build();
 
     X509Source x509Source = DefaultX509Source.newSource(sourceOptions);
-
-    Supplier<Set<SpiffeId>> spiffeIdSetSupplier = () -> Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
+    Supplier<Set<SpiffeId>> acceptedSpiffeIds = () -> Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
     SslContextOptions sslContextOptions = SslContextOptions
             .builder()
-            .acceptedSpiffeIdsSupplier(spiffeIdSetSupplier)
+            .acceptedSpiffeIdsSupplier(acceptedSpiffeIds)
             .x509Source(x509Source)
             .build();
 
@@ -60,17 +58,19 @@ security.provider.<n>=<className>
 
 This declares a provider, and specifies its preference order `n`.
 
-### Copy the JAR to the JVM extensions
-
+#### Java 8
 For installing the JAR file containing the provider classes as a bundled extension in the java platform, 
 copy `build/libs/java-spiffe-provider-<version>-all-linux-x86_64.jar` to `<java-home>/jre/lib/ext`.
 
 In the case of testing the provider in Mac OS, the name of the jar will be `java-spiffe-provider-<version>-all-osx-x86_64.jar`.
 
-#### Register the SPIFFE Provider
+#### Java 9+ 
+
+The `java-spiffe-provider` jar should be on the classpath.
+
+### Extend `java.security` properties file
 
 The master security properties file can be extended. Create a file `java.security` with the following content:
-
 ```
 # Add the spiffe provider, change the <n> for the correct consecutive number
 security.provider.<n>=io.spiffe.provider.SpiffeProvider
@@ -120,7 +120,7 @@ in the `SslContextOptions`:
 SslContextOptions sslContextOptions = SslContextOptions
             .builder()
             .x509Source(x509Source)
-            .acceptAnySpiffeId(true)
+            .acceptAnySpiffeId()
             .build();
 
 SSLContext sslContext = SpiffeSslContextFactory.getSslContext(sslContextOptions);
@@ -159,8 +159,8 @@ Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
 A `GRPC Server` using an SSL context backed by the Workload API:
 
 ```
-    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM, SpiffeProviderConstants.PROVIDER_NAME);
-    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM, SpiffeProviderConstants.PROVIDER_NAME);
+    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM);
+    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(SpiffeProviderConstants.ALGORITHM);
 
     SslContextBuilder sslContextBuilder =
             SslContextBuilder
@@ -184,6 +184,8 @@ with a [X509Source instance](../java-spiffe-core/README.md#x509-source).
 ```
     // create a new X.509 source using the default socket endpoint address
     X509Source x509Source = DefaultX509Source.newSource();
+
+    // KeyManager gets the X.509 cert and private key from the X.509 SVID source
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
 
     // TrustManager gets the X509Source and the supplier of the Set of accepted SPIFFE IDs.
@@ -207,8 +209,11 @@ the GRPC SSL context, analogous to the config for the Server:
 
 ``` 
     X509Source x509Source = DefaultX509Source.newSource();
+
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
-    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-server", ','));
+
+    Supplier<Set<SpiffeId>> acceptedSpiffeIds = () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-server", ',');
+    TrustManager trustManager = new SpiffeTrustManager(x509Source, acceptedSpiffeIds);
 
     SslContextBuilder sslContextBuilder = SslContextBuilder
             .forClient()
@@ -221,8 +226,13 @@ the GRPC SSL context, analogous to the config for the Server:
             .build();
 ```
 
-## References 
+### Secure Socket Example:
+See [HttpsServer example](src/test/java/io/spiffe/provider/examples/mtls/HttpsServer.java).
 
-[How to Implement a Provider in the Java Cryptography Architecture](https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider.html)
+## More information 
 
-[Java PKI Programmer's Guide](https://docs.oracle.com/javase/8/docs/technotes/guides/security/certpath/CertPathProgGuide.html)
+[Java Platform Security Developer’s Guide](https://docs.oracle.com/en/java/javase/14/security/)
+
+[How to Implement a Provider in the Java Cryptography Architecture](https://docs.oracle.com/en/java/javase/14/security/howtoimplaprovider.html)
+
+[Java PKI Programmer's Guide](https://docs.oracle.com/en/java/javase/14/security/java-pki-programmers-guide.html)

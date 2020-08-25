@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 
@@ -139,9 +140,8 @@ public final class DefaultX509Source implements X509Source {
      * Returns the X.509 bundle for a given trust domain.
      *
      * @return an instance of a {@link X509Bundle}
-     *
      * @throws BundleNotFoundException is there is no bundle for the trust domain provided
-     * @throws IllegalStateException if the source is closed
+     * @throws IllegalStateException   if the source is closed
      */
     @Override
     public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
@@ -200,7 +200,8 @@ public final class DefaultX509Source implements X509Source {
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
             public void onUpdate(final X509Context update) {
-                log.log(Level.INFO, "Received X509Context update");
+                String spiffeIds = update.getX509Svids().stream().map(s -> s.getSpiffeId().toString()).collect(Collectors.joining(", "));
+                log.log(Level.INFO, String.format("Received X509Context update: %s", spiffeIds));
                 setX509Context(update);
                 done.countDown();
             }

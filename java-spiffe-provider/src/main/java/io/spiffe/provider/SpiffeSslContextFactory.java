@@ -4,7 +4,6 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
@@ -47,6 +46,11 @@ public final class SpiffeSslContextFactory {
 
         if (options.x509Source == null) {
             throw new IllegalArgumentException("x509Source option cannot be null, an X.509 Source must be provided");
+        }
+
+        if (!options.acceptAnySpiffeId && options.acceptedSpiffeIdsSupplier == null) {
+            throw new IllegalArgumentException("SSL context should be configured either with a Supplier " +
+                    "of accepted SPIFFE IDs or with acceptAnySpiffeId=true");
         }
 
         val sslContext = newSslContext(options);
@@ -109,7 +113,6 @@ public final class SpiffeSslContextFactory {
         @Setter(AccessLevel.NONE)
         private boolean acceptAnySpiffeId;
 
-        @Builder
         public SslContextOptions(
                 final String sslProtocol,
                 final X509Source x509Source,
@@ -119,6 +122,44 @@ public final class SpiffeSslContextFactory {
             this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
             this.sslProtocol = sslProtocol;
             this.acceptAnySpiffeId = acceptAnySpiffeId;
+        }
+
+        public static SslContextOptionsBuilder builder() {
+            return new SslContextOptionsBuilder();
+        }
+
+        public static class SslContextOptionsBuilder {
+            private String sslProtocol;
+            private X509Source x509Source;
+            private Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
+            private boolean acceptAnySpiffeId;
+
+            SslContextOptionsBuilder() {
+            }
+
+            public SslContextOptionsBuilder sslProtocol(String sslProtocol) {
+                this.sslProtocol = sslProtocol;
+                return this;
+            }
+
+            public SslContextOptionsBuilder x509Source(X509Source x509Source) {
+                this.x509Source = x509Source;
+                return this;
+            }
+
+            public SslContextOptionsBuilder acceptedSpiffeIdsSupplier(Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
+                this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
+                return this;
+            }
+
+            public SslContextOptionsBuilder acceptAnySpiffeId() {
+                this.acceptAnySpiffeId = true;
+                return this;
+            }
+
+            public SslContextOptions build() {
+                return new SslContextOptions(sslProtocol, x509Source, acceptedSpiffeIdsSupplier, acceptAnySpiffeId);
+            }
         }
     }
 }

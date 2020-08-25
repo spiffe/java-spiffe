@@ -70,7 +70,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
 
         final SpiffeTrustManager spiffeTrustManager;
         if (ACCEPT_ANY_SPIFFE_ID) {
-            spiffeTrustManager = new SpiffeTrustManager(x509Source, true);
+            spiffeTrustManager = new SpiffeTrustManager(x509Source);
         } else {
             spiffeTrustManager = new SpiffeTrustManager(x509Source, DEFAULT_SPIFFE_ID_SET_SUPPLIER);
         }
@@ -92,8 +92,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
         final SpiffeTrustManager spiffeTrustManager;
 
         if (ACCEPT_ANY_SPIFFE_ID) {
-            // make explicit that all SPIFFE IDs will be accepted
-            spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
+            spiffeTrustManager = new SpiffeTrustManager(x509BundleSource);
         } else {
             spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, DEFAULT_SPIFFE_ID_SET_SUPPLIER);
         }
@@ -108,7 +107,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
-        val spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, true);
+        val spiffeTrustManager = new SpiffeTrustManager(x509BundleSource);
         return new TrustManager[]{spiffeTrustManager};
     }
 
