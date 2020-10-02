@@ -78,6 +78,13 @@ Using Gradle:
 runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.6.2'
 ```
 
+### Note: `java-spiffe-helper` artifact
+
+As the [java-spiffe-helper](java-spiffe-helper/README.md) artifact is meant to be used as a standalone JAR and not as a Maven dependency, 
+it is not published to Maven Central, but to [Github releases](https://github.com/spiffe/java-spiffe/releases/tag/v0.6.2), for both 
+[Linux](https://github.com/spiffe/java-spiffe/releases/download/v0.6.2/java-spiffe-helper-0.6.2-linux-x86_64.jar) and 
+[MacOS](https://github.com/spiffe/java-spiffe/releases/download/v0.6.2/java-spiffe-helper-0.6.2-osx-x86_64.jar) versions.
+
 ### Build the JARs
 
 On Linux or MacOS, run:
