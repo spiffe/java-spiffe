@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /**
- * Represents a SPIFFE ID as defined in SPIFFE standard.
+ * Represents a SPIFFE ID as defined in the SPIFFE standard.
  * <p>
  * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md">https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md</a>
  */

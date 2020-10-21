@@ -12,14 +12,14 @@ allprojects {
 
 subprojects {
     group = 'io.spiffe'
-    version = '0.6.2'
+    version = '0.6.3'
 
     ext {
-        grpcVersion = '1.31.1'
-        jupiterVersion = '5.6.2'
-        mockitoVersion = '3.5.2'
-        lombokVersion = '1.18.12'
-        nimbusVersion = '8.20'
+        grpcVersion = '1.33.0'
+        jupiterVersion = '5.7.0'
+        mockitoVersion = '3.5.15'
+        lombokVersion = '1.18.16'
+        nimbusVersion = '9.1'
     }
 
     apply plugin: 'java-library'

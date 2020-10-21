@@ -10,7 +10,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * Represents a normalized SPIFFE trust domain (e.g. 'domain.test').
+ * Represents the name of a SPIFFE trust domain (e.g. 'domain.test').
  */
 @Value
 public class TrustDomain {
