@@ -1,14 +1,12 @@
 # Java SPIFFE Provider
 
 This module provides a Java Security Provider implementation supporting X.509-SVIDs and methods for
-creating SSLContexts that are backed by the Workload API.
+creating `SSLContext` that are backed by the Workload API.
 
 ## Create an SSL Context backed by the Workload API
 
-To create an SSL Context that uses a `X509Source` backed by the Workload API, having the environment variable
-` SPIFFE_ENDPOINT_SOCKET` defined with the Workload API endpoint address.
-The `SSLContext` is configured with a set of SPIFFE IDs that the current workload
-will trust for TLS connections:
+To create an `javax.net.ssl.SSLContext` that is backed by the Workload API through a `X509Source`, having the environment variable
+` SPIFFE_ENDPOINT_SOCKET` defined with the Workload API endpoint address:
 
 ```
     X509Source source = DefaultX509Source.newSource();
@@ -20,9 +18,12 @@ will trust for TLS connections:
             .build();
 
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
- ```
+```
+
+The `SSLContext` is configured with a set of SPIFFE IDs that will be trusted for TLS connections.
+
     
-Alternatively, a different Workload API address can be used by passing it to the X509Source creation method.
+Alternatively, a different Workload API address can be used by passing it to the `X509Source` creation method.
 
 ```
     X509SourceOptions sourceOptions = X509SourceOptions
@@ -154,7 +155,7 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
 
 ### Create mTLS GRPC server and client
 
-Prerequisite: Having the SPIFFE Provided configured through the `java.security`.
+Prerequisite: Having the SPIFFE Provider configured through the `java.security`.
 
 A `GRPC Server` using an SSL context backed by the Workload API:
 
