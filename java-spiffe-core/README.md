@@ -15,7 +15,7 @@ To create a new X.509 Source:
     X509Source x509Source; 
     try {
         x509Source = DefaultX509Source.newSource();
-    } catch (SocketEndpointAddressException | X509SourceException e) {
+    } catch (SocketEndpointAddressException | X509SourceException | BundleNotFoundException e) {
         // handle exception
     }
 
