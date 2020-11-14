@@ -32,7 +32,7 @@ The socket endpoint address is configured through the environment variable `SPIF
 configure it is by providing an `X509SourceOptions` instance to the `newSource` method:
 
 ```
-    X509Source.X509SourceOptions x509SourceOptions = X509Source.X509SourceOptions
+    DefaultX509Source.X509SourceOptions x509SourceOptions = DefaultX509Source.X509SourceOptions
             .builder()
             .spiffeSocketPath("unix:/tmp/agent-other.sock")
             .picker(list -> list.get(list.size()-1))
