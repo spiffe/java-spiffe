@@ -35,7 +35,7 @@ configure it is by providing an `X509SourceOptions` instance to the `newSource` 
     X509Source.X509SourceOptions x509SourceOptions = X509Source.X509SourceOptions
             .builder()
             .spiffeSocketPath("unix:/tmp/agent-other.sock")
-            .picker(list -> list.get(list.size()-1))
+            .svidPicker(list -> list.get(list.size()-1))
             .build();
     
     X509Source x509Source = DefaultX509Source.newSource(x509SourceOptions);
