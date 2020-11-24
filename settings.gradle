@@ -1,6 +1,3 @@
-import org.gradle.internal.os.OperatingSystem
-gradle.ext.isMacOsX = OperatingSystem.current().isMacOsX()
-
 rootProject.name = 'java-spiffe'
 include 'java-spiffe-core'
 include 'java-spiffe-provider'

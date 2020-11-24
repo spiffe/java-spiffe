@@ -39,7 +39,7 @@ protobuf {
 }
 
 dependencies {
-    if (gradle.ext.isMacOsX) {
+    if (osdetector.os.is('osx') ) {
         compileOnly(project('grpc-netty-macos'))
         testImplementation(project('grpc-netty-macos'))
     } else {
