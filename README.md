@@ -100,7 +100,7 @@ All `jar` files are placed in `build/libs` folder.
 
 For the module [java-spiffe-provider](java-spiffe-provider), a fat jar is generated with the classifier `-all-[os-classifier]`.
 
-Fhe module [java-spiffe-helper](java-spiffe-helper), a fat jar is generated with the classifier `[os-classifier]`
+For the module [java-spiffe-helper](java-spiffe-helper), a fat jar is generated with the classifier `[os-classifier]`.
 
 Based on the OS where the build is run, the `[os-classifier]` will be:
 
