@@ -15,6 +15,8 @@ import java.net.URISyntaxException;
 @Value
 public class TrustDomain {
 
+    public static final int TRUST_DOMAIN_MAXIMUM_LENGTH = 255;
+
     String name;
 
     private TrustDomain(final String trustDomain) {
@@ -67,9 +69,22 @@ public class TrustDomain {
         return name;
     }
 
+    /**
+     * Returns the trust domain as SPIFFE ID string (e.g. 'spiffe://example.org')
+     *
+     * @return a String formatted as a SPIFFE ID
+     */
+    public String toIdString() {
+        return String.format("%s://%s", SpiffeId.SPIFFE_SCHEME, name);
+    }
+
     private static void validateHost(final String host) {
         if (StringUtils.isBlank(host)) {
             throw new IllegalArgumentException("Trust domain cannot be empty");
+        }
+
+        if (host.length() > TRUST_DOMAIN_MAXIMUM_LENGTH) {
+            throw new IllegalArgumentException(String.format("Trust domain maximum length is %s bytes", TRUST_DOMAIN_MAXIMUM_LENGTH));
         }
     }
 

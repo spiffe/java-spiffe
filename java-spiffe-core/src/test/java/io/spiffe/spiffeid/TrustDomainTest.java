@@ -1,5 +1,8 @@
 package io.spiffe.spiffeid;
 
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -8,6 +11,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TrustDomainTest {
 
@@ -60,5 +64,28 @@ public class TrustDomainTest {
                 Arguments.of("/path/element", "Trust domain cannot be empty"),
                 Arguments.of("spiffe://domain.test:80", "Trust Domain: port is not allowed")
         );
+    }
+
+    @Test
+    void test_exceedsMaximumTrustDomainLength() {
+        val name = StringUtils.repeat("a", 256);
+
+        try {
+            TrustDomain.of(name);
+            Assertions.fail("Expected maximum trust domain validation error");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Trust domain maximum length is 255 bytes", e.getMessage());
+        }
+    }
+
+    @Test
+    void test_maximumTrustDomainLength() {
+        val name = StringUtils.repeat("a", 255);
+
+        try {
+            TrustDomain.of(name);
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 }
