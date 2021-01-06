@@ -57,10 +57,9 @@ class SpiffeIdTest {
     @ParameterizedTest
     @MethodSource("provideInvalidSpiffeIds")
     void testParseInvalidSpiffeId(String input, String expected) {
-        SpiffeId result;
         try {
-            result = SpiffeId.parse(input);
-            assertEquals(expected, result.toString());
+            SpiffeId.parse(input);
+            fail("Expected validation SPIFFE ID error");
         } catch (Exception e) {
             assertEquals(expected, e.getMessage());
         }
@@ -86,9 +85,8 @@ class SpiffeIdTest {
     @ParameterizedTest
     @MethodSource("provideValidTrustDomainAndPaths")
     void testOf(TrustDomain inputTrustDomain, String[] inputPath, SpiffeId expectedSpiffeId) {
-        SpiffeId result;
         try {
-            result = SpiffeId.of(inputTrustDomain, inputPath);
+            SpiffeId result = SpiffeId.of(inputTrustDomain, inputPath);
             assertEquals(result, expectedSpiffeId);
         } catch (Exception e) {
             fail("Unexpected error", e);
@@ -113,7 +111,6 @@ class SpiffeIdTest {
     @ParameterizedTest
     @MethodSource("provideInvalidArguments")
     void testOfInvalid(TrustDomain trustDomain, String[] inputPath, String expectedError) {
-        SpiffeId result;
         try {
             SpiffeId.of(trustDomain, inputPath);
             fail(String.format("Expected error %s", expectedError));
@@ -150,7 +147,7 @@ class SpiffeIdTest {
     }
 
     @Test
-    void test_exceedsMaximumSpiffeIdLength() {
+    void test_parse_exceedsMaximumSpiffeIdLength() {
         val path = StringUtils.repeat("a", 2028);
         val spiffeIdString = String.format("spiffe://example.org/%s", path);
 
@@ -160,9 +157,15 @@ class SpiffeIdTest {
         } catch (IllegalArgumentException e) {
             assertEquals("SPIFFE ID: maximum length is 2048 bytes", e.getMessage());
         }
+    }
+
+    @Test
+    void test_of_exceedsMaximumSpiffeIdLength() {
+        val path = StringUtils.repeat("a", 2028);
+        val spiffeIdString = String.format("spiffe://example.org/%s", path);
+        val trustDomain = TrustDomain.of("example.org");
 
         try {
-            val trustDomain = TrustDomain.of("example.org");
             SpiffeId.of(trustDomain, path);
             fail("Expected maximum length validation error");
         } catch (IllegalArgumentException e) {
@@ -174,11 +177,10 @@ class SpiffeIdTest {
     void test_MaximumSpiffeIdLength() {
         val path = StringUtils.repeat("a", 2027);
         val spiffeIdString = String.format("spiffe://example.org/%s", path);
+        val trustDomain = TrustDomain.of("example.org");
 
         try {
             SpiffeId.parse(spiffeIdString);
-
-            val trustDomain = TrustDomain.of("example.org");
             SpiffeId.of(trustDomain, path);
         } catch (Exception e) {
             fail(e);

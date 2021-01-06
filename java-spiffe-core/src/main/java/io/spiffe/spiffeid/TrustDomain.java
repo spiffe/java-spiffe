@@ -16,6 +16,8 @@ import java.net.URISyntaxException;
 public class TrustDomain {
 
     public static final int TRUST_DOMAIN_MAXIMUM_LENGTH = 255;
+    static final String MAXIMUM_LENGTH_ERROR_MESSAGE
+            = String.format("Trust domain maximum length is %d bytes", TRUST_DOMAIN_MAXIMUM_LENGTH);
 
     String name;
 
@@ -75,7 +77,7 @@ public class TrustDomain {
      * @return a String formatted as a SPIFFE ID
      */
     public String toIdString() {
-        return String.format("%s://%s", SpiffeId.SPIFFE_SCHEME, name);
+        return SpiffeId.SPIFFE_SCHEME + "://" + name;
     }
 
     private static void validateHost(final String host) {
@@ -84,7 +86,7 @@ public class TrustDomain {
         }
 
         if (host.length() > TRUST_DOMAIN_MAXIMUM_LENGTH) {
-            throw new IllegalArgumentException(String.format("Trust domain maximum length is %s bytes", TRUST_DOMAIN_MAXIMUM_LENGTH));
+            throw new IllegalArgumentException(MAXIMUM_LENGTH_ERROR_MESSAGE);
         }
     }
 

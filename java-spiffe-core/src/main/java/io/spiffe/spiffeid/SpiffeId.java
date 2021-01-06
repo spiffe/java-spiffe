@@ -19,6 +19,8 @@ public class SpiffeId {
 
     public static final String SPIFFE_SCHEME = "spiffe";
     public static final int SPIFFE_ID_MAXIMUM_LENGTH = 2048;
+    static final String MAXIMUM_LENGTH_ERROR_MESSAGE =
+            String.format("SPIFFE ID: maximum length is %d bytes", SPIFFE_ID_MAXIMUM_LENGTH);
 
     TrustDomain trustDomain;
 
@@ -92,7 +94,6 @@ public class SpiffeId {
     }
 
     private static URI createAndValidateUri(final String uriAsString) {
-
         URI uri;
         try {
             uri = URI.create(uriAsString.trim());
@@ -101,7 +102,8 @@ public class SpiffeId {
         }
 
         if (uri.toASCIIString().length() > SPIFFE_ID_MAXIMUM_LENGTH) {
-            throw new IllegalArgumentException(String.format("SPIFFE ID: maximum length is %s bytes", SPIFFE_ID_MAXIMUM_LENGTH));
+            throw new IllegalArgumentException(MAXIMUM_LENGTH_ERROR_MESSAGE);
+
         }
 
         val scheme = uri.getScheme();

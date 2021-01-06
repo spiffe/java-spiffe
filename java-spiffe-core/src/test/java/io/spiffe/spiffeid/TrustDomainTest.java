@@ -43,6 +43,12 @@ public class TrustDomainTest {
     }
 
     @Test
+    void test_toIdString() {
+        val trustDomain = TrustDomain.of("domain.test");
+        assertEquals("spiffe://domain.test", trustDomain.toIdString());
+    }
+
+    @Test
     void testGetName() {
         TrustDomain trustDomain = TrustDomain.of("test.domain");
         assertEquals("test.domain", trustDomain.getName());
