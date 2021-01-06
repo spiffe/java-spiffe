@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 public class SpiffeId {
 
     public static final String SPIFFE_SCHEME = "spiffe";
+    public static final int SPIFFE_ID_MAXIMUM_LENGTH = 2048;
+    static final String MAXIMUM_LENGTH_ERROR_MESSAGE =
+            String.format("SPIFFE ID: maximum length is %d bytes", SPIFFE_ID_MAXIMUM_LENGTH);
 
     TrustDomain trustDomain;
 
@@ -40,9 +43,14 @@ public class SpiffeId {
     public static SpiffeId of(@NonNull final TrustDomain trustDomain, final String... segments) {
         val path = Arrays.stream(segments)
                 .filter(StringUtils::isNotBlank)
-                .map(SpiffeId::normalize)
+                .map(String::trim)
                 .map(s -> '/' + s)
                 .collect(Collectors.joining());
+
+        val spiffeIdAsString = trustDomain.toIdString().concat(path);
+
+        createAndValidateUri(spiffeIdAsString);
+
         return new SpiffeId(trustDomain, path);
     }
 
@@ -58,8 +66,7 @@ public class SpiffeId {
             throw new IllegalArgumentException("SPIFFE ID cannot be empty");
         }
 
-        val uri = URI.create(normalize(spiffeIdAsString));
-        validateUri(uri);
+        val uri = createAndValidateUri(spiffeIdAsString);
 
         val trustDomain = TrustDomain.of(uri.getHost());
         val path = uri.getPath();
@@ -86,13 +93,21 @@ public class SpiffeId {
         return String.format("%s://%s%s", SPIFFE_SCHEME, this.trustDomain.toString(), this.path);
     }
 
-    private static String normalize(final String s) {
-        return s.toLowerCase().trim();
-    }
+    private static URI createAndValidateUri(final String uriAsString) {
+        URI uri;
+        try {
+            uri = URI.create(uriAsString.trim());
+        } catch (Exception e) {
+            throw new IllegalArgumentException(String.format("SPIFFE ID: malformed URI: %s", uriAsString), e);
+        }
 
-    private static void validateUri(final URI uri) {
+        if (uri.toASCIIString().length() > SPIFFE_ID_MAXIMUM_LENGTH) {
+            throw new IllegalArgumentException(MAXIMUM_LENGTH_ERROR_MESSAGE);
+
+        }
+
         val scheme = uri.getScheme();
-        if (!SpiffeId.SPIFFE_SCHEME.equals(scheme)) {
+        if (!SpiffeId.SPIFFE_SCHEME.equalsIgnoreCase(scheme)) {
             throw new IllegalArgumentException("SPIFFE ID: invalid scheme");
         }
 
@@ -115,5 +130,7 @@ public class SpiffeId {
         if (StringUtils.isNotBlank(uri.getRawQuery())) {
             throw new IllegalArgumentException("SPIFFE ID: query is not allowed");
         }
+
+        return uri;
     }
 }
