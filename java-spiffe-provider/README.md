@@ -190,7 +190,7 @@ with a [X509Source instance](../java-spiffe-core/README.md#x509-source).
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
 
     // TrustManager gets the X509Source and the supplier of the Set of accepted SPIFFE IDs.
-    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-client", ','));
+    TrustManager trustManager = new SpiffeTrustManager(x509Source, () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-client"));
 
     SslContextBuilder sslContextBuilder =
             SslContextBuilder
@@ -213,7 +213,7 @@ the GRPC SSL context, analogous to the config for the Server:
 
     KeyManager keyManager = new SpiffeKeyManager(x509Source);
 
-    Supplier<Set<SpiffeId>> acceptedSpiffeIds = () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-server", ',');
+    Supplier<Set<SpiffeId>> acceptedSpiffeIds = () -> SpiffeIdUtils.toSetOfSpiffeIds("spiffe://example.org/workload-server");
     TrustManager trustManager = new SpiffeTrustManager(x509Source, acceptedSpiffeIds);
 
     SslContextBuilder sslContextBuilder = SslContextBuilder
