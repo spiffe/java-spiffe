@@ -145,7 +145,6 @@ public class X509Svid {
         val privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
         val spiffeId = getSpiffeId(x509Certificates);
 
-        validatePrivateKey(privateKey, x509Certificates);
         validateLeafCertificate(x509Certificates.get(0));
 
         // there are intermediate CA certificates
@@ -223,15 +222,6 @@ public class X509Svid {
         }
         if (CertificateUtils.hasKeyUsageCRLSign(leaf)) {
             throw new X509SvidException("Leaf certificate must not have 'cRLSign' as key usage");
-        }
-    }
-
-    private static void validatePrivateKey(final PrivateKey privateKey, final List<X509Certificate> x509Certificates)
-            throws X509SvidException {
-        try {
-            CertificateUtils.validatePrivateKey(privateKey, x509Certificates.get(0));
-        } catch (InvalidKeyException e) {
-            throw new X509SvidException("Private Key does not match Certificate Public Key", e);
         }
     }
 }
