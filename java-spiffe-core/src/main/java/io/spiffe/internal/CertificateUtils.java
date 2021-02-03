@@ -10,10 +10,6 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
@@ -43,10 +39,6 @@ import static org.apache.commons.lang3.StringUtils.startsWith;
  * Common certificate utility methods.
  */
 public class CertificateUtils {
-
-    // Algorithms for verifying private and public keys
-    private static final String SHA_512_WITH_ECDSA = "SHA512withECDSA";
-    private static final String SHA_512_WITH_RSA = "SHA512withRSA";
 
     private static final String SPIFFE_PREFIX = "spiffe://";
     private static final int SAN_VALUE_INDEX = 1;
@@ -154,24 +146,6 @@ public class CertificateUtils {
         return spiffeId.getTrustDomain();
     }
 
-    /**
-     * Validates that the private key and the public key in the x509Certificate match by
-     * creating a signature with the private key and verifying with the public key.
-     *
-     * @throws InvalidKeyException if the keys don't match
-     */
-    public static void validatePrivateKey(final PrivateKey privateKey, final X509Certificate x509Certificate) throws InvalidKeyException {
-        AsymmetricKeyAlgorithm algorithm = AsymmetricKeyAlgorithm.parse(privateKey.getAlgorithm());
-
-        switch (algorithm) {
-            case RSA:
-                verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_RSA);
-                break;
-            case EC:
-                verifyKeys(privateKey, x509Certificate.getPublicKey(), SHA_512_WITH_ECDSA);
-        }
-    }
-
     public static boolean isCA(final X509Certificate cert) {
         return cert.getBasicConstraints() != -1;
     }
@@ -200,23 +174,6 @@ public class CertificateUtils {
             keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
         }
         return keySpec;
-    }
-
-    private static void verifyKeys(final PrivateKey privateKey, final PublicKey publicKey, final String algorithm) throws InvalidKeyException {
-        final byte[] challenge = new SecureRandom().generateSeed(100);
-        try {
-            Signature sig = Signature.getInstance(algorithm);
-            sig.initSign(privateKey);
-            sig.update(challenge);
-            byte[] signature = sig.sign();
-            sig.initVerify(publicKey);
-            sig.update(challenge);
-            if (!sig.verify(signature)) {
-                throw new InvalidKeyException("Private Key does not match Certificate Public Key");
-            }
-        } catch (NoSuchAlgorithmException | SignatureException e) {
-            throw new InvalidKeyException("Private and Public Keys could not be verified", e);
-        }
     }
 
     private static List<String> getSpiffeIds(final X509Certificate certificate) throws CertificateParsingException {

@@ -24,10 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class X509SvidTest {
+class X509SvidTest {
 
     static String keyRSA = "testdata/x509svid/key-pkcs8-rsa.pem";
-    static String keyRSAOther = "testdata/x509svid/key-rsa-other.pem";
     static String certSingle = "testdata/x509svid/good-leaf-only.pem";
     static String leafNoDigitalSignature = "testdata/x509svid/wrong-leaf-no-digital-signature.pem";
     static String leafCRLSign = "testdata/x509svid/wrong-leaf-crl-sign.pem";
@@ -39,7 +38,6 @@ public class X509SvidTest {
     static String keyECDSA = "testdata/x509svid/key-pkcs8-ecdsa.pem";
     static String certMultiple = "testdata/x509svid/good-leaf-and-intermediate.pem";
     static String corrupted = "testdata/x509svid/corrupted";
-    static String keyECDSAOther = "testdata/x509svid/key-ecdsa-other.pem";
     static String keyDER = "testdata/x509svid/keyEC.der";
     static String certDER = "testdata/x509svid/cert.der";
 
@@ -99,23 +97,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("7. Certificate does not match private key: RSA keys")
-                        .certsPath(certSingle)
-                        .keyPath(keyRSAOther)
-                        .expectedError("Private Key does not match Certificate Public Key")
-                        .build()
-                ),
-                Arguments.of(TestCase
-                        .builder()
-                        .name("8. Certificate does not match private key: EC keys")
-                        .certsPath(certMultiple)
-                        .keyPath(keyECDSAOther)
-                        .expectedError("Private Key does not match Certificate Public Key")
-                        .build()
-                ),
-                Arguments.of(TestCase
-                        .builder()
-                        .name("9. Certificate without SPIFFE ID")
+                        .name("7. Certificate without SPIFFE ID")
                         .certsPath(leafEmptyID)
                         .keyPath(keyRSA)
                         .expectedError("Certificate does not contain SPIFFE ID in the URI SAN")
@@ -123,7 +105,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("10. Leaf certificate with CA flag set to true")
+                        .name("8. Leaf certificate with CA flag set to true")
                         .certsPath(leafCAtrue)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must not have CA flag set to true")
@@ -131,7 +113,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("11. Leaf certificate without digitalSignature as key usage")
+                        .name("9. Leaf certificate without digitalSignature as key usage")
                         .certsPath(leafNoDigitalSignature)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must have 'digitalSignature' as key usage")
@@ -139,7 +121,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("12. Leaf certificate with certSign as key usage")
+                        .name("10. Leaf certificate with certSign as key usage")
                         .certsPath(leafCertSign)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must not have 'keyCertSign' as key usage")
@@ -147,7 +129,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("13. Leaf certificate with cRLSign as key usage")
+                        .name("11. Leaf certificate with cRLSign as key usage")
                         .certsPath(leafCRLSign)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must not have 'cRLSign' as key usage")
@@ -155,7 +137,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("14. Signing certificate without CA flag")
+                        .name("12. Signing certificate without CA flag")
                         .certsPath(signNoCA)
                         .keyPath(keyRSA)
                         .expectedError("Signing certificate must have CA flag set to true")
@@ -163,7 +145,7 @@ public class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("15. Signing certificate without CA flag")
+                        .name("13. Signing certificate without CA flag")
                         .certsPath(signNoKeyCertSign)
                         .keyPath(keyRSA)
                         .expectedError("Signing certificate must have 'keyCertSign' as key usage")
