@@ -1,13 +1,15 @@
-package io.spiffe;
+package io.spiffe.internal;
+
+import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Represents JWT Algorithms.
+ * Represents JWT Signature Supported Algorithms.
  */
-public enum Algorithm {
+public enum JwtSignatureAlgorithm {
 
     /**
      * ECDSA algorithm using SHA-256 hash algorithm.
@@ -52,16 +54,11 @@ public enum Algorithm {
     /**
      * RSASSA-PSS using SHA-512 and MGF1 padding with SHA-512.
      */
-    PS512("PS512"),
-
-    /**
-     * Non-Supported algorithm.
-     */
-    OTHER("OTHER");
+    PS512("PS512");
 
     private final String name;
 
-    Algorithm(final String name) {
+    JwtSignatureAlgorithm(final String name) {
         this.name = name;
     }
 
@@ -74,13 +71,12 @@ public enum Algorithm {
      */
     public enum Family {
         RSA("RSA", RS256, RS384, RS512, PS256, PS384, PS512),
-        EC("EC", ES256, ES384, ES512),
-        OTHER("UNKNOWN");
+        EC("EC", ES256, ES384, ES512);
 
         private final String name;
-        private final Set<Algorithm> algorithms;
+        private final Set<JwtSignatureAlgorithm> algorithms;
 
-        Family(final String name, final Algorithm... algs) {
+        Family(final String name, final JwtSignatureAlgorithm... algs) {
             this.name = name;
             algorithms = new HashSet<>();
             Collections.addAll(algorithms, algs);
@@ -90,7 +86,7 @@ public enum Algorithm {
             return name;
         }
 
-        public boolean contains(final Algorithm a) {
+        public boolean contains(final JwtSignatureAlgorithm a) {
             return algorithms.contains(a);
         }
 
@@ -101,14 +97,14 @@ public enum Algorithm {
             } else if (s.equals(EC.getName())) {
                 family = EC;
             } else {
-                family = OTHER;
+                throw new IllegalArgumentException("Unsupported JWT token family algorithm: " + s);
             }
             return family;
         }
     }
 
-    public static Algorithm parse(final String s) {
-        final Algorithm algorithm;
+    public static JwtSignatureAlgorithm parse(@NonNull final String s) {
+        final JwtSignatureAlgorithm algorithm;
         if (s.equals(RS256.getName())) {
             algorithm = RS256;
         } else if (s.equals(RS384.getName())) {
@@ -128,7 +124,7 @@ public enum Algorithm {
         } else if (s.equals(PS512.getName())) {
             algorithm = PS512;
         } else {
-            algorithm = OTHER;
+            throw new IllegalArgumentException("Unsupported JWT token algorithm: " + s);
         }
         return algorithm;
     }

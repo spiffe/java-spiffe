@@ -5,7 +5,7 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
-import io.spiffe.Algorithm;
+import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
@@ -72,7 +72,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
         try {
             val jwkSet = JWKSet.load(bundlePath.toFile());
             return toJwtBundle(trustDomain, jwkSet);
-        } catch (IOException | ParseException | JOSEException e) {
+        } catch (IllegalArgumentException | IOException | ParseException | JOSEException e) {
             val error = "Could not load bundle from file: %s";
             throw new JwtBundleException(String.format(error, bundlePath.toString()), e);
         }
@@ -189,7 +189,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     private static PublicKey getPublicKey(final JWK jwk) throws JOSEException, ParseException, KeyException {
-        val family = Algorithm.Family.parse(jwk.getKeyType().getValue());
+        val family = JwtSignatureAlgorithm.Family.parse(jwk.getKeyType().getValue());
 
         final PublicKey publicKey;
         switch (family) {

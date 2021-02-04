@@ -157,15 +157,15 @@ class JwtBundleTest {
     }
 
     @Test
-    void testLoadFile_InvalidKeyType_ThrowsKeyException() throws URISyntaxException, JwtBundleException {
+    void testLoadFile_InvalidKeyType_ThrowsKeyException() throws URISyntaxException, KeyException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
         TrustDomain trustDomain = TrustDomain.of("domain.test");
 
         try {
             JwtBundle.load(trustDomain, path);
             fail("should have thrown exception");
-        } catch (KeyException e) {
-            assertEquals("Key Type not supported: OKP", e.getMessage());
+        } catch (JwtBundleException e) {
+            assertEquals("Unsupported JWT token family algorithm: OKP", e.getCause().getMessage());
         }
     }
 

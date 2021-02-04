@@ -28,6 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JwtSvidParseInsecureTest {
 
+    private static final String HS256TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImF1dGhvcml0eTEifQ." +
+            "eyJzdWIiOiJzcGlmZmU6Ly90ZXN0LmRvbWFpbi9ob3N0IiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxMjM0MzQzNTM0NTUsImlh" +
+            "dCI6MTUxNjIzOTAyMiwiYXVkIjoiYXVkaWVuY2UifQ.wNm5pQGSLCw5N9ddgSF2hkgmQpGnG9le_gpiFmyBhao";
+
     @ParameterizedTest
     @MethodSource("provideJwtScenarios")
     void parseJwt(TestCase testCase) {
@@ -147,6 +151,12 @@ class JwtSvidParseInsecureTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "non-spiffe-subject", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Subject non-spiffe-subject cannot be parsed as a SPIFFE ID"))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("unsupported algorithm")
+                        .expectedAudience(Collections.singleton("audience"))
+                        .generateToken(() -> HS256TOKEN)
+                        .expectedException(new JwtSvidException("Unsupported JWT token algorithm: HS256"))
                         .build())
         );
     }
