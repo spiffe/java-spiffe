@@ -156,7 +156,7 @@ class JwtSvidParseInsecureTest {
                         .name("unsupported algorithm")
                         .expectedAudience(Collections.singleton("audience"))
                         .generateToken(() -> HS256TOKEN)
-                        .expectedException(new JwtSvidException("Unsupported JWT token algorithm: HS256"))
+                        .expectedException(new JwtSvidException("Unsupported JWT algorithm: HS256"))
                         .build())
         );
     }

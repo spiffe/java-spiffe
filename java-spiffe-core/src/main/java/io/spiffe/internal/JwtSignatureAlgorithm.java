@@ -97,7 +97,7 @@ public enum JwtSignatureAlgorithm {
             } else if (s.equals(EC.getName())) {
                 family = EC;
             } else {
-                throw new IllegalArgumentException("Unsupported JWT token family algorithm: " + s);
+                throw new IllegalArgumentException("Unsupported JWT family algorithm: " + s);
             }
             return family;
         }
@@ -124,7 +124,7 @@ public enum JwtSignatureAlgorithm {
         } else if (s.equals(PS512.getName())) {
             algorithm = PS512;
         } else {
-            throw new IllegalArgumentException("Unsupported JWT token algorithm: " + s);
+            throw new IllegalArgumentException("Unsupported JWT algorithm: " + s);
         }
         return algorithm;
     }

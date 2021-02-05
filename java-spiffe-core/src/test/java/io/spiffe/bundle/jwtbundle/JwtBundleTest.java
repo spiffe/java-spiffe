@@ -165,7 +165,7 @@ class JwtBundleTest {
             JwtBundle.load(trustDomain, path);
             fail("should have thrown exception");
         } catch (JwtBundleException e) {
-            assertEquals("Unsupported JWT token family algorithm: OKP", e.getCause().getMessage());
+            assertEquals("Unsupported JWT family algorithm: OKP", e.getCause().getMessage());
         }
     }
 

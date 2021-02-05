@@ -154,7 +154,7 @@ class JwtSvidParseAndValidateTest {
                         .jwtBundle(jwtBundle)
                         .expectedAudience(Collections.singleton("audience"))
                         .generateToken(() -> HS256TOKEN)
-                        .expectedException(new JwtSvidException("Unsupported JWT token algorithm: HS256"))
+                        .expectedException(new JwtSvidException("Unsupported JWT algorithm: HS256"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("5. missing subject")

@@ -77,7 +77,7 @@ class JwtSignatureAlgorithmTest {
             JwtSignatureAlgorithm.Family.parse("unknown family");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Unsupported JWT token family algorithm: unknown family", e.getMessage());
+            assertEquals("Unsupported JWT family algorithm: unknown family", e.getMessage());
         }
     }
 
@@ -87,7 +87,7 @@ class JwtSignatureAlgorithmTest {
             JwtSignatureAlgorithm.parse("HS256");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Unsupported JWT token algorithm: HS256", e.getMessage());
+            assertEquals("Unsupported JWT algorithm: HS256", e.getMessage());
         }
     }
 }
