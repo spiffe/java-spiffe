@@ -1,13 +1,14 @@
 package io.spiffe.svid.jwtsvid;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import io.spiffe.Algorithm;
+import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.AuthorityNotFoundException;
@@ -85,7 +86,8 @@ public class JwtSvid {
      * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
      * @throws JwtSvidException when the token expired or the expiration claim is missing,
-     *                                           when the algorithm is not supported, when the header 'kid' is missing,
+     *                                           when the algorithm is not supported (See {@link JwtSignatureAlgorithm}),
+     *                                           when the header 'kid' is missing,
      *                                           when the signature cannot be verified, or
      *                                           when the 'aud' claim has an audience that is not in the audience list
      *                                           provided as parameter
@@ -106,8 +108,9 @@ public class JwtSvid {
         }
 
         val signedJwt = getSignedJWT(token);
-        val claimsSet = getJwtClaimsSet(signedJwt);
+        JwtSignatureAlgorithm algorithm = parseAlgorithm(signedJwt.getHeader().getAlgorithm());
 
+        val claimsSet = getJwtClaimsSet(signedJwt);
         validateAudience(claimsSet.getAudience(), audience);
 
         val expirationTime = claimsSet.getExpirationTime();
@@ -119,7 +122,6 @@ public class JwtSvid {
         val keyId = getKeyId(signedJwt.getHeader());
         val jwtAuthority = jwtBundle.findJwtAuthority(keyId);
 
-        val algorithm = signedJwt.getHeader().getAlgorithm().getName();
         verifySignature(signedJwt, jwtAuthority, algorithm, keyId);
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
@@ -136,7 +138,8 @@ public class JwtSvid {
      * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
      * @throws JwtSvidException when the token expired or the expiration claim is missing, or when
-     *                                           the 'aud' has an audience that is not in the audience provided as parameter
+     *                                           the 'aud' has an audience that is not in the audience provided as parameter,
+     *                                           or when the 'alg' is not supported (See {@link JwtSignatureAlgorithm}).
      * @throws IllegalArgumentException          when the token cannot be parsed
      */
     public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience) throws JwtSvidException {
@@ -145,8 +148,9 @@ public class JwtSvid {
         }
 
         val signedJwt = getSignedJWT(token);
-        val claimsSet = getJwtClaimsSet(signedJwt);
+        parseAlgorithm(signedJwt.getHeader().getAlgorithm());
 
+        val claimsSet = getJwtClaimsSet(signedJwt);
         validateAudience(claimsSet.getAudience(), audience);
 
         val expirationTime = claimsSet.getExpirationTime();
@@ -216,7 +220,7 @@ public class JwtSvid {
         return signedJwt;
     }
 
-    private static void verifySignature(final SignedJWT signedJwt, final PublicKey jwtAuthority, final String algorithm, final String keyId) throws JwtSvidException {
+    private static void verifySignature(final SignedJWT signedJwt, final PublicKey jwtAuthority, final JwtSignatureAlgorithm algorithm, final String keyId) throws JwtSvidException {
         boolean verify;
         try {
             val verifier = getJwsVerifier(jwtAuthority, algorithm);
@@ -230,12 +234,11 @@ public class JwtSvid {
         }
     }
 
-    private static JWSVerifier getJwsVerifier(final PublicKey jwtAuthority, final String algorithm) throws JOSEException, JwtSvidException {
+    private static JWSVerifier getJwsVerifier(final PublicKey jwtAuthority, final JwtSignatureAlgorithm algorithm) throws JOSEException, JwtSvidException {
         JWSVerifier verifier;
-        val alg = Algorithm.parse(algorithm);
-        if (Algorithm.Family.EC.contains(alg)) {
+        if (JwtSignatureAlgorithm.Family.EC.contains(algorithm)) {
             verifier = new ECDSAVerifier((ECPublicKey) jwtAuthority);
-        } else if (Algorithm.Family.RSA.contains(alg)) {
+        } else if (JwtSignatureAlgorithm.Family.RSA.contains(algorithm)) {
             verifier = new RSASSAVerifier((RSAPublicKey) jwtAuthority);
         } else {
             throw new JwtSvidException(String.format("Unsupported token signature algorithm %s", algorithm));
@@ -282,6 +285,18 @@ public class JwtSvid {
     private static void validateAudience(final List<String> audClaim, final Set<String> expectedAudiences) throws JwtSvidException {
         if (!audClaim.containsAll(expectedAudiences)) {
             throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudiences, audClaim));
+        }
+    }
+
+    private static JwtSignatureAlgorithm parseAlgorithm(JWSAlgorithm algorithm) throws JwtSvidException {
+        if (algorithm == null) {
+            throw new JwtSvidException("jwt header 'alg' is required");
+        }
+
+        try {
+            return JwtSignatureAlgorithm.parse(algorithm.getName());
+        } catch (IllegalArgumentException e) {
+            throw new JwtSvidException(e.getMessage(), e);
         }
     }
 }
