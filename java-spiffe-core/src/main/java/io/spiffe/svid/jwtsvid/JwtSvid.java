@@ -1,6 +1,7 @@
 package io.spiffe.svid.jwtsvid;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
@@ -24,6 +25,7 @@ import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -62,11 +64,13 @@ public class JwtSvid {
      */
     String token;
 
+    private static final List<String> VALID_TYPE_HEADER_VALUES = Arrays.asList("JWT", "JOSE");
+
     private JwtSvid(final SpiffeId spiffeId,
-            final Set<String> audience,
-            final Date expiry,
-            final Map<String, Object> claims,
-            final String token) {
+                    final Set<String> audience,
+                    final Date expiry,
+                    final Map<String, Object> claims,
+                    final String token) {
         this.spiffeId = spiffeId;
         this.audience = audience;
         this.expiry = expiry;
@@ -85,18 +89,19 @@ public class JwtSvid {
      * @param audience        audience as a list of strings used to validate the 'aud' claim
      * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
-     * @throws JwtSvidException when the token expired or the expiration claim is missing,
-     *                                           when the algorithm is not supported (See {@link JwtSignatureAlgorithm}),
-     *                                           when the header 'kid' is missing,
-     *                                           when the signature cannot be verified, or
-     *                                           when the 'aud' claim has an audience that is not in the audience list
-     *                                           provided as parameter
-     * @throws IllegalArgumentException          when the token is blank or cannot be parsed
-     * @throws BundleNotFoundException           if the bundle for the trust domain of the spiffe id from the 'sub'
-     * cannot be found
-     *                                           in the JwtBundleSource
-     * @throws AuthorityNotFoundException        if the authority cannot be found in the bundle using the value from
-     * the 'kid' header
+     * @throws JwtSvidException           when the token expired or the expiration claim is missing,
+     *                                    when the algorithm is not supported (See {@link JwtSignatureAlgorithm}),
+     *                                    when the header 'kid' is missing,
+     *                                    when the header 'typ' is present and is not 'JWT' or 'JOSE'
+     *                                    when the signature cannot be verified,
+     *                                    when the 'aud' claim has an audience that is not in the audience list
+     *                                    provided as parameter
+     * @throws IllegalArgumentException   when the token is blank or cannot be parsed
+     * @throws BundleNotFoundException    if the bundle for the trust domain of the spiffe id from the 'sub'
+     *                                    cannot be found
+     *                                    in the JwtBundleSource
+     * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
+     *                                    the 'kid' header
      */
     public static JwtSvid parseAndValidate(@NonNull final String token,
                                            @NonNull final BundleSource<JwtBundle> jwtBundleSource,
@@ -108,6 +113,8 @@ public class JwtSvid {
         }
 
         val signedJwt = getSignedJWT(token);
+        validateTypeHeader(signedJwt.getHeader());
+
         JwtSignatureAlgorithm algorithm = parseAlgorithm(signedJwt.getHeader().getAlgorithm());
 
         val claimsSet = getJwtClaimsSet(signedJwt);
@@ -137,10 +144,11 @@ public class JwtSvid {
      * @param audience audience as a list of strings used to validate the 'aud' claim
      * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
      * from 'exp' claim.
-     * @throws JwtSvidException when the token expired or the expiration claim is missing, or when
-     *                                           the 'aud' has an audience that is not in the audience provided as parameter,
-     *                                           or when the 'alg' is not supported (See {@link JwtSignatureAlgorithm}).
-     * @throws IllegalArgumentException          when the token cannot be parsed
+     * @throws JwtSvidException         when the token expired or the expiration claim is missing,
+     *                                  when the 'aud' has an audience that is not in the audience provided as parameter,
+     *                                  when the 'alg' is not supported (See {@link JwtSignatureAlgorithm})
+     *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
+     * @throws IllegalArgumentException when the token cannot be parsed
      */
     public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience) throws JwtSvidException {
         if (StringUtils.isBlank(token)) {
@@ -148,6 +156,8 @@ public class JwtSvid {
         }
 
         val signedJwt = getSignedJWT(token);
+        validateTypeHeader(signedJwt.getHeader());
+
         parseAlgorithm(signedJwt.getHeader().getAlgorithm());
 
         val claimsSet = getJwtClaimsSet(signedJwt);
@@ -290,13 +300,24 @@ public class JwtSvid {
 
     private static JwtSignatureAlgorithm parseAlgorithm(JWSAlgorithm algorithm) throws JwtSvidException {
         if (algorithm == null) {
-            throw new JwtSvidException("jwt header 'alg' is required");
+            throw new JwtSvidException("JWT header 'alg' is required");
         }
 
         try {
             return JwtSignatureAlgorithm.parse(algorithm.getName());
         } catch (IllegalArgumentException e) {
             throw new JwtSvidException(e.getMessage(), e);
+        }
+    }
+
+    private static void validateTypeHeader(JWSHeader headers) throws JwtSvidException {
+        final JOSEObjectType type = headers.getType();
+        // if it's not present -> OK
+        if (type == null || StringUtils.isBlank(type.toString())) {
+            return;
+        }
+        if (!VALID_TYPE_HEADER_VALUES.contains(type.toString())) {
+            throw new JwtSvidException(String.format("If JWT header 'typ' is present, it must be either 'JWT' or 'JOSE'. Got: '%s'.", type.toString()));
         }
     }
 }

@@ -1,6 +1,7 @@
 package io.spiffe.utils;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
@@ -57,10 +58,14 @@ public class TestUtils {
 
     public static String generateToken(Map<String, Object> claims, KeyPair keyPair, String keyId) {
         JWTClaimsSet jwtClaimsSet = buildJWTClaimSetFromClaimsMap(claims);
-        return generateToken(jwtClaimsSet, keyPair, keyId);
+        return generateToken(jwtClaimsSet, keyPair, keyId, "JWT");
     }
 
     public static String generateToken(JWTClaimsSet claims, KeyPair keyPair, String keyId) {
+        return generateToken(claims, keyPair, keyId, "JWT");
+    }
+
+    public static String generateToken(JWTClaimsSet claims, KeyPair keyPair, String keyId, String typ) {
         try {
             JWSAlgorithm algorithm;
             JWSSigner signer;
@@ -74,7 +79,9 @@ public class TestUtils {
                 throw new IllegalArgumentException("Algorithm not supported");
             }
 
-            SignedJWT signedJWT = new SignedJWT(new JWSHeader.Builder(algorithm).keyID(keyId).build(), claims);
+            final JOSEObjectType joseTyp = new JOSEObjectType(typ);
+            final JWSHeader header = new JWSHeader.Builder(algorithm).keyID(keyId).type(joseTyp).build();
+            SignedJWT signedJWT = new SignedJWT(header, claims);
             signedJWT.sign(signer);
             return signedJWT.serialize();
         } catch (JOSEException e) {

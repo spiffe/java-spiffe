@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import static io.spiffe.svid.jwtsvid.JwtSvidParseInsecureTest.newJwtSvidInstance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class JwtSvidParseAndValidateTest {
 
@@ -34,9 +35,8 @@ class JwtSvidParseAndValidateTest {
             "dCI6MTUxNjIzOTAyMiwiYXVkIjoiYXVkaWVuY2UifQ.wNm5pQGSLCw5N9ddgSF2hkgmQpGnG9le_gpiFmyBhao";
 
     @ParameterizedTest
-    @MethodSource("provideJwtScenarios")
-    void parseAndValidateJwt(TestCase testCase) {
-
+    @MethodSource("provideSuccessScenarios")
+    void parseAndValidateValidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
             JwtSvid jwtSvid = JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience);
@@ -46,6 +46,18 @@ class JwtSvidParseAndValidateTest {
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
             assertEquals(token, jwtSvid.marshal());
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideFailureScenarios")
+    void parseAndValidateInvalidJwt(TestCase testCase) {
+        try {
+            String token = testCase.generateToken.get();
+            JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience);
+            fail("expected error: " + testCase.expectedException.getMessage());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
             assertEquals(testCase.expectedException.getMessage(), e.getMessage());
@@ -100,7 +112,7 @@ class JwtSvidParseAndValidateTest {
         }
     }
 
-    static Stream<Arguments> provideJwtScenarios() {
+    static Stream<Arguments> provideSuccessScenarios() {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key3 = TestUtils.generateRSAKeyPair(2048);
@@ -119,119 +131,159 @@ class JwtSvidParseAndValidateTest {
 
         return Stream.of(
                 Arguments.of(TestCase.builder()
-                        .name("1. success using EC signature")
+                        .name("1. using EC signature")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(Collections.singleton("audience1"))
-                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", "JOSE"))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1") ))
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "JOSE") ))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("2. success using RSA signature")
+                        .name("2. using RSA signature")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
-                        .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3", "JWT"))
+                        .expectedException(null)
+                        .expectedJwtSvid(newJwtSvidInstance(
+                                trustDomain.newSpiffeId("host"),
+                                audience,
+                                expiration,
+                                claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3", "JWT")))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("3. using empty typ")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3", ""))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3")))
-                        .build()),
+                        .build())
+        );
+    }
+
+    static Stream<Arguments> provideFailureScenarios() {
+        KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
+        KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
+        KeyPair key3 = TestUtils.generateRSAKeyPair(2048);
+
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        jwtBundle.putJwtAuthority("authority1", key1.getPublic());
+        jwtBundle.putJwtAuthority("authority2", key2.getPublic());
+        jwtBundle.putJwtAuthority("authority3", key3.getPublic());
+
+        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+        Date expiration = new Date(System.currentTimeMillis() + 3600000);
+        Set<String> audience = new HashSet<String>() {{add("audience1"); add("audience2");}};
+
+        JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
+
+        return Stream.of(
                 Arguments.of(TestCase.builder()
-                        .name("3. malformed")
+                        .name("1. malformed")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> "invalid token")
                         .expectedException(new IllegalArgumentException("Unable to parse JWT token"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("4. unsupported algorithm")
+                        .name("2. unsupported algorithm")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(Collections.singleton("audience"))
                         .generateToken(() -> HS256TOKEN)
                         .expectedException(new JwtSvidException("Unsupported JWT algorithm: HS256"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("5. missing subject")
+                        .name("3. missing subject")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token missing subject claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("6. missing expiration")
+                        .name("4. missing expiration")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), null), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token missing expiration claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("7. token has expired")
+                        .name("5. token has expired")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), new Date()), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token has expired"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("8. unexpected audience")
+                        .name("6. unexpected audience")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(Collections.singleton("another"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience2, audience1])"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("9. invalid subject claim")
+                        .name("7. invalid subject claim")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "non-spiffe-subject", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Subject non-spiffe-subject cannot be parsed as a SPIFFE ID"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("10. missing key id")
+                        .name("8. missing key id")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, null))
                         .expectedException(new JwtSvidException("Token header missing key id"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("11. key id contains an empty value")
+                        .name("9. key id contains an empty value")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "   "))
                         .expectedException(new JwtSvidException("Token header key id contains an empty value"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("12. no bundle for trust domain")
+                        .name("10. no bundle for trust domain")
                         .jwtBundle(new JwtBundle(TrustDomain.of("other.domain")))
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new BundleNotFoundException("No JWT bundle found for trust domain test.domain"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("13. no authority found for key id")
+                        .name("11. no authority found for key id")
                         .jwtBundle(new JwtBundle(TrustDomain.of("test.domain")))
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new AuthorityNotFoundException("No authority found for the trust domain test.domain and key id authority1"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("14. signature cannot be verified with authority")
+                        .name("12. signature cannot be verified with authority")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key2, "authority1"))
                         .expectedException(new JwtSvidException("Signature invalid: cannot be verified with the authority with keyId=authority1"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("15. authority algorithm mismatch")
+                        .name("13. authority algorithm mismatch")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority1"))
                         .expectedException(new JwtSvidException("Error verifying signature with the authority with keyId=authority1"))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("14. not valid header 'typ'")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", "OTHER"))
+                        .expectedException(new JwtSvidException("If JWT header 'typ' is present, it must be either 'JWT' or 'JOSE'. Got: 'OTHER'."))
                         .build())
         );
     }
