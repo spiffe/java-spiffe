@@ -9,12 +9,12 @@ import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.spiffeid.SpiffeId;
 import lombok.NonNull;
 import lombok.Value;
@@ -25,7 +25,6 @@ import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -64,7 +63,8 @@ public class JwtSvid {
      */
     String token;
 
-    private static final List<String> VALID_TYPE_HEADER_VALUES = Arrays.asList("JWT", "JOSE");
+    public static final String HEADER_TYP_JWT = "JWT";
+    public static final String HEADER_TYP_JOSE = "JOSE";
 
     private JwtSvid(final SpiffeId spiffeId,
                     final Set<String> audience,
@@ -98,8 +98,7 @@ public class JwtSvid {
      *                                    provided as parameter
      * @throws IllegalArgumentException   when the token is blank or cannot be parsed
      * @throws BundleNotFoundException    if the bundle for the trust domain of the spiffe id from the 'sub'
-     *                                    cannot be found
-     *                                    in the JwtBundleSource
+     *                                    cannot be found in the JwtBundleSource
      * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
      *                                    the 'kid' header
      */
@@ -146,7 +145,7 @@ public class JwtSvid {
      * from 'exp' claim.
      * @throws JwtSvidException         when the token expired or the expiration claim is missing,
      *                                  when the 'aud' has an audience that is not in the audience provided as parameter,
-     *                                  when the 'alg' is not supported (See {@link JwtSignatureAlgorithm})
+     *                                  when the 'alg' is not supported (See {@link JwtSignatureAlgorithm}),
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
      * @throws IllegalArgumentException when the token cannot be parsed
      */
@@ -316,7 +315,8 @@ public class JwtSvid {
         if (type == null || StringUtils.isBlank(type.toString())) {
             return;
         }
-        if (!VALID_TYPE_HEADER_VALUES.contains(type.toString())) {
+        final String typValue = type.toString();
+        if (!HEADER_TYP_JWT.equals(typValue) && !HEADER_TYP_JOSE.equals(typValue)) {
             throw new JwtSvidException(String.format("If JWT header 'typ' is present, it must be either 'JWT' or 'JOSE'. Got: '%s'.", type.toString()));
         }
     }

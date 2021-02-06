@@ -118,29 +118,29 @@ class JwtSvidParseInsecureTest {
 
         return Stream.of(
                 Arguments.of(TestCase.builder()
-                        .name("1. using typ as JWT")
+                        .name("using typ as JWT")
                         .expectedAudience(audience)
-                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", "JWT"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "JWT")))
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("2. using typ as JOSE")
+                        .name("using typ as JOSE")
                         .expectedAudience(audience)
-                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", "JOSE"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "JWT")))
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("3. using empty typ")
+                        .name("using empty typ")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", ""))
                         .expectedException(null)
@@ -169,43 +169,43 @@ class JwtSvidParseInsecureTest {
 
         return Stream.of(
                 Arguments.of(TestCase.builder()
-                        .name("1. malformed")
+                        .name("malformed")
                         .expectedAudience(audience)
                         .generateToken(() -> "invalid token")
                         .expectedException(new IllegalArgumentException("Unable to parse JWT token"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("2. missing subject")
+                        .name("missing subject")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token missing subject claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("3. missing expiration")
+                        .name("missing expiration")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), null), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token missing expiration claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("4. token has expired")
+                        .name("token has expired")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), new Date()), key1, "authority1"))
                         .expectedException(new JwtSvidException("Token has expired"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("5. unexpected audience")
+                        .name("unexpected audience")
                         .expectedAudience(Collections.singleton("another"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience])"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("6. invalid subject claim")
+                        .name("invalid subject claim")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "non-spiffe-subject", expiration), key1, "authority1"))
                         .expectedException(new JwtSvidException("Subject non-spiffe-subject cannot be parsed as a SPIFFE ID"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("7. not valid header 'typ'")
+                        .name("not valid header 'typ'")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", "OTHER"))
                         .expectedException(new JwtSvidException("If JWT header 'typ' is present, it must be either 'JWT' or 'JOSE'. Got: 'OTHER'."))

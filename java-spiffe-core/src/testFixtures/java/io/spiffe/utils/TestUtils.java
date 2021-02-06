@@ -10,6 +10,7 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import io.spiffe.svid.jwtsvid.JwtSvid;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -58,11 +59,11 @@ public class TestUtils {
 
     public static String generateToken(Map<String, Object> claims, KeyPair keyPair, String keyId) {
         JWTClaimsSet jwtClaimsSet = buildJWTClaimSetFromClaimsMap(claims);
-        return generateToken(jwtClaimsSet, keyPair, keyId, "JWT");
+        return generateToken(jwtClaimsSet, keyPair, keyId, JwtSvid.HEADER_TYP_JWT);
     }
 
     public static String generateToken(JWTClaimsSet claims, KeyPair keyPair, String keyId) {
-        return generateToken(claims, keyPair, keyId, "JWT");
+        return generateToken(claims, keyPair, keyId, JwtSvid.HEADER_TYP_JWT);
     }
 
     public static String generateToken(JWTClaimsSet claims, KeyPair keyPair, String keyId, String typ) {
