@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class JwtSvidParseInsecureTest {
 
@@ -33,9 +34,8 @@ class JwtSvidParseInsecureTest {
             "dCI6MTUxNjIzOTAyMiwiYXVkIjoiYXVkaWVuY2UifQ.wNm5pQGSLCw5N9ddgSF2hkgmQpGnG9le_gpiFmyBhao";
 
     @ParameterizedTest
-    @MethodSource("provideJwtScenarios")
-    void parseJwt(TestCase testCase) {
-
+    @MethodSource("provideSuccessScenarios")
+    void parseValidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
             JwtSvid jwtSvid = JwtSvid.parseInsecure(token, testCase.audience);
@@ -44,6 +44,18 @@ class JwtSvidParseInsecureTest {
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideFailureScenarios")
+    void parseInvalidJwt(TestCase testCase) {
+        try {
+            String token = testCase.generateToken.get();
+            JwtSvid.parseInsecure(token, testCase.audience);
+            fail("expected error: " + testCase.expectedException.getMessage());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
             assertEquals(testCase.expectedException.getMessage(), e.getMessage());
@@ -89,7 +101,7 @@ class JwtSvidParseInsecureTest {
         }
     }
 
-    static Stream<Arguments> provideJwtScenarios() {
+    static Stream<Arguments> provideSuccessScenarios() {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
 
@@ -106,16 +118,56 @@ class JwtSvidParseInsecureTest {
 
         return Stream.of(
                 Arguments.of(TestCase.builder()
-                        .name("success")
+                        .name("using typ as JWT")
                         .expectedAudience(audience)
-                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1")))
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
                         .build()),
+                Arguments.of(TestCase.builder()
+                        .name("using typ as JOSE")
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
+                        .expectedException(null)
+                        .expectedJwtSvid(newJwtSvidInstance(
+                                trustDomain.newSpiffeId("host"),
+                                audience,
+                                expiration,
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("using empty typ")
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", ""))
+                        .expectedException(null)
+                        .expectedJwtSvid(newJwtSvidInstance(
+                                trustDomain.newSpiffeId("host"),
+                                audience,
+                                expiration,
+                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "")))
+                        .build()));
+    }
+
+    static Stream<Arguments> provideFailureScenarios() {
+        KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
+        KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
+
+        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        jwtBundle.putJwtAuthority("authority1", key1.getPublic());
+        jwtBundle.putJwtAuthority("authority2", key2.getPublic());
+
+        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+        Date expiration = new Date(System.currentTimeMillis() + 3600000);
+        Set<String> audience = Collections.singleton("audience");
+
+        JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
+
+        return Stream.of(
                 Arguments.of(TestCase.builder()
                         .name("malformed")
                         .expectedAudience(audience)
@@ -153,10 +205,10 @@ class JwtSvidParseInsecureTest {
                         .expectedException(new JwtSvidException("Subject non-spiffe-subject cannot be parsed as a SPIFFE ID"))
                         .build()),
                 Arguments.of(TestCase.builder()
-                        .name("unsupported algorithm")
-                        .expectedAudience(Collections.singleton("audience"))
-                        .generateToken(() -> HS256TOKEN)
-                        .expectedException(new JwtSvidException("Unsupported JWT algorithm: HS256"))
+                        .name("not valid header 'typ'")
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", "OTHER"))
+                        .expectedException(new JwtSvidException("If JWT header 'typ' is present, it must be either 'JWT' or 'JOSE'. Got: 'OTHER'."))
                         .build())
         );
     }
