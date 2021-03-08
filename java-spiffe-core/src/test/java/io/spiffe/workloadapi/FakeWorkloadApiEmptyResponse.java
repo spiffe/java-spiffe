@@ -13,6 +13,12 @@ class FakeWorkloadApiEmptyResponse extends SpiffeWorkloadAPIImplBase {
     }
 
     @Override
+    public void fetchX509Bundles(Workload.X509BundlesRequest request, StreamObserver<Workload.X509BundlesResponse> responseObserver) {
+        responseObserver.onNext(Workload.X509BundlesResponse.newBuilder().build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {
         responseObserver.onNext(Workload.JWTSVIDResponse.newBuilder().build());
         responseObserver.onCompleted();

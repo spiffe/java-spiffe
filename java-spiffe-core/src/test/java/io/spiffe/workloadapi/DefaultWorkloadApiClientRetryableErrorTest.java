@@ -3,6 +3,7 @@ package io.spiffe.workloadapi;
 import io.grpc.Status;
 import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.X509ContextException;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
@@ -34,7 +35,7 @@ class DefaultWorkloadApiClientRetryableErrorTest {
 
 
     @Test
-    public void testFetchX509Context_throwsX509ContextException() throws Exception {
+    void testFetchX509Context_throwsX509ContextException() throws Exception {
         try {
             workloadApiClient.fetchX509Context();
             fail();
@@ -44,9 +45,8 @@ class DefaultWorkloadApiClientRetryableErrorTest {
     }
 
     @Test
-    public void testWatchX509Context_onErrorIsCalledOnWatcher() throws Exception {
+    void testWatchX509Context_onErrorIsCalledOnWatcher() throws Exception {
         CountDownLatch done = new CountDownLatch(1);
-        final String[] error = new String[1];
         Watcher<X509Context> contextWatcher = new Watcher<X509Context>() {
             @Override
             public void onUpdate(X509Context update) {
@@ -55,19 +55,36 @@ class DefaultWorkloadApiClientRetryableErrorTest {
 
             @Override
             public void onError(Throwable e) {
-                error[0] = e.getMessage();
+                assertEquals("Cancelling X.509 Context watch", e.getMessage());
                 done.countDown();
             }
         };
         workloadApiClient.watchX509Context(contextWatcher);
-        done.await(5, TimeUnit.SECONDS);
-        assertEquals("Canceling X.509 Context watch", error[0]);
+        done.await();
+    }
+
+    @Test
+    void testWatchX509Bundles_onErrorIsCalledOnWatched() throws InterruptedException {
+        CountDownLatch done = new CountDownLatch(1);
+        Watcher<X509BundleSet> contextWatcher = new Watcher<X509BundleSet>() {
+            @Override
+            public void onUpdate(X509BundleSet update) {
+                fail();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                assertEquals("Cancelling X.509 bundles watch", e.getMessage());
+                done.countDown();
+            }
+        };
+        workloadApiClient.watchX509Bundles(contextWatcher);
+        done.await();
     }
 
     @Test
     void testWatchJwtBundles_onErrorIsCalledOnWatched() throws InterruptedException {
         CountDownLatch done = new CountDownLatch(1);
-        final String[] error = new String[1];
         Watcher<JwtBundleSet> contextWatcher = new Watcher<JwtBundleSet>() {
             @Override
             public void onUpdate(JwtBundleSet update) {
@@ -76,12 +93,11 @@ class DefaultWorkloadApiClientRetryableErrorTest {
 
             @Override
             public void onError(Throwable e) {
-                error[0] = e.getMessage();
+                assertEquals("Cancelling JWT Bundles watch", e.getMessage());
                 done.countDown();
             }
         };
         workloadApiClient.watchJwtBundles(contextWatcher);
-        done.await(5, TimeUnit.SECONDS);
-        assertEquals("Canceling JWT Bundles watch", error[0]);
+        done.await();
     }
 }

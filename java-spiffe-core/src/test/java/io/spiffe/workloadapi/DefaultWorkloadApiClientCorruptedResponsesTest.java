@@ -2,8 +2,10 @@ package io.spiffe.workloadapi;
 
 import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.SpiffeId;
 import org.junit.Rule;
@@ -34,7 +36,7 @@ class DefaultWorkloadApiClientCorruptedResponsesTest {
     }
 
     @Test
-    public void testFetchX509Context_throwsX509ContextException() throws Exception {
+    void testFetchX509Context_throwsX509ContextException() throws Exception {
         try {
             workloadApiClient.fetchX509Context();
             fail();
@@ -44,9 +46,8 @@ class DefaultWorkloadApiClientCorruptedResponsesTest {
     }
 
     @Test
-    public void testWatchX509Context_onErrorIsCalledOnWatcher() throws Exception {
+    void testWatchX509Context_onErrorIsCalledOnWatcher() throws Exception {
         CountDownLatch done = new CountDownLatch(1);
-        final String[] error = new String[1];
         Watcher<X509Context> contextWatcher = new Watcher<X509Context>() {
             @Override
             public void onUpdate(X509Context update) {
@@ -55,13 +56,41 @@ class DefaultWorkloadApiClientCorruptedResponsesTest {
 
             @Override
             public void onError(Throwable e) {
-                error[0] = e.getMessage();
+                assertEquals("Error processing X.509 Context update", e.getMessage());
                 done.countDown();
             }
         };
         workloadApiClient.watchX509Context(contextWatcher);
         done.await();
-        assertEquals("Error processing X.509 Context update", error[0]);
+    }
+
+    @Test
+    void testFetchX509Bundles_throwsX509BundleException() {
+        try {
+            workloadApiClient.fetchX509Bundles();
+            fail();
+        } catch (X509BundleException e) {
+            assertEquals("Error fetching X.509 bundles", e.getMessage());
+        }
+    }
+
+    @Test
+    void testWatchX509Bundles_onErrorIsCalledOnWatched() throws InterruptedException {
+        CountDownLatch done = new CountDownLatch(1);
+        Watcher<X509BundleSet> contextWatcher = new Watcher<X509BundleSet>() {
+            @Override
+            public void onUpdate(X509BundleSet update) {
+                fail();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                assertEquals("Error processing X.509 bundles update", e.getMessage());
+                done.countDown();
+            }
+        };
+        workloadApiClient.watchX509Bundles(contextWatcher);
+        done.await();
     }
 
     @Test
@@ -97,7 +126,6 @@ class DefaultWorkloadApiClientCorruptedResponsesTest {
     @Test
     void testWatchJwtBundles_onErrorIsCalledOnWatched() throws InterruptedException {
         CountDownLatch done = new CountDownLatch(1);
-        final String[] error = new String[1];
         Watcher<JwtBundleSet> contextWatcher = new Watcher<JwtBundleSet>() {
             @Override
             public void onUpdate(JwtBundleSet update) {
@@ -106,12 +134,11 @@ class DefaultWorkloadApiClientCorruptedResponsesTest {
 
             @Override
             public void onError(Throwable e) {
-                error[0] = e.getMessage();
+                assertEquals("Error processing JWT bundles update", e.getMessage());
                 done.countDown();
             }
         };
         workloadApiClient.watchJwtBundles(contextWatcher);
         done.await();
-        assertEquals("Error processing JWT bundles update", error[0]);
     }
 }

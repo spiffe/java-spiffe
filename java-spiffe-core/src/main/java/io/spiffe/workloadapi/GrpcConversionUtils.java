@@ -39,7 +39,7 @@ final class GrpcConversionUtils {
     }
 
     static X509Context toX509Context(final Workload.X509SVIDResponse x509SvidResponse) throws X509ContextException {
-        if (x509SvidResponse.getSvidsList() == null || x509SvidResponse.getSvidsList().size() == 0) {
+        if (x509SvidResponse.getSvidsList() == null || x509SvidResponse.getSvidsList().isEmpty()) {
             throw new X509ContextException("X.509 Context response from the Workload API is empty");
         }
 
@@ -49,16 +49,38 @@ final class GrpcConversionUtils {
         return X509Context.of(x509SvidList, bundleSet);
     }
 
-    static JwtBundleSet toBundleSet(final Iterator<Workload.JWTBundlesResponse> bundlesResponseIterator) throws JwtBundleException {
+    public static X509BundleSet toX509BundleSet(Iterator<Workload.X509BundlesResponse> bundlesResponseIterator) throws X509BundleException {
+        if (!bundlesResponseIterator.hasNext()) {
+            throw new X509BundleException("X.509 Bundle response from the Workload API is empty");
+        }
+
+        val bundlesResponse = bundlesResponseIterator.next();
+        return toX509BundleSet(bundlesResponse);
+    }
+
+    static X509BundleSet toX509BundleSet(final Workload.X509BundlesResponse bundlesResponse) throws X509BundleException {
+        if (bundlesResponse.getBundlesMap().size() == 0) {
+            throw new X509BundleException("X.509 Bundle response from the Workload API is empty");
+        }
+
+        final List<X509Bundle> x509Bundles = new ArrayList<>();
+        for (Map.Entry<String, ByteString> entry : bundlesResponse.getBundlesMap().entrySet()) {
+            X509Bundle x509Bundle = createX509Bundle(entry);
+            x509Bundles.add(x509Bundle);
+        }
+        return X509BundleSet.of(x509Bundles);
+    }
+
+    static JwtBundleSet toJwtBundleSet(final Iterator<Workload.JWTBundlesResponse> bundlesResponseIterator) throws JwtBundleException {
         if (!bundlesResponseIterator.hasNext()) {
             throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
         }
 
         val bundlesResponse = bundlesResponseIterator.next();
-        return toBundleSet(bundlesResponse);
+        return toJwtBundleSet(bundlesResponse);
     }
 
-    static JwtBundleSet toBundleSet(final Workload.JWTBundlesResponse bundlesResponse) throws JwtBundleException {
+    static JwtBundleSet toJwtBundleSet(final Workload.JWTBundlesResponse bundlesResponse) throws JwtBundleException {
         if (bundlesResponse.getBundlesMap().size() == 0) {
             throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
         }
@@ -145,5 +167,11 @@ final class GrpcConversionUtils {
         TrustDomain trustDomain = TrustDomain.of(entry.getKey());
         byte[] bundleBytes = entry.getValue().toByteArray();
         return JwtBundle.parse(trustDomain, bundleBytes);
+    }
+
+    private static X509Bundle createX509Bundle(Map.Entry<String, ByteString> bundleEntry) throws X509BundleException {
+        TrustDomain trustDomain = TrustDomain.of(bundleEntry.getKey());
+        byte[] bundleBytes = bundleEntry.getValue().toByteArray();
+        return X509Bundle.parse(trustDomain, bundleBytes);
     }
 }

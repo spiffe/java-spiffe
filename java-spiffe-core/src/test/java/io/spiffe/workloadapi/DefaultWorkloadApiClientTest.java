@@ -5,10 +5,12 @@ import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.bundle.x509bundle.X509Bundle;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
@@ -92,7 +94,7 @@ class DefaultWorkloadApiClientTest {
     }
 
     @Test
-    public void testFetchX509Context() throws Exception {
+    void testFetchX509Context() throws Exception {
 
         X509Context x509Context = workloadApiClient.fetchX509Context();
 
@@ -126,7 +128,7 @@ class DefaultWorkloadApiClientTest {
         };
 
         workloadApiClient.watchX509Context(contextWatcher);
-        done.await(1, TimeUnit.SECONDS);
+        done.await();
 
         X509Context update = x509Context[0];
         assertNotNull(update);
@@ -146,6 +148,72 @@ class DefaultWorkloadApiClientTest {
     void testWatchX509ContextNullWatcher_throwsNullPointerException() {
         try {
             workloadApiClient.watchX509Context(null);
+        } catch (NullPointerException e) {
+            assertEquals("watcher is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testFetchX509Bundles() {
+
+        X509BundleSet x509BundleSet = null;
+        try {
+            x509BundleSet = workloadApiClient.fetchX509Bundles();
+        } catch (X509BundleException e) {
+            fail(e);
+        }
+
+        assertNotNull(x509BundleSet);
+        try {
+            X509Bundle bundle = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            assertNotNull(bundle);
+
+            X509Bundle otherBundle = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            assertNotNull(otherBundle);
+        } catch (BundleNotFoundException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testWatchX509Bundles() throws InterruptedException {
+        CountDownLatch done = new CountDownLatch(1);
+
+        final X509BundleSet[] x509BundleSet = new X509BundleSet[1];
+
+        Watcher<X509BundleSet> x509BundleSetWatcher = new Watcher<X509BundleSet>() {
+            @Override
+            public void onUpdate(X509BundleSet update) {
+                x509BundleSet[0] = update;
+                done.countDown();
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+            }
+        };
+
+        workloadApiClient.watchX509Bundles(x509BundleSetWatcher);
+        done.await();
+
+        X509BundleSet update = x509BundleSet[0];
+        assertNotNull(update);
+        try {
+            X509Bundle bundle1 = update.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            assertNotNull(bundle1);
+
+            X509Bundle bundle2 = update.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            assertNotNull(bundle2);
+        } catch (BundleNotFoundException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testWatchX509BundlesNullWatcher_throwsNullPointerException() {
+        try {
+            workloadApiClient.watchX509Bundles(null);
         } catch (NullPointerException e) {
             assertEquals("watcher is marked non-null but is null", e.getMessage());
         }
@@ -289,7 +357,7 @@ class DefaultWorkloadApiClientTest {
         };
 
         workloadApiClient.watchJwtBundles(jwtBundleSetWatcher);
-        done.await(1, TimeUnit.SECONDS);
+        done.await();
 
         JwtBundleSet update = jwtBundleSet[0];
         assertNotNull(update);
@@ -303,7 +371,7 @@ class DefaultWorkloadApiClientTest {
     }
 
     @Test
-    void testWatchSvidBundlesNullWatcher_throwsNullPointerException() {
+    void testWatchJwtBundlesNullWatcher_throwsNullPointerException() {
         try {
             workloadApiClient.watchJwtBundles(null);
         } catch (NullPointerException e) {
