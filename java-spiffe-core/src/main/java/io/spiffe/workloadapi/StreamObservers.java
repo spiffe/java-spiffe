@@ -4,7 +4,9 @@ import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import io.spiffe.workloadapi.grpc.Workload;
@@ -18,6 +20,7 @@ import java.util.logging.Level;
 final class StreamObservers {
 
     private static final String INVALID_ARGUMENT = "INVALID_ARGUMENT";
+    private static final String STREAM_IS_COMPLETED = "Workload API stream is completed";
 
     private StreamObservers() {
     }
@@ -48,7 +51,7 @@ final class StreamObservers {
 
             private void handleWatchX509ContextError(final Throwable t) {
                 if (isErrorNotRetryable(t)) {
-                    watcher.onError(new X509ContextException("Canceling X.509 Context watch", t));
+                    watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
                 } else {
                     handleX509ContextRetry(t);
                 }
@@ -62,14 +65,66 @@ final class StreamObservers {
                                     () -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(),
                                             this)));
                 } else {
-                    watcher.onError(new X509ContextException("Canceling X.509 Context watch", t));
+                    watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
                 }
             }
 
             @Override
             public void onCompleted() {
                 cancellableContext.close();
-                log.info("Workload API stream is completed");
+                log.info(STREAM_IS_COMPLETED);
+            }
+        };
+    }
+
+    static StreamObserver<Workload.X509BundlesResponse> getX509BundlesStreamObserver(
+            final Watcher<X509BundleSet> watcher,
+            final RetryHandler retryHandler,
+            final Context.CancellableContext cancellableContext,
+            final SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadApiAsyncStub) {
+
+        return new StreamObserver<Workload.X509BundlesResponse>() {
+            @Override
+            public void onNext(final Workload.X509BundlesResponse value) {
+                try {
+                    val x509Context = GrpcConversionUtils.toX509BundleSet(value);
+                    watcher.onUpdate(x509Context);
+                    retryHandler.reset();
+                } catch (X509BundleException e) {
+                    watcher.onError(new X509ContextException("Error processing X.509 bundles update", e));
+                }
+            }
+
+            @Override
+            public void onError(final Throwable t) {
+                log.log(Level.SEVERE, "X.509 bundles observer error", t);
+                handleWatchX509BundlesError(t);
+            }
+
+            private void handleWatchX509BundlesError(final Throwable t) {
+                if (isErrorNotRetryable(t)) {
+                    watcher.onError(new X509ContextException("Cancelling X.509 bundles watch", t));
+                } else {
+                    handleX509BundlesRetry(t);
+                }
+            }
+
+            private void handleX509BundlesRetry(Throwable t) {
+                if (retryHandler.shouldRetry()) {
+                    log.log(Level.INFO, "Retrying connecting to Workload API to register X.509 bundles watcher");
+                    retryHandler.scheduleRetry(() ->
+                            cancellableContext.run(
+                                    () -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(),
+                                            this)));
+                } else {
+                    watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
+                }
+            }
+
+            @Override
+            public void onCompleted() {
+                cancellableContext.close();
+                log.info(STREAM_IS_COMPLETED);
             }
         };
     }
@@ -84,7 +139,7 @@ final class StreamObservers {
             @Override
             public void onNext(final Workload.JWTBundlesResponse value) {
                 try {
-                    val jwtBundleSet = GrpcConversionUtils.toBundleSet(value);
+                    val jwtBundleSet = GrpcConversionUtils.toJwtBundleSet(value);
                     watcher.onUpdate(jwtBundleSet);
                     retryHandler.reset();
                 } catch (JwtBundleException e) {
@@ -100,7 +155,7 @@ final class StreamObservers {
 
             private void handleWatchJwtBundleError(final Throwable t) {
                 if (isErrorNotRetryable(t)) {
-                    watcher.onError(new JwtBundleException("Canceling JWT Bundles watch", t));
+                    watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
                 } else {
                     handleJwtBundleRetry(t);
                 }
@@ -113,14 +168,14 @@ final class StreamObservers {
                             cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(),
                                     this)));
                 } else {
-                    watcher.onError(new JwtBundleException("Canceling JWT Bundles watch", t));
+                    watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
                 }
             }
 
             @Override
             public void onCompleted() {
                 cancellableContext.close();
-                log.info("Workload API stream is completed");
+                log.info(STREAM_IS_COMPLETED);
             }
         };
     }
@@ -131,6 +186,10 @@ final class StreamObservers {
 
     private static Workload.X509SVIDRequest newX509SvidRequest() {
         return Workload.X509SVIDRequest.newBuilder().build();
+    }
+
+    private static Workload.X509BundlesRequest newX509BundlesRequest() {
+        return Workload.X509BundlesRequest.newBuilder().build();
     }
 
     private static Workload.JWTBundlesRequest newJwtBundlesRequest() {

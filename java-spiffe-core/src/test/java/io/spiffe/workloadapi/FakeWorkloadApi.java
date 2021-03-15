@@ -81,6 +81,29 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
         }
     }
 
+    @Override
+    public void fetchX509Bundles(Workload.X509BundlesRequest request, StreamObserver<Workload.X509BundlesResponse> responseObserver) {
+        try {
+            Path pathBundle = Paths.get(toUri(x509Bundle));
+            byte[] bundleBytes = Files.readAllBytes(pathBundle);
+            ByteString bundleByteString = ByteString.copyFrom(bundleBytes);
+
+            Path pathFederateBundle = Paths.get(toUri(federatedBundle));
+            byte[] federatedBundleBytes = Files.readAllBytes(pathFederateBundle);
+            ByteString federatedByteString = ByteString.copyFrom(federatedBundleBytes);
+
+            Workload.X509BundlesResponse response = Workload.X509BundlesResponse
+                    .newBuilder()
+                    .putBundles(TrustDomain.of("example.org").getName(), bundleByteString)
+                    .putBundles(TrustDomain.of("domain.test").getName(), federatedByteString)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (URISyntaxException | IOException e) {
+            throw new Error("Failed FakeSpiffeWorkloadApiService.fetchX509Bundles", e);
+        }
+    }
 
     @Override
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {

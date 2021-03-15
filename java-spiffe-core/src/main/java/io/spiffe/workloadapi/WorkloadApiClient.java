@@ -1,8 +1,10 @@
 package io.spiffe.workloadapi;
 
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.jwtsvid.JwtSvid;
@@ -35,6 +37,25 @@ public interface WorkloadApiClient extends Closeable {
      * @param watcher an instance that implements a {@link Watcher}.
      */
     void watchX509Context(@NonNull Watcher<X509Context> watcher);
+
+    /**
+     * Fetches the X.509 bundles on a one-shot blocking call.
+     *
+     * @return an instance of a {@link X509BundleSet} containing the X.509 bundles keyed by TrustDomain
+     * @throws X509BundleException if there is an error fetching or processing the X.509 bundles
+     */
+    X509BundleSet fetchX509Bundles() throws X509BundleException;
+
+    /**
+     * Watches for X.509 bundles updates.
+     * <p>
+     * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
+     * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
+     * the next update.
+     *
+     * @param watcher an instance that implements a {@link Watcher} for {@link X509BundleSet}.
+     */
+    void watchX509Bundles(@NonNull Watcher<X509BundleSet> watcher);
 
     /**
      * Fetches a SPIFFE JWT-SVID on one-shot blocking call.

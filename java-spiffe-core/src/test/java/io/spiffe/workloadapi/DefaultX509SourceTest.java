@@ -141,7 +141,7 @@ class DefaultX509SourceTest {
     }
 
     @Test
-    void newSource_errorFetchingJwtBundles() {
+    void newSource_errorFetchingX509Context() {
         val options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
