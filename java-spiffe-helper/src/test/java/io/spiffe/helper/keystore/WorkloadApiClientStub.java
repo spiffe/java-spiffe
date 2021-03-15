@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class WorkloadApiClientStub implements WorkloadApiClient {
@@ -39,6 +40,17 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     @Override
     public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
         val update = generateX509Context();
+        watcher.onUpdate(update);
+    }
+
+    @Override
+    public X509BundleSet fetchX509Bundles() throws X509BundleException {
+        return getX509BundleSet();
+    }
+
+    @Override
+    public void watchX509Bundles(@NonNull Watcher<X509BundleSet> watcher) {
+        val update = getX509BundleSet();
         watcher.onUpdate(update);
     }
 
@@ -83,6 +95,18 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
             return X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
+        } catch (IOException | X509BundleException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private X509BundleSet getX509BundleSet() {
+        try {
+            Path pathBundle = Paths.get(toUri(x509Bundle));
+            byte[] bundleBytes = Files.readAllBytes(pathBundle);
+            val bundle1 = X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
+            val bundle2 = X509Bundle.parse(TrustDomain.of("domain.test"), bundleBytes);
+            return X509BundleSet.of(Arrays.asList(bundle1, bundle2));
         } catch (IOException | X509BundleException e) {
             throw new RuntimeException(e);
         }

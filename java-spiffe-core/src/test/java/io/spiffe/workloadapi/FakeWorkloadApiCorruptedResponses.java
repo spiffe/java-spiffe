@@ -48,6 +48,25 @@ class FakeWorkloadApiCorruptedResponses extends SpiffeWorkloadAPIImplBase {
         }
     }
 
+    @Override
+    public void fetchX509Bundles(Workload.X509BundlesRequest request, StreamObserver<Workload.X509BundlesResponse> responseObserver) {
+        Path pathBundle = null;
+        try {
+            pathBundle = Paths.get(toUri(corrupted));
+            byte[] bundleBytes = Files.readAllBytes(pathBundle);
+            ByteString corruptedByteString = ByteString.copyFrom(bundleBytes);
+
+            Workload.X509BundlesResponse response = Workload.X509BundlesResponse
+                    .newBuilder()
+                    .putBundles("example.org", corruptedByteString)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (URISyntaxException | IOException e) {
+            throw new Error("Failed FakeSpiffeWorkloadApiService.fetchX509Bundles", e);
+        }
+    }
 
     @Override
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {

@@ -2,9 +2,11 @@ package io.spiffe.workloadapi;
 
 import io.grpc.Context;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.jwtsvid.JwtSvid;
@@ -37,6 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 import static io.spiffe.workloadapi.StreamObservers.getJwtBundleStreamObserver;
+import static io.spiffe.workloadapi.StreamObservers.getX509BundlesStreamObserver;
 import static io.spiffe.workloadapi.StreamObservers.getX509ContextStreamObserver;
 
 /**
@@ -184,6 +187,33 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
+    public X509BundleSet fetchX509Bundles() throws X509BundleException {
+        try (val cancellableContext = Context.current().withCancellation()) {
+            return cancellableContext.call(this::callFetchX509Bundles);
+        } catch (Exception e) {
+            throw new X509BundleException("Error fetching X.509 bundles", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void watchX509Bundles(@NonNull final Watcher<X509BundleSet> watcher) {
+        val retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+        val cancellableContext = Context.current().withCancellation();
+
+        val streamObserver =
+                getX509BundlesStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+
+        cancellableContext.run(() -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(), streamObserver));
+        this.cancellableContexts.add(cancellableContext);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public JwtSvid fetchJwtSvid(@NonNull String audience, String... extraAudience) throws JwtSvidException {
         final Set<String> audParam = createAudienceSet(audience, extraAudience);
         try (val cancellableContext = Context.current().withCancellation()) {
@@ -289,6 +319,11 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         return GrpcConversionUtils.toX509Context(x509SvidResponse);
     }
 
+    private X509BundleSet callFetchX509Bundles() throws X509BundleException {
+        val x509BundlesResponse = workloadApiBlockingStub.fetchX509Bundles(newX509BundlesRequest());
+        return GrpcConversionUtils.toX509BundleSet(x509BundlesResponse);
+    }
+
     private JwtSvid callFetchJwtSvid(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
         val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
@@ -307,7 +342,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     }
 
     private JwtSvid processJwtSvidResponse(Workload.JWTSVIDResponse response, Set<String> audience) throws JwtSvidException {
-        if (response.getSvidsList() == null || response.getSvidsList().size() == 0) {
+        if (response.getSvidsList() == null || response.getSvidsList().isEmpty()) {
             throw new JwtSvidException("JWT SVID response from the Workload API is empty");
         }
         return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
@@ -316,7 +351,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     private JwtBundleSet callFetchBundles() throws JwtBundleException {
         val request = Workload.JWTBundlesRequest.newBuilder().build();
         val bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
-        return GrpcConversionUtils.toBundleSet(bundlesResponse);
+        return GrpcConversionUtils.toJwtBundleSet(bundlesResponse);
     }
 
     private Set<String> createAudienceSet(final String audience, final String[] extraAudience) {
@@ -328,6 +363,10 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
 
     private Workload.X509SVIDRequest newX509SvidRequest() {
         return Workload.X509SVIDRequest.newBuilder().build();
+    }
+
+    private Workload.X509BundlesRequest newX509BundlesRequest() {
+        return Workload.X509BundlesRequest.newBuilder().build();
     }
 
     private Workload.JWTBundlesRequest newJwtBundlesRequest() {

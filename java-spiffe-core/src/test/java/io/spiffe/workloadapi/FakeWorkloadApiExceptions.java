@@ -21,6 +21,11 @@ class FakeWorkloadApiExceptions extends SpiffeWorkloadAPIImplBase {
     }
 
     @Override
+    public void fetchX509Bundles(Workload.X509BundlesRequest request, StreamObserver<Workload.X509BundlesResponse> responseObserver) {
+        responseObserver.onError(exception);
+    }
+
+    @Override
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {
         responseObserver.onError(exception);
     }
