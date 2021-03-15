@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -155,7 +154,6 @@ class DefaultWorkloadApiClientTest {
 
     @Test
     void testFetchX509Bundles() {
-
         X509BundleSet x509BundleSet = null;
         try {
             x509BundleSet = workloadApiClient.fetchX509Bundles();
@@ -186,7 +184,6 @@ class DefaultWorkloadApiClientTest {
             public void onUpdate(X509BundleSet update) {
                 x509BundleSet[0] = update;
                 done.countDown();
-
             }
 
             @Override

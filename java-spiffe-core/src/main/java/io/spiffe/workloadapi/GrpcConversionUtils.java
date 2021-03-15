@@ -59,11 +59,12 @@ final class GrpcConversionUtils {
     }
 
     static X509BundleSet toX509BundleSet(final Workload.X509BundlesResponse bundlesResponse) throws X509BundleException {
-        if (bundlesResponse.getBundlesMap().size() == 0) {
+        val bundlesCount = bundlesResponse.getBundlesCount();
+        if (bundlesCount == 0) {
             throw new X509BundleException("X.509 Bundle response from the Workload API is empty");
         }
 
-        final List<X509Bundle> x509Bundles = new ArrayList<>();
+        final List<X509Bundle> x509Bundles = new ArrayList<>(bundlesCount);
         for (Map.Entry<String, ByteString> entry : bundlesResponse.getBundlesMap().entrySet()) {
             X509Bundle x509Bundle = createX509Bundle(entry);
             x509Bundles.add(x509Bundle);

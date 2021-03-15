@@ -105,7 +105,7 @@ class GrpcConversionUtilsTest {
 
     @Test
     void test_toX509BundleSet_fromEmptyIterator() {
-        final Iterator<Workload.X509BundlesResponse> iterator = Collections.EMPTY_LIST.iterator();
+        final Iterator<Workload.X509BundlesResponse> iterator = Collections.emptyListIterator();
         try {
             GrpcConversionUtils.toX509BundleSet(iterator);
             fail();
