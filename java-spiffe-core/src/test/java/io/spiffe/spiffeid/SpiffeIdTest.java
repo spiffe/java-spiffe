@@ -186,4 +186,14 @@ class SpiffeIdTest {
             fail(e);
         }
     }
+
+    @Test
+    void test_parseEncodedPath_throws_Exception() {
+        try {
+            SpiffeId.parse("spiffe://bar/%61dmin");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("SPIFFE ID: encoded path is not allowed", e.getMessage());
+        }
+    }
 }

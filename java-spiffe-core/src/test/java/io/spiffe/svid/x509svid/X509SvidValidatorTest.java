@@ -10,8 +10,6 @@ import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -24,18 +22,20 @@ import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class X509SvidValidatorTest {
+class X509SvidValidatorTest {
 
     List<X509Certificate> chain;
     CertAndKeyPair rootCa;
     CertAndKeyPair otherRootCa;
+    CertAndKeyPair intermediate1;
+    CertAndKeyPair intermediate2;
     CertAndKeyPair leaf;
 
     @BeforeEach
     void setUp() throws Exception {
         rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org" );
-        val intermediate1 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE",  "spiffe://example.org/host", rootCa, true);
-        val intermediate2 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://example.org/host2", intermediate1, true);
+        intermediate1 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE",  "spiffe://example.org/host", rootCa, true);
+        intermediate2 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://example.org/host2", intermediate1, true);
         leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://example.org/test", intermediate2, false);
         chain = Arrays.asList(leaf.getCertificate(), intermediate2.getCertificate(), intermediate1.getCertificate());
         otherRootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org" );
@@ -81,7 +81,7 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void verifySpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException, URISyntaxException {
+    void verifySpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws CertificateException {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
@@ -91,7 +91,7 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void verifySpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
+    void verifySpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() {
         val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
         val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
         val spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
@@ -101,6 +101,19 @@ public class X509SvidValidatorTest {
             fail("Should have thrown CertificateException");
         } catch (CertificateException e) {
             assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
+        }
+    }
+
+    @Test
+    void verifySpiffeId_givenAnEncodedSpiffeId_throwsCertificateException() throws Exception {
+        val trustedSpiffeIds = Sets.newHashSet(SpiffeId.parse("spiffe://example.org/admin"));
+        val malicious = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://example.org/%61dmin", intermediate2, false);
+
+        try {
+            X509SvidValidator.verifySpiffeId(malicious.getCertificate(), () -> trustedSpiffeIds);
+            fail("Should have thrown CertificateException");
+        } catch (CertificateException e) {
+            assertEquals("Certificate contains an invalid SPIFFE ID in the URI SAN", e.getMessage());
         }
     }
 
@@ -126,7 +139,7 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void checkSpiffeId_nullAcceptedSpiffeIdsSuppplier_throwsNullPointerException() throws CertificateException, URISyntaxException, IOException {
+    void checkSpiffeId_nullAcceptedSpiffeIdsSuppplier_throwsNullPointerException() throws CertificateException {
         try {
             X509SvidValidator.verifySpiffeId(leaf.getCertificate(), null);
             fail("should have thrown an exception");
@@ -146,7 +159,7 @@ public class X509SvidValidatorTest {
     }
 
     @Test
-    void verifyChain_nullBundleSource_throwsNullPointerException() throws CertificateException, BundleNotFoundException, URISyntaxException, IOException {
+    void verifyChain_nullBundleSource_throwsNullPointerException() throws CertificateException, BundleNotFoundException {
         try {
             X509SvidValidator.verifyChain(chain, null);
             fail("should have thrown an exception");

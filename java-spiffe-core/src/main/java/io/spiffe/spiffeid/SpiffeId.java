@@ -131,6 +131,12 @@ public class SpiffeId {
             throw new IllegalArgumentException("SPIFFE ID: query is not allowed");
         }
 
+        final String rawPath = uri.getRawPath();
+        // if raw path != decoded path
+        if (StringUtils.isNotBlank(rawPath) && !rawPath.equals(uri.getPath())) {
+            throw new IllegalArgumentException("SPIFFE ID: encoded path is not allowed");
+        }
+
         return uri;
     }
 }

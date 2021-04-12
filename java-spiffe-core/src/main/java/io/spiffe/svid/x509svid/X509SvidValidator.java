@@ -73,7 +73,7 @@ public final class X509SvidValidator {
         if (!spiffeIdSet.contains(spiffeId)) {
             val error = String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId);
             log.warning(String.format("Client SPIFFE ID validation failed: %s", error));
-            throw new CertificateException(String.format(error, spiffeId));
+            throw new CertificateException(error);
         }
     }
 }

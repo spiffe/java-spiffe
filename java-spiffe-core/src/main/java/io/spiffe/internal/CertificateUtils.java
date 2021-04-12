@@ -131,7 +131,11 @@ public class CertificateUtils {
             throw new CertificateException("Certificate does not contain SPIFFE ID in the URI SAN");
         }
 
-        return SpiffeId.parse(spiffeIds.get(0));
+        try {
+            return SpiffeId.parse(spiffeIds.get(0));
+        } catch (IllegalArgumentException e) {
+            throw new CertificateException("Certificate contains an invalid SPIFFE ID in the URI SAN", e);
+        }
     }
 
     /**
