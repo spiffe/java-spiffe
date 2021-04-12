@@ -19,7 +19,7 @@ subprojects {
         jupiterVersion = '5.7.0'
         mockitoVersion = '3.5.15'
         lombokVersion = '1.18.16'
-        nimbusVersion = '9.7'
+        nimbusVersion = '9.8.1'
     }
 
     apply plugin: 'java-library'
