@@ -40,12 +40,13 @@ class X509SvidTest {
     static String corrupted = "testdata/x509svid/corrupted";
     static String keyDER = "testdata/x509svid/keyEC.der";
     static String certDER = "testdata/x509svid/cert.der";
+    static String certMalformedId = "testdata/x509svid/cert-malformed-spiffeid.pem";
 
     static Stream<Arguments> provideX509SvidScenarios() {
         return Stream.of(
                 Arguments.of(TestCase
                         .builder()
-                        .name("1. Single certificate and key")
+                        .name("Single certificate and key")
                         .certsPath(certSingle)
                         .keyPath(keyRSA)
                         .expectedSpiffeId(SpiffeId.of(TrustDomain.of("example.org"), "workload-1"))
@@ -55,7 +56,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("2. Certificate with intermediate and key")
+                        .name("Certificate with intermediate and key")
                         .certsPath(certMultiple)
                         .keyPath(keyECDSA)
                         .expectedSpiffeId(SpiffeId.of(TrustDomain.of("example.org"), "workload-1"))
@@ -65,7 +66,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("3. Missing certificate")
+                        .name("Missing certificate")
                         .certsPath(keyRSA)
                         .keyPath(keyRSA)
                         .expectedError("Certificate could not be parsed from cert bytes")
@@ -73,7 +74,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("4. Missing key")
+                        .name("Missing key")
                         .certsPath(certSingle)
                         .keyPath(certSingle)
                         .expectedError("Private Key could not be parsed from key bytes")
@@ -81,7 +82,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("5. Corrupted private key")
+                        .name("Corrupted private key")
                         .certsPath(certSingle)
                         .keyPath(corrupted)
                         .expectedError("Private Key could not be parsed from key bytes")
@@ -89,7 +90,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("6. Corrupted certificate")
+                        .name("Corrupted certificate")
                         .certsPath(corrupted)
                         .keyPath(keyRSA)
                         .expectedError("Certificate could not be parsed from cert bytes")
@@ -97,7 +98,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("7. Certificate without SPIFFE ID")
+                        .name("Certificate without SPIFFE ID")
                         .certsPath(leafEmptyID)
                         .keyPath(keyRSA)
                         .expectedError("Certificate does not contain SPIFFE ID in the URI SAN")
@@ -105,7 +106,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("8. Leaf certificate with CA flag set to true")
+                        .name("Leaf certificate with CA flag set to true")
                         .certsPath(leafCAtrue)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must not have CA flag set to true")
@@ -113,7 +114,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("9. Leaf certificate without digitalSignature as key usage")
+                        .name("Leaf certificate without digitalSignature as key usage")
                         .certsPath(leafNoDigitalSignature)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must have 'digitalSignature' as key usage")
@@ -121,7 +122,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("10. Leaf certificate with certSign as key usage")
+                        .name("Leaf certificate with certSign as key usage")
                         .certsPath(leafCertSign)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must not have 'keyCertSign' as key usage")
@@ -129,7 +130,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("11. Leaf certificate with cRLSign as key usage")
+                        .name("Leaf certificate with cRLSign as key usage")
                         .certsPath(leafCRLSign)
                         .keyPath(keyRSA)
                         .expectedError("Leaf certificate must not have 'cRLSign' as key usage")
@@ -137,7 +138,7 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("12. Signing certificate without CA flag")
+                        .name("Signing certificate without CA flag")
                         .certsPath(signNoCA)
                         .keyPath(keyRSA)
                         .expectedError("Signing certificate must have CA flag set to true")
@@ -145,10 +146,18 @@ class X509SvidTest {
                 ),
                 Arguments.of(TestCase
                         .builder()
-                        .name("13. Signing certificate without CA flag")
+                        .name("Signing certificate without CA flag")
                         .certsPath(signNoKeyCertSign)
                         .keyPath(keyRSA)
                         .expectedError("Signing certificate must have 'keyCertSign' as key usage")
+                        .build()
+                ),
+                Arguments.of(TestCase
+                        .builder()
+                        .name("Certificate with malformed SpiffeId in the URI SAN")
+                        .certsPath(certMalformedId)
+                        .keyPath(keyRSA)
+                        .expectedError("Certificate contains an invalid SPIFFE ID in the URI SAN")
                         .build()
                 )
         );
