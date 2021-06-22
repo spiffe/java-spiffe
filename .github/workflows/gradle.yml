@@ -30,6 +30,8 @@ jobs:
       - name: Build with Gradle and generate the artifacts
         run: ./gradlew assemble test
       - name: Generate and upload coverage report
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.CoverallsRepoToken }}
         run: ./gradlew jacocoTestReport coveralls
       - uses: actions/upload-artifact@v2
         with:
