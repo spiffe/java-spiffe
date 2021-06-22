@@ -31,7 +31,6 @@ jobs:
         run: ./gradlew assemble test
       - name: Generate and upload coverage report
         env:
-          CI_NAME: 'other'
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         run: ./gradlew build jacocoTestReport coveralls
       - uses: actions/upload-artifact@v2
