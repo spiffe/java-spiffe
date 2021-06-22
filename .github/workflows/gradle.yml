@@ -7,16 +7,16 @@ on:
     branches: [ main ]
 
 jobs:
-  build-on-linux-jdk16:
+  build-test-and-coverage-on-linux:
 
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 16
+      - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '16 '
+          java-version: '16'
           distribution: 'adopt'
       - name: Cache Gradle packages
         uses: actions/cache@v2
@@ -29,46 +29,78 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Build with Gradle and generate the artifacts
         run: ./gradlew assemble test
+      - name: Generate and upload coverage report
+        run: ./gradlew jacocoTestReport coveralls
       - uses: actions/upload-artifact@v2
         with:
           name: Package
           path: build/libs
+      - name: Cleanup Gradle Cache
+          # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
+          # Restoring these files from a GitHub Actions cache might cause problems for future builds.
+          run: |
+            rm -f ~/.gradle/caches/modules-2/modules-2.lock
+            rm -f ~/.gradle/caches/modules-2/gc.properties
 
-  build-on-linux-jdk11:
+  test-on-linux:
+
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 8, 11 ]
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '11'
+          java-version: ${{ matrix.java-version }}
           distribution: 'adopt'
-      - name: Build with Gradle
-        run: ./gradlew build
-
-  build-on-linux-jdk8:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 8
-        uses: actions/setup-java@v2
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
         with:
-          java-version: '8'
-          distribution: 'adopt'
-      - name: Build with Gradle
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Build with Gradle and generate the artifacts
         run: ./gradlew build
+      - name: Cleanup Gradle Cache
+          # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
+          # Restoring these files from a GitHub Actions cache might cause problems for future builds.
+          run: |
+            rm -f ~/.gradle/caches/modules-2/modules-2.lock
 
-  build-on-macos-jdk11:
+  test-on-macos:
+
     runs-on: macos-latest
+    strategy:
+      matrix:
+        java-version: [ 8, 11, 14] # macos-latest at his point doesn't have java 16 installed
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '11'
+          java-version: ${{ matrix.java-version }}
           distribution: 'adopt'
-      - name: Build with Gradle
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Build with Gradle and generate the artifacts
         run: ./gradlew build
+      - name: Cleanup Gradle Cache
+          # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
+          # Restoring these files from a GitHub Actions cache might cause problems for future builds.
+          run: |
+            rm -f ~/.gradle/caches/modules-2/modules-2.lock
+            rm -f ~/.gradle/caches/modules-2/gc.properties
