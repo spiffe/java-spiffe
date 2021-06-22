@@ -72,6 +72,7 @@ jobs:
           # Restoring these files from a GitHub Actions cache might cause problems for future builds.
           run: |
             rm -f ~/.gradle/caches/modules-2/modules-2.lock
+            rm -f ~/.gradle/caches/modules-2/gc.properties
 
   test-on-macos:
 

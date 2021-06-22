@@ -1,6 +1,6 @@
 # Java SPIFFE Library
 
-<a href='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'><img src='https://travis-ci.org/spiffe/java-spiffe.svg?branch=master'></a>
+[![continuous-integration](https://github.com/spiffe/java-spiffe/actions/workflows/gradle.yml/badge.svg)](https://github.com/spiffe/java-spiffe/actions/workflows/gradle.yml)
 [![Coverage Status](https://coveralls.io/repos/github/spiffe/java-spiffe/badge.svg)](https://coveralls.io/github/spiffe/java-spiffe?branch=master)
 
 ## Overview
