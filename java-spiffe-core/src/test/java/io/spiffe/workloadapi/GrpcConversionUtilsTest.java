@@ -1,7 +1,6 @@
 package io.spiffe.workloadapi;
 
 import com.google.protobuf.ByteString;
-import io.grpc.stub.StreamObserver;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
@@ -19,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Set;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,7 +52,7 @@ class GrpcConversionUtilsTest {
     @Test
     void test_parseX509Bundle_corruptedBytes() {
         try {
-            GrpcConversionUtils.parseX509Bundle(TrustDomain.of("example.org"), "corrupted".getBytes());
+            GrpcConversionUtils.parseX509Bundle(TrustDomain.parse("example.org"), "corrupted".getBytes());
         } catch (X509ContextException e) {
             assertEquals("X.509 Bundles could not be processed", e.getMessage());
         }
@@ -66,8 +64,8 @@ class GrpcConversionUtilsTest {
 
         try {
             X509BundleSet x509BundleSet = GrpcConversionUtils.toX509BundleSet(response);
-            X509Bundle bundle1 = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
-            X509Bundle bundle2 = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            X509Bundle bundle1 = x509BundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org"));
+            X509Bundle bundle2 = x509BundleSet.getBundleForTrustDomain(TrustDomain.parse("domain.test"));
             assertEquals(1, bundle1.getX509Authorities().size());
             assertEquals(1, bundle2.getX509Authorities().size());
         } catch (X509BundleException | BundleNotFoundException e) {
@@ -82,8 +80,8 @@ class GrpcConversionUtilsTest {
 
         try {
             X509BundleSet x509BundleSet = GrpcConversionUtils.toX509BundleSet(iterator);
-            X509Bundle bundle1 = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
-            X509Bundle bundle2 = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            X509Bundle bundle1 = x509BundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org"));
+            X509Bundle bundle2 = x509BundleSet.getBundleForTrustDomain(TrustDomain.parse("domain.test"));
             assertEquals(1, bundle1.getX509Authorities().size());
             assertEquals(1, bundle2.getX509Authorities().size());
         } catch (X509BundleException | BundleNotFoundException e) {
@@ -126,8 +124,8 @@ class GrpcConversionUtilsTest {
 
         return Workload.X509BundlesResponse
                 .newBuilder()
-                .putBundles(TrustDomain.of("example.org").getName(), bundleByteString)
-                .putBundles(TrustDomain.of("domain.test").getName(), federatedByteString)
+                .putBundles(TrustDomain.parse("example.org").getName(), bundleByteString)
+                .putBundles(TrustDomain.parse("domain.test").getName(), federatedByteString)
                 .build();
     }
 }

@@ -48,7 +48,7 @@ public class KeyStoreTest {
                 Paths.get(toUri("testdata/svid.key")));
 
         x509Bundle = X509Bundle.load(
-                TrustDomain.of("spiffe://example.org"),
+                TrustDomain.parse("spiffe://example.org"),
                 Paths.get(toUri("testdata/bundle.pem")));
     }
 

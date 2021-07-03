@@ -113,7 +113,7 @@ final class GrpcConversionUtils {
         // Process federated bundles
         Set<Map.Entry<String, ByteString>> federatedBundles = x509SvidResponse.getFederatedBundlesMap().entrySet();
         for (Map.Entry<String, ByteString> bundleEntry : federatedBundles) {
-            TrustDomain trustDomain = TrustDomain.of(bundleEntry.getKey());
+            TrustDomain trustDomain = TrustDomain.parse(bundleEntry.getKey());
             byte[] bundleBytes = bundleEntry.getValue().toByteArray();
             val bundle = parseX509Bundle(trustDomain, bundleBytes);
             x509BundleList.add(bundle);
@@ -165,13 +165,13 @@ final class GrpcConversionUtils {
     }
 
     private static JwtBundle createJwtBundle(Map.Entry<String, ByteString> entry) throws JwtBundleException {
-        TrustDomain trustDomain = TrustDomain.of(entry.getKey());
+        TrustDomain trustDomain = TrustDomain.parse(entry.getKey());
         byte[] bundleBytes = entry.getValue().toByteArray();
         return JwtBundle.parse(trustDomain, bundleBytes);
     }
 
     private static X509Bundle createX509Bundle(Map.Entry<String, ByteString> bundleEntry) throws X509BundleException {
-        TrustDomain trustDomain = TrustDomain.of(bundleEntry.getKey());
+        TrustDomain trustDomain = TrustDomain.parse(bundleEntry.getKey());
         byte[] bundleBytes = bundleEntry.getValue().toByteArray();
         return X509Bundle.parse(trustDomain, bundleBytes);
     }

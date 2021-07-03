@@ -88,8 +88,8 @@ class JwtSvidParseInsecureTest {
     void testParseInsecure_nullAudience_throwsNullPointerException() throws JwtSvidException {
         try {
             KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
-            TrustDomain trustDomain = TrustDomain.of("test.domain");
-            SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+            TrustDomain trustDomain = TrustDomain.parse("test.domain");
+            SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
             Set<String> audience = Collections.singleton("audience");
             Date expiration = new Date(System.currentTimeMillis() + 3600000);
             JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
@@ -105,12 +105,12 @@ class JwtSvidParseInsecureTest {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
 
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
 
-        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
         Set<String> audience = Collections.singleton("audience");
 
@@ -123,7 +123,7 @@ class JwtSvidParseInsecureTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("host"),
+                                trustDomain.newSpiffeId("/host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
@@ -134,7 +134,7 @@ class JwtSvidParseInsecureTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("host"),
+                                trustDomain.newSpiffeId("/host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
@@ -145,7 +145,7 @@ class JwtSvidParseInsecureTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", ""))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("host"),
+                                trustDomain.newSpiffeId("/host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "")))
@@ -156,12 +156,12 @@ class JwtSvidParseInsecureTest {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
 
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
 
-        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
         Set<String> audience = Collections.singleton("audience");
 
