@@ -94,7 +94,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         try {
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            return X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
+            return X509Bundle.parse(TrustDomain.parse("example.org"), bundleBytes);
         } catch (IOException | X509BundleException e) {
             throw new RuntimeException(e);
         }
@@ -104,8 +104,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         try {
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            val bundle1 = X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
-            val bundle2 = X509Bundle.parse(TrustDomain.of("domain.test"), bundleBytes);
+            val bundle1 = X509Bundle.parse(TrustDomain.parse("example.org"), bundleBytes);
+            val bundle2 = X509Bundle.parse(TrustDomain.parse("domain.test"), bundleBytes);
             return X509BundleSet.of(Arrays.asList(bundle1, bundle2));
         } catch (IOException | X509BundleException e) {
             throw new RuntimeException(e);

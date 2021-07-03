@@ -50,7 +50,7 @@ class SpiffeIdUtilsTest {
 
     @Test
     void toSetOfSpiffeIdsDefaultSeparator() {
-        val spiffeIdsAsString = " spiffe://example.org/workload1 | spiffe://example.org/workload2 ";
+        val spiffeIdsAsString = "spiffe://example.org/workload1|spiffe://example.org/workload2";
         val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString);
 
         assertNotNull(spiffeIdSet);
@@ -61,7 +61,7 @@ class SpiffeIdUtilsTest {
 
     @Test
     void toSetOfSpiffeIdsBlankSpaceSeparator() {
-        val spiffeIdsAsString = " spiffe://example.org/workload1 spiffe://example.org/workload2 ";
+        val spiffeIdsAsString = "spiffe://example.org/workload1 spiffe://example.org/workload2";
         val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ' ');
 
         assertNotNull(spiffeIdSet);
@@ -72,7 +72,7 @@ class SpiffeIdUtilsTest {
 
     @Test
     void toSetOfSpiffeIdsInvalidSeparator() {
-        val spiffeIdsAsString = " spiffe://example.org/workload1, spiffe://example.org/workload2 ";
+        val spiffeIdsAsString = "spiffe://example.org/workload1, spiffe://example.org/workload2";
         try {
             SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ',');
             fail();

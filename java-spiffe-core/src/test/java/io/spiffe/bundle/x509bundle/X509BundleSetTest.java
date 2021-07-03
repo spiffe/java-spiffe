@@ -19,8 +19,8 @@ class X509BundleSetTest {
 
     @Test
     void testOf_listOfBundles_Success() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
@@ -57,11 +57,11 @@ class X509BundleSetTest {
 
     @Test
     void testAdd() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
         List<X509Bundle> bundleList = Collections.singletonList(x509Bundle1);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("other.org"));
         bundleSet.put(x509Bundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(x509Bundle1));
@@ -70,7 +70,7 @@ class X509BundleSetTest {
 
     @Test
     void testAdd_sameBundleAgain_noDuplicate() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
         List<X509Bundle> bundleList = Collections.singletonList(x509Bundle1);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
@@ -82,11 +82,11 @@ class X509BundleSetTest {
 
     @Test
     void testAdd_aDifferentBundleForSameTrustDomain_replacesWithNewBundle() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
         List<X509Bundle> bundleList = Collections.singletonList(x509Bundle1);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("example.org"));
         x509Bundle2.addX509Authority(new DummyX509Certificate());
         bundleSet.put(x509Bundle2);
 
@@ -97,7 +97,7 @@ class X509BundleSetTest {
 
     @Test
     void testAdd_nullBundle_throwsNullPointerException() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
         List<X509Bundle> bundleList = Collections.singletonList(x509Bundle1);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
@@ -111,24 +111,24 @@ class X509BundleSetTest {
 
     @Test
     void testgetBundleForTrustDomain_Success() throws BundleNotFoundException {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
-        assertEquals(x509Bundle1, bundleSet.getBundleForTrustDomain(TrustDomain.of("example.org")));
-        assertEquals(x509Bundle2, bundleSet.getBundleForTrustDomain(TrustDomain.of("other.org")));
+        assertEquals(x509Bundle1, bundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org")));
+        assertEquals(x509Bundle2, bundleSet.getBundleForTrustDomain(TrustDomain.parse("other.org")));
     }
 
     @Test
     void testgetBundleForTrustDomain_notFoundTrustDomain() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 
         try {
-            bundleSet.getBundleForTrustDomain(TrustDomain.of("unknown.org"));
+            bundleSet.getBundleForTrustDomain(TrustDomain.parse("unknown.org"));
             fail("expected BundleNotFoundException");
         } catch (BundleNotFoundException e) {
             assertEquals("No X.509 bundle for trust domain unknown.org", e.getMessage());
@@ -137,8 +137,8 @@ class X509BundleSetTest {
 
     @Test
     void testgetBundleForTrustDomain_nullTrustDomain_throwsException() throws BundleNotFoundException {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         X509BundleSet bundleSet = X509BundleSet.of(bundleList);
 

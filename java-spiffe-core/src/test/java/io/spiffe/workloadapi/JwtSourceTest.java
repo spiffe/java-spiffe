@@ -46,9 +46,9 @@ class JwtSourceTest {
     @Test
     void testGetBundleForTrustDomain() {
         try {
-            JwtBundle bundle = jwtSource.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = jwtSource.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
-            assertEquals(TrustDomain.of("example.org"), bundle.getTrustDomain());
+            assertEquals(TrustDomain.parse("example.org"), bundle.getTrustDomain());
         } catch (BundleNotFoundException e) {
             fail(e);
         }
@@ -70,7 +70,7 @@ class JwtSourceTest {
     void testGetBundleForTrustDomain_SourceIsClosed_ThrowsIllegalStateException() throws IOException {
         jwtSource.close();
         try {
-            jwtSource.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            jwtSource.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             fail("expected exception");
         } catch (IllegalStateException e) {
             assertEquals("JWT bundle source is closed", e.getMessage());

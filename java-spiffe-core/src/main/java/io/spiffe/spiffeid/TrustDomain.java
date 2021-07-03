@@ -1,13 +1,15 @@
 package io.spiffe.spiffeid;
 
 
+import io.spiffe.exception.InvalidSpiffeIdException;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+
+import static io.spiffe.spiffeid.SpiffeId.BAD_TRUST_DOMAIN_CHAR;
 
 /**
  * Represents the name of a SPIFFE trust domain (e.g. 'domain.test').
@@ -15,40 +17,37 @@ import java.net.URISyntaxException;
 @Value
 public class TrustDomain {
 
-    public static final int TRUST_DOMAIN_MAXIMUM_LENGTH = 255;
-    static final String MAXIMUM_LENGTH_ERROR_MESSAGE
-            = String.format("Trust domain maximum length is %d bytes", TRUST_DOMAIN_MAXIMUM_LENGTH);
-
     String name;
 
-    private TrustDomain(final String trustDomain) {
+    TrustDomain(final String trustDomain) {
         this.name = trustDomain;
     }
 
     /**
      * Creates a trust domain.
      *
-     * @param trustDomain a trust domain represented as a string, must not be blank.
+     * @param idOrName the name of a Trust Domain or a string representing a SpiffeId.
+     *
      * @return an instance of a {@link TrustDomain}
-     * @throws IllegalArgumentException if the given string is blank or cannot be parsed
+     * @throws IllegalArgumentException if the given string is empty.
+     * @throws InvalidSpiffeIdException if the given string contains an invalid char.
      */
-    public static TrustDomain of(@NonNull final String trustDomain) {
-        if (StringUtils.isBlank(trustDomain)) {
-            throw new IllegalArgumentException("Trust domain cannot be empty");
+    public static TrustDomain parse(@NonNull final String idOrName) {
+
+        if (StringUtils.isBlank(idOrName)) {
+            throw new IllegalArgumentException("Trust domain is missing");
         }
 
-        URI uri;
-        try {
-            val normalized = normalize(trustDomain);
-            uri = new URI(normalized);
-            validateUri(uri);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
+        // Something looks kinda like a scheme separator, let's try to parse as
+        // an ID. We use :/ instead of :// since the diagnostics are better for
+        // a bad input like spiffe:/trustdomain.
+        if (idOrName.contains(":/")) {
+            SpiffeId spiffeId = SpiffeId.parse(idOrName);
+            return spiffeId.getTrustDomain();
         }
 
-        val host = uri.getHost();
-        validateHost(host);
-        return new TrustDomain(host);
+        validateTrustDomainName(idOrName);
+        return new TrustDomain(idOrName);
     }
 
     /**
@@ -56,6 +55,7 @@ public class TrustDomain {
      *
      * @param segments path segments
      * @return a {@link SpiffeId} with the current trust domain and the given path segments
+     * @throws InvalidSpiffeIdException if the given path segments contain invalid chars or empty or dot segments
      */
     public SpiffeId newSpiffeId(final String... segments) {
         return SpiffeId.of(this, segments);
@@ -80,33 +80,23 @@ public class TrustDomain {
         return SpiffeId.SPIFFE_SCHEME + "://" + name;
     }
 
-    private static void validateHost(final String host) {
-        if (StringUtils.isBlank(host)) {
-            throw new IllegalArgumentException("Trust domain cannot be empty");
-        }
-
-        if (host.length() > TRUST_DOMAIN_MAXIMUM_LENGTH) {
-            throw new IllegalArgumentException(MAXIMUM_LENGTH_ERROR_MESSAGE);
+    static void validateTrustDomainName(final String name) {
+        for (char c : name.toCharArray()) {
+            if (!isValidTrustDomainChar(c)) {
+                throw new InvalidSpiffeIdException(BAD_TRUST_DOMAIN_CHAR);
+            }
         }
     }
 
-    private static void validateUri(final URI uri) {
-        val scheme = uri.getScheme();
-        if (!SpiffeId.SPIFFE_SCHEME.equals(scheme)) {
-            throw new IllegalArgumentException("Invalid scheme");
+    static boolean isValidTrustDomainChar(char c) {
+        if (c >= 'a' && c <= 'z') {
+            return true;
         }
 
-        val port = uri.getPort();
-        if (port != -1) {
-            throw new IllegalArgumentException("Trust Domain: port is not allowed");
+        if (c >= '0' && c <= '9') {
+            return true;
         }
-    }
 
-    private static String normalize(final String s) {
-        String result = s.toLowerCase().trim();
-        if (!result.contains("://")) {
-            result = SpiffeId.SPIFFE_SCHEME.concat("://").concat(result);
-        }
-        return result;
+        return c == '-' || c == '.' || c == '_';
     }
 }

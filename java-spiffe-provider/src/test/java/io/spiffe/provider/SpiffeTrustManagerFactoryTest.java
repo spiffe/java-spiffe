@@ -22,7 +22,7 @@ class SpiffeTrustManagerFactoryTest {
 
     @Test
     void engineGetTrustManagers() throws Exception {
-        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1 | spiffe://example.org/test2" );
+        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1|spiffe://example.org/test2" );
 
         // init singleton with an instance
         Field field = X509SourceManager.class.getDeclaredField("x509Source");
@@ -37,7 +37,7 @@ class SpiffeTrustManagerFactoryTest {
         Supplier<Set<SpiffeId>> supplier = getSetSupplier(trustManager);
         boolean acceptAny = isAcceptAny(trustManager);
 
-        TrustDomain trustDomain = TrustDomain.of("example.org");
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
         assertEquals(2, supplier.get().size());
         assertTrue(supplier.get().contains(SpiffeId.parse("spiffe://example.org/test1")));
@@ -47,7 +47,7 @@ class SpiffeTrustManagerFactoryTest {
 
     @Test
     void testEngineGetTrustManagers_withCustomSource() throws NoSuchFieldException, IllegalAccessException, BundleNotFoundException {
-        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1 | spiffe://example.org/test2" );
+        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1|spiffe://example.org/test2" );
 
         X509Source source = new X509SourceStub();
         TrustManager[] trustManagers = new SpiffeTrustManagerFactory().engineGetTrustManagers(source);
@@ -57,7 +57,7 @@ class SpiffeTrustManagerFactoryTest {
         Supplier<Set<SpiffeId>> supplier = getSetSupplier(trustManager);
         boolean acceptAny = isAcceptAny(trustManager);
 
-        TrustDomain trustDomain = TrustDomain.of("example.org");
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
         assertEquals(2, supplier.get().size());
         assertTrue(supplier.get().contains(SpiffeId.parse("spiffe://example.org/test1")));

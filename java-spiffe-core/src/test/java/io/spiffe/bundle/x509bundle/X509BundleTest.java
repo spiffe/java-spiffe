@@ -31,9 +31,9 @@ public class X509BundleTest {
 
     @Test
     void TestNewBundle() {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
         assertEquals(0, x509Bundle.getX509Authorities().size());
-        assertEquals(TrustDomain.of("example.org"), x509Bundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("example.org"), x509Bundle.getTrustDomain());
     }
 
     @Test
@@ -59,7 +59,7 @@ public class X509BundleTest {
     @Test
     void testNewBundleAuthorities_nullAuthorities_throwsNullPointerException() {
         try {
-            new X509Bundle(TrustDomain.of("example.org"), null);
+            new X509Bundle(TrustDomain.parse("example.org"), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("x509Authorities is marked non-null but is null", e.getMessage());
@@ -75,22 +75,22 @@ public class X509BundleTest {
         authorities.add(x509Cert1);
         authorities.add(x509Cert2);
 
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"), authorities);
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), authorities);
 
         assertEquals(authorities, x509Bundle.getX509Authorities());
     }
 
     @Test
     void testGetBundleForTrustDomain() throws BundleNotFoundException {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
-        assertEquals(x509Bundle, x509Bundle.getBundleForTrustDomain(TrustDomain.of("example.org")));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
+        assertEquals(x509Bundle, x509Bundle.getBundleForTrustDomain(TrustDomain.parse("example.org")));
     }
 
     @Test
     void testGetBundleForTrustDomain_notBundleFound_throwsBundleNotFoundException() {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
         try {
-            x509Bundle.getBundleForTrustDomain(TrustDomain.of("other.org"));
+            x509Bundle.getBundleForTrustDomain(TrustDomain.parse("other.org"));
         } catch (BundleNotFoundException e) {
             assertEquals("No X.509 bundle found for trust domain other.org", e.getMessage());
         }
@@ -98,7 +98,7 @@ public class X509BundleTest {
 
     @Test
     void testGetBundleForTrustDomain_nullArgument_throwsNullPointerException() {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
         try {
             x509Bundle.getBundleForTrustDomain(null);
             fail();
@@ -113,7 +113,7 @@ public class X509BundleTest {
     @Test
     void TestLoad_Succeeds() {
         try {
-            X509Bundle x509Bundle = X509Bundle.load(TrustDomain.of("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
+            X509Bundle x509Bundle = X509Bundle.load(TrustDomain.parse("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
             assertEquals(2, x509Bundle.getX509Authorities().size());
         } catch (URISyntaxException | X509BundleException e) {
             fail(e);
@@ -123,7 +123,7 @@ public class X509BundleTest {
     @Test
     void TestLoad_Fails() {
         try {
-            X509Bundle.load(TrustDomain.of("example.org"), Paths.get("testdata/x509bundle/non-existent.pem"));
+            X509Bundle.load(TrustDomain.parse("example.org"), Paths.get("testdata/x509bundle/non-existent.pem"));
             fail("should have thrown exception");
         } catch (X509BundleException e) {
             assertEquals("Unable to load X.509 bundle file", e.getMessage());
@@ -143,7 +143,7 @@ public class X509BundleTest {
     @Test
     void testLoad_nullBundlePath_throwsNullPointerException() throws X509BundleException {
         try {
-            X509Bundle.load(TrustDomain.of("example.org"), null);
+            X509Bundle.load(TrustDomain.parse("example.org"), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("bundlePath is marked non-null but is null", e.getMessage());
@@ -163,7 +163,7 @@ public class X509BundleTest {
     @Test
     void testParse_nullBundlePath_throwsNullPointerException() throws X509BundleException {
         try {
-            X509Bundle.parse(TrustDomain.of("example.org"), null);
+            X509Bundle.parse(TrustDomain.parse("example.org"), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("bundleBytes is marked non-null but is null", e.getMessage());
@@ -172,7 +172,7 @@ public class X509BundleTest {
 
     @Test
     void testHasAuthority_nullArgument_throwsNullPointerException() {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
         try {
             x509Bundle.hasX509Authority(null);
             fail();
@@ -183,7 +183,7 @@ public class X509BundleTest {
 
     @Test
     void testAddAuthority_nullArgument_throwsNullPointerException() {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
         try {
             x509Bundle.addX509Authority(null);
             fail();
@@ -194,7 +194,7 @@ public class X509BundleTest {
 
     @Test
     void testRemoveAuthority_nullArgument_throwsNullPointerException() {
-        X509Bundle x509Bundle = new X509Bundle(TrustDomain.of("example.org"));
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
         try {
             x509Bundle.removeX509Authority(null);
             fail();
@@ -209,11 +209,11 @@ public class X509BundleTest {
         X509Bundle bundle2 = null;
         try {
             // Load bundle1, which contains a single certificate
-            bundle1 = X509Bundle.load(TrustDomain.of("example.org"), Paths.get(toUri("testdata/x509bundle/cert.pem")));
+            bundle1 = X509Bundle.load(TrustDomain.parse("example.org"), Paths.get(toUri("testdata/x509bundle/cert.pem")));
 
             // Load bundle2, which contains 2 certificates
             // The first certificate is the same than the one used in bundle1
-            bundle2 = X509Bundle.load(TrustDomain.of("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
+            bundle2 = X509Bundle.load(TrustDomain.parse("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
         } catch (URISyntaxException | X509BundleException e) {
             fail(e);
         }
@@ -277,7 +277,7 @@ public class X509BundleTest {
                         .builder()
                         .name("Parse multiple certificates should succeed")
                         .path("testdata/x509bundle/certs.pem")
-                        .trustDomain(TrustDomain.of("example.org"))
+                        .trustDomain(TrustDomain.parse("example.org"))
                         .expectedNumberOfAuthorities(2)
                         .build()
                 ),
@@ -285,7 +285,7 @@ public class X509BundleTest {
                         .builder()
                         .name("Parse single certificate should succeed")
                         .path("testdata/x509bundle/cert.pem")
-                        .trustDomain(TrustDomain.of("example.org"))
+                        .trustDomain(TrustDomain.parse("example.org"))
                         .expectedNumberOfAuthorities(1)
                         .build()
                 ),
@@ -293,7 +293,7 @@ public class X509BundleTest {
                         .builder()
                         .name("Parse empty bytes should fail")
                         .path("testdata/x509bundle/empty.pem")
-                        .trustDomain(TrustDomain.of("example.org"))
+                        .trustDomain(TrustDomain.parse("example.org"))
                         .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 ),
@@ -301,7 +301,7 @@ public class X509BundleTest {
                         .builder()
                         .name("Parse non-PEM bytes should fail")
                         .path("testdata/x509bundle/not-pem.pem")
-                        .trustDomain(TrustDomain.of("example.org"))
+                        .trustDomain(TrustDomain.parse("example.org"))
                         .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 ),
@@ -309,7 +309,7 @@ public class X509BundleTest {
                         .builder()
                         .name("Parse should fail if no certificate block is is found")
                         .path("testdata/x509bundle/key.pem")
-                        .trustDomain(TrustDomain.of("example.org"))
+                        .trustDomain(TrustDomain.parse("example.org"))
                         .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 ),
@@ -317,7 +317,7 @@ public class X509BundleTest {
                         .builder()
                         .name("Parse a corrupted certificate should fail")
                         .path("testdata/x509bundle/corrupted.pem")
-                        .trustDomain(TrustDomain.of("example.org"))
+                        .trustDomain(TrustDomain.parse("example.org"))
                         .expectedError("Bundle certificates could not be parsed from bundle path")
                         .build()
                 )

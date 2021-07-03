@@ -47,11 +47,11 @@ public class SpiffeTrustManagerTest {
         val subject = "C = US, O = SPIRE";
         val issuerSubject = "C = US, O = SPIFFE";
 
-        val trustDomain = TrustDomain.of("spiffe://example.org");
+        val trustDomain = TrustDomain.parse("spiffe://example.org");
         val spiffeIdRoot = trustDomain.newSpiffeId();
-        val spiffeIdHost1 = SpiffeId.of(trustDomain, "host1");
-        val spiffeIdHost2 = SpiffeId.of(trustDomain, "host2");
-        val spiffeIdTest = SpiffeId.of(trustDomain, "test");
+        val spiffeIdHost1 = SpiffeId.of(trustDomain, "/host1");
+        val spiffeIdHost2 = SpiffeId.of(trustDomain, "/host2");
+        val spiffeIdTest = SpiffeId.of(trustDomain, "/test");
 
         val rootCa = createRootCA(issuerSubject, spiffeIdRoot.toString() );
         val otherRootCa = createRootCA(issuerSubject, spiffeIdRoot.toString());
@@ -105,7 +105,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void test_checkClientTrustedMethods_Success() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
 
         try {
             spiffeTrustManager.checkClientTrusted(chain, "");
@@ -119,7 +119,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void test_checkClientTrustedMethods_ChainCannotVerify() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleUnknown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleUnknown);
 
         try {
             spiffeTrustManager.checkClientTrusted(chain, "");
@@ -170,7 +170,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void test_checkServerTrustedMethods_Success() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
 
         try {
             spiffeTrustManager.checkServerTrusted(chain, "");
@@ -184,7 +184,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void test_checkServerTrustedMethods_ChainCannotVerify() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleUnknown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleUnknown);
 
         try {
             spiffeTrustManager.checkServerTrusted(chain, "");
@@ -236,7 +236,7 @@ public class SpiffeTrustManagerTest {
     void checkClientTrusted_noBundleForTrustDomain_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
 
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenThrow(new BundleNotFoundException("Bundle not found"));
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenThrow(new BundleNotFoundException("Bundle not found"));
 
         try {
             spiffeTrustManager.checkClientTrusted(chain, "");
@@ -249,7 +249,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void checkServerTrusted_noBundleForTrustDomain_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/test"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenThrow(new BundleNotFoundException("Bundle not found"));
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenThrow(new BundleNotFoundException("Bundle not found"));
 
         try {
             spiffeTrustManager.checkServerTrusted(chain, "");
@@ -262,7 +262,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void checkClientTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
 
         try {
             spiffeTrustManager.checkClientTrusted(chain, "");
@@ -275,7 +275,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void checkClientTrusted_acceptyAnySpiffeId() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
 
         spiffeTrustManager = new SpiffeTrustManager(bundleSource);
 
@@ -289,7 +289,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void checkServerTrusted_acceptyAnySpiffeId() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
 
         spiffeTrustManager = new SpiffeTrustManager(bundleSource);
 
@@ -303,7 +303,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void checkServerTrusted_passCertificateWithNonAcceptedSpiffeId_ThrowCertificateException() throws BundleNotFoundException {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
 
         try {
             spiffeTrustManager.checkServerTrusted(chain, "");

@@ -19,8 +19,8 @@ class JwtBundleSetTest {
 
     @Test
     void testOfListOfBundles() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
-        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
+        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.parse("other.org"));
 
         List<JwtBundle> bundles = Arrays.asList(jwtBundle1, jwtBundle2);
 
@@ -28,20 +28,20 @@ class JwtBundleSetTest {
 
         assertNotNull(bundleSet);
         assertEquals(2, bundleSet.getBundles().size());
-        assertEquals(jwtBundle1, bundleSet.getBundles().get(TrustDomain.of("example.org")));
-        assertEquals(jwtBundle2, bundleSet.getBundles().get(TrustDomain.of("other.org")));
+        assertEquals(jwtBundle1, bundleSet.getBundles().get(TrustDomain.parse("example.org")));
+        assertEquals(jwtBundle2, bundleSet.getBundles().get(TrustDomain.parse("other.org")));
     }
 
     @Test
     void getBundleForTrustDomain_Success() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
-        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
+        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.parse("other.org"));
         List<JwtBundle> bundles = Arrays.asList(jwtBundle1, jwtBundle2);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundles);
 
         JwtBundle bundle = null;
         try {
-            bundle = bundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            bundle = bundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org"));
         } catch (BundleNotFoundException e) {
             fail(e);
         }
@@ -78,13 +78,13 @@ class JwtBundleSetTest {
 
     @Test
     void testgetBundleForTrustDomain_TrustDomainNotInSet_ThrowsBundleNotFoundException() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
-        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
+        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.parse("other.org"));
         List<JwtBundle> bundles = Arrays.asList(jwtBundle1, jwtBundle2);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundles);
 
         try {
-            bundleSet.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            bundleSet.getBundleForTrustDomain(TrustDomain.parse("domain.test"));
             fail("exception expected");
         } catch (BundleNotFoundException e) {
             assertEquals("No JWT bundle for trust domain domain.test", e.getMessage());
@@ -93,7 +93,7 @@ class JwtBundleSetTest {
 
     @Test
     void testgetBundleForTrustDomain_null_throwsNullPointerException() throws BundleNotFoundException {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
         try {
@@ -105,11 +105,11 @@ class JwtBundleSetTest {
 
     @Test
     void testAdd() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
 
-        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("other.org"));
+        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.parse("other.org"));
         bundleSet.put(jwtBundle2);
 
         assertTrue(bundleSet.getBundles().containsValue(jwtBundle1));
@@ -118,7 +118,7 @@ class JwtBundleSetTest {
 
     @Test
     void testAdd_sameBundleAgain_noDuplicate() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
 
@@ -130,11 +130,11 @@ class JwtBundleSetTest {
 
     @Test
     void testAdd_aDifferentBundleForSameTrustDomain_replacesWithNewBundle() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
 
-        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle2 = new JwtBundle(TrustDomain.parse("example.org"));
         jwtBundle2.putJwtAuthority("key1", new DummyPublicKey());
         bundleSet.put(jwtBundle2);
 
@@ -144,7 +144,7 @@ class JwtBundleSetTest {
 
     @Test
     void add_null_throwsNullPointerException() {
-        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
         List<JwtBundle> bundleList = Collections.singletonList(jwtBundle1);
         JwtBundleSet bundleSet = JwtBundleSet.of(bundleList);
         try {

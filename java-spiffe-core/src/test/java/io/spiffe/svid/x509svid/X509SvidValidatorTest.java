@@ -47,7 +47,7 @@ public class X509SvidValidatorTest {
         x509Authorities.add(rootCa.getCertificate());
         x509Authorities.add(otherRootCa.getCertificate());
 
-        val x509Bundle = new X509Bundle(TrustDomain.of("example.org"), x509Authorities);
+        val x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), x509Authorities);
         X509SvidValidator.verifyChain(chain, x509Bundle);
     }
 
@@ -56,7 +56,7 @@ public class X509SvidValidatorTest {
         HashSet<X509Certificate> x509Authorities = new HashSet<>();
         x509Authorities.add(otherRootCa.getCertificate());
 
-        val x509Bundle = new X509Bundle(TrustDomain.of("example.org"), x509Authorities);
+        val x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), x509Authorities);
         try {
             X509SvidValidator.verifyChain(chain, x509Bundle);
             fail("exception is expected");
@@ -70,7 +70,7 @@ public class X509SvidValidatorTest {
         HashSet<X509Certificate> x509Authorities = new HashSet<>();
         x509Authorities.add(otherRootCa.getCertificate());
 
-        val x509Bundle = new X509Bundle(TrustDomain.of("other.org"), x509Authorities);
+        val x509Bundle = new X509Bundle(TrustDomain.parse("other.org"), x509Authorities);
 
         try {
             X509SvidValidator.verifyChain(chain, x509Bundle);
@@ -138,7 +138,7 @@ public class X509SvidValidatorTest {
     @Test
     void verifyChain_nullChain_throwsNullPointerException() throws CertificateException, BundleNotFoundException {
         try {
-            X509SvidValidator.verifyChain(null, new X509Bundle(TrustDomain.of("example.org")));
+            X509SvidValidator.verifyChain(null, new X509Bundle(TrustDomain.parse("example.org")));
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
             assertEquals("chain is marked non-null but is null", e.getMessage());

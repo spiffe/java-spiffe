@@ -38,7 +38,7 @@ class FakeWorkloadApiCorruptedResponses extends SpiffeWorkloadAPIImplBase {
             Workload.X509SVIDResponse response = Workload.X509SVIDResponse
                     .newBuilder()
                     .addSvids(svid)
-                    .putFederatedBundles(TrustDomain.of("domain.test").getName(), corruptedByteString)
+                    .putFederatedBundles(TrustDomain.parse("domain.test").getName(), corruptedByteString)
                     .build();
 
             responseObserver.onNext(response);

@@ -102,7 +102,7 @@ class DefaultWorkloadApiClientTest {
         assertNotNull(x509Context.getDefaultSvid().getPrivateKey());
         assertNotNull(x509Context.getX509BundleSet());
         try {
-            X509Bundle bundle = x509Context.getX509BundleSet().getBundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle = x509Context.getX509BundleSet().getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
         } catch (BundleNotFoundException e) {
             fail(e);
@@ -136,7 +136,7 @@ class DefaultWorkloadApiClientTest {
         assertNotNull(update.getDefaultSvid().getPrivateKey());
         assertNotNull(update.getX509BundleSet());
         try {
-            X509Bundle bundle = update.getX509BundleSet().getBundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle = update.getX509BundleSet().getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
         } catch (BundleNotFoundException e) {
             fail(e);
@@ -163,10 +163,10 @@ class DefaultWorkloadApiClientTest {
 
         assertNotNull(x509BundleSet);
         try {
-            X509Bundle bundle = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle = x509BundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
 
-            X509Bundle otherBundle = x509BundleSet.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            X509Bundle otherBundle = x509BundleSet.getBundleForTrustDomain(TrustDomain.parse("domain.test"));
             assertNotNull(otherBundle);
         } catch (BundleNotFoundException e) {
             fail(e);
@@ -197,10 +197,10 @@ class DefaultWorkloadApiClientTest {
         X509BundleSet update = x509BundleSet[0];
         assertNotNull(update);
         try {
-            X509Bundle bundle1 = update.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle1 = update.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle1);
 
-            X509Bundle bundle2 = update.getBundleForTrustDomain(TrustDomain.of("domain.test"));
+            X509Bundle bundle2 = update.getBundleForTrustDomain(TrustDomain.parse("domain.test"));
             assertNotNull(bundle2);
         } catch (BundleNotFoundException e) {
             fail(e);
@@ -327,7 +327,7 @@ class DefaultWorkloadApiClientTest {
 
         assertNotNull(jwtBundleSet);
         try {
-            JwtBundle bundle = jwtBundleSet.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = jwtBundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
             assertEquals(3, bundle.getJwtAuthorities().size());
         } catch (BundleNotFoundException e) {
@@ -359,7 +359,7 @@ class DefaultWorkloadApiClientTest {
         JwtBundleSet update = jwtBundleSet[0];
         assertNotNull(update);
         try {
-            JwtBundle bundle = update.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = update.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
             assertEquals(3, bundle.getJwtAuthorities().size());
         } catch (BundleNotFoundException e) {
