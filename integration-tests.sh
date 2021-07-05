@@ -40,9 +40,3 @@ export SPIFFE_ENDPOINT_SOCKET="unix:/tmp/agent.sock"
 
 # Run only the integration tests
 ./gradlew integrationTest
-
-# Cleaning up
-kill -9 $(pidof spire-agent)
-kill -9 $(pidof spire-server)
-sleep 1
-rm -rf spire-0.12.3
