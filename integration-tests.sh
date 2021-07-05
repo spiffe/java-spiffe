@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Start a SPIRE Server and Agent and run the integration tests
+# Only works on Linux.
 
 set -euf -o pipefail
 
@@ -24,7 +25,7 @@ pushd spire-0.12.3
 bin/spire-server run -config conf/server/server.conf &
 sleep 5
 
-# Run the SPIRE agent with the joint token
+# Run the SPIRE agent with the join token
 bin/spire-server token generate -spiffeID spiffe://example.org/myagent > token
 cut -d ' ' -f 2 token > token_stripped
 bin/spire-agent run -config conf/agent/agent.conf -joinToken "$(< token_stripped)" &
