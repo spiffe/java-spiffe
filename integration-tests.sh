@@ -4,6 +4,20 @@
 
 set -euf -o pipefail
 
+# Some cleanup: kill spire processes that could have remained from previous run
+_agent_id=$(pidof spire-agent)
+if [ -n "$_agent_id" ]; then
+  echo "$_agent_id" > pids.txt
+  kill -9 "$_agent_id"
+fi
+_server_id=$(pidof spire-server)
+if [ -n "$_server_id" ]; then
+  echo "$_server_id" > pids.txt
+  kill -9 "$_server_id"
+fi
+
+rm -rf spire-0.12.3
+
 # Install and run a SPIRE server
 curl -s -N -L https://github.com/spiffe/spire/releases/download/v0.12.3/spire-0.12.3-linux-x86_64-glibc.tar.gz | tar xz
 pushd spire-0.12.3
@@ -23,4 +37,11 @@ popd
 
 export SPIFFE_ENDPOINT_SOCKET="unix:/tmp/agent.sock"
 
+# Run only the integration tests
 ./gradlew integrationTest
+
+# Cleaning up
+kill -9 $(pidof spire-agent)
+kill -9 $(pidof spire-server)
+sleep 1
+rm -rf spire-0.12.3
