@@ -1,10 +1,12 @@
 package io.spiffe.workloadapi;
 
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
@@ -35,6 +37,12 @@ class WorkloadApiIntegrationTest {
     @Test
     void testFetchJwtBundles() throws BundleNotFoundException, JwtBundleException {
         JwtBundleSet response = client.fetchJwtBundles();
+        Assertions.assertNotNull(response.getBundleForTrustDomain(TrustDomain.of("example.org")));
+    }
+
+    @Test
+    void testFetchX509Bundles() throws BundleNotFoundException, X509BundleException {
+        X509BundleSet response = client.fetchX509Bundles();
         Assertions.assertNotNull(response.getBundleForTrustDomain(TrustDomain.of("example.org")));
     }
 
