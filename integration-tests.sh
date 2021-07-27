@@ -16,7 +16,7 @@ function cleanup() {
 }
 
 # Some cleanup: kill spire processes that could have remained from previous run
-cleanup
+trap cleanup EXIT
 
 # Install and run a SPIRE server
 curl -s -N -L https://github.com/spiffe/spire/releases/download/v1.0.0/spire-1.0.0-linux-x86_64-glibc.tar.gz | tar xz
