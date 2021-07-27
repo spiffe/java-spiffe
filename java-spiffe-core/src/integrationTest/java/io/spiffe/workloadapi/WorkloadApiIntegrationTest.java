@@ -66,7 +66,7 @@ class WorkloadApiIntegrationTest {
     }
 
     @Test
-    void testValidateJwtVid_invalid_audience() throws JwtSvidException {
+    void testValidateJwtSvid_invalid_audience() throws JwtSvidException {
         String token = client.fetchJwtSvid("audience1", "audience2").getToken();
 
         try {
