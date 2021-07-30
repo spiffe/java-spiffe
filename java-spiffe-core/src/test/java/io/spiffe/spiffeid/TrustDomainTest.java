@@ -57,7 +57,6 @@ class TrustDomainTest {
     @ParameterizedTest
     @MethodSource("provideInvalidTrustDomain")
     void testParseTrustDomain(String input, Object expected) {
-        TrustDomain result;
         try {
             TrustDomain.parse(input);
             fail("error expected");
