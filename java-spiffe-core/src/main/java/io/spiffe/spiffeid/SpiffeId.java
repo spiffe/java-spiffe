@@ -38,16 +38,19 @@ public class SpiffeId {
         this.path = path;
     }
 
+
     /**
-     * Returns an instance representing a SPIFFE ID, containing the trust domain and
-     * a path generated joining the segments (e.g. /path1/path2).
+     * Returns a new SPIFFE ID in the given trust domain with joined
+     * path segments. The path segments must be valid according to the SPIFFE
+     * specification and must not contain path separators.
+     * See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
      *
      * @param trustDomain an instance of a {@link TrustDomain}
      * @param segments    a list of string path segments
      * @return a {@link SpiffeId}
      * @throws InvalidSpiffeIdException if a given path segment contains an invalid char or empty or dot segment
      */
-    public static SpiffeId of(@NonNull final TrustDomain trustDomain, final String... segments) {
+    public static SpiffeId fromSegments(@NonNull final TrustDomain trustDomain, final String... segments) {
         StringBuilder path = new StringBuilder();
         for (String p : segments) {
             validatePath(p);

@@ -8,7 +8,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,7 +44,7 @@ class SpiffeIdTest {
     @Test
     void toString_SpiffeId_ReturnsTheSpiffeIdInAStringFormatIncludingTheSchema() {
         val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.of(trustDomain, "path1", "path2", "path3");
+        val spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2", "path3");
         assertEquals("spiffe://trustdomain/path1/path2/path3", spiffeId.toString());
     }
 
@@ -109,7 +108,7 @@ class SpiffeIdTest {
     @MethodSource("provideValidTrustDomainAndPaths")
     void testOf(TrustDomain inputTrustDomain, String[] inputPath, SpiffeId expectedSpiffeId) {
         try {
-            SpiffeId result = SpiffeId.of(inputTrustDomain, inputPath);
+            SpiffeId result = SpiffeId.fromSegments(inputTrustDomain, inputPath);
             assertEquals(expectedSpiffeId, result);
         } catch (Exception e) {
             fail("Unexpected error", e);
@@ -130,7 +129,7 @@ class SpiffeIdTest {
     @MethodSource("provideInvalidArguments")
     void testOfInvalid(TrustDomain trustDomain, String[] inputPath, String expectedError) {
         try {
-            SpiffeId.of(trustDomain, inputPath);
+            SpiffeId.fromSegments(trustDomain, inputPath);
             fail(String.format("Expected error %s", expectedError));
         } catch (Exception e) {
             assertEquals(expectedError, e.getMessage());
@@ -203,11 +202,11 @@ class SpiffeIdTest {
             TrustDomain td = TrustDomain.parse("trustdomain");
 
             if (PATH_CHARS.contains(c)) {
-                SpiffeId spiffeId = SpiffeId.of(td, path1, path2);
+                SpiffeId spiffeId = SpiffeId.fromSegments(td, path1, path2);
                 assertEquals(spiffeId.toString(), String.format("spiffe://trustdomain/%s/%s", path1, path2));
             } else {
                 try {
-                    SpiffeId.of(td, path1, path2);
+                    SpiffeId.fromSegments(td, path1, path2);
                 } catch (InvalidSpiffeIdException e) {
                     assertEquals("Path segment characters are limited to letters, numbers, dots, dashes, and underscores", e.getMessage());
                 }
@@ -218,7 +217,7 @@ class SpiffeIdTest {
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithSameTrustDomain_ReturnsTrue() {
         val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.of(trustDomain, "path1", "path2");
+        val spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
 
         val isMemberOf = spiffeId.memberOf(TrustDomain.parse("trustdomain"));
 
@@ -228,7 +227,7 @@ class SpiffeIdTest {
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithDifferentTrustDomain_ReturnsFalse() {
         val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.of(trustDomain, "path1", "path2");
+        val spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
 
         val isMemberOf = spiffeId.memberOf(TrustDomain.parse("otherdomain"));
 

@@ -4,10 +4,7 @@ package io.spiffe.spiffeid;
 import io.spiffe.exception.InvalidSpiffeIdException;
 import lombok.NonNull;
 import lombok.Value;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-
-import java.net.URI;
 
 import static io.spiffe.spiffeid.SpiffeId.BAD_TRUST_DOMAIN_CHAR;
 
@@ -58,7 +55,7 @@ public class TrustDomain {
      * @throws InvalidSpiffeIdException if the given path segments contain invalid chars or empty or dot segments
      */
     public SpiffeId newSpiffeId(final String... segments) {
-        return SpiffeId.of(this, segments);
+        return SpiffeId.fromSegments(this, segments);
     }
 
     /**

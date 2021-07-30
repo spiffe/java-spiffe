@@ -52,9 +52,9 @@ public class SpiffeTrustManagerTest {
 
         val trustDomain = TrustDomain.parse("spiffe://example.org");
         val spiffeIdRoot = trustDomain.newSpiffeId();
-        val spiffeIdHost1 = SpiffeId.of(trustDomain, "host1");
-        val spiffeIdHost2 = SpiffeId.of(trustDomain, "host2");
-        val spiffeIdTest = SpiffeId.of(trustDomain, "test");
+        val spiffeIdHost1 = SpiffeId.fromSegments(trustDomain, "host1");
+        val spiffeIdHost2 = SpiffeId.fromSegments(trustDomain, "host2");
+        val spiffeIdTest = SpiffeId.fromSegments(trustDomain, "test");
 
         val rootCa = createRootCA(issuerSubject, spiffeIdRoot.toString() );
         val otherRootCa = createRootCA(issuerSubject, spiffeIdRoot.toString());
