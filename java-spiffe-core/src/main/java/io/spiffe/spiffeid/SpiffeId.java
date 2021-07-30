@@ -24,7 +24,6 @@ public class SpiffeId {
     static final String BAD_TRUST_DOMAIN_CHAR = "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores";
     static final String BAD_PATH_SEGMENT_CHAR = "Path segment characters are limited to letters, numbers, dots, dashes, and underscores";
     static final String DOT_SEGMENT = "Path cannot contain dot segments";
-    static final String NO_LEADING_SLASH = "Path must have a leading slash";
     static final String EMPTY_SEGMENT = "Path cannot contain empty segments";
     static final String TRAILING_SLASH = "Path cannot have a trailing slash";
 
