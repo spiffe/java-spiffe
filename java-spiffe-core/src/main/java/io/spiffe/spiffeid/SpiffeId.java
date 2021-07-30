@@ -51,6 +51,7 @@ public class SpiffeId {
         StringBuilder path = new StringBuilder();
         for (String p : segments) {
             validatePath(p);
+            path.append('/');
             path.append(p);
         }
 
@@ -94,7 +95,9 @@ public class SpiffeId {
         String td = rest.substring(0, i);
         String path = rest.substring(i);
 
-        validatePath(path);
+        if (StringUtils.isNotBlank(path)) {
+            validatePath(path);
+        }
 
         return new SpiffeId(new TrustDomain(td), path);
     }
@@ -119,24 +122,19 @@ public class SpiffeId {
         return String.format("%s://%s%s", SPIFFE_SCHEME, this.trustDomain.toString(), this.path);
     }
 
-    // Validates that a path string is a conformant path for a SPIFFE ID. Namely:
-    // - does not contain an empty segments (including a trailing slash)
-    // - does not contain dot segments (i.e. '.' or '..')
-    // - does not contain any percent encoded characters
-    // - has only characters from the unreserved or sub-delims set from RFC3986.
-    private static void validatePath(String path) {
+    /**
+     *  Validates that a path string is a conformant path for a SPIFFE ID.
+     *  See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
+     */
+    public static void validatePath(String path) {
         if (StringUtils.isBlank(path)) {
-            return;
-        }
-
-        if (path.charAt(0) != '/') {
-            throw new InvalidSpiffeIdException(NO_LEADING_SLASH);
+            throw new IllegalArgumentException(EMPTY);
         }
 
         int segmentStart = 0;
         int segmentEnd = 0;
 
-        while (segmentEnd < path.length()) {
+        for ( ; segmentEnd < path.length(); segmentEnd++) {
             char c = path.charAt(segmentEnd);
             if (c == '/') {
                 switch (path.substring(segmentStart, segmentEnd)) {
@@ -147,13 +145,11 @@ public class SpiffeId {
                         throw new InvalidSpiffeIdException(DOT_SEGMENT);
                 }
                 segmentStart = segmentEnd;
-                segmentEnd +=1 ;
                 continue;
             }
             if (!isValidPathSegmentChar(c)) {
                 throw new InvalidSpiffeIdException(BAD_PATH_SEGMENT_CHAR);
             }
-            segmentEnd +=1 ;
         }
 
         switch (path.substring(segmentStart, segmentEnd)) {

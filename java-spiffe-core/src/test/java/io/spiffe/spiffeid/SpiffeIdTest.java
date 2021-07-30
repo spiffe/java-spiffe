@@ -8,7 +8,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,27 +20,32 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class SpiffeIdTest {
 
-    static final Set<Character> TD_CHARS = Sets.newHashSet(
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '.', '-', '_'
-    );
+    private static final Set<Character> LOWER_ALPHA = Sets.newHashSet('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+    private static final Set<Character> UPPER_ALPHA = Sets.newHashSet('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z');
+    private static final Set<Character> NUMBERS = Sets.newHashSet('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    private static final Set<Character> SPECIAL_CHARS = Sets.newHashSet('.', '-', '_');
 
-    static final Set<Character> PATH_CHARS = Sets.newHashSet(
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '.', '-', '_'
-    );
+    static final Set<Character> TD_CHARS = Stream.of(
+            LOWER_ALPHA,
+            NUMBERS,
+            SPECIAL_CHARS)
+            .flatMap(Set::stream)
+            .collect(Collectors.toSet());
 
+    static final Set<Character> PATH_CHARS = Stream.of(
+            LOWER_ALPHA,
+            UPPER_ALPHA,
+            NUMBERS,
+            SPECIAL_CHARS)
+            .flatMap(Set::stream)
+            .collect(Collectors.toSet());
 
     @Test
     void toString_SpiffeId_ReturnsTheSpiffeIdInAStringFormatIncludingTheSchema() {
         val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.of(trustDomain, "/path1", "/path2", "/path3");
+        val spiffeId = SpiffeId.of(trustDomain, "path1", "path2", "path3");
         assertEquals("spiffe://trustdomain/path1/path2/path3", spiffeId.toString());
     }
 
@@ -57,7 +64,6 @@ class SpiffeIdTest {
 
     static Stream<Arguments> provideTestValidSpiffeIds() {
         return Stream.of(
-                Arguments.of("spiffe://trustdomain", TrustDomain.parse("trustdomain"), ""),
                 Arguments.of("spiffe://trustdomain/path", TrustDomain.parse("trustdomain"), "/path"),
                 Arguments.of("spiffe://trustdomain/path1/path2", TrustDomain.parse("trustdomain"), "/path1/path2"),
                 Arguments.of("spiffe://trustdomain/PATH1/PATH2", TrustDomain.parse("trustdomain"), "/PATH1/PATH2"),
@@ -104,7 +110,7 @@ class SpiffeIdTest {
     void testOf(TrustDomain inputTrustDomain, String[] inputPath, SpiffeId expectedSpiffeId) {
         try {
             SpiffeId result = SpiffeId.of(inputTrustDomain, inputPath);
-            assertEquals(result, expectedSpiffeId);
+            assertEquals(expectedSpiffeId, result);
         } catch (Exception e) {
             fail("Unexpected error", e);
         }
@@ -112,12 +118,11 @@ class SpiffeIdTest {
 
     static Stream<Arguments> provideValidTrustDomainAndPaths() {
         return Stream.of(
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{""}, SpiffeId.parse("spiffe://trustdomain")),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/path"}, SpiffeId.parse("spiffe://trustdomain/path")),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/path1", "/path2"}, SpiffeId.parse("spiffe://trustdomain/path1/path2")),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/PATH1", "/PATH2"}, SpiffeId.parse("spiffe://trustdomain/PATH1/PATH2")),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/path1", "/path2"}, SpiffeId.parse("spiffe://trustdomain/path1/path2")),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/9eebccd2-12bf-40a6-b262-65fe0487d453"}, SpiffeId.parse("spiffe://trustdomain/9eebccd2-12bf-40a6-b262-65fe0487d453"))
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"path"}, SpiffeId.parse("spiffe://trustdomain/path")),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"path1", "path2"}, SpiffeId.parse("spiffe://trustdomain/path1/path2")),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"PATH1", "PATH2"}, SpiffeId.parse("spiffe://trustdomain/PATH1/PATH2")),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"path1", "path2"}, SpiffeId.parse("spiffe://trustdomain/path1/path2")),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"9eebccd2-12bf-40a6-b262-65fe0487d453"}, SpiffeId.parse("spiffe://trustdomain/9eebccd2-12bf-40a6-b262-65fe0487d453"))
         );
     }
 
@@ -135,7 +140,6 @@ class SpiffeIdTest {
     static Stream<Arguments> provideInvalidArguments() {
         return Stream.of(
                 Arguments.of(null, new String[]{""}, "trustDomain is marked non-null but is null"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"element"}, "Path must have a leading slash"),
                 Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/ele%5ment"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
                 Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/path/"}, "Path cannot have a trailing slash"),
                 Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/ /"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
@@ -156,7 +160,7 @@ class SpiffeIdTest {
             if (c == '/') {
                 continue;
             }
-            String path = "/path"+ c;
+            String path = "/path" + c;
 
             if (PATH_CHARS.contains(c)) {
                 SpiffeId spiffeId = SpiffeId.parse("spiffe://trustdomain" + path);
@@ -165,7 +169,7 @@ class SpiffeIdTest {
                 try {
                     SpiffeId.parse("spiffe://trustdomain" + path);
                 } catch (InvalidSpiffeIdException e) {
-                    assertEquals(e.getMessage(), "Path segment characters are limited to letters, numbers, dots, dashes, and underscores");
+                    assertEquals("Path segment characters are limited to letters, numbers, dots, dashes, and underscores", e.getMessage());
                 }
             }
 
@@ -178,7 +182,7 @@ class SpiffeIdTest {
                 try {
                     SpiffeId.parse(td);
                 } catch (InvalidSpiffeIdException e) {
-                    assertEquals(e.getMessage(), "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores");
+                    assertEquals("Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores", e.getMessage());
                 }
             }
         }
@@ -194,18 +198,18 @@ class SpiffeIdTest {
             if (c == '/') {
                 continue;
             }
-            String path1 = "/path1"+ c;
-            String path2 = "/path2"+ c;
+            String path1 = "path1" + c;
+            String path2 = "path2" + c;
             TrustDomain td = TrustDomain.parse("trustdomain");
 
             if (PATH_CHARS.contains(c)) {
                 SpiffeId spiffeId = SpiffeId.of(td, path1, path2);
-                assertEquals(spiffeId.toString(), "spiffe://trustdomain" + path1 + path2);
+                assertEquals(spiffeId.toString(), String.format("spiffe://trustdomain/%s/%s", path1, path2));
             } else {
                 try {
                     SpiffeId.of(td, path1, path2);
                 } catch (InvalidSpiffeIdException e) {
-                    assertEquals(e.getMessage(), "Path segment characters are limited to letters, numbers, dots, dashes, and underscores");
+                    assertEquals("Path segment characters are limited to letters, numbers, dots, dashes, and underscores", e.getMessage());
                 }
             }
         }
@@ -214,7 +218,7 @@ class SpiffeIdTest {
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithSameTrustDomain_ReturnsTrue() {
         val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.of(trustDomain, "/path1", "/path2");
+        val spiffeId = SpiffeId.of(trustDomain, "path1", "path2");
 
         val isMemberOf = spiffeId.memberOf(TrustDomain.parse("trustdomain"));
 
@@ -224,7 +228,7 @@ class SpiffeIdTest {
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithDifferentTrustDomain_ReturnsFalse() {
         val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.of(trustDomain, "/path1", "/path2");
+        val spiffeId = SpiffeId.of(trustDomain, "path1", "path2");
 
         val isMemberOf = spiffeId.memberOf(TrustDomain.parse("otherdomain"));
 

@@ -110,7 +110,7 @@ class JwtSvidParseInsecureTest {
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
 
-        SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
         Set<String> audience = Collections.singleton("audience");
 
@@ -123,7 +123,7 @@ class JwtSvidParseInsecureTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("/host"),
+                                trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
@@ -134,7 +134,7 @@ class JwtSvidParseInsecureTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("/host"),
+                                trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
@@ -145,7 +145,7 @@ class JwtSvidParseInsecureTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", ""))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("/host"),
+                                trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "")))
@@ -161,7 +161,7 @@ class JwtSvidParseInsecureTest {
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
 
-        SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
         Set<String> audience = Collections.singleton("audience");
 

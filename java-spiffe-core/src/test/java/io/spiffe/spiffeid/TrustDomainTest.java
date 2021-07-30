@@ -89,7 +89,7 @@ class TrustDomainTest {
     @Test
     void testNewSpiffeId() {
         TrustDomain trustDomain = TrustDomain.parse("test.domain");
-        SpiffeId spiffeId = trustDomain.newSpiffeId("/path1", "/host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("path1", "host");
 
         assertEquals(trustDomain, spiffeId.getTrustDomain());
         assertEquals("/path1/host", spiffeId.getPath());

@@ -123,7 +123,7 @@ class JwtSvidParseAndValidateTest {
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
         jwtBundle.putJwtAuthority("authority3", key3.getPublic());
 
-        SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() +  (60 * 60 * 1000));
         Set<String> audience = new HashSet<String>() {{add("audience1"); add("audience2");}};
 
@@ -137,7 +137,7 @@ class JwtSvidParseAndValidateTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("/host"),
+                                trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE) ))
@@ -149,7 +149,7 @@ class JwtSvidParseAndValidateTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("/host"),
+                                trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3", JwtSvid.HEADER_TYP_JWT)))
@@ -161,7 +161,7 @@ class JwtSvidParseAndValidateTest {
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3", ""))
                         .expectedException(null)
                         .expectedJwtSvid(newJwtSvidInstance(
-                                trustDomain.newSpiffeId("/host"),
+                                trustDomain.newSpiffeId("host"),
                                 audience,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3")))
@@ -180,7 +180,7 @@ class JwtSvidParseAndValidateTest {
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
         jwtBundle.putJwtAuthority("authority3", key3.getPublic());
 
-        SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
+        SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() +  (60 * 60 * 1000));
         Set<String> audience = new HashSet<String>() {{add("audience1"); add("audience2");}};
 
