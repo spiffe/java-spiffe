@@ -22,6 +22,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
@@ -85,7 +87,7 @@ public class SpiffeTrustManagerTest {
     @Test
     void testCreateSpiffeTrustManager_nullSupplier() {
         try {
-            new SpiffeTrustManager(bundleSource, null);
+            new SpiffeTrustManager(bundleSource, (Supplier<Set<SpiffeId>>) null);
             fail();
         } catch (Exception e) {
             assertEquals("acceptedSpiffeIdsSupplier is marked non-null but is null", e.getMessage());
@@ -93,9 +95,26 @@ public class SpiffeTrustManagerTest {
     }
 
     @Test
+    void testCreateSpiffeTrustManager_nullSpiffeIdVerifier() {
+        try {
+            new SpiffeTrustManager(bundleSource, (SpiffeIdVerifier) null);
+            fail();
+        } catch (Exception e) {
+            assertEquals("spiffeIdVerifier is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
     void testCreateSpiffeTrustManager_nullParameters() {
         try {
-            new SpiffeTrustManager(null, null);
+            new SpiffeTrustManager(null, (Supplier<Set<SpiffeId>>) null);
+            fail();
+        } catch (Exception e) {
+            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+        }
+
+        try {
+            new SpiffeTrustManager(null, (SpiffeIdVerifier) null);
             fail();
         } catch (Exception e) {
             assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
@@ -305,6 +324,34 @@ public class SpiffeTrustManagerTest {
         acceptedSpiffeIds = Collections.singleton(SpiffeId.parse("spiffe://example.org/other"));
         when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
 
+        try {
+            spiffeTrustManager.checkServerTrusted(chain, "");
+            fail("CertificateException was expected");
+        } catch (CertificateException e) {
+            assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
+        }
+    }
+
+    @Test
+    void checkServerTrusted_verifierResult_ThrowCertificateException() throws BundleNotFoundException {
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        final SpiffeId expected = SpiffeId.parse("spiffe://example.org/test");
+        final AtomicBoolean verifyResult = new AtomicBoolean(true);
+        final SpiffeIdVerifier verifier = spiffeId -> {
+            assertEquals(expected, spiffeId);
+            return verifyResult.get();
+        };
+
+        SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(bundleSource, verifier);
+
+        verifyResult.set(true);
+        try {
+            spiffeTrustManager.checkServerTrusted(chain, "");
+        } catch (CertificateException e) {
+            fail(e);
+        }
+
+        verifyResult.set(false);
         try {
             spiffeTrustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
