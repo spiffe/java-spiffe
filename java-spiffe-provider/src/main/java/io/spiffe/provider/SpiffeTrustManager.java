@@ -172,7 +172,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
             }
             if (spiffeIdVerifier != null) {
                 SpiffeId spiffeId = CertificateUtils.getSpiffeId(chain[0]);
-                if (!spiffeIdVerifier.verify(spiffeId)) {
+                if (!spiffeIdVerifier.verify(spiffeId, chain)) {
                     throw new CertificateException(String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId));
                 }
             }

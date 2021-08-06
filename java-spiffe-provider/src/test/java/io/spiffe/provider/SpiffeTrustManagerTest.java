@@ -3,6 +3,7 @@ package io.spiffe.provider;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import lombok.val;
@@ -337,8 +338,13 @@ public class SpiffeTrustManagerTest {
         when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
         final SpiffeId expected = SpiffeId.parse("spiffe://example.org/test");
         final AtomicBoolean verifyResult = new AtomicBoolean(true);
-        final SpiffeIdVerifier verifier = spiffeId -> {
+        final SpiffeIdVerifier verifier = (spiffeId, chain) -> {
             assertEquals(expected, spiffeId);
+            try {
+                assertEquals(expected, CertificateUtils.getSpiffeId(chain[0]));
+            } catch (CertificateException e) {
+                fail(e);
+            }
             return verifyResult.get();
         };
 
