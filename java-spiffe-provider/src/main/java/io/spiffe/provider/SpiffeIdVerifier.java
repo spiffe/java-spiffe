@@ -11,7 +11,7 @@ public interface SpiffeIdVerifier {
      *
      * @param spiffeId the SPIFFE ID of the SVID
      * @param verifiedChain the certificate chain with the X509-SVID certificate back to an X.509 root for the trust domain.
-     * @return true if the SPIFFE ID is acceptable
+     * @throws SpiffeVerificationException if there was an error verifying the SPIFFE ID or it wasn't considered valid.
      */
-    public boolean verify(SpiffeId spiffeId, X509Certificate[] verifiedChain);
+    public void verify(SpiffeId spiffeId, X509Certificate[] verifiedChain) throws SpiffeVerificationException;
 }

@@ -345,12 +345,12 @@ public class SpiffeTrustManagerTest {
             } catch (CertificateException e) {
                 fail(e);
             }
-            return verifyResult.get();
+            if (!verifyResult.get()) {
+                throw new SpiffeVerificationException("Stub failure.");
+            }
         };
 
         SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(bundleSource, verifier);
-
-        verifyResult.set(true);
         try {
             spiffeTrustManager.checkServerTrusted(chain, "");
         } catch (CertificateException e) {
@@ -362,7 +362,7 @@ public class SpiffeTrustManagerTest {
             spiffeTrustManager.checkServerTrusted(chain, "");
             fail("CertificateException was expected");
         } catch (CertificateException e) {
-            assertEquals("SPIFFE ID spiffe://example.org/test in X.509 certificate is not accepted", e.getMessage());
+            assertEquals("Stub failure.", e.getMessage());
         }
     }
 

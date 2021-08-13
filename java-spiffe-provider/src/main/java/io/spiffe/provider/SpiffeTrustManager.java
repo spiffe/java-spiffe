@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
-    private static final SpiffeIdVerifier ALLOW_ANY_SPIFFE_ID_VERIFIER = (spiffeId, verifiedChain) -> true;
+    private static final SpiffeIdVerifier ALLOW_ANY_SPIFFE_ID_VERIFIER = (spiffeId, verifiedChain) -> {};
 
     private final BundleSource<X509Bundle> x509BundleSource;
     private final SpiffeIdVerifier spiffeIdVerifier;
@@ -158,8 +158,10 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     // root CA in the bundle source
     private void validatePeerChain(final X509Certificate... chain) throws CertificateException {
         SpiffeId spiffeId = CertificateUtils.getSpiffeId(chain[0]);
-        if (!spiffeIdVerifier.verify(spiffeId, chain)) {
-            throw new CertificateException(String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId));
+        try {
+            spiffeIdVerifier.verify(spiffeId, chain);
+        } catch (SpiffeVerificationException e) {
+            throw new CertificateException(e.getMessage(), e);
         }
 
         try {

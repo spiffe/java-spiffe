@@ -16,8 +16,10 @@ public class AllowedIdSupplierSpiffeIdVerifier implements SpiffeIdVerifier {
     }
 
     @Override
-    public boolean verify(SpiffeId spiffeId, X509Certificate[] verifiedChain) {
+    public void verify(SpiffeId spiffeId, X509Certificate[] verifiedChain) throws SpiffeVerificationException {
         Set<SpiffeId> allowedSpiffeIds = allowedSpiffeIdsSupplier.get();
-        return allowedSpiffeIds.contains(spiffeId);
+        if (!allowedSpiffeIds.contains(spiffeId)) {
+            throw new SpiffeVerificationException(String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId));
+        }
     }
 }

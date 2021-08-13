@@ -13,9 +13,9 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SpiffeTrustManagerFactoryTest {
 
@@ -37,9 +37,9 @@ class SpiffeTrustManagerFactoryTest {
 
         TrustDomain trustDomain = TrustDomain.of("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
-        assertTrue(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
-        assertTrue(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
-        assertFalse(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test3"), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
+        assertThrows(SpiffeVerificationException.class, () -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test3"), null));
     }
 
 
@@ -56,9 +56,9 @@ class SpiffeTrustManagerFactoryTest {
 
         TrustDomain trustDomain = TrustDomain.of("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
-        assertTrue(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
-        assertTrue(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
-        assertFalse(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test3"), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
+        assertThrows(SpiffeVerificationException.class, () -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test3"), null));
     }
 
     @Test
@@ -67,7 +67,7 @@ class SpiffeTrustManagerFactoryTest {
         TrustManager[] trustManagers = new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(source);
         SpiffeTrustManager trustManager = (SpiffeTrustManager) trustManagers[0];
         SpiffeIdVerifier spiffeIdVerifier = getSpiffeIdVerifier(trustManager);
-        assertTrue(spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/" + UUID.randomUUID()), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/" + UUID.randomUUID()), null));
     }
 
     @Test
