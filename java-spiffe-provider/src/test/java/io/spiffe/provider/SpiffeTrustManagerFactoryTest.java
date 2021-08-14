@@ -10,13 +10,12 @@ import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.TrustManager;
 import java.lang.reflect.Field;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.util.UUID;
 
 import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SpiffeTrustManagerFactoryTest {
 
@@ -34,14 +33,13 @@ class SpiffeTrustManagerFactoryTest {
         SpiffeTrustManager trustManager = (SpiffeTrustManager) trustManagers[0];
 
         BundleSource<X509Bundle> bundleSource = getX509BundleBundleSource(trustManager);
-        Supplier<Set<SpiffeId>> supplier = getSetSupplier(trustManager);
-        boolean acceptAny = isAcceptAny(trustManager);
+        SpiffeIdVerifier spiffeIdVerifier = getSpiffeIdVerifier(trustManager);
 
         TrustDomain trustDomain = TrustDomain.of("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
-        assertEquals(2, supplier.get().size());
-        assertTrue(supplier.get().contains(SpiffeId.parse("spiffe://example.org/test1")));
-        assertFalse(acceptAny);
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
+        assertThrows(SpiffeVerificationException.class, () -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test3"), null));
     }
 
 
@@ -54,14 +52,13 @@ class SpiffeTrustManagerFactoryTest {
         SpiffeTrustManager trustManager = (SpiffeTrustManager) trustManagers[0];
 
         BundleSource<X509Bundle> bundleSource = getX509BundleBundleSource(trustManager);
-        Supplier<Set<SpiffeId>> supplier = getSetSupplier(trustManager);
-        boolean acceptAny = isAcceptAny(trustManager);
+        SpiffeIdVerifier spiffeIdVerifier = getSpiffeIdVerifier(trustManager);
 
         TrustDomain trustDomain = TrustDomain.of("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
-        assertEquals(2, supplier.get().size());
-        assertTrue(supplier.get().contains(SpiffeId.parse("spiffe://example.org/test1")));
-        assertFalse(acceptAny);
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
+        assertThrows(SpiffeVerificationException.class, () -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test3"), null));
     }
 
     @Test
@@ -69,8 +66,8 @@ class SpiffeTrustManagerFactoryTest {
         X509Source source = new X509SourceStub();
         TrustManager[] trustManagers = new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(source);
         SpiffeTrustManager trustManager = (SpiffeTrustManager) trustManagers[0];
-        boolean acceptAny = isAcceptAny(trustManager);
-        assertTrue(acceptAny);
+        SpiffeIdVerifier spiffeIdVerifier = getSpiffeIdVerifier(trustManager);
+        assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/" + UUID.randomUUID()), null));
     }
 
     @Test
@@ -116,15 +113,9 @@ class SpiffeTrustManagerFactoryTest {
         return (BundleSource<X509Bundle>) bundleField.get(trustManager);
     }
 
-    private Supplier<Set<SpiffeId>> getSetSupplier(SpiffeTrustManager trustManager) throws NoSuchFieldException, IllegalAccessException {
-        Field supplierField = SpiffeTrustManager.class.getDeclaredField("acceptedSpiffeIdsSupplier");
-        supplierField.setAccessible(true);
-        return (Supplier<Set<SpiffeId>>) supplierField.get(trustManager);
-    }
-
-    private boolean isAcceptAny(SpiffeTrustManager trustManager) throws NoSuchFieldException, IllegalAccessException {
-        Field acceptAnyField = SpiffeTrustManager.class.getDeclaredField("acceptAnySpiffeId");
-        acceptAnyField.setAccessible(true);
-        return (boolean) acceptAnyField.get(trustManager);
+    private SpiffeIdVerifier getSpiffeIdVerifier(SpiffeTrustManager trustManager) throws NoSuchFieldException, IllegalAccessException {
+        Field spiffeIdVerifierField = SpiffeTrustManager.class.getDeclaredField("spiffeIdVerifier");
+        spiffeIdVerifierField.setAccessible(true);
+        return (SpiffeIdVerifier) spiffeIdVerifierField.get(trustManager);
     }
 }

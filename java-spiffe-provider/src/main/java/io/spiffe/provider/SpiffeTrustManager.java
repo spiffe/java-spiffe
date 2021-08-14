@@ -3,6 +3,7 @@ package io.spiffe.provider;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.x509svid.X509SvidValidator;
 import lombok.NonNull;
@@ -13,7 +14,6 @@ import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -26,9 +26,10 @@ import java.util.function.Supplier;
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
+    private static final SpiffeIdVerifier ALLOW_ANY_SPIFFE_ID_VERIFIER = (spiffeId, verifiedChain) -> {};
+
     private final BundleSource<X509Bundle> x509BundleSource;
-    private final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
-    private final boolean acceptAnySpiffeId;
+    private final SpiffeIdVerifier spiffeIdVerifier;
 
     /**
      * Constructor.
@@ -42,8 +43,23 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
                               @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
         this.x509BundleSource = x509BundleSource;
-        this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
-        this.acceptAnySpiffeId = false;
+        this.spiffeIdVerifier = new AllowedIdSupplierSpiffeIdVerifier(acceptedSpiffeIdsSupplier);
+    }
+
+    /**
+     * Constructor.
+     * <p>
+     * Creates a {@link SpiffeTrustManager} with an X.509 bundle source used to provide the trusted bundles,
+     * and a {@link SpiffeIdVerifier} which will be called to determine if a {@link SpiffeId} should be accepted
+     * during peer SVID validation.
+     *
+     * @param x509BundleSource          an implementation of a {@link BundleSource}
+     * @param spiffeIdVerifier          a {@link SpiffeIdVerifier} that will be called to determine if a peer's SPIFFE ID is acceptable
+     */
+    public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
+                              @NonNull final SpiffeIdVerifier spiffeIdVerifier) {
+        this.x509BundleSource = x509BundleSource;
+        this.spiffeIdVerifier = spiffeIdVerifier;
     }
 
     /**
@@ -58,8 +74,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      */
     public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
         this.x509BundleSource = x509BundleSource;
-        this.acceptedSpiffeIdsSupplier = Collections::emptySet;
-        this.acceptAnySpiffeId = true;
+        this.spiffeIdVerifier = ALLOW_ANY_SPIFFE_ID_VERIFIER;
     }
 
     /**
@@ -142,8 +157,11 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     // Check that the SPIFFE ID in the peer's certificate is accepted and the chain can be validated with a
     // root CA in the bundle source
     private void validatePeerChain(final X509Certificate... chain) throws CertificateException {
-        if (!acceptAnySpiffeId) {
-            X509SvidValidator.verifySpiffeId(chain[0], acceptedSpiffeIdsSupplier);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId(chain[0]);
+        try {
+            spiffeIdVerifier.verify(spiffeId, chain);
+        } catch (SpiffeVerificationException e) {
+            throw new CertificateException(e.getMessage(), e);
         }
 
         try {
