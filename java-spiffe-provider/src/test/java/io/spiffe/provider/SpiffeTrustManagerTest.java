@@ -335,7 +335,7 @@ public class SpiffeTrustManagerTest {
 
     @Test
     void checkServerTrusted_verifierResult_ThrowCertificateException() throws BundleNotFoundException {
-        when(bundleSource.getBundleForTrustDomain(TrustDomain.of("example.org"))).thenReturn(bundleKnown);
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
         final SpiffeId expected = SpiffeId.parse("spiffe://example.org/test");
         final AtomicBoolean verifyResult = new AtomicBoolean(true);
         final SpiffeIdVerifier verifier = (spiffeId, chain) -> {
