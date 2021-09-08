@@ -31,19 +31,19 @@ class WorkloadApiIntegrationTest {
     void testFetchX509Context() throws X509ContextException, BundleNotFoundException {
         X509Context response = client.fetchX509Context();
         Assertions.assertEquals(response.getDefaultSvid().getSpiffeId(), SpiffeId.parse("spiffe://example.org/myservice"));
-        Assertions.assertNotNull(response.getX509BundleSet().getBundleForTrustDomain(TrustDomain.of("example.org")));
+        Assertions.assertNotNull(response.getX509BundleSet().getBundleForTrustDomain(TrustDomain.parse("example.org")));
     }
 
     @Test
     void testFetchJwtBundles() throws BundleNotFoundException, JwtBundleException {
         JwtBundleSet response = client.fetchJwtBundles();
-        Assertions.assertNotNull(response.getBundleForTrustDomain(TrustDomain.of("example.org")));
+        Assertions.assertNotNull(response.getBundleForTrustDomain(TrustDomain.parse("example.org")));
     }
 
     @Test
     void testFetchX509Bundles() throws BundleNotFoundException, X509BundleException {
         X509BundleSet response = client.fetchX509Bundles();
-        Assertions.assertNotNull(response.getBundleForTrustDomain(TrustDomain.of("example.org")));
+        Assertions.assertNotNull(response.getBundleForTrustDomain(TrustDomain.parse("example.org")));
     }
 
     @Test

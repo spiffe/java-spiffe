@@ -30,9 +30,9 @@ class JwtBundleTest {
 
     @Test
     void testNewJwtBundleWithTrustDomain_Success() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
         assertNotNull(jwtBundle);
-        assertEquals(TrustDomain.of("example.org"), jwtBundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("example.org"), jwtBundle.getTrustDomain());
     }
 
     @Test
@@ -45,13 +45,13 @@ class JwtBundleTest {
         authorities.put("authority1", key1.getPublic());
         authorities.put("authority2", key2.getPublic());
 
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"), authorities);
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"), authorities);
 
         // change a key in the map, to test that the bundle has its own copy
         authorities.put("authority1", key2.getPublic());
 
         assertNotNull(jwtBundle);
-        assertEquals(TrustDomain.of("example.org"), jwtBundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("example.org"), jwtBundle.getTrustDomain());
         assertEquals(2, jwtBundle.getJwtAuthorities().size());
         assertEquals(key1.getPublic(), jwtBundle.getJwtAuthorities().get("authority1"));
         assertEquals(key2.getPublic(), jwtBundle.getJwtAuthorities().get("authority2"));
@@ -71,7 +71,7 @@ class JwtBundleTest {
     @Test
     void testNewJwtBundleWithTrustDomain_AuthoritiesIsNull_ThrowsNullPointerException() {
         try {
-            new JwtBundle(TrustDomain.of("example.org"), null);
+            new JwtBundle(TrustDomain.parse("example.org"), null);
             fail("NullPointerException was expected");
         } catch (NullPointerException e) {
             assertEquals("jwtAuthorities is marked non-null but is null", e.getMessage());
@@ -91,7 +91,7 @@ class JwtBundleTest {
     @Test
     void testLoadFileWithEcKey_Success() throws URISyntaxException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_valid_EC_1.json"));
-        TrustDomain trustDomain = TrustDomain.of("example.org");
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
 
         JwtBundle jwtBundle = null;
         try {
@@ -101,7 +101,7 @@ class JwtBundleTest {
         }
 
         assertNotNull(jwtBundle);
-        assertEquals(TrustDomain.of("example.org"), jwtBundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("example.org"), jwtBundle.getTrustDomain());
         assertEquals(1, jwtBundle.getJwtAuthorities().size());
         assertNotNull(jwtBundle.getJwtAuthorities().get("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
     }
@@ -109,7 +109,7 @@ class JwtBundleTest {
     @Test
     void testLoadFileWithRsaKey_Success() throws URISyntaxException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_valid_RSA_1.json"));
-        TrustDomain trustDomain = TrustDomain.of("domain.test");
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
         JwtBundle jwtBundle = null;
         try {
@@ -119,7 +119,7 @@ class JwtBundleTest {
         }
 
         assertNotNull(jwtBundle);
-        assertEquals(TrustDomain.of("domain.test"), jwtBundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("domain.test"), jwtBundle.getTrustDomain());
         assertEquals(1, jwtBundle.getJwtAuthorities().size());
         assertNotNull(jwtBundle.getJwtAuthorities().get("14cc39cd-838d-426d-9bb1-77f3468fba96"));
     }
@@ -127,7 +127,7 @@ class JwtBundleTest {
     @Test
     void testLoadFileWithRsaAndEc_Success() throws URISyntaxException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_valid_RSA_EC.json"));
-        TrustDomain trustDomain = TrustDomain.of("domain.test");
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
         JwtBundle jwtBundle = null;
         try {
@@ -137,7 +137,7 @@ class JwtBundleTest {
         }
 
         assertNotNull(jwtBundle);
-        assertEquals(TrustDomain.of("domain.test"), jwtBundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("domain.test"), jwtBundle.getTrustDomain());
         assertEquals(2, jwtBundle.getJwtAuthorities().size());
         assertNotNull(jwtBundle.getJwtAuthorities().get("14cc39cd-838d-426d-9bb1-77f3468fba96"));
         assertNotNull(jwtBundle.getJwtAuthorities().get("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
@@ -146,7 +146,7 @@ class JwtBundleTest {
     @Test
     void testLoadFile_MissingKid_ThrowsJwtBundleException() throws URISyntaxException, KeyException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_missing_kid.json"));
-        TrustDomain trustDomain = TrustDomain.of("domain.test");
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
         try {
             JwtBundle.load(trustDomain, path);
@@ -159,7 +159,7 @@ class JwtBundleTest {
     @Test
     void testLoadFile_InvalidKeyType_ThrowsKeyException() throws URISyntaxException, KeyException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
-        TrustDomain trustDomain = TrustDomain.of("domain.test");
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
         try {
             JwtBundle.load(trustDomain, path);
@@ -172,7 +172,7 @@ class JwtBundleTest {
     @Test
     void testLoadFile_NonExistentFile_ThrowsException() throws KeyException {
         Path path = Paths.get("testdata/jwtbundle/non-existen.json");
-        TrustDomain trustDomain = TrustDomain.of("domain.test");
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
         try {
             JwtBundle.load(trustDomain, path);
@@ -194,7 +194,7 @@ class JwtBundleTest {
     @Test
     void testLoad_NullBundlePath_ThrowsNullPointerException() throws KeyException, JwtBundleException {
         try {
-            JwtBundle.load(TrustDomain.of("example.org"), null);
+            JwtBundle.load(TrustDomain.parse("example.org"), null);
         } catch (NullPointerException e) {
             assertEquals("bundlePath is marked non-null but is null", e.getMessage());
         }
@@ -207,13 +207,13 @@ class JwtBundleTest {
 
         JwtBundle jwtBundle = null;
         try {
-            jwtBundle = JwtBundle.parse(TrustDomain.of("domain.test"), bundleBytes);
+            jwtBundle = JwtBundle.parse(TrustDomain.parse("domain.test"), bundleBytes);
         } catch (JwtBundleException e) {
             fail(e);
         }
 
         assertNotNull(jwtBundle);
-        assertEquals(TrustDomain.of("domain.test"), jwtBundle.getTrustDomain());
+        assertEquals(TrustDomain.parse("domain.test"), jwtBundle.getTrustDomain());
         assertEquals(2, jwtBundle.getJwtAuthorities().size());
         assertNotNull(jwtBundle.getJwtAuthorities().get("14cc39cd-838d-426d-9bb1-77f3468fba96"));
         assertNotNull(jwtBundle.getJwtAuthorities().get("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
@@ -223,7 +223,7 @@ class JwtBundleTest {
     void testParse_MissingKid_Fails() throws URISyntaxException, IOException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_missing_kid.json"));
         byte[] bundleBytes = Files.readAllBytes(path);
-        TrustDomain trustDomain = TrustDomain.of("domain.test");
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
         try {
             JwtBundle.parse(trustDomain, bundleBytes);
@@ -236,7 +236,7 @@ class JwtBundleTest {
     @Test
     void testParseInvalidJson() throws KeyException {
         try {
-            JwtBundle.parse(TrustDomain.of("example.org"), "invalid json".getBytes());
+            JwtBundle.parse(TrustDomain.parse("example.org"), "invalid json".getBytes());
             fail("exception is expected");
         } catch (JwtBundleException e) {
             assertEquals("Could not parse bundle from bytes", e.getMessage());
@@ -255,7 +255,7 @@ class JwtBundleTest {
     @Test
     void testParse_NullBundleBytes_ThrowsNullPointerException() throws KeyException, JwtBundleException {
         try {
-            JwtBundle.parse(TrustDomain.of("example.org"), null);
+            JwtBundle.parse(TrustDomain.parse("example.org"), null);
         } catch (NullPointerException e) {
             assertEquals("bundleBytes is marked non-null but is null", e.getMessage());
         }
@@ -264,9 +264,9 @@ class JwtBundleTest {
 
     @Test
     void testgetBundleForTrustDomain_Success() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
         try {
-            JwtBundle bundle = jwtBundle.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            JwtBundle bundle = jwtBundle.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertEquals(jwtBundle, bundle);
         } catch (BundleNotFoundException e) {
            fail(e);
@@ -275,9 +275,9 @@ class JwtBundleTest {
 
     @Test
     void testgetBundleForTrustDomain_doesNotExiste_ThrowsBundleNotFoundException() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
         try {
-            jwtBundle.getBundleForTrustDomain(TrustDomain.of("other.org"));
+            jwtBundle.getBundleForTrustDomain(TrustDomain.parse("other.org"));
             fail("exception expected");
         } catch (BundleNotFoundException e) {
             assertEquals("No JWT bundle found for trust domain other.org", e.getMessage());
@@ -286,7 +286,7 @@ class JwtBundleTest {
 
     @Test
     void testJWTAuthoritiesCRUD() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
 
         // Test addJWTAuthority
         DummyPublicKey jwtAuthority1 = new DummyPublicKey();
@@ -321,7 +321,7 @@ class JwtBundleTest {
 
     @Test
     void testAddJwtAuthority_emtpyKeyId_throwsIllegalArgumentException() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
         try {
             jwtBundle.putJwtAuthority("", new DummyPublicKey());
         } catch (IllegalArgumentException e) {
@@ -331,7 +331,7 @@ class JwtBundleTest {
 
     @Test
     void testAddJwtAuthority_nullKeyId_throwsNullPointerException() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
         try {
             jwtBundle.putJwtAuthority(null, new DummyPublicKey());
         } catch (NullPointerException e) {
@@ -341,7 +341,7 @@ class JwtBundleTest {
 
     @Test
     void testAddJwtAuthority_nullJwtAuthority_throwsNullPointerException() {
-        JwtBundle jwtBundle = new JwtBundle(TrustDomain.of("example.org"));
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
         try {
             jwtBundle.putJwtAuthority("key1", null);
         } catch (NullPointerException e) {

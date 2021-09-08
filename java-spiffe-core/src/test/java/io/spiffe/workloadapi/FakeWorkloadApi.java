@@ -71,7 +71,7 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
             Workload.X509SVIDResponse response = Workload.X509SVIDResponse
                     .newBuilder()
                     .addSvids(svid)
-                    .putFederatedBundles(TrustDomain.of("domain.test").getName(), federatedByteString)
+                    .putFederatedBundles(TrustDomain.parse("domain.test").getName(), federatedByteString)
                     .build();
 
             responseObserver.onNext(response);
@@ -94,8 +94,8 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
 
             Workload.X509BundlesResponse response = Workload.X509BundlesResponse
                     .newBuilder()
-                    .putBundles(TrustDomain.of("example.org").getName(), bundleByteString)
-                    .putBundles(TrustDomain.of("domain.test").getName(), federatedByteString)
+                    .putBundles(TrustDomain.parse("example.org").getName(), bundleByteString)
+                    .putBundles(TrustDomain.parse("domain.test").getName(), federatedByteString)
                     .build();
 
             responseObserver.onNext(response);

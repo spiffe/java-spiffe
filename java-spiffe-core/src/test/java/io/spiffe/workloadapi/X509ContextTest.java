@@ -45,8 +45,8 @@ class X509ContextTest {
     }
     
     private X509BundleSet createBundleSet() {
-        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.of("example.org"));
-        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.of("other.org"));
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
+        X509Bundle x509Bundle2 = new X509Bundle(TrustDomain.parse("other.org"));
         List<X509Bundle> bundleList = Arrays.asList(x509Bundle1, x509Bundle2);
         return X509BundleSet.of(bundleList);
     }

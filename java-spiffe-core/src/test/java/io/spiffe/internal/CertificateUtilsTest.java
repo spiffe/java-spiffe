@@ -189,7 +189,7 @@ public class CertificateUtilsTest {
         try {
             TrustDomain trustDomain = CertificateUtils.getTrustDomain(chain);
             assertNotNull(trustDomain);
-            assertEquals(TrustDomain.of("domain.test"), trustDomain);
+            assertEquals(TrustDomain.parse("domain.test"), trustDomain);
         } catch (CertificateException e) {
             fail(e);
         }

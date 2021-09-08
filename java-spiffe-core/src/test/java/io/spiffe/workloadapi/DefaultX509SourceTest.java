@@ -44,9 +44,9 @@ class DefaultX509SourceTest {
     @Test
     void testGetBundleForTrustDomain() {
         try {
-            X509Bundle bundle = x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            X509Bundle bundle = x509Source.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertNotNull(bundle);
-            assertEquals(TrustDomain.of("example.org"), bundle.getTrustDomain());
+            assertEquals(TrustDomain.parse("example.org"), bundle.getTrustDomain());
         } catch (BundleNotFoundException e) {
             fail(e);
         }
@@ -68,7 +68,7 @@ class DefaultX509SourceTest {
     void testGetBundleForTrustDomain_SourceIsClosed_ThrowsIllegalStateExceptions() {
         x509Source.close();
         try {
-            x509Source.getBundleForTrustDomain(TrustDomain.of("example.org"));
+            x509Source.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             fail("exceptions is expected");
         } catch (IllegalStateException e) {
             assertEquals("X.509 bundle source is closed", e.getMessage());

@@ -26,7 +26,7 @@ public class X509SourceStub implements X509Source {
             Path key = Paths.get(toUri("testdata/key.pem"));
             svid = X509Svid.load(cert, key);
             bundle = X509Bundle.load(
-                    TrustDomain.of("spiffe://example.org"),
+                    TrustDomain.parse("spiffe://example.org"),
                     Paths.get(toUri("testdata/bundle.pem")));
         } catch (X509SvidException | URISyntaxException | X509BundleException e) {
             throw new RuntimeException(e);
@@ -35,7 +35,7 @@ public class X509SourceStub implements X509Source {
 
     @Override
     public X509Bundle getBundleForTrustDomain(@NonNull TrustDomain trustDomain) throws BundleNotFoundException {
-        if (TrustDomain.of("example.org").equals(trustDomain)) {
+        if (TrustDomain.parse("example.org").equals(trustDomain)) {
             return bundle;
         }
         throw new BundleNotFoundException("trustDomain not found");

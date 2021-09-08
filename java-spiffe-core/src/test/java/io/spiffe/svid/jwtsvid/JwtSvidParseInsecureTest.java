@@ -88,8 +88,8 @@ class JwtSvidParseInsecureTest {
     void testParseInsecure_nullAudience_throwsNullPointerException() throws JwtSvidException {
         try {
             KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
-            TrustDomain trustDomain = TrustDomain.of("test.domain");
-            SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+            TrustDomain trustDomain = TrustDomain.parse("test.domain");
+            SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
             Set<String> audience = Collections.singleton("audience");
             Date expiration = new Date(System.currentTimeMillis() + 3600000);
             JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
@@ -105,7 +105,7 @@ class JwtSvidParseInsecureTest {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
 
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
@@ -156,7 +156,7 @@ class JwtSvidParseInsecureTest {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
 
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());

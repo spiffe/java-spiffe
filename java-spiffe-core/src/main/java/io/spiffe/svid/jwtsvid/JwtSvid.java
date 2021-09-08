@@ -13,6 +13,7 @@ import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.exception.InvalidSpiffeIdException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.spiffeid.SpiffeId;
@@ -284,7 +285,7 @@ public class JwtSvid {
 
         try {
             return SpiffeId.parse(subject);
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidSpiffeIdException e) {
             throw new JwtSvidException(String.format("Subject %s cannot be parsed as a SPIFFE ID", subject), e);
         }
 

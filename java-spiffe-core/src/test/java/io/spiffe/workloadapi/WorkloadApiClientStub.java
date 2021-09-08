@@ -96,7 +96,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         try {
             val pathBundle = Paths.get(toUri(jwtBundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            val jwtBundle = JwtBundle.parse(TrustDomain.of("example.org"), bundleBytes);
+            val jwtBundle = JwtBundle.parse(TrustDomain.parse("example.org"), bundleBytes);
             return JwtBundleSet.of(Collections.singleton(jwtBundle));
         } catch (IOException | JwtBundleException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -107,8 +107,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         try {
             val pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            val x509Bundle1 = X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
-            val x509Bundle2 = X509Bundle.parse(TrustDomain.of("domain.test"), bundleBytes);
+            val x509Bundle1 = X509Bundle.parse(TrustDomain.parse("example.org"), bundleBytes);
+            val x509Bundle2 = X509Bundle.parse(TrustDomain.parse("domain.test"), bundleBytes);
             return X509BundleSet.of(Arrays.asList(x509Bundle1, x509Bundle2));
         } catch (IOException | X509BundleException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -150,7 +150,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         try {
             Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            return X509Bundle.parse(TrustDomain.of("example.org"), bundleBytes);
+            return X509Bundle.parse(TrustDomain.parse("example.org"), bundleBytes);
         } catch (IOException | URISyntaxException | X509BundleException e) {
             throw new RuntimeException(e);
         }

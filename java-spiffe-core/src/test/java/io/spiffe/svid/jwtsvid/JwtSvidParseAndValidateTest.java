@@ -66,7 +66,7 @@ class JwtSvidParseAndValidateTest {
 
     @Test
     void testParseAndValidate_nullToken_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         Set<String> audience = Collections.singleton("audience");
 
@@ -79,7 +79,7 @@ class JwtSvidParseAndValidateTest {
 
     @Test
     void testParseAndValidate_emptyToken_throwsIllegalArgumentException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         Set<String> audience = Collections.singleton("audience");
 
@@ -102,7 +102,7 @@ class JwtSvidParseAndValidateTest {
 
     @Test
     void testParseAndValidate_nullAudience_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
 
         try {
@@ -117,7 +117,7 @@ class JwtSvidParseAndValidateTest {
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key3 = TestUtils.generateRSAKeyPair(2048);
 
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
@@ -174,7 +174,7 @@ class JwtSvidParseAndValidateTest {
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key3 = TestUtils.generateRSAKeyPair(2048);
 
-        TrustDomain trustDomain = TrustDomain.of("test.domain");
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
         jwtBundle.putJwtAuthority("authority1", key1.getPublic());
         jwtBundle.putJwtAuthority("authority2", key2.getPublic());
@@ -252,14 +252,14 @@ class JwtSvidParseAndValidateTest {
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("no bundle for trust domain")
-                        .jwtBundle(new JwtBundle(TrustDomain.of("other.domain")))
+                        .jwtBundle(new JwtBundle(TrustDomain.parse("other.domain")))
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new BundleNotFoundException("No JWT bundle found for trust domain test.domain"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("no authority found for key id")
-                        .jwtBundle(new JwtBundle(TrustDomain.of("test.domain")))
+                        .jwtBundle(new JwtBundle(TrustDomain.parse("test.domain")))
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new AuthorityNotFoundException("No authority found for the trust domain test.domain and key id authority1"))

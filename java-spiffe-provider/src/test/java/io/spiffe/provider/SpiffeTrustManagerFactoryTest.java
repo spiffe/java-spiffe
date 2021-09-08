@@ -21,7 +21,7 @@ class SpiffeTrustManagerFactoryTest {
 
     @Test
     void engineGetTrustManagers() throws Exception {
-        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1 | spiffe://example.org/test2" );
+        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1|spiffe://example.org/test2" );
 
         // init singleton with an instance
         Field field = X509SourceManager.class.getDeclaredField("x509Source");
@@ -35,7 +35,7 @@ class SpiffeTrustManagerFactoryTest {
         BundleSource<X509Bundle> bundleSource = getX509BundleBundleSource(trustManager);
         SpiffeIdVerifier spiffeIdVerifier = getSpiffeIdVerifier(trustManager);
 
-        TrustDomain trustDomain = TrustDomain.of("example.org");
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
         assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
         assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
@@ -45,7 +45,7 @@ class SpiffeTrustManagerFactoryTest {
 
     @Test
     void testEngineGetTrustManagers_withCustomSource() throws NoSuchFieldException, IllegalAccessException, BundleNotFoundException {
-        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1 | spiffe://example.org/test2" );
+        System.setProperty(SSL_SPIFFE_ACCEPT_PROPERTY, "spiffe://example.org/test1|spiffe://example.org/test2" );
 
         X509Source source = new X509SourceStub();
         TrustManager[] trustManagers = new SpiffeTrustManagerFactory().engineGetTrustManagers(source);
@@ -54,7 +54,7 @@ class SpiffeTrustManagerFactoryTest {
         BundleSource<X509Bundle> bundleSource = getX509BundleBundleSource(trustManager);
         SpiffeIdVerifier spiffeIdVerifier = getSpiffeIdVerifier(trustManager);
 
-        TrustDomain trustDomain = TrustDomain.of("example.org");
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
         assertEquals(source.getBundleForTrustDomain(trustDomain), bundleSource.getBundleForTrustDomain(trustDomain));
         assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test1"), null));
         assertDoesNotThrow(() -> spiffeIdVerifier.verify(SpiffeId.parse("spiffe://example.org/test2"), null));
