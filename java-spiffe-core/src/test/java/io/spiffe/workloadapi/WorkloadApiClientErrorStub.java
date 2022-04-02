@@ -11,6 +11,7 @@ import io.spiffe.svid.jwtsvid.JwtSvid;
 import lombok.NonNull;
 
 import java.io.IOException;
+import java.util.List;
 
 public class WorkloadApiClientErrorStub implements WorkloadApiClient {
 
@@ -41,6 +42,16 @@ public class WorkloadApiClientErrorStub implements WorkloadApiClient {
 
     @Override
     public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+        throw new JwtSvidException("Testing exception");
+    }
+
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+        throw new JwtSvidException("Testing exception");
+    }
+
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException {
         throw new JwtSvidException("Testing exception");
     }
 

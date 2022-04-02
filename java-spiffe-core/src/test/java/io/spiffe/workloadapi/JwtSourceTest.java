@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -123,6 +124,64 @@ class JwtSourceTest {
         jwtSource.close();
         try {
             jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
+            fail("expected exception");
+        } catch (IllegalStateException e) {
+            assertEquals("JWT SVID source is closed", e.getMessage());
+            assertTrue(workloadApiClient.closed);
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+
+    @Test
+    void testFetchJwtSvidsWithSubject() {
+        try {
+            List<JwtSvid> svids = jwtSource.fetchJwtSvids(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
+            assertNotNull(svids);
+            assertEquals(svids.size(), 1);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svids.get(0).getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svids.get(0).getAudience());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidsWithoutSubject() {
+        try {
+            List<JwtSvid> svids = jwtSource.fetchJwtSvids("aud1", "aud2", "aud3");
+            assertNotNull(svids);
+            assertEquals(svids.size(), 2);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svids.get(0).getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svids.get(0).getAudience());
+            assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), svids.get(1).getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svids.get(1).getAudience());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+
+    @Test
+    void testFetchJwtSvids_SourceIsClosed_ThrowsIllegalStateException() throws IOException {
+        jwtSource.close();
+        try {
+            jwtSource.fetchJwtSvids("aud1", "aud2", "aud3");
+            fail("expected exception");
+        } catch (IllegalStateException e) {
+            assertEquals("JWT SVID source is closed", e.getMessage());
+            assertTrue(workloadApiClient.closed);
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidsWithSubject_SourceIsClosed_ThrowsIllegalStateException() throws IOException {
+        jwtSource.close();
+        try {
+            jwtSource.fetchJwtSvids(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
             fail("expected exception");
         } catch (IllegalStateException e) {
             assertEquals("JWT SVID source is closed", e.getMessage());

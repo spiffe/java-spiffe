@@ -116,6 +116,26 @@ class DefaultWorkloadApiClientInvalidArgumentTest {
     }
 
     @Test
+    void testFetchJwtSvids_throwsJwtSvidException() {
+        try {
+            workloadApiClient.fetchJwtSvids("aud1", "aud2");
+            fail();
+        } catch (JwtSvidException e) {
+            assertEquals("Error fetching JWT SVID", e.getMessage());
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidsPassingSpiffeId_throwsJwtSvidException() {
+        try {
+            workloadApiClient.fetchJwtSvids(SpiffeId.parse("spiffe://example.org/test"), "aud1", "aud2");
+            fail();
+        } catch (JwtSvidException e) {
+            assertEquals("Error fetching JWT SVID", e.getMessage());
+        }
+    }
+
+    @Test
     void testValidateJwtSvid_throwsJwtSvidException() {
         try {
             workloadApiClient.validateJwtSvid("token", "aud1");

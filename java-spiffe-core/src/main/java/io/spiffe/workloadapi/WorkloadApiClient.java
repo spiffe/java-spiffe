@@ -11,6 +11,7 @@ import io.spiffe.svid.jwtsvid.JwtSvid;
 import lombok.NonNull;
 
 import java.io.Closeable;
+import java.util.List;
 
 /**
  * Represents a client to interact with the Workload API.
@@ -77,6 +78,27 @@ public interface WorkloadApiClient extends Closeable {
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
     JwtSvid fetchJwtSvid(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException;
+
+    /**
+     * Fetches all SPIFFE JWT-SVIDs on one-shot blocking call.
+     *
+     * @param audience      the audience of the JWT-SVID
+     * @param extraAudience the extra audience for the JWT_SVID
+     * @return all of {@link JwtSvid} object
+     * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
+     */
+    List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException;
+
+    /**
+     * Fetches a SPIFFE JWT-SVID on one-shot blocking call.
+     *
+     * @param subject       a SPIFFE ID
+     * @param audience      the audience of the JWT-SVID
+     * @param extraAudience the extra audience for the JWT_SVID
+     * @return all of {@link JwtSvid} objectÏ
+     * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
+     */
+    List<JwtSvid> fetchJwtSvids(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException;
 
     /**
      * Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
