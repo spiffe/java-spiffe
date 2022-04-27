@@ -280,6 +280,74 @@ class DefaultWorkloadApiClientTest {
     }
 
     @Test
+    void testFetchJwtSvids() {
+        try {
+            List<JwtSvid> jwtSvids = workloadApiClient.fetchJwtSvids("aud1", "aud2", "aud3");
+            System.out.println(jwtSvids.toString());
+            assertNotNull(jwtSvids);
+            assertEquals(jwtSvids.size(), 2);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvids.get(0).getSpiffeId());
+            assertTrue(jwtSvids.get(0).getAudience().contains("aud1"));
+            assertEquals(3, jwtSvids.get(0).getAudience().size());
+            assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), jwtSvids.get(1).getSpiffeId());
+            assertTrue(jwtSvids.get(1).getAudience().contains("aud1"));
+            assertEquals(3, jwtSvids.get(1).getAudience().size());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidsPassingSpiffeId() {
+        try {
+            List<JwtSvid> jwtSvids = workloadApiClient.fetchJwtSvids(SpiffeId.parse("spiffe://example.org/test"), "aud1", "aud2", "aud3");
+            assertNotNull(jwtSvids);
+            assertEquals(jwtSvids.size(), 1);
+            assertEquals(SpiffeId.parse("spiffe://example.org/test"), jwtSvids.get(0).getSpiffeId());
+            assertTrue(jwtSvids.get(0).getAudience().contains("aud1"));
+            assertEquals(3, jwtSvids.get(0).getAudience().size());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvids_nullAudience() {
+        try {
+            workloadApiClient.fetchJwtSvid(null, new String[]{"aud2", "aud3"});
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testFetchJwtSvids_withSpiffeIdAndNullAudience() {
+        try {
+            workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/text"), null, "aud2", "aud3");
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("audience is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testFetchJwtSvids_nullSpiffeId() {
+        try {
+            workloadApiClient.fetchJwtSvid(null, "aud1", new String[]{"aud2", "aud3"});
+            fail();
+        } catch (NullPointerException e) {
+            assertEquals("subject is marked non-null but is null", e.getMessage());
+        } catch (JwtSvidException e) {
+            fail();
+        }
+    }
+
+    @Test
     void testValidateJwtSvid() {
         String token = generateToken("spiffe://example.org/workload-server", Collections.singletonList("aud1"));
         try {

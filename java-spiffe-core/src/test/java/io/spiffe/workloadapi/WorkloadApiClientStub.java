@@ -23,14 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static io.spiffe.utils.TestUtils.toUri;
 
@@ -41,6 +34,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     final String x509Bundle = "testdata/workloadapi/bundle.der";
     final String jwtBundle = "testdata/workloadapi/bundle.json";
     final SpiffeId subject = SpiffeId.parse("spiffe://example.org/workload-server");
+    final SpiffeId extraSubject = SpiffeId.parse("spiffe://example.org/extra-workload-server");
 
     boolean closed;
 
@@ -74,6 +68,21 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     @Override
     public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
         return generateJwtSvid(subject, audience, extraAudience);
+    }
+
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+        List<JwtSvid> svids = new ArrayList<>();
+        svids.add(generateJwtSvid(subject, audience, extraAudience));
+        svids.add(generateJwtSvid(extraSubject, audience, extraAudience));
+        return svids;
+    }
+
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException {
+        List<JwtSvid> svids = new ArrayList<>();
+        svids.add(generateJwtSvid(subject, audience, extraAudience));
+        return svids;
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Collections;
 
 public class WorkloadApiClientStub implements WorkloadApiClient {
@@ -64,6 +65,15 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         return null;
     }
 
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+        return null;
+    }
+
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+        return null;
+    }
     @Override
     public JwtBundleSet fetchJwtBundles() throws JwtBundleException {
         return null;

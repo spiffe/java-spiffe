@@ -108,25 +108,49 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
     @Override
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {
         String spiffeId = request.getSpiffeId();
+        String extraSpiffeId = "spiffe://example.org/extra-workload-server";
+        boolean firstOnly = true;
         if (StringUtils.isBlank(spiffeId)) {
+            firstOnly = false;
             spiffeId = "spiffe://example.org/workload-server";
         }
+        Date expiration = new Date(System.currentTimeMillis() + 3600000);
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", spiffeId);
         claims.put("aud", getAudienceList(request.getAudienceList()));
-        Date expiration = new Date(System.currentTimeMillis() + 3600000);
         claims.put("exp", expiration);
+
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("sub", extraSpiffeId);
+        extraClaims.put("aud", getAudienceList(request.getAudienceList()));
+        extraClaims.put("exp", expiration);
 
         KeyPair keyPair = TestUtils.generateECKeyPair(Curve.P_521);
 
         String token = TestUtils.generateToken(claims, keyPair, "authority1");
+        String extraToken = TestUtils.generateToken(extraClaims, keyPair, "authority1");
 
         Workload.JWTSVID jwtsvid = Workload.JWTSVID
                 .newBuilder()
                 .setSpiffeId(spiffeId)
                 .setSvid(token)
                 .build();
-        Workload.JWTSVIDResponse response = Workload.JWTSVIDResponse.newBuilder().addSvids(jwtsvid).build();
+
+        Workload.JWTSVID extraJwtsvid = Workload.JWTSVID
+                .newBuilder()
+                .setSpiffeId(extraSpiffeId)
+                .setSvid(extraToken)
+                .build();
+
+
+        Workload.JWTSVIDResponse.Builder builder = Workload.JWTSVIDResponse.newBuilder();
+        builder.addSvids(jwtsvid);
+        if (!firstOnly) {
+            builder.addSvids(extraJwtsvid);
+        }
+
+        Workload.JWTSVIDResponse response = builder.build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }

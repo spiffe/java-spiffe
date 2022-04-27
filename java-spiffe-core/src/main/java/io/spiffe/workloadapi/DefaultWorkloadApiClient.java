@@ -245,6 +245,39 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+        final Set<String> audParam = createAudienceSet(audience, extraAudience);
+        try (val cancellableContext = Context.current().withCancellation()) {
+            return cancellableContext.call(() -> callFetchJwtSvids(audParam));
+        } catch (Exception e) {
+            throw new JwtSvidException("Error fetching JWT SVID", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return
+     */
+    @Override
+    public List<JwtSvid> fetchJwtSvids(@NonNull final SpiffeId subject,
+                                       @NonNull final String audience,
+                                       final String... extraAudience)
+            throws JwtSvidException {
+
+        final Set<String> audParam = createAudienceSet(audience, extraAudience);
+
+        try (val cancellableContext = Context.current().withCancellation()) {
+            return cancellableContext.call(() -> callFetchJwtSvids(subject, audParam));
+        } catch (Exception e) {
+            throw new JwtSvidException("Error fetching JWT SVID", e);
+        }
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public JwtBundleSet fetchJwtBundles() throws JwtBundleException {
         try (val cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(this::callFetchBundles);
@@ -330,7 +363,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 .addAllAudience(audience)
                 .build();
         val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
-        return processJwtSvidResponse(response, audience);
+        return processJwtSvidResponse(response, audience, true).get(0);
     }
 
     private JwtSvid callFetchJwtSvid(final Set<String> audience) throws JwtSvidException {
@@ -338,14 +371,40 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 .addAllAudience(audience)
                 .build();
         val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
-        return processJwtSvidResponse(response, audience);
+        return processJwtSvidResponse(response, audience, true).get(0);
     }
 
-    private JwtSvid processJwtSvidResponse(Workload.JWTSVIDResponse response, Set<String> audience) throws JwtSvidException {
+    private List<JwtSvid> callFetchJwtSvids(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
+        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
+                .setSpiffeId(subject.toString())
+                .addAllAudience(audience)
+                .build();
+        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        return processJwtSvidResponse(response, audience, false);
+    }
+
+    private List<JwtSvid> callFetchJwtSvids(final Set<String> audience) throws JwtSvidException {
+        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
+                .addAllAudience(audience)
+                .build();
+        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        return processJwtSvidResponse(response, audience, false);
+    }
+
+    private List<JwtSvid> processJwtSvidResponse(Workload.JWTSVIDResponse response, Set<String> audience, boolean firstOnly) throws JwtSvidException {
         if (response.getSvidsList() == null || response.getSvidsList().isEmpty()) {
             throw new JwtSvidException("JWT SVID response from the Workload API is empty");
         }
-        return JwtSvid.parseInsecure(response.getSvids(0).getSvid(), audience);
+        int n = response.getSvidsCount();
+        if (firstOnly) {
+            n = 1;
+        }
+        ArrayList<JwtSvid> svids = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            val svid = JwtSvid.parseInsecure(response.getSvids(i).getSvid(), audience);
+            svids.add(svid);
+        }
+        return svids;
     }
 
     private JwtBundleSet callFetchBundles() throws JwtBundleException {

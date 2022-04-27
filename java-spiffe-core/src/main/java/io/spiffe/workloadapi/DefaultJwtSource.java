@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+import java.util.List;
 
 import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 
@@ -128,6 +129,30 @@ public class DefaultJwtSource implements JwtSource {
         }
 
         return workloadApiClient.fetchJwtSvid(subject, audience, extraAudiences);
+    }
+
+    @Override
+    public List<JwtSvid> fetchJwtSvids(String audience, String... extraAudiences) throws JwtSvidException {
+        if (isClosed()) {
+            throw new IllegalStateException("JWT SVID source is closed");
+        }
+        return workloadApiClient.fetchJwtSvids(audience, extraAudiences);
+    }
+
+    /**
+     * Fetches all new JWT SVIDs from the Workload API for the given subject SPIFFE ID and audiences.
+     *
+     * @return all {@link JwtSvid}s
+     * @throws IllegalStateException if the source is closed
+     */
+    @Override
+    public List<JwtSvid> fetchJwtSvids(final SpiffeId subject, final String audience, final String... extraAudiences)
+            throws JwtSvidException {
+        if (isClosed()) {
+            throw new IllegalStateException("JWT SVID source is closed");
+        }
+
+        return workloadApiClient.fetchJwtSvids(subject, audience, extraAudiences);
     }
 
     /**
