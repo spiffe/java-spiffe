@@ -211,7 +211,7 @@ public class DefaultJwtSource implements JwtSource {
         workloadApiClient.watchJwtBundles(new Watcher<JwtBundleSet>() {
             @Override
             public void onUpdate(final JwtBundleSet update) {
-                log.log(Level.INFO, "Received JwtBundleSet update");
+                log.log(Level.DEBUG, "Received JwtBundleSet update");
                 setJwtBundleSet(update);
                 done.countDown();
             }
