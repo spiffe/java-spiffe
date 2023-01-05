@@ -18,7 +18,14 @@ dependencies {
 
     // runtimeOnly grpc-netty dependency module will be included in the shadowJar
     if (osdetector.os.is('osx') ) {
-        runtimeOnly(project(':java-spiffe-core:grpc-netty-macos'))
+        project.ext.osArch = System.getProperty("os.arch")
+        if ("x86_64" == project.ext.osArch) {
+            runtimeOnly(project(':java-spiffe-core:grpc-netty-macos'))
+        } else if ("aarch_64" == project.ext.osArch) {
+            runtimeOnly(project(':java-spiffe-core:grpc-netty-macos-aarch64'))
+        } else {
+            throw new GradleException("Architecture not supported: " + project.ext.osArch)
+        }
     } else {
         runtimeOnly(project(':java-spiffe-core:grpc-netty-linux'))
     }

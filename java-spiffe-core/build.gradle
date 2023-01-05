@@ -64,12 +64,23 @@ protobuf {
 
 dependencies {
     if (osdetector.os.is('osx') ) {
-        compileOnly(project('grpc-netty-macos'))
-        testImplementation(project('grpc-netty-macos'))
+        project.ext.osArch = System.getProperty("os.arch")
+        if ("x86_64" == project.ext.osArch) {
+            compileOnly(project('grpc-netty-macos'))
+            testImplementation(project('grpc-netty-macos'))
+        } else if ("aarch_64" == project.ext.osArch) {
+            compileOnly(project('grpc-netty-macos'))
+            testImplementation(project('grpc-netty-macos'))
+        } else {
+            throw new GradleException("Architecture not supported: " + project.ext.osArch)
+        }
     } else {
         compileOnly(project('grpc-netty-linux'))
         testImplementation(project('grpc-netty-linux'))
     }
+
+    project.ext.osArch = System.getProperty("os.arch")
+
 
     implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
     implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
