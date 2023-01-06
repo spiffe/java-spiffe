@@ -2,7 +2,9 @@ description = "Java SPIFFE Library GRPC-Netty MacOS module"
 
 dependencies {
     implementation group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
-    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: '4.1.86.Final', classifier: 'osx-aarch_64'
+
+    // version must match the one in grpc-netty
+    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: '4.1.79.Final', classifier: 'osx-aarch_64'
 }
 
 jar {

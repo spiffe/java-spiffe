@@ -48,7 +48,7 @@ task integrationTest(type: Test) {
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.13.0'
+        artifact = 'com.google.protobuf:protoc:3.21.12'
     }
     plugins {
         grpc {
@@ -68,9 +68,9 @@ dependencies {
         if ("x86_64" == project.ext.osArch) {
             compileOnly(project('grpc-netty-macos'))
             testImplementation(project('grpc-netty-macos'))
-        } else if ("aarch_64" == project.ext.osArch) {
-            compileOnly(project('grpc-netty-macos'))
-            testImplementation(project('grpc-netty-macos'))
+        } else if ("aarch64" == project.ext.osArch) {
+            compileOnly(project('grpc-netty-macos-aarch64'))
+            testImplementation(project('grpc-netty-macos-aarch64'))
         } else {
             throw new GradleException("Architecture not supported: " + project.ext.osArch)
         }
