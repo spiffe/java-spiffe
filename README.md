@@ -63,8 +63,12 @@ implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.8.0'
 
 ### MacOS Support
 
-Add to your `pom.xml`:
+#### x86 Architecture
+
+In case run on a osx-x86 architecture, add to your `pom.xml`:
+
 ```xml
+
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos</artifactId>
@@ -77,6 +81,29 @@ Using Gradle:
 ```gradle
 runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.8.0'
 ```
+
+#### Aarch64 (M1) Architecture
+
+If you are running the aarch64 architecture (M1 CPUs), add to your `pom.xml`:
+
+```xml
+
+<dependency>
+  <groupId>io.spiffe</groupId>
+  <artifactId>grpc-netty-macos-aarch64</artifactId>
+  <version>0.8.0</version>
+  <scope>runtime</scope>
+</dependency>
+```
+
+Using Gradle:
+
+```gradle
+runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos-aarch64', version: '0.8.0'
+```
+
+*Caveat: not all OpenJDK distributions are aarch64 native, make sure your JDK is also running
+natively*
 
 ### Note: `java-spiffe-helper` artifact
 
@@ -105,4 +132,5 @@ For the module [java-spiffe-helper](java-spiffe-helper), a fat jar is generated 
 Based on the OS where the build is run, the `[os-classifier]` will be:
 
 * `-linux-x86_64` for Linux
-* `-osx-x86_64` for MacOS
+* `-osx-x86_64` for MacOS with x86_64 architecture
+* `-osx-aarch64` for MacOS with aarch64 architecture (M1)

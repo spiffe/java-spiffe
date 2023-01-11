@@ -47,7 +47,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        java-version: [ 8, 11, 14 ] # macos-latest at his point doesn't have java 16 installed
+        java-version: [ 8, 11, 17 ]
 
     steps:
       - uses: actions/checkout@v2
