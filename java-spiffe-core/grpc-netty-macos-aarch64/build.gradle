@@ -4,7 +4,7 @@ dependencies {
     implementation group: 'io.grpc', name: 'grpc-netty', version: "${grpcVersion}"
 
     // version must match the one in grpc-netty
-    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: '4.1.79.Final', classifier: 'osx-aarch_64'
+    implementation group: 'io.netty', name: 'netty-transport-native-kqueue', version: "${nettyVersion}", classifier: 'osx-aarch_64'
 }
 
 jar {

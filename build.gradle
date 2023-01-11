@@ -20,6 +20,9 @@ subprojects {
         mockitoVersion = '3.5.15'
         lombokVersion = '1.18.20'
         nimbusVersion = '9.24.2'
+
+        //IMPORTANT: This must be in sync with the shaded netty version in gRPC
+        nettyVersion = '4.1.79.Final'
     }
 
     apply plugin: 'java-library'
