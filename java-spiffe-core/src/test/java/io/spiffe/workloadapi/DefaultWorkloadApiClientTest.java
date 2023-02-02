@@ -20,6 +20,7 @@ import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
 import java.security.KeyPair;
@@ -54,13 +55,14 @@ class DefaultWorkloadApiClientTest {
 
     @Test
     void testNewClient_defaultOptions() throws Exception {
-        try {
-            TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/agent.sock" );
-            WorkloadApiClient client = DefaultWorkloadApiClient.newClient();
-            assertNotNull(client);
-        } catch (SocketEndpointAddressException e) {
-            fail(e);
-        }
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/agent.sock").execute(() -> {
+            try {
+                WorkloadApiClient client = DefaultWorkloadApiClient.newClient();
+                assertNotNull(client);
+            } catch (SocketEndpointAddressException e) {
+                fail(e);
+            }
+        });
     }
 
     @Test

@@ -13,6 +13,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -190,13 +191,14 @@ class KeyStoreHelperTest {
 
     @Test
     void testCreateKeyStoreHelper_createNewClient() throws Exception {
-        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test");
-        val options = getKeyStoreValidOptions(null);
-        try {
-            KeyStoreHelper.create(options);
-        } catch (KeyStoreHelperException e) {
-            fail();
-        }
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test").execute(() -> {
+            val options = getKeyStoreValidOptions(null);
+            try {
+                KeyStoreHelper.create(options);
+            } catch (KeyStoreHelperException e) {
+                fail();
+            }
+        });
     }
 
     @Test
