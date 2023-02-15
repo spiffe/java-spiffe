@@ -62,6 +62,7 @@ class Config {
         val trustStorePath = getProperty(properties, "trustStorePath");
         val trustStorePass = getProperty(properties, "trustStorePass");
 
+        val includeRootCaCertProp = properties.getProperty("includeRootCaCertInChain", "false");
         val keyAlias = properties.getProperty("keyAlias", null);
         val spiffeSocketPath = properties.getProperty("spiffeSocketPath", null);
         val keyStoreTypeProp = properties.getProperty("keyStoreType", null);
@@ -73,6 +74,8 @@ class Config {
             keyStoreType = KeyStoreType.getDefaultType();
         }
 
+        val includeRootCaCert = Boolean.parseBoolean(includeRootCaCertProp);
+
         return KeyStoreOptions.builder()
                 .keyStorePath(Paths.get(keyStorePath))
                 .keyStorePass(keyStorePass)
@@ -80,6 +83,7 @@ class Config {
                 .trustStorePath(Paths.get(trustStorePath))
                 .trustStorePass(trustStorePass)
                 .keyAlias(keyAlias)
+                .includeRootCaCertInChain(includeRootCaCert)
                 .spiffeSocketPath(spiffeSocketPath)
                 .keyStoreType(keyStoreType)
                 .build();

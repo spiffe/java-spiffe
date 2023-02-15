@@ -12,8 +12,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import static io.spiffe.utils.TestUtils.toUri;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ConfigTest {
 
@@ -36,6 +35,20 @@ class ConfigTest {
         assertEquals("jks", properties.getProperty("keyStoreType"));
         assertEquals("other_alias", properties.getProperty("keyAlias"));
         assertEquals("unix:/tmp/test", properties.getProperty("spiffeSocketPath"));
+    }
+
+    @Test
+    void parseConfigFileWithPropertyIncludeRootCaCert() throws URISyntaxException {
+        val path = Paths.get(toUri("testdata/cli/correct-2.conf"));
+
+        Properties properties = null;
+        try {
+            properties = Config.parseConfigFileProperties(path);
+        } catch (RunnerException e) {
+            fail(e);
+        }
+
+        assertEquals("true", properties.getProperty("includeRootCaCertInChain"));
     }
 
     @Test
@@ -92,7 +105,7 @@ class ConfigTest {
 
     @Test
     void createKeyStoreOptions() throws URISyntaxException {
-        Properties configuration = getValidConfiguration();
+        Properties configuration = getValidConfiguration("testdata/cli/correct.conf");
         KeyStoreHelper.KeyStoreOptions keyStoreOptions = Config.createKeyStoreOptions(configuration);
 
         assertEquals("keystore123.p12", keyStoreOptions.getKeyStorePath().toString());
@@ -103,11 +116,28 @@ class ConfigTest {
         assertEquals("jks", keyStoreOptions.getKeyStoreType().value());
         assertEquals("other_alias", keyStoreOptions.getKeyAlias());
         assertEquals("unix:/tmp/test", keyStoreOptions.getSpiffeSocketPath());
+        assertFalse(keyStoreOptions.isIncludeRootCaCertInChain());
+    }
+
+    @Test
+    void createKeyStoreOptionsIncludingRootCaCertProp() throws URISyntaxException {
+        Properties configuration = getValidConfiguration("testdata/cli/correct-2.conf");
+        KeyStoreHelper.KeyStoreOptions keyStoreOptions = Config.createKeyStoreOptions(configuration);
+
+        assertEquals("keystore123.p12", keyStoreOptions.getKeyStorePath().toString());
+        assertEquals("example123", keyStoreOptions.getKeyStorePass());
+        assertEquals("pass123", keyStoreOptions.getKeyPass());
+        assertEquals("truststore123.p12", keyStoreOptions.getTrustStorePath().toString());
+        assertEquals("otherpass123", keyStoreOptions.getTrustStorePass());
+        assertEquals("jks", keyStoreOptions.getKeyStoreType().value());
+        assertEquals("other_alias", keyStoreOptions.getKeyAlias());
+        assertEquals("unix:/tmp/test", keyStoreOptions.getSpiffeSocketPath());
+        assertTrue(keyStoreOptions.isIncludeRootCaCertInChain());
     }
 
     @Test
     void createKeyStoreOptions_aRequiredProperty_is_missing() throws URISyntaxException {
-        Properties configuration = getValidConfiguration();
+        Properties configuration = getValidConfiguration("testdata/cli/correct.conf");
 
         // remove a required config
         configuration.setProperty("trustStorePass", "");
@@ -122,7 +152,7 @@ class ConfigTest {
 
     @Test
     void createKeyStoreOptions_keyStoreTypeMissing_useDefault() throws URISyntaxException {
-        Properties configuration = getValidConfiguration();
+        Properties configuration = getValidConfiguration("testdata/cli/correct.conf");
 
         configuration.setProperty("keyStoreType", "");
 
@@ -130,8 +160,8 @@ class ConfigTest {
         assertEquals(KeyStoreType.getDefaultType(), keyStoreOptions.getKeyStoreType());
     }
 
-    Properties getValidConfiguration() throws URISyntaxException {
-        val path = Paths.get(toUri("testdata/cli/correct.conf"));
+    Properties getValidConfiguration(String configPath) throws URISyntaxException {
+        val path = Paths.get(toUri(configPath));
         Properties properties = null;
         try {
             return Config.parseConfigFileProperties(path);

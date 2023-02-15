@@ -1,6 +1,7 @@
 package io.spiffe.helper.keystore;
 
 import io.spiffe.bundle.x509bundle.X509Bundle;
+import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.WatcherException;
 import io.spiffe.helper.exception.KeyStoreHelperException;
@@ -22,6 +23,11 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.Closeable;
 import java.nio.file.Path;
 import java.security.KeyStoreException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
@@ -52,6 +58,8 @@ public class KeyStoreHelper implements Closeable {
 
     // alias of the private key entry (case-insensitive)
     private final String keyAlias;
+
+    private final boolean includeCa;
 
     private final WorkloadApiClient workloadApiClient;
 
@@ -89,7 +97,7 @@ public class KeyStoreHelper implements Closeable {
             options.workloadApiClient = createNewClient(options.spiffeSocketPath);
         }
 
-        return new KeyStoreHelper(keyStore, trustStore, options.keyPass, options.keyAlias, options.workloadApiClient);
+        return new KeyStoreHelper(keyStore, trustStore, options.keyPass, options.keyAlias, options.includeRootCaCertInChain, options.workloadApiClient);
     }
 
     /**
@@ -135,12 +143,13 @@ public class KeyStoreHelper implements Closeable {
         }
     }
 
-    private KeyStoreHelper(KeyStore keyStore, KeyStore trustStore, String keyPass, String keyAlias, WorkloadApiClient workloadApiClient) {
+    private KeyStoreHelper(KeyStore keyStore, KeyStore trustStore, String keyPass, String keyAlias, boolean includeCa,  WorkloadApiClient workloadApiClient) {
         this.keyStore = keyStore;
         this.trustStore = trustStore;
         this.keyPass = keyPass;
         this.keyAlias = keyAlias;
         this.workloadApiClient = workloadApiClient;
+        this.includeCa = includeCa;
     }
 
     private static KeyStore createKeyStore(KeyStoreOptions options, Path keyStorePath, String keyStorePass) throws KeyStoreException {
@@ -184,11 +193,20 @@ public class KeyStoreHelper implements Closeable {
     }
 
     private void storeX509ContextUpdate(final X509Context update) throws KeyStoreException {
+
+        List<X509Certificate> chain = new ArrayList<>(update.getDefaultSvid().getChain());
+
+        if (includeCa) {
+            X509Certificate caCertificate = getValidSelfSignedCaCertificate(update);
+            chain.add(caCertificate);
+        }
+
         val privateKeyEntry = PrivateKeyEntry.builder()
                 .alias(keyAlias)
                 .password(keyPass)
                 .privateKey(update.getDefaultSvid().getPrivateKey())
                 .certificateChain(update.getDefaultSvid().getChainArray())
+                .certificateChain(chain.toArray(new X509Certificate[0]))
                 .build();
 
         keyStore.storePrivateKeyEntry(privateKeyEntry);
@@ -200,6 +218,29 @@ public class KeyStoreHelper implements Closeable {
         }
 
         log.log(Level.INFO, "Stored X.509 context update in Java KeyStore");
+    }
+
+    // looks for a self-signed CA cert in the trust bundle to complete the chain.
+    private static X509Certificate getValidSelfSignedCaCertificate(X509Context update) {
+        X509Bundle localBundle;
+        try {
+            localBundle = update.getX509BundleSet().getBundleForTrustDomain(update.getDefaultSvid().getSpiffeId().getTrustDomain());
+        } catch (BundleNotFoundException e) {
+            // in case the X509Context was incorrect, should never happen
+            throw new RuntimeException("Incorrect X509Context", e);
+        }
+
+        for (X509Certificate auth : localBundle.getX509Authorities()) {
+            try {
+                auth.checkValidity();
+                if (auth.getIssuerX500Principal().equals(auth.getSubjectX500Principal())) {
+                    // a valid self-signed CA cert was found
+                    return auth;
+                }
+            } catch (CertificateNotYetValidException | CertificateExpiredException ignored) {
+            }
+        }
+        return null;
     }
 
     private void storeBundle(final TrustDomain trustDomain, final X509Bundle bundle) throws KeyStoreException {
@@ -285,6 +326,9 @@ public class KeyStoreHelper implements Closeable {
         private String keyPass;
 
         @Setter(AccessLevel.NONE)
+        private boolean includeRootCaCertInChain;
+
+        @Setter(AccessLevel.NONE)
         private String keyAlias;
 
         @Setter(AccessLevel.NONE)
@@ -301,6 +345,7 @@ public class KeyStoreHelper implements Closeable {
                                @NonNull final String keyPass,
                                final KeyStoreType keyStoreType,
                                final String keyAlias,
+                               final boolean includeRootCaCertInChain,
                                final WorkloadApiClient workloadApiClient,
                                final String spiffeSocketPath) {
             this.keyStorePath = keyStorePath;
@@ -310,6 +355,7 @@ public class KeyStoreHelper implements Closeable {
             this.trustStorePass = trustStorePass;
             this.keyPass = keyPass;
             this.keyAlias = keyAlias;
+            this.includeRootCaCertInChain = includeRootCaCertInChain;
             this.workloadApiClient = workloadApiClient;
             this.spiffeSocketPath = spiffeSocketPath;
         }

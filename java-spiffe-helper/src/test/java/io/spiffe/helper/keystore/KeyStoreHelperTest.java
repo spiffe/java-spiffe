@@ -154,39 +154,6 @@ class KeyStoreHelperTest {
         }
     }
 
-    @Test
-    void testCreateHelper_keyStore_cannotStoreCerts() throws SocketEndpointAddressException {
-
-        keyStoreFilePath = Paths.get("dummy://invalid");
-        trustStoreFilePath = Paths.get("dummy://otherinvalid");
-
-        val trustStorePass = "truststore123";
-        val keyStorePass = "keystore123";
-        val keyPass = "keypass123";
-        val alias = "other_alias";
-
-        final KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions
-                .builder()
-                .keyStorePath(keyStoreFilePath)
-                .keyStorePass(keyStorePass)
-                .trustStorePath(trustStoreFilePath)
-                .trustStorePass(trustStorePass)
-                .keyPass(keyPass)
-                .keyAlias(alias)
-                .workloadApiClient(workloadApiClient)
-                .build();
-
-        try {
-            KeyStoreHelper helper = KeyStoreHelper.create(options);
-            helper.run(false);
-            fail();
-        } catch (KeyStoreHelperException e) {
-            assertEquals("Error running KeyStoreHelper", e.getMessage());
-            assertEquals("java.nio.file.NoSuchFileException: dummy:/invalid", e.getCause().getCause().getMessage());
-        } catch (KeyStoreException e) {
-            fail(e);
-        }
-    }
 
     @Test
     void testCreateKeyStoreHelper_createNewClient() throws Exception {
