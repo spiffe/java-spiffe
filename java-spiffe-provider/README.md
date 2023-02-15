@@ -137,6 +137,35 @@ export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
 
 ## Use Cases
 
+### Connect to Postgres DB using TLS and the SPIFFE SslSocketFactory 
+
+A Java app can connect to a Postgres DB using TLS and authenticate itself using certificates provided by SPIRE through
+the SPIFFE Workload API. To enable this functionality, there's a custom `SSLSocketFactory` implementation that injects a 
+custom `SSLContext` that uses the SPIFFE `KeyStore` and a `Truststore` implementations to obtain certificates and bundles
+from a SPIRE Agent, keep them updated in memory, and provide them for TLS connections.
+
+The URL to connect to Postgress using TLS and Java SPIFFE is as follows:
+
+```
+jdbc:postgresql://localhost:5432/postgres?sslmode=require&sslfactory=io.spiffe.provider.SpiffeSslSocketFactory
+```
+
+The parameter `sslfactory` in the URL configures the Postgres JDBC driver to use the `SpiffeSslSocketFactory` which wraps 
+around an SSL Socket with the Java SPIFFE functionality.
+
+The Workload API socket endpoint should be configured through the Environment variable `SPIFFE_ENDPOINT_SOCKET`.
+
+During the connection to a Postgres DB, the server presents its certificate, which is validated using trust bundles
+obtained from the SPIFFE Workload API. 
+To also validate that the SPIFFE ID presented in the server's certificate is one of a list of expected SPIFFE IDs, 
+the property `ssl.spiffe.accept` needs to be configured with the expected SPIFFE IDs separated by commas.  
+For example:
+
+```
+-Dssl.spiffe.accept=spiffe://domain.test/db-1,spiffe://domain.test/db-2'
+```
+If this property is not configured, any SPIFFE ID will be accepted in a TLS connection.
+
 ### Configure a Tomcat connector
 
 ***Prerequisite***: Having the SPIFFE Provider configured through the `java.security`.
