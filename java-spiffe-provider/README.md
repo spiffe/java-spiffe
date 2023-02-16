@@ -141,10 +141,10 @@ export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
 
 A Java app can connect to a Postgres DB using TLS and authenticate itself using certificates provided by SPIRE through
 the SPIFFE Workload API. To enable this functionality, there's a custom `SSLSocketFactory` implementation that injects a 
-custom `SSLContext` that uses the SPIFFE `KeyStore` and a `Truststore` implementations to obtain certificates and bundles
+custom `SSLContext` that uses the SPIFFE `KeyStore` and a `TrustStore` implementations to obtain certificates and bundles
 from a SPIRE Agent, keep them updated in memory, and provide them for TLS connections.
 
-The URL to connect to Postgress using TLS and Java SPIFFE is as follows:
+The URL to connect to Postgres using TLS and Java SPIFFE is as follows:
 
 ```
 jdbc:postgresql://localhost:5432/postgres?sslmode=require&sslfactory=io.spiffe.provider.SpiffeSslSocketFactory
