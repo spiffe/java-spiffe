@@ -334,12 +334,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 for (val context : cancellableContexts) {
                     context.close();
                 }
-                retryExecutor.shutdown();
-                executorService.shutdown();
 
                 if (managedChannel != null) {
                     managedChannel.close();
                 }
+
+                retryExecutor.shutdown();
+                executorService.shutdown();
                 closed = true;
             }
         }

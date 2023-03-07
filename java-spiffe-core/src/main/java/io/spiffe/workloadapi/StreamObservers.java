@@ -45,7 +45,9 @@ final class StreamObservers {
 
             @Override
             public void onError(final Throwable t) {
-                log.log(Level.SEVERE, "X.509 context observer error", t);
+                if (Status.fromThrowable(t).getCode() != Status.Code.CANCELLED) {
+                    log.log(Level.SEVERE, "X.509 context observer error", t);
+                }
                 handleWatchX509ContextError(t);
             }
 
@@ -59,7 +61,7 @@ final class StreamObservers {
 
             private void handleX509ContextRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
-                    log.log(Level.INFO, "Retrying connecting to Workload API to register X.509 context watcher");
+                    log.log(Level.FINE, "Retrying connecting to Workload API to register X.509 context watcher");
                     retryHandler.scheduleRetry(() ->
                             cancellableContext.run(
                                     () -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(),
@@ -97,7 +99,9 @@ final class StreamObservers {
 
             @Override
             public void onError(final Throwable t) {
-                log.log(Level.SEVERE, "X.509 bundles observer error", t);
+                if (Status.fromThrowable(t).getCode() != Status.Code.CANCELLED) {
+                    log.log(Level.SEVERE, "X.509 bundles observer error", t);
+                }
                 handleWatchX509BundlesError(t);
             }
 
@@ -111,7 +115,7 @@ final class StreamObservers {
 
             private void handleX509BundlesRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
-                    log.log(Level.INFO, "Retrying connecting to Workload API to register X.509 bundles watcher");
+                    log.log(Level.FINE, "Retrying connecting to Workload API to register X.509 bundles watcher");
                     retryHandler.scheduleRetry(() ->
                             cancellableContext.run(
                                     () -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(),
@@ -149,7 +153,9 @@ final class StreamObservers {
 
             @Override
             public void onError(final Throwable t) {
-                log.log(Level.SEVERE, "JWT observer error", t);
+                if (Status.fromThrowable(t).getCode() != Status.Code.CANCELLED) {
+                    log.log(Level.SEVERE, "JWT observer error", t);
+                }
                 handleWatchJwtBundleError(t);
             }
 
@@ -163,7 +169,7 @@ final class StreamObservers {
 
             private void handleJwtBundleRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
-                    log.log(Level.INFO, "Retrying connecting to Workload API to register JWT Bundles watcher");
+                    log.log(Level.FINE, "Retrying connecting to Workload API to register JWT Bundles watcher");
                     retryHandler.scheduleRetry(() ->
                             cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(),
                                     this)));

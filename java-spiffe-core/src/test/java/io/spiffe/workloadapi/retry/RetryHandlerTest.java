@@ -11,8 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 class RetryHandlerTest {
 
@@ -78,7 +77,8 @@ class RetryHandlerTest {
 
         // fourth retry exceeds max retries
         retryHandler.scheduleRetry(runnable);
-        verifyNoInteractions(scheduledExecutorService);
+        verify(scheduledExecutorService).isShutdown();
+        verifyNoMoreInteractions(scheduledExecutorService);
     }
 
     @Test
