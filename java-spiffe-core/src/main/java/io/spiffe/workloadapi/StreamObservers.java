@@ -21,7 +21,6 @@ final class StreamObservers {
 
     private static final String INVALID_ARGUMENT = "INVALID_ARGUMENT";
     private static final String STREAM_IS_COMPLETED = "Workload API stream is completed";
-    public static final String CANCELLED = "CANCELLED";
 
     private StreamObservers() {
     }
@@ -46,7 +45,7 @@ final class StreamObservers {
 
             @Override
             public void onError(final Throwable t) {
-                if (!t.getMessage().contains(CANCELLED)) {
+                if (Status.fromThrowable(t).getCode() != Status.Code.CANCELLED) {
                     log.log(Level.SEVERE, "X.509 context observer error", t);
                 }
                 handleWatchX509ContextError(t);
@@ -100,7 +99,7 @@ final class StreamObservers {
 
             @Override
             public void onError(final Throwable t) {
-                if (!t.getMessage().contains(CANCELLED)) {
+                if (Status.fromThrowable(t).getCode() != Status.Code.CANCELLED) {
                     log.log(Level.SEVERE, "X.509 bundles observer error", t);
                 }
                 handleWatchX509BundlesError(t);
@@ -154,7 +153,7 @@ final class StreamObservers {
 
             @Override
             public void onError(final Throwable t) {
-                if (!t.getMessage().contains(CANCELLED)) {
+                if (Status.fromThrowable(t).getCode() != Status.Code.CANCELLED) {
                     log.log(Level.SEVERE, "JWT observer error", t);
                 }
                 handleWatchJwtBundleError(t);
