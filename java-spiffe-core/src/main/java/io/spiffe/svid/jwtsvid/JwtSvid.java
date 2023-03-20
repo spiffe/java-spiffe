@@ -69,6 +69,12 @@ public class JwtSvid {
      */
     Date issuedAt;
 
+    /**
+     * Hint is an operator-specified string used to provide guidance on how this
+     * identity should be used by a workload when more than one SVID is returned.
+     */
+    String hint;
+
     public static final String HEADER_TYP_JWT = "JWT";
     public static final String HEADER_TYP_JOSE = "JOSE";
 
@@ -77,13 +83,16 @@ public class JwtSvid {
                     final Date issuedAt,
                     final Date expiry,
                     final Map<String, Object> claims,
-                    final String token) {
+                    final String token,
+                    final String hint
+                    ) {
         this.spiffeId = spiffeId;
         this.audience = audience;
         this.expiry = expiry;
         this.claims = claims;
         this.token = token;
         this.issuedAt = issuedAt;
+        this.hint = hint;
     }
 
     /**
@@ -112,7 +121,9 @@ public class JwtSvid {
      */
     public static JwtSvid parseAndValidate(@NonNull final String token,
                                            @NonNull final BundleSource<JwtBundle> jwtBundleSource,
-                                           @NonNull final Set<String> audience)
+                                           @NonNull final Set<String> audience,
+                                           @NonNull final String hint
+    )
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
 
         if (StringUtils.isBlank(token)) {
@@ -142,7 +153,7 @@ public class JwtSvid {
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
 
-        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token);
+        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token, hint);
     }
 
     /**
@@ -160,7 +171,7 @@ public class JwtSvid {
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
      * @throws IllegalArgumentException when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience) throws JwtSvidException {
+    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience, @NonNull final String hint) throws JwtSvidException {
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }
@@ -182,7 +193,7 @@ public class JwtSvid {
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
 
-        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token);
+        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token, hint);
     }
 
     /**
@@ -204,6 +215,16 @@ public class JwtSvid {
         // defensive copy to prevent exposing a mutable object
         return new Date(expiry.getTime());
     }
+
+    /**
+     * Returns the SVID hint.
+     *
+     * @return the SVID hint
+     */
+    public String gethint() {
+        return hint;
+    }
+
 
     /**
      * Returns the map of claims.

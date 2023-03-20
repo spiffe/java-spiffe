@@ -39,10 +39,11 @@ class JwtSvidParseAndValidateTest {
     void parseAndValidateValidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid jwtSvid = JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience);
+            JwtSvid jwtSvid = JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience, testCase.hint);
 
             assertEquals(testCase.expectedJwtSvid.getSpiffeId(), jwtSvid.getSpiffeId());
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
+            assertEquals(testCase.expectedJwtSvid.gethint(), jwtSvid.gethint());
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
             assertEquals(token, jwtSvid.marshal());
@@ -56,7 +57,7 @@ class JwtSvidParseAndValidateTest {
     void parseAndValidateInvalidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience);
+            JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience, "");
             fail("expected error: " + testCase.expectedException.getMessage());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
@@ -71,7 +72,7 @@ class JwtSvidParseAndValidateTest {
         Set<String> audience = Collections.singleton("audience");
 
         try {
-            JwtSvid.parseAndValidate(null, jwtBundle, audience);
+            JwtSvid.parseAndValidate(null, jwtBundle, audience, "");
         } catch (NullPointerException e) {
             assertEquals("token is marked non-null but is null", e.getMessage());
         }
@@ -84,7 +85,7 @@ class JwtSvidParseAndValidateTest {
         Set<String> audience = Collections.singleton("audience");
 
         try {
-            JwtSvid.parseAndValidate("", jwtBundle, audience);
+            JwtSvid.parseAndValidate("", jwtBundle, audience, "");
         } catch (IllegalArgumentException e) {
             assertEquals("Token cannot be blank", e.getMessage());
         }
@@ -94,7 +95,7 @@ class JwtSvidParseAndValidateTest {
     void testParseAndValidate_nullBundle_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
         Set<String> audience = Collections.singleton("audience");
         try {
-            JwtSvid.parseAndValidate("token", null, audience);
+            JwtSvid.parseAndValidate("token", null, audience, "");
         } catch (NullPointerException e) {
             assertEquals("jwtBundleSource is marked non-null but is null", e.getMessage());
         }
@@ -106,9 +107,22 @@ class JwtSvidParseAndValidateTest {
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
 
         try {
-            JwtSvid.parseAndValidate("token", jwtBundle, null);
+            JwtSvid.parseAndValidate("token", jwtBundle, null, "");
         } catch (NullPointerException e) {
             assertEquals("audience is marked non-null but is null", e.getMessage());
+        }
+    }
+
+    @Test
+    void testParseAndValidate_nullHint_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.parse("test.domain");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        Set<String> audience = Collections.singleton("audience");
+
+        try {
+            JwtSvid.parseAndValidate("token", jwtBundle, audience, null);
+        } catch (NullPointerException e) {
+            assertEquals("hint is marked non-null but is null", e.getMessage());
         }
     }
 
@@ -137,12 +151,16 @@ class JwtSvidParseAndValidateTest {
                         .expectedAudience(Collections.singleton("audience1"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
                         .expectedException(null)
+                        .hint("external")
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 issuedAt,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE) ))
+                                claims.getClaims(),
+                                TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE),
+                                "external"
+                        ))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("using RSA signature")
@@ -150,12 +168,15 @@ class JwtSvidParseAndValidateTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
+                        .hint("internal")
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 issuedAt,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3", JwtSvid.HEADER_TYP_JWT)))
+                                claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3", JwtSvid.HEADER_TYP_JWT),
+                                "internal"
+                        ))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("using empty typ")
@@ -163,12 +184,16 @@ class JwtSvidParseAndValidateTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key3, "authority3", ""))
                         .expectedException(null)
+                        .hint("")
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 issuedAt,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3")))
+                                claims.getClaims(),
+                                TestUtils.generateToken(claims, key3, "authority3"),
+                                ""
+                        ))
                         .build())
         );
     }
@@ -297,19 +322,21 @@ class JwtSvidParseAndValidateTest {
         String name;
         JwtBundle jwtBundle;
         Set<String> audience;
+        String hint;
         Supplier<String> generateToken;
         Exception expectedException;
         JwtSvid expectedJwtSvid;
 
         @Builder
         public TestCase(String name, JwtBundle jwtBundle, Set<String> expectedAudience, Supplier<String> generateToken,
-                        Exception expectedException, JwtSvid expectedJwtSvid) {
+                        Exception expectedException, JwtSvid expectedJwtSvid, String hint) {
             this.name = name;
             this.jwtBundle = jwtBundle;
             this.audience = expectedAudience;
             this.generateToken = generateToken;
             this.expectedException = expectedException;
             this.expectedJwtSvid = expectedJwtSvid;
+            this.hint = hint;
         }
     }
 }
