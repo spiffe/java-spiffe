@@ -256,6 +256,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
 
     /**
      * {@inheritDoc}
+     *
      * @return
      */
     @Override
@@ -305,7 +306,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         if (response == null || StringUtils.isBlank(response.getSpiffeId())) {
             throw new JwtSvidException("Error validating JWT SVID. Empty response from Workload API");
         }
-        return JwtSvid.parseInsecure(token, Collections.singleton(audience));
+        return JwtSvid.parseInsecure(token, Collections.singleton(audience), "");
     }
 
     /**
@@ -401,8 +402,15 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
             n = 1;
         }
         ArrayList<JwtSvid> svids = new ArrayList<>(n);
+        HashSet<String> hints = new HashSet<>();
         for (int i = 0; i < n; i++) {
-            val svid = JwtSvid.parseInsecure(response.getSvids(i).getSvid(), audience);
+            // In the event of more than one JWTSVID message with the same hint value set, then the first message in the
+            // list SHOULD be selected.
+            if (hints.contains(response.getSvids(i).getHint())) {
+                continue;
+            }
+            val svid = JwtSvid.parseInsecure(response.getSvids(i).getSvid(), audience, response.getSvids(i).getHint());
+            hints.add(svid.getHint());
             svids.add(svid);
         }
         return svids;
