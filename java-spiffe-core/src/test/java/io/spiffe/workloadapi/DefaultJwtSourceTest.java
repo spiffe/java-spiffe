@@ -88,6 +88,7 @@ class DefaultJwtSourceTest {
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals("external", svid.getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -100,6 +101,7 @@ class DefaultJwtSourceTest {
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals("external", svid.getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
