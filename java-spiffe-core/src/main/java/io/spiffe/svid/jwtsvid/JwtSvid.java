@@ -221,7 +221,7 @@ public class JwtSvid {
      *
      * @return the SVID hint
      */
-    public String gethint() {
+    public String getHint() {
         return hint;
     }
 

@@ -43,7 +43,7 @@ class JwtSvidParseAndValidateTest {
 
             assertEquals(testCase.expectedJwtSvid.getSpiffeId(), jwtSvid.getSpiffeId());
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
-            assertEquals(testCase.expectedJwtSvid.gethint(), jwtSvid.gethint());
+            assertEquals(testCase.expectedJwtSvid.getHint(), jwtSvid.getHint());
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
             assertEquals(token, jwtSvid.marshal());
