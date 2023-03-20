@@ -41,13 +41,23 @@ public class X509Svid {
 
     PrivateKey privateKey;
 
+    /**
+     * Hint is an operator-specified string used to provide guidance on how this
+     * identity should be used by a workload when more than one SVID is returned.
+     */
+    String hint;
+
+
     private X509Svid(
             final SpiffeId spiffeId,
             final List<X509Certificate> chain,
-            final PrivateKey privateKey) {
+            final PrivateKey privateKey,
+            final String hint
+    ) {
         this.spiffeId = spiffeId;
         this.chain = chain;
         this.privateKey = privateKey;
+        this.hint = hint;
     }
 
     /**
@@ -58,6 +68,16 @@ public class X509Svid {
     public X509Certificate getLeaf() {
         return chain.get(0);
     }
+
+    /**
+     * Returns the SVID hint.
+     *
+     * @return the SVID hint
+     */
+    public String getHint() {
+        return hint;
+    }
+
 
     /**
      * Returns the chain of X.509 certificates.
@@ -93,7 +113,7 @@ public class X509Svid {
         } catch (IOException e) {
             throw new X509SvidException("Cannot read private key file", e);
         }
-        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM);
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, "");
     }
 
     /**
@@ -107,9 +127,9 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes)
+    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes, @NonNull final String hint)
             throws X509SvidException {
-        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM);
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, hint);
     }
 
     /**
@@ -124,8 +144,9 @@ public class X509Svid {
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
     public static X509Svid parseRaw(@NonNull final byte[] certsBytes,
-                                    @NonNull final byte[] privateKeyBytes) throws X509SvidException {
-        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER);
+                                    @NonNull final byte[] privateKeyBytes,
+                                    @NonNull final String hint) throws X509SvidException {
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER, hint);
     }
 
     /**
@@ -139,7 +160,8 @@ public class X509Svid {
 
     private static X509Svid createX509Svid(final byte[] certsBytes,
                                            final byte[] privateKeyBytes,
-                                           final KeyFileFormat keyFileFormat) throws X509SvidException {
+                                           final KeyFileFormat keyFileFormat,
+                                           final String hint) throws X509SvidException {
 
         val x509Certificates = generateX509Certificates(certsBytes);
         val privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
@@ -152,7 +174,7 @@ public class X509Svid {
             validateSigningCertificates(x509Certificates);
         }
 
-        return new X509Svid(spiffeId, x509Certificates, privateKey);
+        return new X509Svid(spiffeId, x509Certificates, privateKey, hint);
     }
 
     private static SpiffeId getSpiffeId(final List<X509Certificate> x509Certificates) throws X509SvidException {
