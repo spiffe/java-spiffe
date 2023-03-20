@@ -38,11 +38,6 @@ public class SpiffeKeyManagerTest {
     void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test");
-        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "spiffe://domain.test/workload", rootCa, false);
-
-        X509Svid svid = X509Svid.parseRaw(leaf.getCertificate().getEncoded(), leaf.getKeyPair().getPrivate().getEncoded());
-
         x509Svid = X509Svid.load(
                 Paths.get(toUri("testdata/cert.pem")),
                 Paths.get(toUri("testdata/key.pem")));
