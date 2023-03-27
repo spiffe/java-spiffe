@@ -112,6 +112,7 @@ class JwtSvidParseInsecureTest {
 
         SpiffeId spiffeId = trustDomain.newSpiffeId("host");
         Date expiration = new Date(System.currentTimeMillis() + 3600000);
+        Date issuedAt = new Date();
         Set<String> audience = Collections.singleton("audience");
 
         JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
@@ -125,6 +126,7 @@ class JwtSvidParseInsecureTest {
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
+                                issuedAt,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
                         .build()),
@@ -136,6 +138,7 @@ class JwtSvidParseInsecureTest {
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
+                                issuedAt,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
                         .build()),
@@ -147,6 +150,7 @@ class JwtSvidParseInsecureTest {
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
+                                issuedAt,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "")))
                         .build()));
@@ -234,13 +238,14 @@ class JwtSvidParseInsecureTest {
 
     static JwtSvid newJwtSvidInstance(final SpiffeId spiffeId,
                                       final Set<String> audience,
+                                      final Date issuedAt,
                                       final Date expiry,
                                       final Map<String, Object> claims,
                                       final String token) {
         val constructor = JwtSvid.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
         try {
-            return (JwtSvid) constructor.newInstance(spiffeId, audience, expiry, claims, token);
+            return (JwtSvid) constructor.newInstance(spiffeId, audience, issuedAt, expiry, claims, token);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
