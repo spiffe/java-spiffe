@@ -41,6 +41,7 @@ import java.util.logging.Level;
 import static io.spiffe.workloadapi.StreamObservers.getJwtBundleStreamObserver;
 import static io.spiffe.workloadapi.StreamObservers.getX509BundlesStreamObserver;
 import static io.spiffe.workloadapi.StreamObservers.getX509ContextStreamObserver;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Represents a client to interact with the Workload API.
@@ -306,7 +307,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         if (response == null || StringUtils.isBlank(response.getSpiffeId())) {
             throw new JwtSvidException("Error validating JWT SVID. Empty response from Workload API");
         }
-        return JwtSvid.parseInsecure(token, Collections.singleton(audience), "");
+        return JwtSvid.parseInsecure(token, Collections.singleton(audience), EMPTY);
     }
 
     /**

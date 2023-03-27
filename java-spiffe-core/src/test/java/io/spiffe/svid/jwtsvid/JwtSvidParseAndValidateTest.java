@@ -113,19 +113,6 @@ class JwtSvidParseAndValidateTest {
         }
     }
 
-    @Test
-    void testParseAndValidate_nullHint_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
-        TrustDomain trustDomain = TrustDomain.parse("test.domain");
-        JwtBundle jwtBundle = new JwtBundle(trustDomain);
-        Set<String> audience = Collections.singleton("audience");
-
-        try {
-            JwtSvid.parseAndValidate("token", jwtBundle, audience, null);
-        } catch (NullPointerException e) {
-            assertEquals("hint is marked non-null but is null", e.getMessage());
-        }
-    }
-
     static Stream<Arguments> provideSuccessScenarios() {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);

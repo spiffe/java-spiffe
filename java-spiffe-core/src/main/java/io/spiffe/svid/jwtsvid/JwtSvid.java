@@ -122,7 +122,7 @@ public class JwtSvid {
     public static JwtSvid parseAndValidate(@NonNull final String token,
                                            @NonNull final BundleSource<JwtBundle> jwtBundleSource,
                                            @NonNull final Set<String> audience,
-                                           @NonNull final String hint
+                                           final String hint
     )
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
 
@@ -171,7 +171,7 @@ public class JwtSvid {
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
      * @throws IllegalArgumentException when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience, @NonNull final String hint) throws JwtSvidException {
+    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience, final String hint) throws JwtSvidException {
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }

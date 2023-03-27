@@ -22,6 +22,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.List;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 /**
  * Represents a SPIFFE X.509 SVID.
  * <p>
@@ -113,7 +115,7 @@ public class X509Svid {
         } catch (IOException e) {
             throw new X509SvidException("Cannot read private key file", e);
         }
-        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, "");
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, EMPTY);
     }
 
     /**
@@ -127,7 +129,7 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes, @NonNull final String hint)
+    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes, final String hint)
             throws X509SvidException {
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, hint);
     }
@@ -145,7 +147,7 @@ public class X509Svid {
      */
     public static X509Svid parseRaw(@NonNull final byte[] certsBytes,
                                     @NonNull final byte[] privateKeyBytes,
-                                    @NonNull final String hint) throws X509SvidException {
+                                    final String hint) throws X509SvidException {
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER, hint);
     }
 

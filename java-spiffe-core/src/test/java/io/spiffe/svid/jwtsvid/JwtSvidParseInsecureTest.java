@@ -102,17 +102,6 @@ class JwtSvidParseInsecureTest {
         }
     }
 
-    @Test
-    void testParseInsecure_nullHint_throwsNullPointerException() throws JwtSvidException {
-        Set<String> audience = Collections.singleton("audience");
-
-        try {
-            JwtSvid.parseInsecure("", audience, null);
-        } catch (NullPointerException e) {
-            assertEquals("hint is marked non-null but is null", e.getMessage());
-        }
-    }
-
     static Stream<Arguments> provideSuccessScenarios() {
         KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
         KeyPair key2 = TestUtils.generateECKeyPair(Curve.P_521);

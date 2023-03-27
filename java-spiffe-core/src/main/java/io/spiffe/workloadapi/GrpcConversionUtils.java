@@ -15,7 +15,12 @@ import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.workloadapi.grpc.Workload;
 import lombok.val;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Utility methods for converting GRPC objects to JAVA-SPIFFE domain objects.

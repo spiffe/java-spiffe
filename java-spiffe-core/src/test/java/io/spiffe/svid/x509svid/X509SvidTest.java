@@ -238,18 +238,6 @@ class X509SvidTest {
     }
 
     @Test
-    void testParseRawNullHintArgument() {
-        try {
-            X509Svid.parseRaw(new byte[]{}, new byte[]{}, null);
-            fail();
-        } catch (NullPointerException e) {
-            assertEquals("hint is marked non-null but is null", e.getMessage());
-        } catch (X509SvidException e) {
-            fail();
-        }
-    }
-
-    @Test
     void testLoad_FailsCannotReadCertFile() throws URISyntaxException {
         Path keyPath = Paths.get(toUri(keyRSA));
         try {
@@ -308,16 +296,6 @@ class X509SvidTest {
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());
-        }
-    }
-
-    @Test
-    void testParse_nullHint_throwsNullPointerException() throws X509SvidException {
-        try {
-            X509Svid.parse("cert".getBytes(), "key".getBytes(), null);
-            fail("should have thrown exception");
-        } catch (NullPointerException e) {
-            assertEquals("hint is marked non-null but is null", e.getMessage());
         }
     }
 
