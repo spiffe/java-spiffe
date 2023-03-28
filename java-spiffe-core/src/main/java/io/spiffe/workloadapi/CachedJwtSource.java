@@ -35,7 +35,7 @@ public class CachedJwtSource implements JwtSource {
     static final Duration DEFAULT_TIMEOUT =
             Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
-    // Synchronized map of JWT SVIDs, keyed by a pair of SPIFFE ID and Set of audiences strings.
+    // Synchronized map of JWT SVIDs, keyed by a pair of SPIFFE ID and a Set of audiences strings.
     // This map is used to cache the JWT SVIDs and avoid fetching them from the Workload API.
     private final
     Map<ImmutablePair<SpiffeId, Set<String>>, List<JwtSvid>> jwtSvids = new ConcurrentHashMap<>();
