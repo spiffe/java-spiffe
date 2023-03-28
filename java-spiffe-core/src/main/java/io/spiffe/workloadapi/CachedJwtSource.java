@@ -228,7 +228,7 @@ public class CachedJwtSource implements JwtSource {
         audiences[0] = audience;
         System.arraycopy(extraAudiences, 0, audiences, 1, extraAudiences.length);
         Arrays.sort(audiences);
-        return String.join(",", audiences);
+        return String.join("", audiences);
     }
 
     // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not past its half lifetime.
@@ -241,8 +241,9 @@ public class CachedJwtSource implements JwtSource {
         }
 
         synchronized (this) {
-            // Check again if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not past its half lifetime,
-            // if not, fetches a new one, adds it to the cache map and returns it.
+            // Check again if the jwtSvids map contains the cacheKey, returns the entry if it does exist and the JWT SVID has not past its half lifetime,
+            // if it does not exist or the JWT-SVID has past half its lifetime calls the Workload API to fetch new JWT-SVIDs,
+            // adds them to the cache map and returns the list of them.
             svidList = jwtSvids.get(cacheKey);
             if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
                 return svidList;
