@@ -141,6 +141,9 @@ class CachedJwtSourceTest {
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
+            // set clock forwards but not enough to expire the JWT SVID in the cache
+            jwtSource.setClock(clock.offset(clock, JWT_TTL.dividedBy(2).minus(Duration.ofSeconds(1))));
+
             // call again to get from cache, fetchJwtSvid call count should not change
             svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
             assertNotNull(svid);
@@ -211,6 +214,9 @@ class CachedJwtSourceTest {
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
+            // set clock forwards but not enough to expire the JWT SVID in the cache
+            jwtSource.setClock(clock.offset(clock, JWT_TTL.dividedBy(2).minus(Duration.ofSeconds(1))));
+
             // call again to get from cache, fetchJwtSvid call count should not change
             svid = jwtSource.fetchJwtSvid("aud3", "aud2", "aud1");
             assertNotNull(svid);
@@ -218,7 +224,7 @@ class CachedJwtSourceTest {
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
-            // set clock to expire the JWT SVID in the cache
+            // set clock forwards to expire the JWT SVID in the cache
             jwtSource.setClock(clock.offset(clock, JWT_TTL.dividedBy(2).plus(Duration.ofSeconds(1))));
 
             // call again, fetchJwtSvid call count should increase
