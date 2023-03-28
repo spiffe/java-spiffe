@@ -20,7 +20,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static io.spiffe.workloadapi.WorkloadApiClientStub.JWT_TTL;
 import static org.junit.jupiter.api.Assertions.*;
@@ -162,6 +167,43 @@ class CachedJwtSourceTest {
             assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
 
         } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testfFetchJwtSvidWithSubject_JwtSvidExpiredInCache_MultipleThreads() {
+        // test fetchJwtSvid with several threads trying to read and write the cache
+        // at the same time, the cache should be updated only once
+        try {
+
+            jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
+            assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
+
+            // set clock to expire the JWT SVID in the cache
+            Clock offset = Clock.offset(clock, JWT_TTL.dividedBy(2).plus(Duration.ofSeconds(1)));
+            jwtSource.setClock(offset);
+            workloadApiClient.setClock(offset);
+
+            // create a thread pool with 10 threads
+            ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+            List<Future<JwtSvid>> futures = new ArrayList<>();
+
+            // create 10 tasks to fetch a JWT SVID
+            for (int i = 0; i < 10; i++) {
+                futures.add(executorService.submit(() -> jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3")));
+            }
+
+            // wait for all tasks to finish
+            for (Future<JwtSvid> future : futures) {
+                future.get();
+            }
+
+            // verify that the cache was updated only once after the JWT SVID expired
+            assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
+
+        } catch (InterruptedException | ExecutionException | JwtSvidException e) {
             fail(e);
         }
     }

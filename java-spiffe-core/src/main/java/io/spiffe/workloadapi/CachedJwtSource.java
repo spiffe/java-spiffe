@@ -8,13 +8,23 @@ import io.spiffe.exception.*;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import lombok.*;
+import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.java.Log;
+import lombok.val;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.Closeable;
-import java.time.*;
-import java.util.*;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -240,7 +250,6 @@ public class CachedJwtSource implements JwtSource {
                 svidList = workloadApiClient.fetchJwtSvids(cacheKey.left, audience, extraAudiences);
             }
             jwtSvids.put(cacheKey, svidList);
-
             return svidList;
         }
     }
