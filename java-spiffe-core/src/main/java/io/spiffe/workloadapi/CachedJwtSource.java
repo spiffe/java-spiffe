@@ -123,9 +123,7 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        Set<String> audiencesString = getAudienceSet(audience, extraAudiences);
-        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(null, audiencesString);
-        return getJwtSvids(cacheKey, audience, extraAudiences).get(0);
+        return getJwtSvids(null, audience, extraAudiences).get(0);
     }
 
     /**
@@ -142,9 +140,7 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
-        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
-        return getJwtSvids(cacheKey, audience, extraAudiences).get(0);
+        return getJwtSvids(subject, audience, extraAudiences).get(0);
     }
 
     /**
@@ -160,9 +156,7 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
-        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(null, audiencesSet);
-        return getJwtSvids(cacheKey, audience, extraAudiences);
+        return getJwtSvids(null, audience, extraAudiences);
     }
 
     /**
@@ -179,9 +173,7 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
-        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
-        return getJwtSvids(cacheKey, audience, extraAudiences);
+        return getJwtSvids(subject, audience, extraAudiences);
     }
 
     /**
@@ -219,21 +211,14 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    private static Set<String> getAudienceSet(String audience, String[] extraAudiences) {
-        Set<String> audiencesString;
-        if (extraAudiences != null && extraAudiences.length > 0) {
-            audiencesString = new HashSet<>(Arrays.asList(extraAudiences));
-            audiencesString.add(audience);
-        } else {
-            audiencesString = Collections.singleton(audience);
-        }
-        return audiencesString;
-    }
-
     // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not past its half lifetime.
-    // If the cache does not contain the key or the JWT SVID has past its half lifetime, make a new FetchJWTSVID call to the Workload API, adds the JWT SVIDs to the cache map and returns them.
-    // Only one thread can fetch a new JWT SVID at a time.
-    private List<JwtSvid> getJwtSvids(ImmutablePair<SpiffeId, Set<String>> cacheKey, String audience, String... extraAudiences) throws JwtSvidException {
+    // If the cache does not contain the key or the JWT SVID has past its half lifetime, make a new FetchJWTSVID call to the Workload API,
+    // adds the JWT SVIDs to the cache map and returns them.
+    // Only one thread can fetch new JWT SVIDs and update the cache at a time.
+    private List<JwtSvid> getJwtSvids(SpiffeId subject, String audience, String... extraAudiences) throws JwtSvidException {
+        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
+
         List<JwtSvid> svidList = jwtSvids.get(cacheKey);
         if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
             return svidList;
@@ -259,7 +244,17 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    // Checks if the token passed half of its lifetime.
+    private static Set<String> getAudienceSet(String audience, String[] extraAudiences) {
+        Set<String> audiencesString;
+        if (extraAudiences != null && extraAudiences.length > 0) {
+            audiencesString = new HashSet<>(Arrays.asList(extraAudiences));
+            audiencesString.add(audience);
+        } else {
+            audiencesString = Collections.singleton(audience);
+        }
+        return audiencesString;
+    }
+
     private boolean isTokenPastHalfLifetime(JwtSvid jwtSvid) {
         Instant now = clock.instant();
         val halfLife = new Date(jwtSvid.getExpiry().getTime() - (jwtSvid.getExpiry().getTime() - jwtSvid.getIssuedAt().getTime()) / 2);
