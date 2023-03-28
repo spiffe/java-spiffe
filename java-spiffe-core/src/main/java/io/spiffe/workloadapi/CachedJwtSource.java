@@ -14,10 +14,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.Closeable;
 import java.time.*;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -38,10 +35,10 @@ public class CachedJwtSource implements JwtSource {
     static final Duration DEFAULT_TIMEOUT =
             Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
-    // Synchronized map of JWT SVIDs, keyed by a pair of SPIFFE ID and audience.
+    // Synchronized map of JWT SVIDs, keyed by a pair of SPIFFE ID and Set of audiences strings.
     // This map is used to cache the JWT SVIDs and avoid fetching them from the Workload API.
     private final
-    Map<ImmutablePair<SpiffeId, String>, List<JwtSvid>> jwtSvids = new ConcurrentHashMap<>();
+    Map<ImmutablePair<SpiffeId, Set<String>>, List<JwtSvid>> jwtSvids = new ConcurrentHashMap<>();
 
     private JwtBundleSet bundles;
 
@@ -126,8 +123,8 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        String audiencesString = getAudienceString(audience, extraAudiences);
-        ImmutablePair<SpiffeId, String> cacheKey = new ImmutablePair<>(null, audiencesString);
+        Set<String> audiencesString = getAudienceSet(audience, extraAudiences);
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(null, audiencesString);
         return getJwtSvids(cacheKey, audience, extraAudiences).get(0);
     }
 
@@ -145,8 +142,8 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        String audiencesString = getAudienceString(audience, extraAudiences);
-        ImmutablePair<SpiffeId, String> cacheKey = new ImmutablePair<>(subject, audiencesString);
+        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
         return getJwtSvids(cacheKey, audience, extraAudiences).get(0);
     }
 
@@ -163,8 +160,8 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        String audiencesString = getAudienceString(audience, extraAudiences);
-        ImmutablePair<SpiffeId, String> cacheKey = new ImmutablePair<>(null, audiencesString);
+        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(null, audiencesSet);
         return getJwtSvids(cacheKey, audience, extraAudiences);
     }
 
@@ -182,8 +179,8 @@ public class CachedJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        String audiencesString = getAudienceString(audience, extraAudiences);
-        ImmutablePair<SpiffeId, String> cacheKey = new ImmutablePair<>(subject, audiencesString);
+        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
         return getJwtSvids(cacheKey, audience, extraAudiences);
     }
 
@@ -222,19 +219,21 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    // Creates a string from the audience and extraAudiences, sorting them in alphabetical order.
-    private String getAudienceString(final String audience, final String... extraAudiences) {
-        String[] audiences = new String[extraAudiences.length + 1];
-        audiences[0] = audience;
-        System.arraycopy(extraAudiences, 0, audiences, 1, extraAudiences.length);
-        Arrays.sort(audiences);
-        return String.join("", audiences);
+    private static Set<String> getAudienceSet(String audience, String[] extraAudiences) {
+        Set<String> audiencesString;
+        if (extraAudiences != null && extraAudiences.length > 0) {
+            audiencesString = new HashSet<>(Arrays.asList(extraAudiences));
+            audiencesString.add(audience);
+        } else {
+            audiencesString = Collections.singleton(audience);
+        }
+        return audiencesString;
     }
 
     // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not past its half lifetime.
     // If the cache does not contain the key or the JWT SVID has past its half lifetime, make a new FetchJWTSVID call to the Workload API, adds the JWT SVIDs to the cache map and returns them.
     // Only one thread can fetch a new JWT SVID at a time.
-    private List<JwtSvid> getJwtSvids(ImmutablePair<SpiffeId, String> cacheKey, String audience, String... extraAudiences) throws JwtSvidException {
+    private List<JwtSvid> getJwtSvids(ImmutablePair<SpiffeId, Set<String>> cacheKey, String audience, String... extraAudiences) throws JwtSvidException {
         List<JwtSvid> svidList = jwtSvids.get(cacheKey);
         if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
             return svidList;
