@@ -16,23 +16,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
+import static io.spiffe.workloadapi.WorkloadApiClientStub.JWT_TTL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CachedJwtSourceTest {
-    private JwtSource jwtSource;
+    private CachedJwtSource jwtSource;
     private WorkloadApiClientStub workloadApiClient;
     private WorkloadApiClientErrorStub workloadApiClientErrorStub;
+    private Clock clock;
 
     @BeforeEach
     void setUp() throws JwtSourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
         JwtSourceOptions options = JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
         System.setProperty(DefaultJwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
-        jwtSource = CachedJwtSource.newSource(options);
+        jwtSource = (CachedJwtSource) CachedJwtSource.newSource(options);
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
+
+        clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        workloadApiClient.setClock(clock);
+        jwtSource.setClock(clock);
     }
 
     @AfterEach
@@ -105,19 +114,50 @@ class CachedJwtSourceTest {
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
-            // call again to get from cache changing the order of the audiences
-            svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud2", "aud3", "aud1");
+            // call again using different subject
+            svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/extra-workload-server"), "aud2", "aud3", "aud1");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
+
+            // call again using different audience
+            svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/extra-workload-server"), "aud1", "aud2", "aud3");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidWithSubject_JwtSvidExpiredInCache() {
+        try {
+            JwtSvid svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
-            // call again using different audience
-            svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "other-audience");
+            // call again to get from cache, fetchJwtSvid call count should not change
+            svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
-            assertEquals(Sets.newHashSet("other-audience"), svid.getAudience());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
+
+            // set clock to expire the JWT SVID in the cache
+            jwtSource.setClock(clock.offset(clock, JWT_TTL.dividedBy(2).plus(Duration.ofSeconds(1))));
+
+            // call again, fetchJwtSvid call count should increase
+            svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/workload-server"), "aud1", "aud2", "aud3");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
+
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -144,18 +184,48 @@ class CachedJwtSourceTest {
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
-            // call again to get from cache changing the order of the audiences
+            // call again to get from cache changing the order of the audiences, the call count should not change
             svid = jwtSource.fetchJwtSvid("aud3", "aud2", "aud1");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
 
-            // call again using different audience
+            // call again using different audience, the call count should increase
             svid = jwtSource.fetchJwtSvid("other-audience");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
             assertEquals(Sets.newHashSet("other-audience"), svid.getAudience());
+            assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
+        } catch (JwtSvidException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void testFetchJwtSvidWithoutSubject_JwtSvidExpiredInCache() {
+        try {
+            JwtSvid svid = jwtSource.fetchJwtSvid("aud1", "aud2", "aud3");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
+
+            // call again to get from cache, fetchJwtSvid call count should not change
+            svid = jwtSource.fetchJwtSvid("aud3", "aud2", "aud1");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
+            assertEquals(1, workloadApiClient.getFetchJwtSvidCallCount());
+
+            // set clock to expire the JWT SVID in the cache
+            jwtSource.setClock(clock.offset(clock, JWT_TTL.dividedBy(2).plus(Duration.ofSeconds(1))));
+
+            // call again, fetchJwtSvid call count should increase
+            svid = jwtSource.fetchJwtSvid("aud1", "aud2", "aud3");
+            assertNotNull(svid);
+            assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svid.getSpiffeId());
+            assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
         } catch (JwtSvidException e) {
             fail(e);

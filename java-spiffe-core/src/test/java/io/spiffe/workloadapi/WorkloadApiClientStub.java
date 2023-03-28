@@ -23,12 +23,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.*;
 
 import static io.spiffe.utils.TestUtils.toUri;
 
 public class WorkloadApiClientStub implements WorkloadApiClient {
 
+    static final Duration JWT_TTL = Duration.ofSeconds(60);
     final String privateKey = "testdata/workloadapi/svid.key.der";
     final String svid = "testdata/workloadapi/svid.der";
     final String x509Bundle = "testdata/workloadapi/bundle.der";
@@ -39,6 +42,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     int fetchJwtSvidCallCount = 0;
 
     boolean closed;
+
+    Clock clock = Clock.systemDefaultZone();
 
     @Override
     public X509Context fetchX509Context() {
@@ -138,8 +143,9 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", subject.toString());
         claims.put("aud", new ArrayList<>(audParam));
-        Date expiration = new Date(System.currentTimeMillis() + 3600000);
-        claims.put("exp", expiration);
+
+        claims.put("iat", new Date(clock.millis()));
+        claims.put("exp", new Date(clock.millis() + JWT_TTL.toMillis()));
 
         KeyPair keyPair = TestUtils.generateECKeyPair(Curve.P_521);
 
@@ -191,5 +197,13 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
     int getFetchJwtSvidCallCount() {
         return fetchJwtSvidCallCount;
+    }
+
+    Clock getClock() {
+        return clock;
+    }
+
+    void setClock(Clock clock) {
+        this.clock = clock;
     }
 }

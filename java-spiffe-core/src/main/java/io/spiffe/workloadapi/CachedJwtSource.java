@@ -13,7 +13,7 @@ import lombok.extern.java.Log;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.Closeable;
-import java.time.Duration;
+import java.time.*;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -47,9 +47,11 @@ public class CachedJwtSource implements JwtSource {
 
     private final WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
+    private Clock clock;
 
     // private constructor
     private CachedJwtSource(final WorkloadApiClient workloadApiClient) {
+        this.clock = Clock.systemDefaultZone();
         this.workloadApiClient = workloadApiClient;
     }
 
@@ -230,7 +232,7 @@ public class CachedJwtSource implements JwtSource {
     }
 
     // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not past its half lifetime.
-    // If the cache does not contain the key or the JWT SVID has past its half lifetime, fetches a new one, adds it to the cache map and returns it.
+    // If the cache does not contain the key or the JWT SVID has past its half lifetime, make a new FetchJWTSVID call to the Workload API, adds the JWT SVIDs to the cache map and returns them.
     // Only one thread can fetch a new JWT SVID at a time.
     private List<JwtSvid> getJwtSvids(ImmutablePair<SpiffeId, String> cacheKey, String audience, String... extraAudiences) throws JwtSvidException {
         List<JwtSvid> svidList = jwtSvids.get(cacheKey);
@@ -257,11 +259,12 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    // Checks if the token passed half of its lifetime
+    // Checks if the token passed half of its lifetime.
     private boolean isTokenPastHalfLifetime(JwtSvid jwtSvid) {
-        val now = new Date();
-        val halfLife = new Date(jwtSvid.getExpiry().getTime() - (jwtSvid.getExpiry().getTime() - jwtSvid.getExpiry().getTime()) / 2);
-        return now.after(halfLife);
+        Instant now = clock.instant();
+        val halfLife = new Date(jwtSvid.getExpiry().getTime() - (jwtSvid.getExpiry().getTime() - jwtSvid.getIssuedAt().getTime()) / 2);
+        val halfLifeInstant = Instant.ofEpochMilli(halfLife.getTime());
+        return now.isAfter(halfLifeInstant);
     }
 
 
@@ -318,5 +321,9 @@ public class CachedJwtSource implements JwtSource {
                 .spiffeSocketPath(options.getSpiffeSocketPath())
                 .build();
         return DefaultWorkloadApiClient.newClient(clientOptions);
+    }
+
+    void setClock(Clock clock) {
+        this.clock = clock;
     }
 }
