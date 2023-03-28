@@ -224,6 +224,7 @@ public class CachedJwtSource implements JwtSource {
             return svidList;
         }
 
+        // even using ConcurrentHashMap, there is a possibility of multiple threads trying to fetch new JWT SVIDs at the same time.
         synchronized (this) {
             // Check again if the jwtSvids map contains the cacheKey, returns the entry if it does exist and the JWT SVID has not past its half lifetime,
             // if it does not exist or the JWT-SVID has past half its lifetime calls the Workload API to fetch new JWT-SVIDs,
