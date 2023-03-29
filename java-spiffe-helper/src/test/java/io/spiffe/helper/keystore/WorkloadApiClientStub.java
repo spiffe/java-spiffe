@@ -130,7 +130,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
             Path pathKey = Paths.get(toUri(privateKey));
             byte[] keyBytes = Files.readAllBytes(pathKey);
 
-            return X509Svid.parseRaw(svidBytes, keyBytes, "");
+            return X509Svid.parseRaw(svidBytes, keyBytes);
         } catch (X509SvidException | IOException e) {
             throw new RuntimeException(e);
         }

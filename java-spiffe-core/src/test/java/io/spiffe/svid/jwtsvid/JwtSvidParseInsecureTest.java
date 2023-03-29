@@ -55,7 +55,7 @@ class JwtSvidParseInsecureTest {
     void parseInvalidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid.parseInsecure(token, testCase.audience, "");
+            JwtSvid.parseInsecure(token, testCase.audience);
             fail("expected error: " + testCase.expectedException.getMessage());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
@@ -69,7 +69,7 @@ class JwtSvidParseInsecureTest {
         Set<String> audience = Collections.singleton("audience");
 
         try {
-            JwtSvid.parseInsecure(null, audience, "");
+            JwtSvid.parseInsecure(null, audience);
         } catch (NullPointerException e) {
             assertEquals("token is marked non-null but is null", e.getMessage());
         }
@@ -79,7 +79,7 @@ class JwtSvidParseInsecureTest {
     void testParseAndValidate_emptyToken_throwsIllegalArgumentException() throws JwtSvidException {
         Set<String> audience = Collections.singleton("audience");
         try {
-            JwtSvid.parseInsecure("", audience, "");
+            JwtSvid.parseInsecure("", audience);
         } catch (IllegalArgumentException e) {
             assertEquals("Token cannot be blank", e.getMessage());
         }
@@ -95,7 +95,7 @@ class JwtSvidParseInsecureTest {
             Date expiration = new Date(System.currentTimeMillis() + 3600000);
             JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
 
-            JwtSvid.parseInsecure(TestUtils.generateToken(claims, key1, "authority1"), null, "");
+            JwtSvid.parseInsecure(TestUtils.generateToken(claims, key1, "authority1"), null);
 
         } catch (NullPointerException e) {
             assertEquals("audience is marked non-null but is null", e.getMessage());

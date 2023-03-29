@@ -216,7 +216,7 @@ class X509SvidTest {
     @Test
     void testParseRawNullCertsBytesArgument() {
         try {
-            X509Svid.parseRaw(null, new byte[]{}, "");
+            X509Svid.parseRaw(null, new byte[]{});
             fail();
         } catch (NullPointerException e) {
             assertEquals("certsBytes is marked non-null but is null", e.getMessage());
@@ -228,7 +228,7 @@ class X509SvidTest {
     @Test
     void testParseRawNullPrivateKeyBytesArgument() {
         try {
-            X509Svid.parseRaw(new byte[]{}, null, "");
+            X509Svid.parseRaw(new byte[]{}, null);
             fail();
         } catch (NullPointerException e) {
             assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());
@@ -282,7 +282,7 @@ class X509SvidTest {
     @Test
     void testParse_nullByteArray_throwsNullPointerException() throws X509SvidException {
         try {
-            X509Svid.parse(null, "key".getBytes(), "");
+            X509Svid.parse(null, "key".getBytes());
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("certsBytes is marked non-null but is null", e.getMessage());
@@ -292,7 +292,7 @@ class X509SvidTest {
     @Test
     void testParse_nullKeyByteArray_throwsNullPointerException() throws X509SvidException {
         try {
-            X509Svid.parse("cert".getBytes(), null, "");
+            X509Svid.parse("cert".getBytes(), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
             assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());

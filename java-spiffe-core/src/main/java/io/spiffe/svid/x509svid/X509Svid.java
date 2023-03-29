@@ -115,7 +115,7 @@ public class X509Svid {
         } catch (IOException e) {
             throw new X509SvidException("Cannot read private key file", e);
         }
-        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, EMPTY);
+        return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, null);
     }
 
     /**
@@ -126,6 +126,23 @@ public class X509Svid {
      *
      * @param certsBytes      chain of certificates as a byte array
      * @param privateKeyBytes private key as byte array
+     * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
+     * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
+     */
+    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes)
+            throws X509SvidException {
+        return parse(certsBytes, privateKeyBytes, null);
+    }
+
+    /**
+     * Parses the X.509 SVID from PEM or DER blocks containing certificate chain and key
+     * bytes. The key must be a PEM block with PKCS#8.
+     * <p>
+     * It is assumed that the leaf certificate is always the first certificate in the parsed chain.
+     *
+     * @param certsBytes      chain of certificates as a byte array
+     * @param privateKeyBytes private key as byte array
+     * @param hint            a hint that can be used to provide guidance on how this identity should be used
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
@@ -142,6 +159,23 @@ public class X509Svid {
      *
      * @param certsBytes      chain of certificates as a byte array
      * @param privateKeyBytes private key as byte array
+     * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
+     * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
+     */
+    public static X509Svid parseRaw(@NonNull final byte[] certsBytes,
+                                    @NonNull final byte[] privateKeyBytes) throws X509SvidException {
+        return parseRaw(certsBytes, privateKeyBytes, null);
+    }
+
+    /**
+     * Parses the X509-SVID from certificate and key bytes. The certificate must be ASN.1 DER (concatenated with
+     * no intermediate padding if there are more than one certificate). The key must be a PKCS#8 ASN.1 DER.
+     * <p>
+     * It is assumed that the leaf certificate is always the first certificate in the parsed chain.
+     *
+     * @param certsBytes      chain of certificates as a byte array
+     * @param privateKeyBytes private key as byte array
+     * @param hint            a hint that can be used to provide guidance on how this identity should be used
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */

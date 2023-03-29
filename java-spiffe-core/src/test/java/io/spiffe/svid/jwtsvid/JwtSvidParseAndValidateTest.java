@@ -57,7 +57,7 @@ class JwtSvidParseAndValidateTest {
     void parseAndValidateInvalidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience, "");
+            JwtSvid.parseAndValidate(token, testCase.jwtBundle, testCase.audience);
             fail("expected error: " + testCase.expectedException.getMessage());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
@@ -72,7 +72,7 @@ class JwtSvidParseAndValidateTest {
         Set<String> audience = Collections.singleton("audience");
 
         try {
-            JwtSvid.parseAndValidate(null, jwtBundle, audience, "");
+            JwtSvid.parseAndValidate(null, jwtBundle, audience);
         } catch (NullPointerException e) {
             assertEquals("token is marked non-null but is null", e.getMessage());
         }
@@ -85,7 +85,7 @@ class JwtSvidParseAndValidateTest {
         Set<String> audience = Collections.singleton("audience");
 
         try {
-            JwtSvid.parseAndValidate("", jwtBundle, audience, "");
+            JwtSvid.parseAndValidate("", jwtBundle, audience);
         } catch (IllegalArgumentException e) {
             assertEquals("Token cannot be blank", e.getMessage());
         }
@@ -95,7 +95,7 @@ class JwtSvidParseAndValidateTest {
     void testParseAndValidate_nullBundle_throwsNullPointerException() throws JwtSvidException, AuthorityNotFoundException, BundleNotFoundException {
         Set<String> audience = Collections.singleton("audience");
         try {
-            JwtSvid.parseAndValidate("token", null, audience, "");
+            JwtSvid.parseAndValidate("token", null, audience);
         } catch (NullPointerException e) {
             assertEquals("jwtBundleSource is marked non-null but is null", e.getMessage());
         }
@@ -107,7 +107,7 @@ class JwtSvidParseAndValidateTest {
         JwtBundle jwtBundle = new JwtBundle(trustDomain);
 
         try {
-            JwtSvid.parseAndValidate("token", jwtBundle, null, "");
+            JwtSvid.parseAndValidate("token", jwtBundle, null);
         } catch (NullPointerException e) {
             assertEquals("audience is marked non-null but is null", e.getMessage());
         }
