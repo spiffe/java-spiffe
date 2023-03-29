@@ -22,8 +22,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.List;
 
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-
 /**
  * Represents a SPIFFE X.509 SVID.
  * <p>
