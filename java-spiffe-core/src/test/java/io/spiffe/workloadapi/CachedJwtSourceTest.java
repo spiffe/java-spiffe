@@ -126,7 +126,7 @@ class CachedJwtSourceTest {
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svid.getAudience());
             assertEquals(2, workloadApiClient.getFetchJwtSvidCallCount());
 
-            // call again using different audience
+            // call again using the same audiences
             svid = jwtSource.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/extra-workload-server"), "aud1", "aud2", "aud3");
             assertNotNull(svid);
             assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), svid.getSpiffeId());
