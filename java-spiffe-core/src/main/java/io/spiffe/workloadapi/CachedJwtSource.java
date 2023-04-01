@@ -128,12 +128,12 @@ public class CachedJwtSource implements JwtSource {
      * @throws JwtSvidException
      */
     @Override
-    public JwtSvid fetchJwtSvid(String audience, String... extraAudiences) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(final String audience, final String... extraAudiences) throws JwtSvidException {
         if (isClosed()) {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        return getJwtSvids(null, audience, extraAudiences).get(0);
+        return getJwtSvids(audience, extraAudiences).get(0);
     }
 
     /**
@@ -161,12 +161,12 @@ public class CachedJwtSource implements JwtSource {
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public List<JwtSvid> fetchJwtSvids(String audience, String... extraAudiences) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(final String audience, final String... extraAudiences) throws JwtSvidException {
         if (isClosed()) {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        return getJwtSvids(null, audience, extraAudiences);
+        return getJwtSvids(audience, extraAudiences);
     }
 
     /**
@@ -252,6 +252,10 @@ public class CachedJwtSource implements JwtSource {
             jwtSvids.put(cacheKey, svidList);
             return svidList;
         }
+    }
+
+    private List<JwtSvid> getJwtSvids(String audience, String... extraAudiences) throws JwtSvidException {
+        return getJwtSvids(null, audience, extraAudiences);
     }
 
     private static Set<String> getAudienceSet(String audience, String[] extraAudiences) {

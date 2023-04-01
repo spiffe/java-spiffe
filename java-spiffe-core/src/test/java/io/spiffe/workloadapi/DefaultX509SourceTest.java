@@ -6,7 +6,6 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.utils.TestUtils;
 import lombok.val;
@@ -85,7 +84,6 @@ class DefaultX509SourceTest {
         assertNotNull(x509Svid);
         assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"),x509Svid.getSpiffeId());
     }
-
 
     @Test
     void testGetX509Svid_SourceIsClosed_ThrowsIllegalStateException() {
