@@ -81,7 +81,7 @@ public class CachedJwtSource implements JwtSource {
 
     /**
      * Creates a new JWT source. It blocks until the initial update with the JWT bundles
-     * has been received from the Workload API, doing retries with a backoff exponential policy,
+     * has been received from the Workload API, doing retries with an exponential backoff policy,
      * or until the initTimeout has expired.
      * <p>
      * If the timeout is not provided in the options, the default timeout is read from the
