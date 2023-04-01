@@ -172,7 +172,7 @@ class CachedJwtSourceTest {
     }
 
     @Test
-    void testfFetchJwtSvidWithSubject_JwtSvidExpiredInCache_MultipleThreads() {
+    void testFetchJwtSvidWithSubject_JwtSvidExpiredInCache_MultipleThreads() {
         // test fetchJwtSvid with several threads trying to read and write the cache
         // at the same time, the cache should be updated only once
         try {
