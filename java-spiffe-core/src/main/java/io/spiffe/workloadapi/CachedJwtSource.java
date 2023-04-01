@@ -238,7 +238,7 @@ public class CachedJwtSource implements JwtSource {
         synchronized (this) {
             // Check again if the jwtSvids map contains the cacheKey, and return the entry if it exists and the JWT SVID has not passed its half lifetime.
             // If it does not exist or the JWT-SVID has passed half its lifetime, call the Workload API to fetch new JWT-SVIDs,
-            // adds them to the cache map and returns the list of them.
+            // add them to the cache map, and return the list of JWT-SVIDs.
             svidList = jwtSvids.get(cacheKey);
             if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
                 return svidList;
