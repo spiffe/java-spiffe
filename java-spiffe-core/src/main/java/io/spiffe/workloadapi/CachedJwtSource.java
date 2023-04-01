@@ -119,7 +119,7 @@ public class CachedJwtSource implements JwtSource {
     }
 
     /**
-     * Fetches a JWT SVID for the given audience. The JWT SVID is cached and
+     * Fetches a JWT SVID for the given audiences. The JWT SVID is cached and
      * returned from cache if it has still at least half of its lifetime.
      *
      * @param audience       the audience
