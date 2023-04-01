@@ -221,7 +221,7 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not past its half lifetime.
+    // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not passed its half lifetime.
     // If the cache does not contain the key or the JWT SVID has past its half lifetime, make a new FetchJWTSVID call to the Workload API,
     // adds the JWT SVIDs to the cache map and returns them.
     // Only one thread can fetch new JWT SVIDs and update the cache at a time.
