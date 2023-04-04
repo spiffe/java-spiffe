@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class JwtSourceTest {
+class DefaultJwtSourceTest {
 
     private JwtSource jwtSource;
     private WorkloadApiClientStub workloadApiClient;
@@ -33,7 +33,7 @@ class JwtSourceTest {
     @BeforeEach
     void setUp() throws JwtSourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
-        DefaultJwtSource.JwtSourceOptions options = DefaultJwtSource.JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
+        JwtSourceOptions options = JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
         System.setProperty(DefaultJwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
         jwtSource = DefaultJwtSource.newSource(options);
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
@@ -152,7 +152,7 @@ class JwtSourceTest {
         try {
             List<JwtSvid> svids = jwtSource.fetchJwtSvids("aud1", "aud2", "aud3");
             assertNotNull(svids);
-            assertEquals(svids.size(), 2);
+            assertEquals(2, svids.size());
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), svids.get(0).getSpiffeId());
             assertEquals(Sets.newHashSet("aud1", "aud2", "aud3"), svids.get(0).getAudience());
             assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), svids.get(1).getSpiffeId());
@@ -193,7 +193,7 @@ class JwtSourceTest {
 
     @Test
     void newSource_success() {
-        val options = DefaultJwtSource.JwtSourceOptions
+        val options = JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .initTimeout(Duration.ofSeconds(0))
@@ -220,7 +220,7 @@ class JwtSourceTest {
 
     @Test
     void newSource_errorFetchingJwtBundles() {
-        val options = DefaultJwtSource.JwtSourceOptions
+        val options = JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")
@@ -239,7 +239,7 @@ class JwtSourceTest {
     @Test
     void newSource_FailsBecauseOfTimeOut() throws Exception {
         try {
-            val options = DefaultJwtSource.JwtSourceOptions
+            val options = JwtSourceOptions
                     .builder()
                     .spiffeSocketPath("unix:/tmp/test")
                     .build();

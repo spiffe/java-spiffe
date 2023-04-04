@@ -124,6 +124,7 @@ class JwtSvidParseAndValidateTest {
         jwtBundle.putJwtAuthority("authority3", key3.getPublic());
 
         SpiffeId spiffeId = trustDomain.newSpiffeId("host");
+        Date issuedAt = new Date();
         Date expiration = new Date(System.currentTimeMillis() +  (60 * 60 * 1000));
         Set<String> audience = new HashSet<String>() {{add("audience1"); add("audience2");}};
 
@@ -139,6 +140,7 @@ class JwtSvidParseAndValidateTest {
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
+                                issuedAt,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE) ))
                         .build()),
@@ -151,6 +153,7 @@ class JwtSvidParseAndValidateTest {
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
+                                issuedAt,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3", JwtSvid.HEADER_TYP_JWT)))
                         .build()),
@@ -163,6 +166,7 @@ class JwtSvidParseAndValidateTest {
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
+                                issuedAt,
                                 expiration,
                                 claims.getClaims(), TestUtils.generateToken(claims, key3, "authority3")))
                         .build())
