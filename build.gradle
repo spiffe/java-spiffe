@@ -15,7 +15,7 @@ subprojects {
     version = '0.8.2'
 
     ext {
-        grpcVersion = '1.51.1'
+        grpcVersion = '1.54.0'
         jupiterVersion = '5.7.0'
         mockitoVersion = '3.5.15'
         lombokVersion = '1.18.20'
