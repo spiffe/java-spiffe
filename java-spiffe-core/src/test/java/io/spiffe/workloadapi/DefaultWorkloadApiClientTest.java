@@ -227,7 +227,7 @@ class DefaultWorkloadApiClientTest {
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvid.getSpiffeId());
             assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(3, jwtSvid.getAudience().size());
-            assertEquals(jwtSvid.getHint(), "external");
+            assertEquals("external", jwtSvid.getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -241,7 +241,7 @@ class DefaultWorkloadApiClientTest {
             assertEquals(SpiffeId.parse("spiffe://example.org/test"), jwtSvid.getSpiffeId());
             assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(3, jwtSvid.getAudience().size());
-            assertEquals(jwtSvid.getHint(), "external");
+            assertEquals("external", jwtSvid.getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
