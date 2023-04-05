@@ -22,7 +22,7 @@ subprojects {
         nimbusVersion = '9.31'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.1.79.Final'
+        nettyVersion = '4.1.91.Final'
     }
 
     apply plugin: 'java-library'
