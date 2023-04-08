@@ -12,17 +12,17 @@ allprojects {
 
 subprojects {
     group = 'io.spiffe'
-    version = '0.8.1'
+    version = '0.8.2'
 
     ext {
-        grpcVersion = '1.51.1'
+        grpcVersion = '1.54.0'
         jupiterVersion = '5.9.2'
         mockitoVersion = '3.12.4'
         lombokVersion = '1.18.20'
-        nimbusVersion = '9.28'
+        nimbusVersion = '9.31'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.1.79.Final'
+        nettyVersion = '4.1.91.Final'
     }
 
     apply plugin: 'java-library'

@@ -28,6 +28,10 @@ public class RetryHandler {
      * @param runnable the task to be scheduled for execution
      */
     public void scheduleRetry(final Runnable runnable) {
+        if (executor.isShutdown()) {
+            return;
+        }
+
         if (exponentialBackoffPolicy.reachedMaxRetries(retryCount)) {
             return;
         }

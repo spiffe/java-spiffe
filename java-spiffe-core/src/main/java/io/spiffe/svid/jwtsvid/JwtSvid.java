@@ -64,11 +64,17 @@ public class JwtSvid {
      */
     String token;
 
+    /**
+     * Issued at time of JWT-SVID as present in 'iat' claim.
+     */
+    Date issuedAt;
+
     public static final String HEADER_TYP_JWT = "JWT";
     public static final String HEADER_TYP_JOSE = "JOSE";
 
     private JwtSvid(final SpiffeId spiffeId,
                     final Set<String> audience,
+                    final Date issuedAt,
                     final Date expiry,
                     final Map<String, Object> claims,
                     final String token) {
@@ -77,6 +83,7 @@ public class JwtSvid {
         this.expiry = expiry;
         this.claims = claims;
         this.token = token;
+        this.issuedAt = issuedAt;
     }
 
     /**
@@ -120,6 +127,8 @@ public class JwtSvid {
         val claimsSet = getJwtClaimsSet(signedJwt);
         validateAudience(claimsSet.getAudience(), audience);
 
+        val issuedAt = claimsSet.getIssueTime();
+
         val expirationTime = claimsSet.getExpirationTime();
         validateExpiration(expirationTime);
 
@@ -132,7 +141,8 @@ public class JwtSvid {
         verifySignature(signedJwt, jwtAuthority, algorithm, keyId);
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
-        return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
+
+        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token);
     }
 
     /**
@@ -163,13 +173,16 @@ public class JwtSvid {
         val claimsSet = getJwtClaimsSet(signedJwt);
         validateAudience(claimsSet.getAudience(), audience);
 
+        val issuedAt = claimsSet.getIssueTime();
+
         val expirationTime = claimsSet.getExpirationTime();
         validateExpiration(expirationTime);
 
         val spiffeId = getSpiffeIdOfSubject(claimsSet);
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
-        return new JwtSvid(spiffeId, claimAudience, expirationTime, claimsSet.getClaims(), token);
+
+        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token);
     }
 
     /**

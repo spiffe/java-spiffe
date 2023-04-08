@@ -1,5 +1,6 @@
 package io.spiffe.workloadapi;
 
+
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.bundle.x509bundle.X509Bundle;
@@ -11,10 +12,20 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import lombok.val;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.Closeable;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -24,27 +35,35 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 
 /**
  * Represents a source of SPIFFE JWT SVIDs and JWT bundles maintained via the Workload API.
+ * The JWT SVIDs are cached and fetchJwtSvid methods return from cache
+ * checking that the JWT SVID has still at least half of its lifetime.
  */
 @Log
-public class DefaultJwtSource implements JwtSource {
-
+public class CachedJwtSource implements JwtSource {
     static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
 
     static final Duration DEFAULT_TIMEOUT =
             Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
+    // Synchronized map of JWT SVIDs, keyed by a pair of SPIFFE ID and a Set of audiences strings.
+    // This map is used to cache the JWT SVIDs and avoid fetching them from the Workload API.
+    private final
+    Map<ImmutablePair<SpiffeId, Set<String>>, List<JwtSvid>> jwtSvids = new ConcurrentHashMap<>();
+
     private JwtBundleSet bundles;
 
     private final WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
+    private Clock clock;
 
     // private constructor
-    private DefaultJwtSource(final WorkloadApiClient workloadApiClient) {
+    private CachedJwtSource(final WorkloadApiClient workloadApiClient) {
+        this.clock = Clock.systemDefaultZone();
         this.workloadApiClient = workloadApiClient;
     }
 
     /**
-     * Creates a new JWT source. It blocks until the initial update with the JWT bundles
+     * Creates a new Cached JWT source. It blocks until the initial update with the JWT bundles
      * has been received from the Workload API or until the timeout configured
      * through the system property `spiffe.newJwtSource.timeout` expires.
      * If no timeout is configured, it blocks until it gets a JWT update from the Workload API.
@@ -53,7 +72,7 @@ public class DefaultJwtSource implements JwtSource {
      *
      * @return an instance of {@link DefaultJwtSource}, with the JWT bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws JwtSourceException            if the source could not be initialized
+     * @throws JwtSourceException             if the source could not be initialized
      */
     public static JwtSource newSource() throws JwtSourceException, SocketEndpointAddressException {
         JwtSourceOptions options = JwtSourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
@@ -62,7 +81,7 @@ public class DefaultJwtSource implements JwtSource {
 
     /**
      * Creates a new JWT source. It blocks until the initial update with the JWT bundles
-     * has been received from the Workload API, doing retries with a backoff exponential policy,
+     * has been received from the Workload API, doing retries with an exponential backoff policy,
      * or until the initTimeout has expired.
      * <p>
      * If the timeout is not provided in the options, the default timeout is read from the
@@ -73,21 +92,21 @@ public class DefaultJwtSource implements JwtSource {
      * a new client is created.
      *
      * @param options {@link JwtSourceOptions}
-     * @return an instance of {@link DefaultJwtSource}, with the JWT bundles initialized
+     * @return an instance of {@link CachedJwtSource}, with the JWT bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws JwtSourceException if the source could not be initialized
+     * @throws JwtSourceException             if the source could not be initialized
      */
     public static JwtSource newSource(@NonNull final JwtSourceOptions options)
             throws SocketEndpointAddressException, JwtSourceException {
-        if (options.getWorkloadApiClient()== null) {
+        if (options.getWorkloadApiClient() == null) {
             options.setWorkloadApiClient(createClient(options));
         }
 
-        if (options.getInitTimeout()== null) {
+        if (options.getInitTimeout() == null) {
             options.setInitTimeout(DEFAULT_TIMEOUT);
         }
 
-        DefaultJwtSource jwtSource = new DefaultJwtSource(options.getWorkloadApiClient());
+        CachedJwtSource jwtSource = new CachedJwtSource(options.getWorkloadApiClient());
 
         try {
             jwtSource.init(options.getInitTimeout());
@@ -99,16 +118,27 @@ public class DefaultJwtSource implements JwtSource {
         return jwtSource;
     }
 
+    /**
+     * Fetches a JWT SVID for the given audiences. The JWT SVID is cached and
+     * returned from the cache if it still has at least half of its lifetime.
+     *
+     * @param audience       the audience
+     * @param extraAudiences a list of extra audiences as an array of String
+     * @return a {@link JwtSvid}
+     * @throws JwtSvidException
+     */
     @Override
-    public JwtSvid fetchJwtSvid(String audience, String... extraAudiences) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(final String audience, final String... extraAudiences) throws JwtSvidException {
         if (isClosed()) {
             throw new IllegalStateException("JWT SVID source is closed");
         }
-        return workloadApiClient.fetchJwtSvid(audience, extraAudiences);
+
+        return getJwtSvids(audience, extraAudiences).get(0);
     }
 
     /**
-     * Fetches a new JWT SVID from the Workload API for the given subject SPIFFE ID and audiences.
+     * Fetches a JWT SVID for the given subject and audience. The JWT SVID is cached and
+     * returned from cache if it has still at least half of its lifetime.
      *
      * @return a {@link JwtSvid}
      * @throws IllegalStateException if the source is closed
@@ -120,21 +150,30 @@ public class DefaultJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        return workloadApiClient.fetchJwtSvid(subject, audience, extraAudiences);
-    }
-
-    @Override
-    public List<JwtSvid> fetchJwtSvids(String audience, String... extraAudiences) throws JwtSvidException {
-        if (isClosed()) {
-            throw new IllegalStateException("JWT SVID source is closed");
-        }
-        return workloadApiClient.fetchJwtSvids(audience, extraAudiences);
+        return getJwtSvids(subject, audience, extraAudiences).get(0);
     }
 
     /**
-     * Fetches all new JWT SVIDs from the Workload API for the given subject SPIFFE ID and audiences.
+     * Fetches a list of JWT SVIDs for the given audience. The JWT SVIDs are cached and
+     * returned from cache if they have still at least half of their lifetime.
      *
-     * @return all {@link JwtSvid}s
+     * @return a list of {@link JwtSvid}s
+     * @throws IllegalStateException if the source is closed
+     */
+    @Override
+    public List<JwtSvid> fetchJwtSvids(final String audience, final String... extraAudiences) throws JwtSvidException {
+        if (isClosed()) {
+            throw new IllegalStateException("JWT SVID source is closed");
+        }
+
+        return getJwtSvids(audience, extraAudiences);
+    }
+
+    /**
+     * Fetches a list of JWT SVIDs for the given subject and audience. The JWT SVIDs are cached and
+     * returned from cache if they have still at least half of their lifetime.
+     *
+     * @return a list of {@link JwtSvid}s
      * @throws IllegalStateException if the source is closed
      */
     @Override
@@ -144,16 +183,15 @@ public class DefaultJwtSource implements JwtSource {
             throw new IllegalStateException("JWT SVID source is closed");
         }
 
-        return workloadApiClient.fetchJwtSvids(subject, audience, extraAudiences);
+        return getJwtSvids(subject, audience, extraAudiences);
     }
 
     /**
      * Returns the JWT bundle for a given trust domain.
      *
      * @return an instance of a {@link X509Bundle}
-     *
      * @throws BundleNotFoundException is there is no bundle for the trust domain provided
-     * @throws IllegalStateException if the source is closed
+     * @throws IllegalStateException   if the source is closed
      */
     @Override
     public JwtBundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
@@ -182,6 +220,62 @@ public class DefaultJwtSource implements JwtSource {
             }
         }
     }
+
+    // Check if the jwtSvids map contains the cacheKey, returns it if it does and the JWT SVID has not passed its half lifetime.
+    // If the cache does not contain the key or the JWT SVID has passed its half lifetime, make a new FetchJWTSVID call to the Workload API,
+    // adds the JWT SVIDs to the cache map and returns them.
+    // Only one thread can fetch new JWT SVIDs and update the cache at a time.
+    private List<JwtSvid> getJwtSvids(SpiffeId subject, String audience, String... extraAudiences) throws JwtSvidException {
+        Set<String> audiencesSet = getAudienceSet(audience, extraAudiences);
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
+
+        List<JwtSvid> svidList = jwtSvids.get(cacheKey);
+        if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
+            return svidList;
+        }
+
+        // even using ConcurrentHashMap, there is a possibility of multiple threads trying to fetch new JWT SVIDs at the same time.
+        synchronized (this) {
+            // Check again if the jwtSvids map contains the cacheKey, and return the entry if it exists and the JWT SVID has not passed its half lifetime.
+            // If it does not exist or the JWT-SVID has passed half its lifetime, call the Workload API to fetch new JWT-SVIDs,
+            // add them to the cache map, and return the list of JWT-SVIDs.
+            svidList = jwtSvids.get(cacheKey);
+            if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
+                return svidList;
+            }
+
+            if (cacheKey.left == null) {
+                svidList = workloadApiClient.fetchJwtSvids(audience, extraAudiences);
+            } else {
+                svidList = workloadApiClient.fetchJwtSvids(cacheKey.left, audience, extraAudiences);
+            }
+            jwtSvids.put(cacheKey, svidList);
+            return svidList;
+        }
+    }
+
+    private List<JwtSvid> getJwtSvids(String audience, String... extraAudiences) throws JwtSvidException {
+        return getJwtSvids(null, audience, extraAudiences);
+    }
+
+    private static Set<String> getAudienceSet(String audience, String[] extraAudiences) {
+        Set<String> audiencesString;
+        if (extraAudiences != null && extraAudiences.length > 0) {
+            audiencesString = new HashSet<>(Arrays.asList(extraAudiences));
+            audiencesString.add(audience);
+        } else {
+            audiencesString = Collections.singleton(audience);
+        }
+        return audiencesString;
+    }
+
+    private boolean isTokenPastHalfLifetime(JwtSvid jwtSvid) {
+        Instant now = clock.instant();
+        val halfLife = new Date(jwtSvid.getExpiry().getTime() - (jwtSvid.getExpiry().getTime() - jwtSvid.getIssuedAt().getTime()) / 2);
+        val halfLifeInstant = Instant.ofEpochMilli(halfLife.getTime());
+        return now.isAfter(halfLifeInstant);
+    }
+
 
     private void init(final Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
@@ -236,5 +330,9 @@ public class DefaultJwtSource implements JwtSource {
                 .spiffeSocketPath(options.getSpiffeSocketPath())
                 .build();
         return DefaultWorkloadApiClient.newClient(clientOptions);
+    }
+
+    void setClock(Clock clock) {
+        this.clock = clock;
     }
 }

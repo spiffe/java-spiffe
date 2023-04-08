@@ -101,6 +101,7 @@ public class TestUtils {
     public static JWTClaimsSet buildJWTClaimSetFromClaimsMap(Map<String, Object> claims) {
         return new JWTClaimsSet.Builder()
                 .subject((String) claims.get("sub"))
+                .issueTime((Date) claims.get("iat"))
                 .expirationTime((Date) claims.get("exp"))
                 .audience((List<String>) claims.get("aud"))
                 .build();
