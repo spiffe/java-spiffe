@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.8.13'
+        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.9.2'
     }
 }
 
@@ -30,6 +30,8 @@ sourceSets {
         resources.srcDir file('src/integrationTest/resources')
     }
 }
+
+sourcesJar.duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
 configurations {
     integrationTestImplementation.extendsFrom testImplementation
