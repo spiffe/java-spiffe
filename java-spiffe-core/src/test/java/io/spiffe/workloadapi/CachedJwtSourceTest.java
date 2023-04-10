@@ -41,7 +41,7 @@ class CachedJwtSourceTest {
     void setUp() throws JwtSourceException, SocketEndpointAddressException {
         workloadApiClient = new WorkloadApiClientStub();
         JwtSourceOptions options = JwtSourceOptions.builder().workloadApiClient(workloadApiClient).build();
-        System.setProperty(DefaultJwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
+        System.setProperty(CachedJwtSource.TIMEOUT_SYSTEM_PROPERTY, "PT1S");
         jwtSource = (CachedJwtSource) CachedJwtSource.newSource(options);
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
 
@@ -440,7 +440,7 @@ class CachedJwtSourceTest {
                 .initTimeout(Duration.ofSeconds(0))
                 .build();
         try {
-            JwtSource jwtSource = DefaultJwtSource.newSource(options);
+            JwtSource jwtSource = CachedJwtSource.newSource(options);
             assertNotNull(jwtSource);
         } catch (SocketEndpointAddressException | JwtSourceException e) {
             fail(e);
@@ -450,7 +450,7 @@ class CachedJwtSourceTest {
     @Test
     void newSource_nullParam() {
         try {
-            DefaultJwtSource.newSource(null);
+            CachedJwtSource.newSource(null);
             fail();
         } catch (NullPointerException e) {
             assertEquals("options is marked non-null but is null", e.getMessage());
@@ -467,7 +467,7 @@ class CachedJwtSourceTest {
                 .spiffeSocketPath("unix:/tmp/test")
                 .build();
         try {
-            DefaultJwtSource.newSource(options);
+            CachedJwtSource.newSource(options);
             fail();
         } catch (JwtSourceException e) {
             assertEquals("Error creating JWT source", e.getMessage());
@@ -484,7 +484,7 @@ class CachedJwtSourceTest {
                     .builder()
                     .spiffeSocketPath("unix:/tmp/test")
                     .build();
-            DefaultJwtSource.newSource(options);
+            CachedJwtSource.newSource(options);
             fail();
         } catch (JwtSourceException e) {
             assertEquals("Error creating JWT source", e.getMessage());
