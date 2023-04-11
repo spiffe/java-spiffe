@@ -254,7 +254,6 @@ class DefaultJwtSourceTest {
         }
     }
 
-
     @Test
     void newSource_DefaultSocketAddress() throws Exception {
         new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test").execute(() -> {
