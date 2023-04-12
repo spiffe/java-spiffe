@@ -9,11 +9,11 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import io.spiffe.utils.TestUtils;
 import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -495,28 +495,29 @@ class CachedJwtSourceTest {
 
     @Test
     void newSource_DefaultSocketAddress() throws Exception {
-        try {
-            TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test");
-            CachedJwtSource.newSource();
-            fail();
-        } catch (JwtSourceException e) {
-            assertEquals("Error creating JWT source", e.getMessage());
-        } catch (SocketEndpointAddressException e) {
-            fail();
-        }
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test").execute(() -> {
+            try {
+                CachedJwtSource.newSource();
+                fail();
+            } catch (JwtSourceException e) {
+                assertEquals("Error creating JWT source", e.getMessage());
+            } catch (SocketEndpointAddressException e) {
+                fail();
+            }
+        });
     }
 
     @Test
     void newSource_noSocketAddress() throws Exception {
-        try {
-            // just in case it's defined in the environment
-            TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "");
-            CachedJwtSource.newSource();
-            fail();
-        } catch (SocketEndpointAddressException e) {
-            fail();
-        } catch (IllegalStateException e) {
-            assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
-        }
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "").execute(() -> {
+            try {
+                CachedJwtSource.newSource();
+                fail();
+            } catch (SocketEndpointAddressException e) {
+                fail();
+            } catch (IllegalStateException e) {
+                assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
+            }
+        });
     }
 }

@@ -107,38 +107,7 @@ public class TestUtils {
                 .build();
     }
 
-    public static void setEnvironmentVariable(String variableName, String value) throws Exception {
-        Class<?> processEnvironment = Class.forName("java.lang.ProcessEnvironment");
-
-        Field unmodifiableMapField = getField(processEnvironment, "theUnmodifiableEnvironment");
-        Object unmodifiableMap = unmodifiableMapField.get(null);
-        injectIntoUnmodifiableMap(variableName, value, unmodifiableMap);
-
-        Field mapField = getField(processEnvironment, "theEnvironment");
-        Map<String, String> map = (Map<String, String>) mapField.get(null);
-        map.put(variableName, value);
-    }
-
-    public static Object invokeMethod(Class<?> clazz, String methodName, Object... args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method method = clazz.getDeclaredMethod(methodName);
-        method.setAccessible(true);
-        return method.invoke(args);
-    }
-
-    public static Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
-        Field field = clazz.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return field;
-    }
-
     public static URI toUri(String path) throws URISyntaxException {
         return Thread.currentThread().getContextClassLoader().getResource(path).toURI();
-    }
-
-    private static void injectIntoUnmodifiableMap(String key, String value, Object map) throws ReflectiveOperationException {
-        Class unmodifiableMap = Class.forName("java.util.Collections$UnmodifiableMap");
-        Field field = getField(unmodifiableMap, "m");
-        Object obj = field.get(map);
-        ((Map<String, String>) obj).put(key, value);
     }
 }

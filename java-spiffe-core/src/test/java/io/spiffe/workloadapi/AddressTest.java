@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.net.URI;
 import java.util.stream.Stream;
@@ -74,19 +75,24 @@ public class AddressTest {
 
     @Test
     void getDefaultAddress() throws Exception {
-        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test" );
-        String defaultAddress = Address.getDefaultAddress();
-        assertEquals("unix:/tmp/test", defaultAddress);
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test").execute(() -> {
+            String defaultAddress = Address.getDefaultAddress();
+            assertEquals("unix:/tmp/test", defaultAddress);
+        });
     }
 
     @Test
     void getDefaultAddress_isBlankThrowsException() throws Exception {
-        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "");
-        try {
-            Address.getDefaultAddress();
-            fail();
-        } catch (Exception e) {
-            assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
-        }
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "").execute(() -> {
+            try {
+                Address.getDefaultAddress();
+                fail();
+            } catch (Exception e) {
+                assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
+            }
+        });
+
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "").execute(() -> {
+        });
     }
 }

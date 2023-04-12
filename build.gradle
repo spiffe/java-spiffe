@@ -16,10 +16,11 @@ subprojects {
 
     ext {
         grpcVersion = '1.54.0'
-        jupiterVersion = '5.7.0'
-        mockitoVersion = '3.5.15'
+        jupiterVersion = '5.9.2'
+        mockitoVersion = '3.12.4'
         lombokVersion = '1.18.20'
         nimbusVersion = '9.31'
+        shadowVersion = '8.1.1'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
         nettyVersion = '4.1.91.Final'
@@ -107,6 +108,9 @@ subprojects {
 
         testCompileOnly group: 'org.mockito', name: 'mockito-core', version: "${mockitoVersion}"
         testRuntimeOnly group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${mockitoVersion}"
+        testRuntimeOnly group: 'org.mockito', name: 'mockito-inline', version: "${mockitoVersion}"
+
+        testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.2'
 
         // Project Lombok dependency
         compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
@@ -145,8 +149,8 @@ task jacocoTestReport(type: JacocoReport) {
     }
 
     reports {
-        xml.enabled true
-        html.enabled true
+        xml.required = true
+        html.required = true
     }
 }
 

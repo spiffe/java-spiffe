@@ -4,6 +4,7 @@ import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.Address;
 import io.spiffe.workloadapi.X509Source;
 import org.junit.jupiter.api.Test;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.lang.reflect.Field;
 
@@ -24,11 +25,12 @@ class X509SourceManagerTest {
 
     @Test
     void getX509Source_defaultAddressNotSet() throws Exception {
-        TestUtils.setEnvironmentVariable(Address.SOCKET_ENV_VARIABLE, "" );
-        try {
-            X509SourceManager.getX509Source();
-        } catch (IllegalStateException e) {
-            assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
-        }
+        new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "").execute(() -> {
+            try {
+                X509SourceManager.getX509Source();
+            } catch (IllegalStateException e) {
+                assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
+            }
+        });
     }
 }
