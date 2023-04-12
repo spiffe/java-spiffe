@@ -48,9 +48,11 @@ class X509SvidTest {
                         .name("1. Single certificate and key")
                         .certsPath(certSingle)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedSpiffeId(SpiffeId.fromSegments(TrustDomain.parse("example.org"), "workload-1"))
                         .expectedNumberOfCerts(1)
                         .expectedPrivateKeyAlgorithm("RSA")
+                        .expectedHint("")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -58,9 +60,11 @@ class X509SvidTest {
                         .name("2. Certificate with intermediate and key")
                         .certsPath(certMultiple)
                         .keyPath(keyECDSA)
+                        .hint("")
                         .expectedSpiffeId(SpiffeId.fromSegments(TrustDomain.parse("example.org"), "workload-1"))
                         .expectedNumberOfCerts(2)
                         .expectedPrivateKeyAlgorithm("EC")
+                        .expectedHint("")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -68,7 +72,9 @@ class X509SvidTest {
                         .name("3. Missing certificate")
                         .certsPath(keyRSA)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Certificate could not be parsed from cert bytes")
+                        .expectedHint("")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -76,6 +82,7 @@ class X509SvidTest {
                         .name("4. Missing key")
                         .certsPath(certSingle)
                         .keyPath(certSingle)
+                        .hint("")
                         .expectedError("Private Key could not be parsed from key bytes")
                         .build()
                 ),
@@ -84,6 +91,7 @@ class X509SvidTest {
                         .name("5. Corrupted private key")
                         .certsPath(certSingle)
                         .keyPath(corrupted)
+                        .hint("")
                         .expectedError("Private Key could not be parsed from key bytes")
                         .build()
                 ),
@@ -92,6 +100,7 @@ class X509SvidTest {
                         .name("6. Corrupted certificate")
                         .certsPath(corrupted)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Certificate could not be parsed from cert bytes")
                         .build()
                 ),
@@ -100,6 +109,7 @@ class X509SvidTest {
                         .name("7. Certificate without SPIFFE ID")
                         .certsPath(leafEmptyID)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Certificate does not contain SPIFFE ID in the URI SAN")
                         .build()
                 ),
@@ -108,6 +118,7 @@ class X509SvidTest {
                         .name("8. Leaf certificate with CA flag set to true")
                         .certsPath(leafCAtrue)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Leaf certificate must not have CA flag set to true")
                         .build()
                 ),
@@ -116,6 +127,7 @@ class X509SvidTest {
                         .name("9. Leaf certificate without digitalSignature as key usage")
                         .certsPath(leafNoDigitalSignature)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Leaf certificate must have 'digitalSignature' as key usage")
                         .build()
                 ),
@@ -124,6 +136,7 @@ class X509SvidTest {
                         .name("10. Leaf certificate with certSign as key usage")
                         .certsPath(leafCertSign)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Leaf certificate must not have 'keyCertSign' as key usage")
                         .build()
                 ),
@@ -132,6 +145,7 @@ class X509SvidTest {
                         .name("11. Leaf certificate with cRLSign as key usage")
                         .certsPath(leafCRLSign)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Leaf certificate must not have 'cRLSign' as key usage")
                         .build()
                 ),
@@ -140,6 +154,7 @@ class X509SvidTest {
                         .name("12. Signing certificate without CA flag")
                         .certsPath(signNoCA)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Signing certificate must have CA flag set to true")
                         .build()
                 ),
@@ -148,7 +163,20 @@ class X509SvidTest {
                         .name("13. Signing certificate without CA flag")
                         .certsPath(signNoKeyCertSign)
                         .keyPath(keyRSA)
+                        .hint("")
                         .expectedError("Signing certificate must have 'keyCertSign' as key usage")
+                        .build()
+                ),
+                Arguments.of(TestCase
+                        .builder()
+                        .name("14. SVID with non-empty hint")
+                        .certsPath(certSingle)
+                        .keyPath(keyRSA)
+                        .hint("internal")
+                        .expectedSpiffeId(SpiffeId.fromSegments(TrustDomain.parse("example.org"), "workload-1"))
+                        .expectedNumberOfCerts(1)
+                        .expectedPrivateKeyAlgorithm("RSA")
+                        .expectedHint("internal")
                         .build()
                 )
         );
@@ -176,8 +204,10 @@ class X509SvidTest {
         byte[] keyBytes = Files.readAllBytes(keyPath);
 
         try {
-            X509Svid x509Svid = X509Svid.parseRaw(certBytes, keyBytes);
+            X509Svid x509Svid = X509Svid.parseRaw(certBytes, keyBytes, "external");
             assertEquals("spiffe://example.org/workload-server", x509Svid.getSpiffeId().toString());
+            assertEquals("external", x509Svid.getHint());
+
         } catch (X509SvidException e) {
             fail(e);
         }
@@ -296,7 +326,7 @@ class X509SvidTest {
             byte[] certBytes = Files.readAllBytes(certPath);
             byte[] keyBytes = Files.readAllBytes(keyPath);
 
-            X509Svid x509Svid = X509Svid.parse(certBytes, keyBytes);
+            X509Svid x509Svid = X509Svid.parse(certBytes, keyBytes, testCase.getHint());
 
             if (StringUtils.isNotBlank(testCase.expectedError)) {
                 fail(String.format("Error was expected: %s", testCase.expectedError));
@@ -309,6 +339,7 @@ class X509SvidTest {
             assertEquals(testCase.expectedNumberOfCerts, x509Svid.getChain().size());
             assertEquals(testCase.expectedSpiffeId, x509Svid.getSpiffeId());
             assertEquals(testCase.expectedPrivateKeyAlgorithm, x509Svid.getPrivateKey().getAlgorithm());
+            assertEquals(testCase.expectedHint, x509Svid.getHint());
 
         } catch (Exception e) {
             if (StringUtils.isBlank(testCase.expectedError)) {
@@ -322,21 +353,25 @@ class X509SvidTest {
     static class TestCase {
         String name;
         String certsPath;
+        String hint;
         String keyPath;
         SpiffeId expectedSpiffeId;
         int expectedNumberOfCerts;
         String expectedPrivateKeyAlgorithm;
+        String expectedHint;
         String expectedError;
 
         @Builder
-        public TestCase(String name, String certsPath, String keyPath, SpiffeId expectedSpiffeId, int expectedNumberOfCerts, String expectedPrivateKeyAlgorithm, String expectedError) {
+        public TestCase(String name, String certsPath, String keyPath, String hint, SpiffeId expectedSpiffeId, int expectedNumberOfCerts, String expectedPrivateKeyAlgorithm, String expectedHint, String expectedError) {
             this.name = name;
             this.certsPath = certsPath;
             this.keyPath = keyPath;
+            this.hint = hint;
             this.expectedSpiffeId = expectedSpiffeId;
             this.expectedNumberOfCerts = expectedNumberOfCerts;
             this.expectedPrivateKeyAlgorithm = expectedPrivateKeyAlgorithm;
             this.expectedError = expectedError;
+            this.expectedHint = expectedHint;
         }
     }
 }

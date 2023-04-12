@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Utility methods for converting GRPC objects to JAVA-SPIFFE domain objects.
@@ -132,9 +133,16 @@ final class GrpcConversionUtils {
     private static List<X509Svid> getListOfX509Svid(final Workload.X509SVIDResponse x509SvidResponse) throws X509ContextException{
 
         final List<X509Svid> result = new ArrayList<>();
+        HashSet<String> hints = new HashSet<>();
 
         for (Workload.X509SVID x509SVID : x509SvidResponse.getSvidsList()) {
+            // In the event of more than one X509SVID message with the same hint value set, then the first message in the
+            // list SHOULD be selected.
+            if (hints.contains(x509SVID.getHint())) {
+                continue;
+            }
             val svid = createAndValidateX509Svid(x509SVID);
+            hints.add(svid.getHint());
             result.add(svid);
         }
         return result;
@@ -144,9 +152,9 @@ final class GrpcConversionUtils {
         byte[] certsBytes = x509SVID.getX509Svid().toByteArray();
         byte[] privateKeyBytes = x509SVID.getX509SvidKey().toByteArray();
 
-        X509Svid svid = null;
+        X509Svid svid;
         try {
-            svid = X509Svid.parseRaw(certsBytes, privateKeyBytes);
+            svid = X509Svid.parseRaw(certsBytes, privateKeyBytes, x509SVID.getHint());
         } catch (X509SvidException e) {
             throw new X509ContextException("X.509 SVID response could not be processed", e);
         }

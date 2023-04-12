@@ -102,6 +102,7 @@ class DefaultWorkloadApiClientTest {
         assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), x509Context.getDefaultSvid().getSpiffeId());
         assertNotNull(x509Context.getDefaultSvid().getChain());
         assertNotNull(x509Context.getDefaultSvid().getPrivateKey());
+        assertEquals("external", x509Context.getDefaultSvid().getHint());
         assertNotNull(x509Context.getX509BundleSet());
         try {
             X509Bundle bundle = x509Context.getX509BundleSet().getBundleForTrustDomain(TrustDomain.parse("example.org"));
@@ -136,6 +137,7 @@ class DefaultWorkloadApiClientTest {
         assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), update.getDefaultSvid().getSpiffeId());
         assertNotNull(update.getDefaultSvid().getChain());
         assertNotNull(update.getDefaultSvid().getPrivateKey());
+        assertEquals("external", update.getDefaultSvid().getHint());
         assertNotNull(update.getX509BundleSet());
         try {
             X509Bundle bundle = update.getX509BundleSet().getBundleForTrustDomain(TrustDomain.parse("example.org"));
@@ -227,6 +229,7 @@ class DefaultWorkloadApiClientTest {
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvid.getSpiffeId());
             assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(3, jwtSvid.getAudience().size());
+            assertEquals("external", jwtSvid.getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -240,6 +243,7 @@ class DefaultWorkloadApiClientTest {
             assertEquals(SpiffeId.parse("spiffe://example.org/test"), jwtSvid.getSpiffeId());
             assertTrue(jwtSvid.getAudience().contains("aud1"));
             assertEquals(3, jwtSvid.getAudience().size());
+            assertEquals("external", jwtSvid.getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -291,9 +295,11 @@ class DefaultWorkloadApiClientTest {
             assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), jwtSvids.get(0).getSpiffeId());
             assertTrue(jwtSvids.get(0).getAudience().contains("aud1"));
             assertEquals(3, jwtSvids.get(0).getAudience().size());
+            assertEquals("external", jwtSvids.get(0).getHint());
             assertEquals(SpiffeId.parse("spiffe://example.org/extra-workload-server"), jwtSvids.get(1).getSpiffeId());
             assertTrue(jwtSvids.get(1).getAudience().contains("aud1"));
             assertEquals(3, jwtSvids.get(1).getAudience().size());
+            assertEquals("", jwtSvids.get(1).getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -308,6 +314,7 @@ class DefaultWorkloadApiClientTest {
             assertEquals(SpiffeId.parse("spiffe://example.org/test"), jwtSvids.get(0).getSpiffeId());
             assertTrue(jwtSvids.get(0).getAudience().contains("aud1"));
             assertEquals(3, jwtSvids.get(0).getAudience().size());
+            assertEquals("external", jwtSvids.get(0).getHint());
         } catch (JwtSvidException e) {
             fail(e);
         }
@@ -418,6 +425,7 @@ class DefaultWorkloadApiClientTest {
                 done.countDown();
 
             }
+
             @Override
             public void onError(Throwable e) {
             }

@@ -82,7 +82,8 @@ class DefaultX509SourceTest {
     void testGetX509Svid() {
         X509Svid x509Svid = x509Source.getX509Svid();
         assertNotNull(x509Svid);
-        assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"),x509Svid.getSpiffeId());
+        assertEquals(SpiffeId.parse("spiffe://example.org/workload-server"), x509Svid.getSpiffeId());
+        assertEquals("internal", x509Svid.getHint());
     }
 
     @Test
@@ -123,6 +124,7 @@ class DefaultX509SourceTest {
             fail();
         }
     }
+
     @Test
     void newSource_timeout() throws Exception {
         try {
