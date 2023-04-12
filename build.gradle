@@ -12,7 +12,7 @@ allprojects {
 
 subprojects {
     group = 'io.spiffe'
-    version = '0.8.2'
+    version = '0.8.3'
 
     ext {
         grpcVersion = '1.54.0'
