@@ -69,6 +69,12 @@ public class JwtSvid {
      */
     Date issuedAt;
 
+    /**
+     * Hint is an operator-specified string used to provide guidance on how this
+     * identity should be used by a workload when more than one SVID is returned.
+     */
+    String hint;
+
     public static final String HEADER_TYP_JWT = "JWT";
     public static final String HEADER_TYP_JOSE = "JOSE";
 
@@ -77,13 +83,16 @@ public class JwtSvid {
                     final Date issuedAt,
                     final Date expiry,
                     final Map<String, Object> claims,
-                    final String token) {
+                    final String token,
+                    final String hint
+    ) {
         this.spiffeId = spiffeId;
         this.audience = audience;
         this.expiry = expiry;
         this.claims = claims;
         this.token = token;
         this.issuedAt = issuedAt;
+        this.hint = hint;
     }
 
     /**
@@ -115,6 +124,41 @@ public class JwtSvid {
                                            @NonNull final Set<String> audience)
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
 
+        return parseAndValidate(token, jwtBundleSource, audience, null);
+    }
+
+    /**
+     * Parses and validates a JWT-SVID token and returns an instance of {@link JwtSvid}.
+     * <p>
+     * The JWT-SVID signature is verified using the JWT bundle source.
+     *
+     * @param token           a token as a string that is parsed and validated
+     * @param jwtBundleSource an implementation of a {@link BundleSource} that provides the JWT authorities to
+     *                        verify the signature
+     * @param audience        audience as a list of strings used to validate the 'aud' claim
+     * @param hint            a hint that can be used to provide guidance on how this identity should be used
+     * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
+     * from 'exp' claim.
+     * @throws JwtSvidException           when the token expired or the expiration claim is missing,
+     *                                    when the algorithm is not supported (See {@link JwtSignatureAlgorithm}),
+     *                                    when the header 'kid' is missing,
+     *                                    when the header 'typ' is present and is not 'JWT' or 'JOSE'
+     *                                    when the signature cannot be verified,
+     *                                    when the 'aud' claim has an audience that is not in the audience list
+     *                                    provided as parameter
+     * @throws IllegalArgumentException   when the token is blank or cannot be parsed
+     * @throws BundleNotFoundException    if the bundle for the trust domain of the spiffe id from the 'sub'
+     *                                    cannot be found in the JwtBundleSource
+     * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
+     *                                    the 'kid' header
+     */
+    public static JwtSvid parseAndValidate(@NonNull final String token,
+                                           @NonNull final BundleSource<JwtBundle> jwtBundleSource,
+                                           @NonNull final Set<String> audience,
+                                           final String hint
+    )
+            throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
+
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }
@@ -142,7 +186,7 @@ public class JwtSvid {
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
 
-        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token);
+        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token, hint);
     }
 
     /**
@@ -161,6 +205,26 @@ public class JwtSvid {
      * @throws IllegalArgumentException when the token cannot be parsed
      */
     public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience) throws JwtSvidException {
+        return parseInsecure(token, audience, null);
+    }
+
+    /**
+     * Parses and validates a JWT-SVID token and returns an instance of a {@link JwtSvid}.
+     * <p>
+     * The JWT-SVID signature is not verified.
+     *
+     * @param token    a token as a string that is parsed and validated
+     * @param audience audience as a list of strings used to validate the 'aud'
+     * @param hint     a hint that can be used to provide guidance on how this identity should be used
+     * @return an instance of a {@link JwtSvid} with a SPIFFE ID parsed from the 'sub', audience from 'aud', and expiry
+     * from 'exp' claim.
+     * @throws JwtSvidException         when the token expired or the expiration claim is missing,
+     *                                  when the 'aud' has an audience that is not in the audience provided as parameter,
+     *                                  when the 'alg' is not supported (See {@link JwtSignatureAlgorithm}),
+     *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
+     * @throws IllegalArgumentException when the token cannot be parsed
+     */
+    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience, final String hint) throws JwtSvidException {
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("Token cannot be blank");
         }
@@ -182,7 +246,7 @@ public class JwtSvid {
 
         val claimAudience = new HashSet<>(claimsSet.getAudience());
 
-        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token);
+        return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token, hint);
     }
 
     /**
@@ -204,6 +268,16 @@ public class JwtSvid {
         // defensive copy to prevent exposing a mutable object
         return new Date(expiry.getTime());
     }
+
+    /**
+     * Returns the SVID hint.
+     *
+     * @return the SVID hint
+     */
+    public String getHint() {
+        return hint;
+    }
+
 
     /**
      * Returns the map of claims.

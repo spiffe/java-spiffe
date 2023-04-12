@@ -151,7 +151,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
         String token = TestUtils.generateToken(claims, keyPair, "authority1");
 
-        return JwtSvid.parseInsecure(token, audParam);
+        return JwtSvid.parseInsecure(token, audParam, "external");
     }
 
 
@@ -185,7 +185,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
             Path pathKey = Paths.get(toUri(privateKey));
             byte[] keyBytes = Files.readAllBytes(pathKey);
 
-            return X509Svid.parseRaw(svidBytes, keyBytes);
+            return X509Svid.parseRaw(svidBytes, keyBytes, "internal");
         } catch (X509SvidException | IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }

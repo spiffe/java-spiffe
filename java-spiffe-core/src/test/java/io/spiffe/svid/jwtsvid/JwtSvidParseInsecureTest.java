@@ -38,10 +38,11 @@ class JwtSvidParseInsecureTest {
     void parseValidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid jwtSvid = JwtSvid.parseInsecure(token, testCase.audience);
+            JwtSvid jwtSvid = JwtSvid.parseInsecure(token, testCase.audience, testCase.hint);
 
             assertEquals(testCase.expectedJwtSvid.getSpiffeId(), jwtSvid.getSpiffeId());
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
+            assertEquals(testCase.expectedJwtSvid.getHint(), jwtSvid.getHint());
             assertEquals(testCase.expectedJwtSvid.getExpiry().toInstant().getEpochSecond(), jwtSvid.getExpiry().toInstant().getEpochSecond());
             assertEquals(token, jwtSvid.getToken());
         } catch (Exception e) {
@@ -123,36 +124,48 @@ class JwtSvidParseInsecureTest {
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT))
                         .expectedException(null)
+                        .hint("internal")
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 issuedAt,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
+                                claims.getClaims(),
+                                TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT),
+                                "internal"
+                        ))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("using typ as JOSE")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JOSE))
                         .expectedException(null)
+                        .hint("external")
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 issuedAt,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT)))
+                                claims.getClaims(),
+                                TestUtils.generateToken(claims, key1, "authority1", JwtSvid.HEADER_TYP_JWT),
+                                "external"
+                        ))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("using empty typ")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1", ""))
                         .expectedException(null)
+                        .hint("")
                         .expectedJwtSvid(newJwtSvidInstance(
                                 trustDomain.newSpiffeId("host"),
                                 audience,
                                 issuedAt,
                                 expiration,
-                                claims.getClaims(), TestUtils.generateToken(claims, key1, "authority1", "")))
+                                claims.getClaims(),
+                                TestUtils.generateToken(claims, key1, "authority1", ""),
+                                ""
+                        ))
                         .build()));
     }
 
@@ -221,18 +234,20 @@ class JwtSvidParseInsecureTest {
     static class TestCase {
         String name;
         Set<String> audience;
+        String hint;
         Supplier<String> generateToken;
         Exception expectedException;
         JwtSvid expectedJwtSvid;
 
         @Builder
         public TestCase(String name, Set<String> expectedAudience, Supplier<String> generateToken,
-                        Exception expectedException, JwtSvid expectedJwtSvid) {
+                        Exception expectedException, JwtSvid expectedJwtSvid, String hint) {
             this.name = name;
             this.audience = expectedAudience;
             this.generateToken = generateToken;
             this.expectedException = expectedException;
             this.expectedJwtSvid = expectedJwtSvid;
+            this.hint = hint;
         }
     }
 
@@ -241,11 +256,13 @@ class JwtSvidParseInsecureTest {
                                       final Date issuedAt,
                                       final Date expiry,
                                       final Map<String, Object> claims,
-                                      final String token) {
+                                      final String token,
+                                      final String hint
+    ) {
         val constructor = JwtSvid.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
         try {
-            return (JwtSvid) constructor.newInstance(spiffeId, audience, issuedAt, expiry, claims, token);
+            return (JwtSvid) constructor.newInstance(spiffeId, audience, issuedAt, expiry, claims, token, hint);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }

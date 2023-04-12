@@ -66,11 +66,23 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
                     .setX509Svid(svidByteString)
                     .setX509SvidKey(keyByteString)
                     .setBundle(bundleByteString)
+                    .setHint("external")
+                    .build();
+
+            // This X.509-SVID should be filtered out by the client because it has a non-unique hint and is not the first X.509-SVID in the response with this hint.
+            Workload.X509SVID skippedSVID = Workload.X509SVID
+                    .newBuilder()
+                    .setSpiffeId("spiffe://example.org/this0-should-be-filtered-out")
+                    .setX509Svid(svidByteString)
+                    .setX509SvidKey(keyByteString)
+                    .setBundle(bundleByteString)
+                    .setHint("external")
                     .build();
 
             Workload.X509SVIDResponse response = Workload.X509SVIDResponse
                     .newBuilder()
                     .addSvids(svid)
+                    .addSvids(skippedSVID)
                     .putFederatedBundles(TrustDomain.parse("domain.test").getName(), federatedByteString)
                     .build();
 
@@ -109,6 +121,7 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
     public void fetchJWTSVID(Workload.JWTSVIDRequest request, StreamObserver<Workload.JWTSVIDResponse> responseObserver) {
         String spiffeId = request.getSpiffeId();
         String extraSpiffeId = "spiffe://example.org/extra-workload-server";
+        String skippedSpiffeId = "spiffe://example.org/this-should-be-filtered-out";
         boolean firstOnly = true;
         if (StringUtils.isBlank(spiffeId)) {
             firstOnly = false;
@@ -135,6 +148,7 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
                 .newBuilder()
                 .setSpiffeId(spiffeId)
                 .setSvid(token)
+                .setHint("external")
                 .build();
 
         Workload.JWTSVID extraJwtsvid = Workload.JWTSVID
@@ -143,9 +157,17 @@ class FakeWorkloadApi extends SpiffeWorkloadAPIImplBase {
                 .setSvid(extraToken)
                 .build();
 
+        // This JWT-SVID should be filtered out by the client because it has a non-unique hint and is not the first JWT-SVID in the response with this hint.
+        Workload.JWTSVID skippedJWTSVID = Workload.JWTSVID
+                .newBuilder()
+                .setSpiffeId(skippedSpiffeId)
+                .setSvid(extraToken)
+                .setHint("external")
+                .build();
 
         Workload.JWTSVIDResponse.Builder builder = Workload.JWTSVIDResponse.newBuilder();
         builder.addSvids(jwtsvid);
+        builder.addSvids(skippedJWTSVID);
         if (!firstOnly) {
             builder.addSvids(extraJwtsvid);
         }
