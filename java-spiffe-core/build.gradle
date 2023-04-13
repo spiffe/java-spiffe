@@ -94,7 +94,7 @@ dependencies {
     testFixturesImplementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
 
     // using bouncy castle for generating X.509 certs for testing purposes
-    testFixturesImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.66'
+    testFixturesImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.70'
     testFixturesImplementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
 }
 
