@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.9.2'
+        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.9.3'
     }
 }
 
