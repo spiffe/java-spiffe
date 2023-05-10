@@ -50,7 +50,7 @@ task integrationTest(type: Test) {
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.21.12'
+        artifact = 'com.google.protobuf:protoc:3.23.0'
     }
     plugins {
         grpc {
