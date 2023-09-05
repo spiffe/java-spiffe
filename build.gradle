@@ -109,7 +109,7 @@ subprojects {
         testCompileOnly group: 'org.mockito', name: 'mockito-core', version: "${mockitoVersion}"
         testRuntimeOnly group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${mockitoVersion}"
 
-        testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.2'
+        testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.3'
 
         // Project Lombok dependency
         compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
