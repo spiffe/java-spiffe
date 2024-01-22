@@ -17,7 +17,7 @@ jobs:
         with:
           file: java-spiffe-helper/Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: false
+          push: true
           tags: where-should-this-go?:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
