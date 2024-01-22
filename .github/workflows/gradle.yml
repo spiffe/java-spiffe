@@ -10,13 +10,14 @@ jobs:
 
   build-and-test:
 
-    runs-on: ${{ matrix.os-version }}
     strategy:
       matrix:
         java-version: [ 8, 11, 17 ]
         os-version:
           - ubuntu-latest
           - macos-latest
+
+    runs-on: ${{ matrix.os-version }}
 
     steps:
       - uses: actions/checkout@v4
