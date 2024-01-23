@@ -10,15 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set tag
-        run: echo "JAVA_SPIFFE_HELPER_VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+        run: echo "DOCKER_TAG=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
       - name: Publish java-spiffe-helper
         uses: docker/build-push-action@v5
         with:
-          file: java-spiffe-helper/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/spiffe/java-spiffe-helper:${{ env.JAVA_SPIFFE_HELPER_VERSION }}
+          tags: ghcr.io/spiffe/java-spiffe-helper:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            JAVA_SPIFFE_HELPER_VERSION=${{ env.JAVA_SPIFFE_HELPER_VERSION }}
