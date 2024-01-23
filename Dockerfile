@@ -9,5 +9,4 @@ COPY --from=builder \
   --chown=nobody:nobody \
   /builder/java-spiffe-helper/build/libs/java-spiffe-helper-docker-docker.jar /app/java-spiffe-helper.jar
 USER nobody
-ENTRYPOINT ["java"]
-CMD ["-jar", "/app/java-spiffe-helper.jar"]
+ENTRYPOINT ["java", "-jar", "/app/java-spiffe-helper.jar"]
