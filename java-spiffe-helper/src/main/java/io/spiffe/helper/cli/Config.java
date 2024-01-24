@@ -21,11 +21,13 @@ import java.util.Properties;
 
 class Config {
 
+    private static final String DEFAULT_CONFIG_FILENAME = "conf/java-spiffe-helper.conf";
+
     static final Option CONFIG_FILE_OPTION =
             Option.builder("c")
             .longOpt("config")
             .hasArg(true)
-            .required(true)
+            .required(false)
             .build();
 
     private Config() {
@@ -48,7 +50,11 @@ class Config {
         CommandLineParser parser = new DefaultParser();
         try {
             val cmd = parser.parse(cliOptions, args);
-            return cmd.getOptionValue("config");
+            if (cmd.hasOption("config")) {
+                return cmd.getOptionValue("config");
+            } else {
+                return Paths.get(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME).toString();
+            }
         } catch (ParseException e) {
             val error = String.format("%s. Use -c, --config <arg>", e.getMessage());
             throw new RunnerException(error);
