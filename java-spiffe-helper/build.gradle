@@ -9,6 +9,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
 assemble.dependsOn shadowJar
 
 shadowJar {
+    mergeServiceFiles()
     archiveClassifier = osdetector.classifier
     manifest {
         attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
