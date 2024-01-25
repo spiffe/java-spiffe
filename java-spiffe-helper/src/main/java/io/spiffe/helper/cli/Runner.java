@@ -27,7 +27,7 @@ public class Runner {
         } catch (RunnerException e) {
             log.severe(ExceptionUtils.getStackTrace(e));
             System.exit(1);
-        } catch (ParseException e) {
+        } catch (ParseException | IllegalArgumentException e) {
             log.severe(e.getMessage());
             System.exit(1);
         }
