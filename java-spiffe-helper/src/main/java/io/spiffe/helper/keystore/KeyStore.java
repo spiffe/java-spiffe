@@ -44,21 +44,27 @@ class KeyStore {
 
     private java.security.KeyStore loadKeyStore() throws KeyStoreException {
         try {
-            val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
-
-            // Initialize KeyStore
-            if (Files.exists(keyStoreFilePath)) {
-                try (final InputStream inputStream = Files.newInputStream(keyStoreFilePath)) {
-                    keyStore.load(inputStream, keyStorePassword.toCharArray());
-                }
-            } else {
-                //create new keyStore
-                keyStore.load(null, keyStorePassword.toCharArray());
-            }
-            return keyStore;
+            return loadKeyStoreFromFile();
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new KeyStoreException("KeyStore cannot be created", e);
         }
+    }
+
+    private java.security.KeyStore loadKeyStoreFromFile() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+
+        // Initialize KeyStore
+        if (Files.exists(keyStoreFilePath)) {
+            try (final InputStream inputStream = Files.newInputStream(keyStoreFilePath)) {
+                keyStore.load(inputStream, keyStorePassword.toCharArray());
+            } catch (IOException e) {
+                throw new KeyStoreException("KeyStore cannot be opened", e);
+            }
+        } else {
+            // Create a new KeyStore if it doesn't exist
+            keyStore.load(null, keyStorePassword.toCharArray());
+        }
+        return keyStore;
     }
 
 

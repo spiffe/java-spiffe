@@ -6,9 +6,10 @@ import io.spiffe.helper.exception.RunnerException;
 import io.spiffe.helper.keystore.KeyStoreHelper;
 import lombok.extern.java.Log;
 import lombok.val;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.nio.file.Paths;
-import java.security.InvalidParameterException;
 import java.security.KeyStoreException;
 
 /**
@@ -24,12 +25,15 @@ public class Runner {
         try {
             runApplication(args);
         } catch (RunnerException e) {
+            log.severe(ExceptionUtils.getStackTrace(e));
+            System.exit(1);
+        } catch (ParseException e) {
             log.severe(e.getMessage());
             System.exit(1);
         }
     }
 
-    static void runApplication(final String... args) throws RunnerException {
+    static void runApplication(final String... args) throws RunnerException, ParseException {
         try {
             val configFilePath = Config.getCliConfigOption(args);
             val properties = Config.parseConfigFileProperties(Paths.get(configFilePath));
@@ -37,7 +41,7 @@ public class Runner {
             try (val keyStoreHelper = KeyStoreHelper.create(options)) {
                 keyStoreHelper.run(true);
             }
-        } catch (SocketEndpointAddressException | KeyStoreHelperException | InvalidParameterException | KeyStoreException e) {
+        } catch (SocketEndpointAddressException | KeyStoreHelperException | KeyStoreException e) {
             throw new RunnerException(e);
         }
     }

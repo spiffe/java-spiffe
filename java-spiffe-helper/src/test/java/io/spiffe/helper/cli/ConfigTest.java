@@ -4,6 +4,7 @@ import io.spiffe.helper.exception.RunnerException;
 import io.spiffe.helper.keystore.KeyStoreHelper;
 import io.spiffe.helper.keystore.KeyStoreType;
 import lombok.val;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -55,7 +56,7 @@ class ConfigTest {
         try {
             String option = Config.getCliConfigOption("-c", "test");
             assertEquals("test", option);
-        } catch (RunnerException e) {
+        } catch (ParseException e) {
             fail();
         }
     }
@@ -65,7 +66,7 @@ class ConfigTest {
         try {
             String option = Config.getCliConfigOption("--config", "example");
             assertEquals("example", option);
-        } catch (RunnerException e) {
+        } catch (ParseException e) {
             fail();
         }
     }
@@ -75,8 +76,8 @@ class ConfigTest {
         try {
             Config.getCliConfigOption("--unknown", "example");
             fail("expected parse exception");
-        } catch (RunnerException e) {
-            assertTrue(e.getMessage().startsWith("Error parsing command line options: Unrecognized option: --unknown"));
+        } catch (ParseException e) {
+            assertTrue(e.getMessage().startsWith("Unrecognized option: --unknown"));
         }
     }
 
@@ -85,8 +86,8 @@ class ConfigTest {
         try {
             String option = Config.getCliConfigOption("-a", "test");
             fail("expected parse exception");
-        } catch (RunnerException e) {
-            assertTrue(e.getMessage().startsWith("Error parsing command line options: Unrecognized option: -a"));
+        } catch (ParseException e) {
+            assertTrue(e.getMessage().startsWith("Unrecognized option: -a"));
         }
     }
 

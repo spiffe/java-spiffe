@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.InvalidParameterException;
 import java.util.Properties;
 
 class Config {
@@ -21,10 +20,10 @@ class Config {
 
     static final Option CONFIG_FILE_OPTION =
             Option.builder("c")
-            .longOpt("config")
-            .hasArg(true)
-            .required(false)
-            .build();
+                    .longOpt("config")
+                    .hasArg(true)
+                    .required(false)
+                    .build();
 
     private Config() {
     }
@@ -40,17 +39,13 @@ class Config {
         return properties;
     }
 
-    static String getCliConfigOption(final String... args) throws RunnerException {
+    static String getCliConfigOption(final String... args) throws ParseException {
         final Options cliOptions = new Options();
         cliOptions.addOption(CONFIG_FILE_OPTION);
         CommandLineParser parser = new DefaultParser();
 
-        try {
-            CommandLine cmd = parser.parse(cliOptions, args);
-            return cmd.getOptionValue("config", getDefaultConfigPath());
-        } catch (ParseException e) {
-            throw new RunnerException("Error parsing command line options: " + e.getMessage(), e);
-        }
+        CommandLine cmd = parser.parse(cliOptions, args);
+        return cmd.getOptionValue("config", getDefaultConfigPath());
     }
 
     private static String getDefaultConfigPath() {
@@ -91,7 +86,7 @@ class Config {
     static String getProperty(final Properties properties, final String key) {
         final String value = properties.getProperty(key);
         if (StringUtils.isBlank(value)) {
-            throw new InvalidParameterException(String.format("Missing value for config property: %s", key));
+            throw new IllegalArgumentException(String.format("Missing value for config property: %s", key));
         }
         return value;
     }
