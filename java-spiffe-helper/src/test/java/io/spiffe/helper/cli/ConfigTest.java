@@ -12,8 +12,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import static io.spiffe.utils.TestUtils.toUri;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ConfigTest {
 
@@ -72,21 +71,22 @@ class ConfigTest {
     }
 
     @Test
-    void getCliConfigOption_unknownOption() {
-        try {
-            String option = Config.getCliConfigOption("-a", "test");
-        } catch (RunnerException e) {
-            assertEquals("Unrecognized option: -a. Use -c, --config <arg>", e.getMessage());
-        }
-    }
-
-    @Test
     void testGetCliConfigOption_unknownLongOption() {
         try {
             Config.getCliConfigOption("--unknown", "example");
             fail("expected parse exception");
         } catch (RunnerException e) {
-            assertEquals("Unrecognized option: --unknown. Use -c, --config <arg>", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Error parsing command line options: Unrecognized option: --unknown"));
+        }
+    }
+
+    @Test
+    void getCliConfigOption_unknownOption() {
+        try {
+            String option = Config.getCliConfigOption("-a", "test");
+            fail("expected parse exception");
+        } catch (RunnerException e) {
+            assertTrue(e.getMessage().startsWith("Error parsing command line options: Unrecognized option: -a"));
         }
     }
 

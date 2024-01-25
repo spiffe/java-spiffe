@@ -12,7 +12,7 @@ import java.security.InvalidParameterException;
 import java.security.KeyStoreException;
 
 /**
- * Entry point of the CLI to run the KeyStoreHelper.
+ * Entry point of the java-spiffe-helper CLI application.
  */
 @Log
 public class Runner {
@@ -20,15 +20,16 @@ public class Runner {
     private Runner() {
     }
 
-    /**
-     * Entry method of the CLI to run the {@link KeyStoreHelper}.
-     * <p>
-     * In the args needs to be passed the config file option as: "-c" and "path_to_config_file"
-     *
-     * @param args contains the option with the config file path
-     * @throws RunnerException is there is an error configuring or creating the KeyStoreHelper.
-     */
-    public static void main(final String ...args) throws RunnerException {
+    public static void main(final String... args) {
+        try {
+            runApplication(args);
+        } catch (RunnerException e) {
+            log.severe(e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    static void runApplication(final String... args) throws RunnerException {
         try {
             val configFilePath = Config.getCliConfigOption(args);
             val properties = Config.parseConfigFileProperties(Paths.get(configFilePath));
@@ -36,8 +37,7 @@ public class Runner {
             try (val keyStoreHelper = KeyStoreHelper.create(options)) {
                 keyStoreHelper.run(true);
             }
-        } catch (SocketEndpointAddressException | KeyStoreHelperException | RunnerException | InvalidParameterException | KeyStoreException e) {
-            log.severe(e.getMessage());
+        } catch (SocketEndpointAddressException | KeyStoreHelperException | InvalidParameterException | KeyStoreException e) {
             throw new RunnerException(e);
         }
     }

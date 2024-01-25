@@ -4,11 +4,7 @@ import io.spiffe.helper.exception.RunnerException;
 import io.spiffe.helper.keystore.KeyStoreHelper.KeyStoreOptions;
 import io.spiffe.helper.keystore.KeyStoreType;
 import lombok.val;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -48,17 +44,17 @@ class Config {
         final Options cliOptions = new Options();
         cliOptions.addOption(CONFIG_FILE_OPTION);
         CommandLineParser parser = new DefaultParser();
+
         try {
-            val cmd = parser.parse(cliOptions, args);
-            if (cmd.hasOption("config")) {
-                return cmd.getOptionValue("config");
-            } else {
-                return Paths.get(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME).toString();
-            }
+            CommandLine cmd = parser.parse(cliOptions, args);
+            return cmd.getOptionValue("config", getDefaultConfigPath());
         } catch (ParseException e) {
-            val error = String.format("%s. Use -c, --config <arg>", e.getMessage());
-            throw new RunnerException(error);
+            throw new RunnerException("Error parsing command line options: " + e.getMessage(), e);
         }
+    }
+
+    private static String getDefaultConfigPath() {
+        return Paths.get(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME).toString();
     }
 
     static KeyStoreOptions createKeyStoreOptions(final Properties properties) {

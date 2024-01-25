@@ -20,7 +20,7 @@ class RunnerTest {
     void test_Main_KeyStorePathIsMissing() throws URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-keystorepath.conf"));
         try {
-            Runner.main("-c", path.toString());
+            Runner.runApplication("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (RunnerException e) {
             assertEquals("Missing value for config property: keyStorePath", e.getCause().getMessage());
@@ -31,7 +31,7 @@ class RunnerTest {
     void test_Main_KeyStorePassIsMissing() throws URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-keystorepass.conf"));
         try {
-            Runner.main("-c", path.toString());
+            Runner.runApplication("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (RunnerException e) {
             assertEquals("Missing value for config property: keyStorePass", e.getCause().getMessage());
@@ -42,7 +42,7 @@ class RunnerTest {
     void test_Main_KeyPassIsMissing() throws URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-keypass.conf"));
         try {
-            Runner.main("-c", path.toString());
+            Runner.runApplication("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (RunnerException e) {
             assertEquals("Missing value for config property: keyPass", e.getCause().getMessage());
@@ -53,7 +53,7 @@ class RunnerTest {
     void test_Main_TrustStorePathIsMissing() throws URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-truststorepath.conf"));
         try {
-            Runner.main("-c", path.toString());
+            Runner.runApplication("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (RunnerException e) {
             assertEquals("Missing value for config property: trustStorePath", e.getCause().getMessage());
@@ -64,7 +64,7 @@ class RunnerTest {
     void test_Main_TrustStorePassIsMissing() throws URISyntaxException {
         final Path path = Paths.get(toUri("testdata/cli/missing-truststorepass.conf"));
         try {
-            Runner.main("-c", path.toString());
+            Runner.runApplication("-c", path.toString());
             fail("expected exception: property is missing");
         } catch (RunnerException e) {
             assertEquals("Missing value for config property: trustStorePass", e.getCause().getMessage());
@@ -78,7 +78,7 @@ class RunnerTest {
 
         val configPath = Paths.get(toUri("testdata/cli/correct.conf"));
         try {
-            Runner.main("-c", configPath.toString());
+            Runner.runApplication("-c", configPath.toString());
         } catch (RunnerException e) {
             assertEquals("KeyStore cannot be created", e.getCause().getMessage());
         } finally {
