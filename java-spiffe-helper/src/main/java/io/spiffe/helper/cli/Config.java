@@ -16,7 +16,7 @@ import java.util.Properties;
 
 class Config {
 
-    private static final String DEFAULT_CONFIG_FILENAME = "conf/java-spiffe-helper.conf";
+    private static final String DEFAULT_CONFIG_FILENAME = "conf/java-spiffe-helper.properties";
 
     static final Option CONFIG_FILE_OPTION =
             Option.builder("c")

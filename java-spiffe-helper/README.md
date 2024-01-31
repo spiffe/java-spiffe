@@ -17,7 +17,7 @@ On Mac OS:
 `java -jar java-spiffe-helper-0.8.4-osx-x86_64.jar`
 
 You can run the utility with the `-c` or `--config` option to specify the path to the configuration file. By default, it
-will look for a configuration file named `conf/java-spiffe-helper.conf` in the current working directory.
+will look for a configuration file named `conf/java-spiffe-helper.properties` in the current working directory.
 
 ## Config file
 
