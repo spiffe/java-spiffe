@@ -1,4 +1,4 @@
-FROM gradle:jdk17 AS builder
+FROM gradle:8.5.0-jdk17 AS builder
 COPY --chown=gradle:gradle . /builder
 WORKDIR /builder
 RUN gradle dependencies
