@@ -17,6 +17,6 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/spiffe/java-spiffe-helper:${{ env.DOCKER_TAG }}
+          tags: ghcr.io/${{ github.repository }}-helper:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
