@@ -10,15 +10,14 @@ The Helper automatically gets the SVID updates and stores them in the KeyStore a
 
 On Linux:
 
-`java -jar java-spiffe-helper-0.7.0-linux-x86_64.jar -c helper.conf`
+`java -jar java-spiffe-helper-0.8.4-linux-x86_64.jar`
 
 On Mac OS:
 
-`java -jar java-spiffe-helper-0.7.0-osx-x86_64.jar -c helper.conf`
+`java -jar java-spiffe-helper-0.8.4-osx-x86_64.jar`
 
-Either `-c` or `--config` should be used to pass the path to the config file.
-
-(The jar can be downloaded from [Github releases](https://github.com/spiffe/java-spiffe/releases/tag/v0.7.0))
+You can run the utility with the `-c` or `--config` option to specify the path to the configuration file. By default, it
+will look for a configuration file named `conf/java-spiffe-helper.properties` in the current working directory.
 
 ## Config file
 
@@ -39,20 +38,19 @@ spiffeSocketPath = unix:/tmp/agent.sock
 
 ### Configuration Properties
 
- |Configuration     | Description                                                                    | Default value |
- |------------------|--------------------------------------------------------------------------------| ------------- |
- |`keyStorePath`    | Path to the Java KeyStore File for storing the Private Key and chain of certs  |     none      |
- |`keyStorePass`    | Password to protect the Java KeyStore File                                     |     none      |
- |`keyPass`         | Password to protect the Private Key entry in the KeyStore                      |     none      |
- |`trustStorePath`  | Path to the Java TrustStore File for storing the trusted bundles               |     none      |
- |`trustStorePass`  | Password to protect the Java TrustStore File                                   |     none      |
- |`keyStoreType`    | Java KeyStore Type. (`pkcs12` and `jks` are supported). Case insensitive.      |     pkcs12    |
- |`keyAlias`        | Alias for the Private Key entry                                                |     spiffe    |
- |`spiffeSocketPath`| Path the Workload API                                                          |     Read from the system variable: SPIFFE_ENDPOINT_SOCKET  |
-  
-KeyStore and TrustStore **must** be in separate files. If `keyStorePath` and `trustStorePath` points to the same file, an error
-is shown
-. 
+| Configuration      | Description                                                                   | Default value                                         |
+ |--------------------|-------------------------------------------------------------------------------|-------------------------------------------------------|
+| `keyStorePath`     | Path to the Java KeyStore File for storing the Private Key and chain of certs | none                                                  |
+| `keyStorePass`     | Password to protect the Java KeyStore File                                    | none                                                  |
+| `keyPass`          | Password to protect the Private Key entry in the KeyStore                     | none                                                  |
+| `trustStorePath`   | Path to the Java TrustStore File for storing the trusted bundles              | none                                                  |
+| `trustStorePass`   | Password to protect the Java TrustStore File                                  | none                                                  |
+| `keyStoreType`     | Java KeyStore Type. (`pkcs12` and `jks` are supported). Case insensitive.     | pkcs12                                                |
+| `keyAlias`         | Alias for the Private Key entry                                               | spiffe                                                |
+| `spiffeSocketPath` | Path the Workload API                                                         | Read from the system variable: SPIFFE_ENDPOINT_SOCKET |
+
+KeyStore and TrustStore **must** be in separate files. If `keyStorePath` and `trustStorePath` points to the same file,
+an error is shown. 
 If the store files do not exist, they are created. 
 
 The default and **recommended KeyStore Type** is `PKCS12`. The same type is used for both KeyStore and TrustStore.

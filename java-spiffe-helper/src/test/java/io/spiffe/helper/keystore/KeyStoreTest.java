@@ -203,7 +203,7 @@ public class KeyStoreTest {
                     .keyStorePassword("example")
                     .build();
         } catch (KeyStoreException e) {
-            assertEquals("KeyStore cannot be created", e.getMessage());
+            assertEquals("KeyStore cannot be opened", e.getMessage());
         } finally {
             file.delete();
         }
