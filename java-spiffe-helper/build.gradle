@@ -10,7 +10,7 @@ assemble.dependsOn shadowJar
 
 shadowJar {
     mergeServiceFiles()
-    archiveClassifier = osdetector.classifier
+    archiveClassifier = project.hasProperty('archiveClassifier') && project.archiveClassifier != "" ? project.archiveClassifier : osdetector.classifier
     manifest {
         attributes 'Main-Class': 'io.spiffe.helper.cli.Runner'
     }
