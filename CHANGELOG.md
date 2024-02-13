@@ -15,7 +15,7 @@
 
 - Addressed a Fat Jar Assembly issue. (#198)
 
-### Dependencies updates
+### Dependency updates
 
 - Bump `grpcVersion` from 1.54.0 to 1.61.1 (#202)
 - Bump `commons-validator:commons-validator` from 1.7. to 1.8.0 (#197)
