@@ -17,7 +17,7 @@
 
 ### Dependency updates
 
-- Bump `grpcVersion` from 1.54.0 to 1.61.1 (#202)
+- Bump `io.grpc:grpc-protobuf` and  `io.grpc:grpc-stub` from 1.54.0 to 1.61.1 (#202)
 - Bump `commons-validator:commons-validator` from 1.7. to 1.8.0 (#197)
 - Bump `commons-cli:commons-cli` from 1.5.0 to 1.6.0 (#196)
 - Bump `com.google.protobuf:protoc` from 3.21.12 to 3.25.2 (#193)
