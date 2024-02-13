@@ -19,7 +19,7 @@
 
 - Bump `grpcVersion` from 1.54.0 to 1.61.1 (#202)
 - Bump `commons-validator:commons-validator` from 1.7. to 1.8.0 (#197)
-- Bump `commons-cli:commons-cli` from 1.5.0 to 1.6.0 (#197)
+- Bump `commons-cli:commons-cli` from 1.5.0 to 1.6.0 (#196)
 - Bump `com.google.protobuf` from 3.21.12 to 3.25.2 (#193)
 - Bump `io.netty:netty-transport-native-kqueue` from 4.1.91.Final to 4.1.106.Final (#192)
 - Bump `org.apache.commons:commons-lang3` from 3.13.0 to 3.14.0 (#189)
