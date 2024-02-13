@@ -22,7 +22,7 @@
 - Bump `commons-cli:commons-cli` from 1.5.0 to 1.6.0 (#196)
 - Bump `com.google.protobuf:protoc` from 3.21.12 to 3.25.2 (#193)
 - Bump `io.netty:netty-transport-native-kqueue` from 4.1.91.Final to 4.1.106.Final (#192)
-- Bump `org.apache.commons:commons-lang3` from 3.13.0 to 3.14.0 (#189)
+- Bump `org.apache.commons:commons-lang3` from 3.12.0 to 3.14.0 (#189)
 - Bump `com.nimbusds:nimbus-jose-jwt` from 9.31 to 9.37.3 (#184)
 - Bump `org.projectlombok:lombok` from 1.18.26 to 1.18.30 (#170)
 - Bump `com.google.protobuf:protobuf-gradle-plugin` from 0.9.2 to 0.9.4 (#153)
