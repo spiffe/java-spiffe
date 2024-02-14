@@ -1,6 +1,6 @@
 spire-server:
   ca_subject:
-    common_name: $TRUSTSTORE_COMMON_NAME
+    common_name: common_name
   controllerManager:
     identities:
       clusterSPIFFEIDs:
@@ -15,4 +15,4 @@ spire-server:
             matchLabels:
               app: java-spiffe-helper
           dnsNameTemplates:
-            - $KEYSTORE_COMMON_NAME
+            - dnsNameTemplate

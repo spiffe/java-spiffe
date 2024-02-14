@@ -28,8 +28,12 @@ jobs:
           cluster_name: kind
       - run: kind load docker-image java-spiffe-helper:test --name kind
       - run: helm upgrade --install -n spire-server spire-crds spire-crds --repo https://spiffe.github.io/helm-charts-hardened/ --create-namespace
-      - run: envsubst < .github/tests/spire-values.yaml.tpl > .github/tests/spire-values.yaml
-      - run: helm upgrade --install -n spire-server spire spire --repo https://spiffe.github.io/helm-charts-hardened/ -f .github/tests/spire-values.yaml
+      - run: |
+          helm upgrade --install -n spire-server spire spire \
+            --repo https://spiffe.github.io/helm-charts-hardened/ \
+            -f .github/tests/spire-values.yaml \
+            --set spire-server.ca_subject.common_name="$TRUSTSTORE_COMMON_NAME" \
+            --set spire-server.controllerManager.identities.clusterSPIFFEIDs.java-spiffe-helper.dnsNameTemplates[0]="$KEYSTORE_COMMON_NAME"
       - run: kubectl apply -f .github/tests/java-spiffe-helper.yaml
       - run: kubectl wait pod/java-spiffe-helper --for condition=Ready --timeout=90s
       - if: ${{ failure() }}
