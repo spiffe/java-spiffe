@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: java-spiffe-helper
+data:
+  java-spiffe-helper.properties: |
+    keyStorePath=/tmp/keystore.p12
+    keyStorePass=password
+    keyPass=password
+    trustStorePath=/tmp/truststore.p12
+    trustStorePass=password
+    keyStoreType=pkcs12
+    keyAlias=spiffe
+    spiffeSocketPath=unix:/run/spire/agent-sockets/spire-agent.sock
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: java-spiffe-helper
+  labels:
+    app: java-spiffe-helper
+spec:
+  containers:
+    - name: java-spiffe-helper
+      image: java-spiffe-helper:test
+      imagePullPolicy: IfNotPresent
+      readinessProbe:
+        initialDelaySeconds: 15
+        exec:
+          command:
+            - ls
+            - /tmp/truststore.p12
+      volumeMounts:
+        - name: properties
+          mountPath: /app/java-spiffe-helper.properties
+          subPath: java-spiffe-helper.properties
+        - name: spire-sockets
+          mountPath: /run/spire/agent-sockets
+          readOnly: true
+  restartPolicy: Never
+  volumes:
+    - name: properties
+      configMap:
+        name: java-spiffe-helper
+    - name: spire-sockets
+      hostPath:
+        path: /run/spire/agent-sockets
+        type: DirectoryOrCreate
