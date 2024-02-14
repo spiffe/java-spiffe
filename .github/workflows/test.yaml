@@ -37,7 +37,7 @@ jobs:
       - run: kubectl apply -f .github/tests/java-spiffe-helper.yaml
       - run: kubectl wait pod/java-spiffe-helper --for condition=Ready --timeout=90s
       - if: ${{ failure() }}
-        run: kubectl logs pod/java-spiffe-helper > java-spiffe-helper.log
+        run: kubectl logs pod/java-spiffe-helper | tee java-spiffe-helper.log
       - if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
