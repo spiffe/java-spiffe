@@ -40,7 +40,7 @@ jobs:
           name: logs
           path: java-spiffe-helper.log
       - if: ${{ failure() }}
-        run: kubectl describe pods -lapp=java-spiffe-helper
+        run: kubectl describe pod/java-spiffe-helper
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
