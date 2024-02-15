@@ -86,7 +86,7 @@ dependencies {
 
     implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
     implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
-    implementation group: 'io.grpc', name: 'grpc-inprocess', version: "${grpcVersion}"
+    testImplementation group: 'io.grpc', name: 'grpc-inprocess', version: "${grpcVersion}"
     testImplementation group: 'io.grpc', name: 'grpc-testing', version: "${grpcVersion}"
     compileOnly group: 'org.apache.tomcat', name: 'annotations-api', version: '6.0.53' // necessary for Java 9+
 
