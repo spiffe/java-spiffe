@@ -112,7 +112,7 @@ The `java-spiffe-helper` module manages X.509 SVIDs and Bundles in Java Keystore
 
 ### Docker Image
 
-Pull the `java-spiffe-helper` image from `ghcr.io/java-spiffe-helper:v0.8.5`.
+Pull the `java-spiffe-helper` image from `ghcr.io/spiffe/java-spiffe-helper:0.8.5`.
 
 For more details, see [java-spiffe-helper/README.md](java-spiffe-helper/README.md).
 
