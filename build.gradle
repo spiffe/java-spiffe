@@ -1,6 +1,7 @@
 plugins {
     id 'com.github.kt3k.coveralls' version '2.12.2'
     id 'com.google.osdetector' version '1.7.3'
+    id 'jvm-test-suite'
 }
 
 allprojects {
@@ -118,18 +119,12 @@ subprojects {
         testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
     }
 
-    test {
-        useJUnitPlatform()
-
-        testLogging {
-            afterSuite { desc, result ->
-                if (!desc.parent) {
-                    println "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
-                }
+    testing {
+        suites {
+            test {
+                useJUnitJupiter()
             }
         }
-
-        finalizedBy jacocoTestReport
     }
 }
 
@@ -175,13 +170,4 @@ task copyJars(type: Copy) {
     into "$buildDir/libs"
 }
 
-task assemble {
-    dependsOn subprojects.assemble
-}
-
 assemble.finalizedBy copyJars
-
-task clean {
-    dependsOn subprojects.clean
-    delete "$buildDir"
-}
