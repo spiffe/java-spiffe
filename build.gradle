@@ -128,6 +128,8 @@ subprojects {
                 }
             }
         }
+
+        finalizedBy jacocoTestReport
     }
 }
 
@@ -153,17 +155,17 @@ task jacocoTestReport(type: JacocoReport) {
     }
 }
 
+jacocoTestReport.dependsOn {
+    subprojects.collectMany { project ->
+        project.tasks.matching { it.name in ['test'] }
+    }
+}
+
 coveralls {
     jacocoReportPath 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
     sourceDirs = ['java-spiffe-core/src/main/java',
                   'java-spiffe-helper/src/main/java',
                   'java-spiffe-provider/src/main/java']
-}
-
-// always run the tests before generating the report
-jacocoTestReport.dependsOn {
-    subprojects*.test
-    copyJars // workaround to prevent deleting the build folder before generating the reports
 }
 
 // copy submodules jars to a common folder for deploy
