@@ -19,7 +19,7 @@ jobs:
       - name: Generate and upload coverage report
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: ./gradlew build jacocoTestReport coveralls
+        run: ./gradlew jacocoTestReport coveralls
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.
