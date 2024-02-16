@@ -5,7 +5,7 @@ COPY . /builder
 RUN ./gradlew dependencies
 RUN ./gradlew java-spiffe-helper:assemble -ParchiveClassifier=docker -Pversion=docker
 
-FROM eclipse-temurin:17-jre  AS runner
+FROM eclipse-temurin:17-jre AS runner
 USER nobody
 
 COPY conf/java-spiffe-helper.properties /app/java-spiffe-helper.properties
