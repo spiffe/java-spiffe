@@ -16,7 +16,7 @@ subprojects {
     version = project.version
 
     ext {
-        grpcVersion = '1.61.1'
+        grpcVersion = '1.62.2'
         jupiterVersion = '5.10.2'
         mockitoVersion = '4.11.0'
         lombokVersion = '1.18.30'
@@ -48,8 +48,8 @@ subprojects {
         repositories {
             maven {
                 credentials {
-                    username = project.properties["mavenDeployUser"]
-                    password = project.properties["mavenDeployPassword"]
+                    username = project.properties["mavenDeployUser"] ?: System.getenv("NEXUS_USERNAME")
+                    password = project.properties["mavenDeployPassword"] ?: System.getenv("NEXUS_TOKEN")
                 }
                 url = project.properties["mavenDeployUrl"]
             }
@@ -82,12 +82,15 @@ subprojects {
                             url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                         }
                     }
-
                     developers {
-                        developer {
-                            id = 'maxlambrecht'
-                            name = 'Max Lambrecht'
-                            email = 'maxlambrecht@gmail.com'
+                        ['maxlambrecht:Max Lambrecht', 'rturner3:Ryan Turner'].each { devData ->
+                            developer {
+                                def devInfo = devData.split(':')
+                                id = devInfo[0]
+                                name = devInfo[1]
+                                url = 'https://github.com/' + devInfo[0]
+                                roles = ["Maintainer"]
+                            }
                         }
                     }
                 }
@@ -96,6 +99,7 @@ subprojects {
     }
 
     signing {
+        useInMemoryPgpKeys(System.getenv('PGP_PRIVATE_KEY'), System.getenv('PGP_KEY_PASSPHRASE'))
         sign publishing.publications.mavenJava
     }
 
@@ -110,7 +114,11 @@ subprojects {
         testCompileOnly group: 'org.mockito', name: 'mockito-core', version: "${mockitoVersion}"
         testRuntimeOnly group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${mockitoVersion}"
 
-        testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.2'
+        if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
+            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.3' // Last version supporting Java 8
+        } else {
+            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.6'
+        }
 
         // Project Lombok dependency
         compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
