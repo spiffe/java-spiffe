@@ -48,8 +48,8 @@ subprojects {
         repositories {
             maven {
                 credentials {
-                    username = project.properties["mavenDeployUser"]
-                    password = project.properties["mavenDeployPassword"]
+                    username = project.properties["mavenDeployUser"] ?: System.getenv("NEXUS_USERNAME")
+                    password = project.properties["mavenDeployPassword"] ?: System.getenv("NEXUS_TOKEN")
                 }
                 url = project.properties["mavenDeployUrl"]
             }
@@ -82,12 +82,15 @@ subprojects {
                             url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                         }
                     }
-
                     developers {
-                        developer {
-                            id = 'maxlambrecht'
-                            name = 'Max Lambrecht'
-                            email = 'maxlambrecht@gmail.com'
+                        ['maxlambrecht:Max Lambrecht', 'rturner3:Ryan Turner'].each { devData ->
+                            developer {
+                                def devInfo = devData.split(':')
+                                id = devInfo[0]
+                                name = devInfo[1]
+                                url = 'https://github.com/' + devInfo[0]
+                                roles = ["Maintainer"]
+                            }
                         }
                     }
                 }
@@ -96,6 +99,7 @@ subprojects {
     }
 
     signing {
+        useInMemoryPgpKeys(System.getenv('PGP_PRIVATE_KEY'), System.getenv('PGP_KEY_PASSPHRASE'))
         sign publishing.publications.mavenJava
     }
 
