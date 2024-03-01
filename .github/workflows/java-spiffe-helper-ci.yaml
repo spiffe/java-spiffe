@@ -8,7 +8,13 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        spire-chart-version:
+          - '0.17.2'
+
     env:
+      HELM_REPOSITORY: https://spiffe.github.io/helm-charts-hardened/
       KEYSTORE_COMMON_NAME: keystore-${{ github.sha }}
       TRUSTSTORE_COMMON_NAME: truststore-${{ github.sha }}
 
@@ -38,13 +44,18 @@ jobs:
           cluster_name: kind
       - name: Load container image onto kubernetes node
         run: kind load docker-image java-spiffe-helper:test --name kind
-      - name: Install SPIRE CRDs
-        run: helm upgrade --install -n spire-server spire-crds spire-crds --repo https://spiffe.github.io/helm-charts-hardened/ --create-namespace
-      - name: Install SPIRE server and set to-be-verified values for common name
+      - name: Install SPIRE CRDs in version ${{ matrix.spire-chart-version }}
+        run: |
+          helm upgrade --install -n spire-server spire-crds spire-crds \
+            --repo ${{ env.HELM_REPOSITORY }} \
+            --version ${{ matrix.spire-chart-version }} \
+            --create-namespace
+      - name: Install SPIRE server in version ${{ matrix.spire-chart-version }} and set to-be-verified values for common name
         run: |
           helm upgrade --install -n spire-server spire spire \
-            --repo https://spiffe.github.io/helm-charts-hardened/ \
-            -f .github/ci-k8s-configs/spire-values.yaml \
+            --repo ${{ env.HELM_REPOSITORY }} \
+            --version ${{ matrix.spire-chart-version }} \
+            --values .github/ci-k8s-configs/spire-values.yaml \
             --set spire-server.ca_subject.common_name="$TRUSTSTORE_COMMON_NAME" \
             --set spire-server.controllerManager.identities.clusterSPIFFEIDs.java-spiffe-helper.dnsNameTemplates[0]="$KEYSTORE_COMMON_NAME"
       - name: Deploy java-spiffe-helper pod to local cluster
