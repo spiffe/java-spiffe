@@ -11,8 +11,8 @@ jobs:
     strategy:
       matrix:
         spire-chart-version:
-          - spire: '0.17.2'
-            crds: '0.3.0'
+          - spire: '0.17.x'
+            crds: '0.3.x'
 
     env:
       HELM_REPOSITORY: https://spiffe.github.io/helm-charts-hardened/
