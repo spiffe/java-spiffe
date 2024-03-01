@@ -6,6 +6,7 @@
 
 - Bump `com.google.protobuf:protoc` from 3.25.2 to 3.25.3 (#218)
 - Bump `io.grpc:grpc-protobuf` and  `io.grpc:grpc-stub` from 1.61.1 to 1.62.2 (#222)
+- Bump `io.netty:netty-transport-native-kqueue` from 4.1.106.Final to 4.1.107.Final (#205)
 
 ### CI/CD Improvements
 
