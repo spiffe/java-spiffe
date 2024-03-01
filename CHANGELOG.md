@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.6] - 2024-03-04
+
+### Dependency updates
+
+- Bump `com.google.protobuf:protoc` from 3.25.2 to 3.25.3 (#218)
+- Bump `io.grpc:grpc-protobuf` and  `io.grpc:grpc-stub` from 1.61.1 to 1.62.2 (#222)
+
+### CI/CD Improvements
+
+Automated build and publish process via GitHub Actions.
+
 ## [0.8.5] - 2024-14-02
 
 ### Added
