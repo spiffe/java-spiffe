@@ -1,0 +1,18 @@
+spire-server:
+  ca_subject:
+    common_name: common_name
+  controllerManager:
+    identities:
+      clusterSPIFFEIDs:
+        default:
+          enabled: false
+        java-spiffe-helper:
+          spiffeIDTemplate: spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+          podSelector:
+            matchLabels:
+              app: java-spiffe-helper
+          dnsNameTemplates:
+            - dnsNameTemplate
