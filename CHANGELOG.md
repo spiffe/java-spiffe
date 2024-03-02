@@ -5,7 +5,8 @@
 ### Dependency updates
 
 - Bump `com.google.protobuf:protoc` from 3.25.2 to 3.25.3 (#218)
-- Bump `io.grpc:grpc-protobuf` and  `io.grpc:grpc-stub` from 1.61.1 to 1.62.2 (#222)
+- Bump `io.grpc:grpc-protobuf`, `io.grpc:grpc-stub`, `io.grpc:grpc-netty`, `io.grpc:grpc-netty-shaded`,
+  and `io.grpc:protoc-gen-grpc-java` from 1.61.1 to 1.62.2 (#222)
 - Bump `io.netty:netty-transport-native-kqueue` from 4.1.106.Final to 4.1.107.Final (#205)
 
 ### CI/CD Improvements
@@ -39,7 +40,6 @@ Automated build and publish process via GitHub Actions.
 - Bump `org.projectlombok:lombok` from 1.18.26 to 1.18.30 (#170)
 - Bump `com.google.protobuf:protobuf-gradle-plugin` from 0.9.2 to 0.9.4 (#153)
 
-
 ## [0.8.4] - 2023-04-14
 
 ### Dependencies updates
@@ -49,7 +49,7 @@ Automated build and publish process via GitHub Actions.
 - Bump `org.apache.commons:commons-lang3` from 3.11 to 3.12.0 (#129)
 - Bump `org.projectlombok:lombok` from 1.18.20 to 1.18.26 (#128)
 
-## [0.8.3] - 2023-04-13 
+## [0.8.3] - 2023-04-13
 
 ### Added
 
