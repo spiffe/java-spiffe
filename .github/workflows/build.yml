@@ -1,8 +1,12 @@
-name: PR Build
+name: Build
 
 on:
-  pull_request: {}
-  workflow_dispatch: {}
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
 

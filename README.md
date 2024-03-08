@@ -1,6 +1,6 @@
 # Java SPIFFE Library
 
-[![Build Status](https://github.com/spiffe/java-spiffe/actions/workflows/pr_build.yml/badge.svg)](https://github.com/spiffe/java-spiffe/actions/workflows/pr_build.yml)
+[![Build Status](https://github.com/spiffe/java-spiffe/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/spiffe/java-spiffe/actions/workflows/build.yml?query=branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/spiffe/java-spiffe/badge.svg)](https://coveralls.io/github/spiffe/java-spiffe?branch=main)
 
 ## Overview
