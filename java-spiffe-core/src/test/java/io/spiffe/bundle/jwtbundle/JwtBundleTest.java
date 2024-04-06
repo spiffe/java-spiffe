@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -220,6 +221,25 @@ class JwtBundleTest {
     }
 
     @Test
+    void testParseJWKSWithEmptyKeysArray_Success() {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        String jwksEmptyKeysJson = "{\"keys\": []}";
+        byte[] bundleBytes = jwksEmptyKeysJson.getBytes(StandardCharsets.UTF_8);
+
+
+        JwtBundle jwtBundle = null;
+        try {
+            jwtBundle = JwtBundle.parse(trustDomain, bundleBytes);
+        } catch (JwtBundleException e) {
+            fail("Parsing failed with exception: " + e.getMessage());
+        }
+
+        assertNotNull(jwtBundle, "JwtBundle should not be null");
+        assertEquals(trustDomain, jwtBundle.getTrustDomain(), "Trust domain should match");
+        assertTrue(jwtBundle.getJwtAuthorities().isEmpty(), "JwtAuthorities should be empty");
+    }
+
+    @Test
     void testParse_MissingKid_Fails() throws URISyntaxException, IOException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_missing_kid.json"));
         byte[] bundleBytes = Files.readAllBytes(path);
@@ -269,7 +289,7 @@ class JwtBundleTest {
             JwtBundle bundle = jwtBundle.getBundleForTrustDomain(TrustDomain.parse("example.org"));
             assertEquals(jwtBundle, bundle);
         } catch (BundleNotFoundException e) {
-           fail(e);
+            fail(e);
         }
     }
 
@@ -305,8 +325,8 @@ class JwtBundleTest {
         } catch (AuthorityNotFoundException e) {
             fail(e);
         }
-        assertEquals(key1, jwtAuthority1 );
-        assertEquals(key2, jwtAuthority2 );
+        assertEquals(key1, jwtAuthority1);
+        assertEquals(key2, jwtAuthority2);
 
         // Test RemoveJwtAuthority
         jwtBundle.removeJwtAuthority("key1");
