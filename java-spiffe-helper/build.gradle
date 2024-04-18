@@ -33,7 +33,7 @@ dependencies {
         runtimeOnly(project(':java-spiffe-core:grpc-netty-linux'))
     }
 
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.6.0'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.7.0'
 
     testImplementation(testFixtures(project(":java-spiffe-core")))
 }
