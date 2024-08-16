@@ -16,15 +16,15 @@ subprojects {
     version = project.version
 
     ext {
-        grpcVersion = '1.63.0'
+        grpcVersion = '1.66.0'
         jupiterVersion = '5.10.2'
         mockitoVersion = '4.11.0'
         lombokVersion = '1.18.32'
-        nimbusVersion = '9.37.3'
+        nimbusVersion = '9.40'
         shadowVersion = '8.1.1'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.1.109.Final'
+        nettyVersion = '4.1.112.Final'
     }
 
     apply plugin: 'java-library'
