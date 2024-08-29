@@ -104,7 +104,7 @@ subprojects {
     }
 
     dependencies {
-        implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
+        implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0'
         implementation group: 'commons-validator', name: 'commons-validator', version: "1.8.0"
 
         testCompileOnly group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: "${jupiterVersion}"
