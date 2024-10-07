@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.7] - 2024-09-20
+
+### Dependency updates
+
+- Bump `grpcVersion` from 1.62.2 to 1.66.0 (#248)
+- Bump `io.netty:netty-transport-native-kqueue` from 4.1.107.Final to 4.1.113.Final (#260)
+- Bump `commons-cli:commons-cli` from 1.6.0 to 1.9.0 (#258)
+- Bump `com.nimbusds:nimbus-jose-jwt` from 9.37.3 to 9.41.1 (#259)
+- Bump `org.apache.commons:commons-lang3` from 3.14.0 to 3.17.0 (#255)
+- Bump `org.projectlombok:lombok` from 1.18.30 to 1.18.34 (#253)
+- Bump `commons-validator:commons-validator` from 1.8.0 to 1.9.0 (#251)
+- Bump `jupiterVersion` from 5.10.2 to 5.11.0 (#254)
+
 ## [0.8.6] - 2024-03-04
 
 ### Dependency updates

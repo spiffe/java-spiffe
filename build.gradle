@@ -16,15 +16,15 @@ subprojects {
     version = project.version
 
     ext {
-        grpcVersion = '1.66.0'
-        jupiterVersion = '5.11.0'
+        grpcVersion = '1.68.0'
+        jupiterVersion = '5.11.1'
         mockitoVersion = '4.11.0'
         lombokVersion = '1.18.34'
-        nimbusVersion = '9.41.1'
+        nimbusVersion = '9.41.2'
         shadowVersion = '8.1.1'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.1.113.Final'
+        nettyVersion = '4.1.114.Final'
     }
 
     apply plugin: 'java-library'
@@ -117,7 +117,7 @@ subprojects {
         if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
             testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.3' // Last version supporting Java 8
         } else {
-            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.6'
+            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.7'
         }
 
         // Project Lombok dependency
