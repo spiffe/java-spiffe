@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.8] - 2024-10-08
+
+### Dependency updates
+
+- Bump `grpcVersion` from 1.66.0 to 1.68.0 (#262) 
+- Bump `io.netty:netty-transport-native-kqueue` from 4.1.113.Final to 4.1.114.Final (#265) 
+- Bump `com.nimbusds:nimbus-jose-jwt` from 9.41.1 to 9.41.2 in (#266) 
+
+### Changed
+
+- Updated Gradle to version 8.10.2 (#269)
+
 ## [0.8.7] - 2024-09-20
 
 ### Dependency updates
