@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.9] - 2024-10-09
+
+- Bump `com.google.protobuf:protoc` to `3.25.5` (#271)
+
 ## [0.8.8] - 2024-10-08
 
 ### Dependency updates
