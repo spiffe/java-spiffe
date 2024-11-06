@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.10] - 2024-11-06
+
+### Dependency updates
+
+- Bump jupiterVersion from 5.11.2 to 5.11.3 (#273)
+- Bump grpcVersion from 1.68.0 to 1.68.1 (#276)
+- Bump com.nimbusds:nimbus-jose-jwt from 9.41.2 to 9.45 (#278)
+
+
 ## [0.8.9] - 2024-10-09
 
 ### Dependency updates
