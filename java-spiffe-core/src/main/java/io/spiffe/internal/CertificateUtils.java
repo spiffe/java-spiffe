@@ -229,8 +229,8 @@ public class CertificateUtils {
     // Given a private key in PEM format, encode it as DER
     private static byte[] toDerFormat(final byte[] privateKeyPem) throws InvalidKeyException {
         String privateKeyAsString = new String(privateKeyPem);
-        privateKeyAsString = privateKeyAsString.replaceAll("(-+BEGIN PRIVATE KEY-+\\r?\\n|-+END PRIVATE KEY-+\\r?\\n?)", "");
-        privateKeyAsString = privateKeyAsString.replaceAll("\n", "");
+        privateKeyAsString = privateKeyAsString.replaceAll("(-+BEGIN PRIVATE KEY-+|-+END PRIVATE KEY-+)", "");
+        privateKeyAsString = privateKeyAsString.replaceAll("\r?\n", "");
         val decoder = Base64.getDecoder();
         try {
             return decoder.decode(privateKeyAsString);
