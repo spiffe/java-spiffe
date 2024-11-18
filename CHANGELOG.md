@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.11] - 2024-11-18
+
+### Fixed
+
+- Fix CRLF newline removal in DER format logic for Windows compatibility (#284)
+
+### Dependency updates
+
+- Bump io.netty:netty-transport-native-kqueue from 4.1.114.Final to 4.1.115.Final (#281)
+- Bump com.nimbusds:nimbus-jose-jwt from 9.45 to 9.47 (#285)
+- Bump org.projectlombok:lombok from 1.18.34 to 1.18.36 (#286)
+ 
+
 ## [0.8.10] - 2024-11-06
 
 ### Dependency updates
