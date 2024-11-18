@@ -19,7 +19,7 @@ subprojects {
         grpcVersion = '1.68.1'
         jupiterVersion = '5.11.3'
         mockitoVersion = '4.11.0'
-        lombokVersion = '1.18.34'
+        lombokVersion = '1.18.36'
         nimbusVersion = '9.47'
         shadowVersion = '8.1.1'
 
