@@ -20,7 +20,7 @@ subprojects {
         jupiterVersion = '5.12.0'
         mockitoVersion = '4.11.0'
         lombokVersion = '1.18.36'
-        nimbusVersion = '10.0.1'
+        nimbusVersion = '10.0.2'
         shadowVersion = '8.1.1'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
