@@ -115,9 +115,9 @@ subprojects {
         testRuntimeOnly group: 'org.mockito', name: 'mockito-junit-jupiter', version: "${mockitoVersion}"
 
         if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
-            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.0.3' // Last version supporting Java 8
+            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.8' // Last version supporting Java 8
         } else {
-            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.7'
+            testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.8'
         }
 
         // Project Lombok dependency
