@@ -147,11 +147,12 @@ from a SPIRE Agent, keep them updated in memory, and provide them for TLS connec
 The URL to connect to Postgres using TLS and Java SPIFFE is as follows:
 
 ```
-jdbc:postgresql://localhost:5432/postgres?sslmode=require&sslfactory=io.spiffe.provider.SpiffeSslSocketFactory
+jdbc:postgresql://localhost:5432/postgres?sslmode=require&sslfactory=io.spiffe.provider.SpiffeSslSocketFactory&sslNegotiation=direct
 ```
 
 The parameter `sslfactory` in the URL configures the Postgres JDBC driver to use the `SpiffeSslSocketFactory` which wraps 
-around an SSL Socket with the Java SPIFFE functionality.
+around an SSL Socket with the Java SPIFFE functionality. Additional parameter `sslNegotiation` is needed to instantiate
+`SpiffeSslSocketFactory` correct.
 
 The Workload API socket endpoint should be configured through the Environment variable `SPIFFE_ENDPOINT_SOCKET`.
 
