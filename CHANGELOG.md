@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.8.12] - 2025-06-06
+## [0.8.12] - 2025-06-05
 
 ### Dependency updates
 
@@ -8,8 +8,6 @@
 - Bump com.nimbusds:nimbus-jose-jwt to 10.3 (#323)
 - Bump io.netty:netty-transport-native-kqueue to 4.2.1.Final (#321)
 - Bump com.google.protobuf:protobuf-gradle-plugin to 0.9.5 (#314)
-- Bump jupiterVersion to 5.13.0 (#330)
-- Bump uk.org.webcompere:system-stubs-core to 2.1.8 (#320)
 - Bump org.projectlombok:lombok to 1.18.38 (#313)
 
 ### Documentation
