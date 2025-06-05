@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.12] - 2025-06-06
+
+### Dependency updates
+
+- Bump grpcVersion to 1.73.0 (#327)
+- Bump com.nimbusds:nimbus-jose-jwt to 10.3 (#323)
+- Bump io.netty:netty-transport-native-kqueue to 4.2.1.Final (#321)
+- Bump com.google.protobuf:protobuf-gradle-plugin to 0.9.5 (#314)
+- Bump jupiterVersion to 5.13.0 (#330)
+- Bump uk.org.webcompere:system-stubs-core to 2.1.8 (#320)
+- Bump org.projectlombok:lombok to 1.18.38 (#313)
+
+### Documentation
+
+- Add documentation about sslNegotiation config in java-spiffe-provider (#325)
+
 ## [0.8.11] - 2024-11-18
 
 ### Fixed
