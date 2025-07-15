@@ -10,11 +10,11 @@ The Helper automatically gets the SVID updates and stores them in the KeyStore a
 
 On Linux:
 
-`java -jar java-spiffe-helper-0.8.12-linux-x86_64.jar`
+`java -jar java-spiffe-helper-0.8.13-linux-x86_64.jar`
 
 On Mac OS:
 
-`java -jar java-spiffe-helper-0.8.12-osx-x86_64.jar`
+`java -jar java-spiffe-helper-0.8.13-osx-x86_64.jar`
 
 You can run the utility with the `-c` or `--config` option to specify the path to the configuration file. By default, it
 will look for a configuration file named `conf/java-spiffe-helper.properties` in the current working directory.
