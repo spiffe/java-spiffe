@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.13] - 2025-07-15
+
+### Dependency updates
+
+* Bump io.netty:netty-transport-native-kqueue to 4.2.2.Final (#332)
+* Bump com.nimbusds:nimbus-jose-jwt to 10.3.1 (#335)
+* Bump commons-validator:commons-validator to 1.10.0 (#338)
+* Bump org.apache.commons:commons-lang3 to 3.18.0 (#339)
+
 ## [0.8.12] - 2025-06-05
 
 ### Dependency updates

@@ -26,7 +26,7 @@ X.509 and JWT SVIDs and bundles.
 Download
 --------
 
-The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.8.12). 
+The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.8.13). 
 
 The dependencies can be added to `pom.xml`
 
@@ -35,7 +35,7 @@ To import the `java-spiffe-provider` component:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-provider</artifactId>
-  <version>0.8.12</version>
+  <version>0.8.13</version>
 </dependency>
 ```
 The `java-spiffe-provider` component imports the `java-spiffe-core` component.
@@ -45,7 +45,7 @@ To just import the `java-spiffe-core` component:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-core</artifactId>
-  <version>0.8.12</version>
+  <version>0.8.13</version>
 </dependency>
 ```
 
@@ -53,12 +53,12 @@ Using Gradle:
 
 Import `java-spiffe-provider`:
 ```gradle
-implementation group: 'io.spiffe', name: 'java-spiffe-provider', version: '0.8.12'
+implementation group: 'io.spiffe', name: 'java-spiffe-provider', version: '0.8.13'
 ```
 
 Import `java-spiffe-core`:
 ```gradle
-implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.8.12'
+implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.8.13'
 ```
 
 ### MacOS Support
@@ -72,14 +72,14 @@ In case run on a osx-x86 architecture, add to your `pom.xml`:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos</artifactId>
-  <version>0.8.12</version>
+  <version>0.8.13</version>
   <scope>runtime</scope>
 </dependency>
 ```
 
 Using Gradle:
 ```gradle
-runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.8.12'
+runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.8.13'
 ```
 
 #### Aarch64 (M1) Architecture
@@ -91,7 +91,7 @@ If you are running the aarch64 architecture (M1 CPUs), add to your `pom.xml`:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos-aarch64</artifactId>
-  <version>0.8.12</version>
+  <version>0.8.13</version>
   <scope>runtime</scope>
 </dependency>
 ```
@@ -99,7 +99,7 @@ If you are running the aarch64 architecture (M1 CPUs), add to your `pom.xml`:
 Using Gradle:
 
 ```gradle
-runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos-aarch64', version: '0.8.12'
+runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos-aarch64', version: '0.8.13'
 ```
 
 *Caveat: not all OpenJDK distributions are aarch64 native, make sure your JDK is also running
@@ -112,7 +112,7 @@ The `java-spiffe-helper` module manages X.509 SVIDs and Bundles in Java Keystore
 
 ### Docker Image
 
-Pull the `java-spiffe-helper` image from `ghcr.io/spiffe/java-spiffe-helper:0.8.12`.
+Pull the `java-spiffe-helper` image from `ghcr.io/spiffe/java-spiffe-helper:0.8.13`.
 
 For more details, see [java-spiffe-helper/README.md](java-spiffe-helper/README.md).
 
