@@ -16,10 +16,10 @@ subprojects {
     version = project.version
 
     ext {
-        grpcVersion = '1.73.0'
+        grpcVersion = '1.76.0'
         jupiterVersion = '5.13.4'
         mockitoVersion = '4.11.0'
-        lombokVersion = '1.18.38'
+        lombokVersion = '1.18.42'
         nimbusVersion = '10.5'
         shadowVersion = '8.1.1'
 
