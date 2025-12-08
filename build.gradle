@@ -2,6 +2,7 @@ plugins {
     id 'com.github.kt3k.coveralls' version '2.12.2'
     id 'com.google.osdetector' version '1.7.3'
     id 'jvm-test-suite'
+    id 'com.vanniktech.maven.publish' version '0.35.0'
 }
 
 allprojects {
@@ -28,14 +29,14 @@ subprojects {
     }
 
     apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
+
+    // vanniktech plugin (maven-publish + signing)
+    apply plugin: 'com.vanniktech.maven.publish'
 
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
 
-        withJavadocJar()
         withSourcesJar()
     }
 
@@ -44,63 +45,50 @@ subprojects {
         exclude "**/internal/**"
     }
 
-    publishing {
-        repositories {
-            maven {
-                credentials {
-                    username = project.properties["mavenDeployUser"] ?: System.getenv("NEXUS_USERNAME")
-                    password = project.properties["mavenDeployPassword"] ?: System.getenv("NEXUS_TOKEN")
+    // Central Portal + signing configuration
+    mavenPublishing {
+        // Credentials come from:
+        //   - ORG_GRADLE_PROJECT_mavenCentralUsername
+        //   - ORG_GRADLE_PROJECT_mavenCentralPassword
+        publishToMavenCentral()
+        signAllPublications()
+
+        pom {
+            name.set(project.name)
+            url.set('https://github.com/spiffe/java-spiffe')
+
+            // description is only available after evaluation
+            afterEvaluate {
+                if (project.description != null) {
+                    description.set(project.description)
                 }
-                url = project.properties["mavenDeployUrl"]
             }
-        }
 
-        publications {
-            mavenJava(MavenPublication) {
-                groupId project.group
-                version "${project.version}"
-                from components.java
+            scm {
+                connection = 'scm:git:https://github.com/spiffe/java-spiffe.git'
+                developerConnection = 'scm:git:git@github.com:spiffe/java-spiffe.git'
+                url = 'https://github.com/spiffe/java-spiffe'
+            }
 
-                pom {
-                    name = project.name
-                    artifactId = project.name
-                    url = 'https://github.com/spiffe/java-spiffe'
-                    afterEvaluate {
-                        // description is not available until evaluated.
-                        description = project.description
-                    }
+            licenses {
+                license {
+                    name = 'The Apache License, Version 2.0'
+                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                }
+            }
 
-                    scm {
-                        connection = 'scm:git:https://github.com/spiffe/java-spiffe.git'
-                        developerConnection = 'scm:git:git@github.com:spiffe/java-spiffe.git'
-                        url = 'https://github.com/spiffe/java-spiffe'
-                    }
-
-                    licenses {
-                        license {
-                            name = 'The Apache License, Version 2.0'
-                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        }
-                    }
-                    developers {
-                        ['maxlambrecht:Max Lambrecht', 'rturner3:Ryan Turner'].each { devData ->
-                            developer {
-                                def devInfo = devData.split(':')
-                                id = devInfo[0]
-                                name = devInfo[1]
-                                url = 'https://github.com/' + devInfo[0]
-                                roles = ["Maintainer"]
-                            }
-                        }
+            developers {
+                ['maxlambrecht:Max Lambrecht', 'rturner3:Ryan Turner'].each { devData ->
+                    developer {
+                        def devInfo = devData.split(':')
+                        id = devInfo[0]
+                        name = devInfo[1]
+                        url = 'https://github.com/' + devInfo[0]
+                        roles = ["Maintainer"]
                     }
                 }
             }
         }
-    }
-
-    signing {
-        useInMemoryPgpKeys(System.getenv('PGP_PRIVATE_KEY'), System.getenv('PGP_KEY_PASSPHRASE'))
-        sign publishing.publications.mavenJava
     }
 
     dependencies {
@@ -132,6 +120,14 @@ subprojects {
             test {
                 useJUnitJupiter()
             }
+        }
+    }
+
+    afterEvaluate {
+        // Work around Gradle 8.14.x implicit-dependency validation:
+        // generateMetadataFileForMavenPublication must run after plainJavadocJar.
+        tasks.matching { it.name == "generateMetadataFileForMavenPublication" }.configureEach {
+            dependsOn(tasks.named("plainJavadocJar"))
         }
     }
 }

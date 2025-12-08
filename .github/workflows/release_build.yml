@@ -13,10 +13,11 @@ jobs:
   publishToMaven:
     runs-on: ubuntu-latest
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_TOKEN: ${{ secrets.NEXUS_TOKEN }}
-      PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
-      PGP_KEY_PASSPHRASE: ${{ secrets.PGP_KEY_PASSPHRASE }}
+      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
+      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.PGP_PRIVATE_KEY }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.PGP_KEY_PASSPHRASE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -25,8 +26,8 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'adopt'
-      - name: Publish to Nexus Maven Repository
-        run: ./gradlew publish
+      - name: Publish to Maven Central
+        run: ./gradlew publishToMavenCentral
 
   publishDockerImage:
     needs: publishToMaven
