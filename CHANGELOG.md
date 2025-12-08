@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.14] - 2025-12-08
+
+### Dependency updates
+
+* Bump io.netty:netty-transport-native-kqueue to 4.2.7.Final (#358)
+* Bump org.projectlombok:lombok to 1.18.42 (#362)
+* Bump org.apache.commons:commons-lang3 to 3.19.0 (#363)
+* Bump grpcVersion from to 1.77.0 (#369)
+* Bump com.nimbusds:nimbus-jose-jwt to 10.6 (#366)
+* Bump commons-cli:commons-cli to 1.11.0 (#367)
+
+### Build & publishing
+
+* Migrated artifact publishing from OSSRH to the new Sonatype Maven Central Portal.
+
+
 ## [0.8.13] - 2025-07-15
 
 ### Dependency updates
