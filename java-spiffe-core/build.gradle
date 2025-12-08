@@ -96,6 +96,6 @@ dependencies {
 
     // using bouncy castle for generating X.509 certs for testing purposes
     testFixturesImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.70'
-    testFixturesImplementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.19.0'
+    testFixturesImplementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.20.0'
 }
 
