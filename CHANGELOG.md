@@ -6,7 +6,7 @@
 
 * Bump io.netty:netty-transport-native-kqueue to 4.2.7.Final (#358)
 * Bump org.projectlombok:lombok to 1.18.42 (#362)
-* Bump grpcVersion from to 1.77.0 (#369)
+* Bump grpcVersion to 1.77.0 (#369)
 * Bump com.nimbusds:nimbus-jose-jwt to 10.6 (#366)
 * Bump commons-cli:commons-cli to 1.11.0 (#367)
 * Bump commons-validator:commons-validator to 1.10.1 (#375)
