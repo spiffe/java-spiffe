@@ -5,9 +5,6 @@ import io.spiffe.internal.AsymmetricKeyAlgorithm;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.internal.KeyFileFormat;
 import io.spiffe.spiffeid.SpiffeId;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.val;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,13 +18,13 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a SPIFFE X.509 SVID.
  * <p>
  * Contains a SPIFFE ID, a private key and a chain of X.509 certificates.
  */
-@Value
 public class X509Svid {
 
     SpiffeId spiffeId;
@@ -58,6 +55,14 @@ public class X509Svid {
         this.chain = chain;
         this.privateKey = privateKey;
         this.hint = hint;
+    }
+
+    public SpiffeId getSpiffeId() {
+        return this.spiffeId;
+    }
+
+    public PrivateKey getPrivateKey() {
+        return this.privateKey;
     }
 
     /**
@@ -98,8 +103,12 @@ public class X509Svid {
      * @return an instance of {@link X509Svid}
      * @throws X509SvidException if there is an error parsing the given certsFilePath or the privateKeyFilePath
      */
-    public static X509Svid load(@NonNull final Path certsFilePath, @NonNull final Path privateKeyFilePath)
+    public static X509Svid load(Path certsFilePath, Path privateKeyFilePath)
             throws X509SvidException {
+
+        Objects.requireNonNull(certsFilePath, "certsFilePath must not be null");
+        Objects.requireNonNull(privateKeyFilePath, "privateKeyFilePath must not be null");
+
         final byte[] certsBytes;
         try {
             certsBytes = Files.readAllBytes(certsFilePath);
@@ -127,8 +136,11 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes)
+    public static X509Svid parse(byte[] certsBytes, byte[] privateKeyBytes)
             throws X509SvidException {
+
+        Objects.requireNonNull(certsBytes, "certsBytes must not be null");
+        Objects.requireNonNull(privateKeyBytes, "privateKeyBytes must not be null");
         return parse(certsBytes, privateKeyBytes, null);
     }
 
@@ -144,7 +156,7 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parse(@NonNull final byte[] certsBytes, @NonNull final byte[] privateKeyBytes, final String hint)
+    public static X509Svid parse(byte[] certsBytes, byte[] privateKeyBytes, final String hint)
             throws X509SvidException {
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.PEM, hint);
     }
@@ -160,8 +172,10 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parseRaw(@NonNull final byte[] certsBytes,
-                                    @NonNull final byte[] privateKeyBytes) throws X509SvidException {
+    public static X509Svid parseRaw(byte[] certsBytes,
+                                    byte[] privateKeyBytes) throws X509SvidException {
+        Objects.requireNonNull(certsBytes, "certsBytes must not be null");
+        Objects.requireNonNull(privateKeyBytes, "privateKeyBytes must not be null");
         return parseRaw(certsBytes, privateKeyBytes, null);
     }
 
@@ -177,9 +191,11 @@ public class X509Svid {
      * @return a {@link X509Svid} parsed from the given certBytes and privateKeyBytes
      * @throws X509SvidException if the given certsBytes or privateKeyBytes cannot be parsed
      */
-    public static X509Svid parseRaw(@NonNull final byte[] certsBytes,
-                                    @NonNull final byte[] privateKeyBytes,
+    public static X509Svid parseRaw(byte[] certsBytes,
+                                    byte[] privateKeyBytes,
                                     final String hint) throws X509SvidException {
+        Objects.requireNonNull(certsBytes, "certsBytes must not be null");
+        Objects.requireNonNull(privateKeyBytes, "privateKeyBytes must not be null");
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER, hint);
     }
 
@@ -197,9 +213,9 @@ public class X509Svid {
                                            final KeyFileFormat keyFileFormat,
                                            final String hint) throws X509SvidException {
 
-        val x509Certificates = generateX509Certificates(certsBytes);
-        val privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
-        val spiffeId = getSpiffeId(x509Certificates);
+        final List<X509Certificate> x509Certificates = generateX509Certificates(certsBytes);
+        final PrivateKey privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
+        final SpiffeId spiffeId = getSpiffeId(x509Certificates);
 
         validateLeafCertificate(x509Certificates.get(0));
 
@@ -226,8 +242,8 @@ public class X509Svid {
                                                  final List<X509Certificate> x509Certificates)
             throws X509SvidException {
 
-        val publicKeyCertAlgorithm = x509Certificates.get(0).getPublicKey().getAlgorithm();
-        val algorithm = AsymmetricKeyAlgorithm.parse(publicKeyCertAlgorithm);
+        final String publicKeyCertAlgorithm = x509Certificates.get(0).getPublicKey().getAlgorithm();
+        final AsymmetricKeyAlgorithm algorithm = AsymmetricKeyAlgorithm.parse(publicKeyCertAlgorithm);
         final PrivateKey privateKey;
         try {
             privateKey = CertificateUtils.generatePrivateKey(privateKeyBytes, algorithm, keyFileFormat);

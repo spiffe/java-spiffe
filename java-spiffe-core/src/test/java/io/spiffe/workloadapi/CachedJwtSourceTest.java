@@ -9,7 +9,6 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,7 +70,7 @@ class CachedJwtSourceTest {
             jwtSource.getBundleForTrustDomain(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         } catch (BundleNotFoundException e) {
             fail();
         }
@@ -433,7 +432,7 @@ class CachedJwtSourceTest {
 
     @Test
     void newSource_success() {
-        val options = JwtSourceOptions
+        final JwtSourceOptions options = JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .initTimeout(Duration.ofSeconds(0))
@@ -452,7 +451,7 @@ class CachedJwtSourceTest {
             CachedJwtSource.newSource(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("options is marked non-null but is null", e.getMessage());
+            assertEquals("options must not be null", e.getMessage());
         } catch (SocketEndpointAddressException | JwtSourceException e) {
             fail();
         }
@@ -460,7 +459,7 @@ class CachedJwtSourceTest {
 
     @Test
     void newSource_errorFetchingJwtBundles() {
-        val options = JwtSourceOptions
+        final JwtSourceOptions options = JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")
@@ -479,7 +478,7 @@ class CachedJwtSourceTest {
     @Test
     void newSource_FailsBecauseOfTimeOut() throws Exception {
         try {
-            val options = JwtSourceOptions
+            final JwtSourceOptions options = JwtSourceOptions
                     .builder()
                     .spiffeSocketPath("unix:/tmp/test")
                     .build();

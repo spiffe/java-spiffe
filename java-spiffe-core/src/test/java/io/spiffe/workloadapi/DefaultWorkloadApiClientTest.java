@@ -70,7 +70,7 @@ class DefaultWorkloadApiClientTest {
         try {
             DefaultWorkloadApiClient.newClient(null);
         } catch (NullPointerException e) {
-            assertEquals("options is marked non-null but is null", e.getMessage());
+            assertEquals("options must not be null", e.getMessage());
         } catch (SocketEndpointAddressException e) {
             fail(e);
         }
@@ -152,7 +152,7 @@ class DefaultWorkloadApiClientTest {
         try {
             workloadApiClient.watchX509Context(null);
         } catch (NullPointerException e) {
-            assertEquals("watcher is marked non-null but is null", e.getMessage());
+            assertEquals("watcher must not be null", e.getMessage());
         }
     }
 
@@ -216,7 +216,7 @@ class DefaultWorkloadApiClientTest {
         try {
             workloadApiClient.watchX509Bundles(null);
         } catch (NullPointerException e) {
-            assertEquals("watcher is marked non-null but is null", e.getMessage());
+            assertEquals("watcher must not be null", e.getMessage());
         }
     }
 
@@ -255,7 +255,7 @@ class DefaultWorkloadApiClientTest {
             workloadApiClient.fetchJwtSvid(null, new String[]{"aud2", "aud3"});
             fail();
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -267,7 +267,7 @@ class DefaultWorkloadApiClientTest {
             workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/text"), null, "aud2", "aud3");
             fail();
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -279,7 +279,7 @@ class DefaultWorkloadApiClientTest {
             workloadApiClient.fetchJwtSvid(null, "aud1", new String[]{"aud2", "aud3"});
             fail();
         } catch (NullPointerException e) {
-            assertEquals("subject is marked non-null but is null", e.getMessage());
+            assertEquals("subject must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -326,7 +326,7 @@ class DefaultWorkloadApiClientTest {
             workloadApiClient.fetchJwtSvid(null, new String[]{"aud2", "aud3"});
             fail();
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -338,7 +338,7 @@ class DefaultWorkloadApiClientTest {
             workloadApiClient.fetchJwtSvid(SpiffeId.parse("spiffe://example.org/text"), null, "aud2", "aud3");
             fail();
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -350,7 +350,7 @@ class DefaultWorkloadApiClientTest {
             workloadApiClient.fetchJwtSvid(null, "aud1", new String[]{"aud2", "aud3"});
             fail();
         } catch (NullPointerException e) {
-            assertEquals("subject is marked non-null but is null", e.getMessage());
+            assertEquals("subject must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -375,7 +375,7 @@ class DefaultWorkloadApiClientTest {
         try {
             JwtSvid jwtSvid = workloadApiClient.validateJwtSvid(null, "aud1");
         } catch (NullPointerException e) {
-            assertEquals("token is marked non-null but is null", e.getMessage());
+            assertEquals("token must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -386,7 +386,7 @@ class DefaultWorkloadApiClientTest {
         try {
             JwtSvid jwtSvid = workloadApiClient.validateJwtSvid("token", null);
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         } catch (JwtSvidException e) {
             fail();
         }
@@ -450,7 +450,7 @@ class DefaultWorkloadApiClientTest {
         try {
             workloadApiClient.watchJwtBundles(null);
         } catch (NullPointerException e) {
-            assertEquals("watcher is marked non-null but is null", e.getMessage());
+            assertEquals("watcher must not be null", e.getMessage());
         }
     }
 

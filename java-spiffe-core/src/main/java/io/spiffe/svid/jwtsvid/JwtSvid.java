@@ -17,28 +17,18 @@ import io.spiffe.exception.InvalidSpiffeIdException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.spiffeid.SpiffeId;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Represents a SPIFFE JWT-SVID.
  */
-@Value
 public class JwtSvid {
-
     /**
      * SPIFFE ID of the JWT-SVID as present in the 'sub' claim.
      */
@@ -119,10 +109,13 @@ public class JwtSvid {
      * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
      *                                    the 'kid' header
      */
-    public static JwtSvid parseAndValidate(@NonNull final String token,
-                                           @NonNull final BundleSource<JwtBundle> jwtBundleSource,
-                                           @NonNull final Set<String> audience)
+    public static JwtSvid parseAndValidate(String token,
+                                           BundleSource<JwtBundle> jwtBundleSource,
+                                           Set<String> audience)
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
+        Objects.requireNonNull(token, "token must not be null");
+        Objects.requireNonNull(jwtBundleSource, "jwtBundleSource must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
 
         return parseAndValidate(token, jwtBundleSource, audience, null);
     }
@@ -152,39 +145,42 @@ public class JwtSvid {
      * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
      *                                    the 'kid' header
      */
-    public static JwtSvid parseAndValidate(@NonNull final String token,
-                                           @NonNull final BundleSource<JwtBundle> jwtBundleSource,
-                                           @NonNull final Set<String> audience,
+    public static JwtSvid parseAndValidate(String token,
+                                           BundleSource<JwtBundle> jwtBundleSource,
+                                           Set<String> audience,
                                            final String hint
     )
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
+        Objects.requireNonNull(token, "token must not be null");
+        Objects.requireNonNull(jwtBundleSource, "jwtBundleSource must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
 
         if (StringUtils.isBlank(token)) {
-            throw new IllegalArgumentException("Token cannot be blank");
+            throw new IllegalArgumentException("token cannot be blank");
         }
 
-        val signedJwt = getSignedJWT(token);
+        final SignedJWT signedJwt = getSignedJWT(token);
         validateTypeHeader(signedJwt.getHeader());
 
         JwtSignatureAlgorithm algorithm = parseAlgorithm(signedJwt.getHeader().getAlgorithm());
 
-        val claimsSet = getJwtClaimsSet(signedJwt);
+        final JWTClaimsSet claimsSet = getJwtClaimsSet(signedJwt);
         validateAudience(claimsSet.getAudience(), audience);
 
-        val issuedAt = claimsSet.getIssueTime();
+        final Date issuedAt = claimsSet.getIssueTime();
 
-        val expirationTime = claimsSet.getExpirationTime();
+        final Date expirationTime = claimsSet.getExpirationTime();
         validateExpiration(expirationTime);
 
-        val spiffeId = getSpiffeIdOfSubject(claimsSet);
-        val jwtBundle = jwtBundleSource.getBundleForTrustDomain(spiffeId.getTrustDomain());
+        final SpiffeId spiffeId = getSpiffeIdOfSubject(claimsSet);
+        final JwtBundle jwtBundle = jwtBundleSource.getBundleForTrustDomain(spiffeId.getTrustDomain());
 
-        val keyId = getKeyId(signedJwt.getHeader());
-        val jwtAuthority = jwtBundle.findJwtAuthority(keyId);
+        final String keyId = getKeyId(signedJwt.getHeader());
+        final PublicKey jwtAuthority = jwtBundle.findJwtAuthority(keyId);
 
         verifySignature(signedJwt, jwtAuthority, algorithm, keyId);
 
-        val claimAudience = new HashSet<>(claimsSet.getAudience());
+        final HashSet<String> claimAudience = new HashSet<>(claimsSet.getAudience());
 
         return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token, hint);
     }
@@ -204,7 +200,9 @@ public class JwtSvid {
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
      * @throws IllegalArgumentException when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience) throws JwtSvidException {
+    public static JwtSvid parseInsecure(String token, Set<String> audience) throws JwtSvidException {
+        Objects.requireNonNull(token, "token must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
         return parseInsecure(token, audience, null);
     }
 
@@ -224,27 +222,30 @@ public class JwtSvid {
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
      * @throws IllegalArgumentException when the token cannot be parsed
      */
-    public static JwtSvid parseInsecure(@NonNull final String token, @NonNull final Set<String> audience, final String hint) throws JwtSvidException {
+    public static JwtSvid parseInsecure(String token, Set<String> audience, final String hint) throws JwtSvidException {
+        Objects.requireNonNull(token, "token must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
         if (StringUtils.isBlank(token)) {
-            throw new IllegalArgumentException("Token cannot be blank");
+            throw new IllegalArgumentException("token cannot be blank");
         }
 
-        val signedJwt = getSignedJWT(token);
+        final SignedJWT signedJwt = getSignedJWT(token);
         validateTypeHeader(signedJwt.getHeader());
 
         parseAlgorithm(signedJwt.getHeader().getAlgorithm());
 
-        val claimsSet = getJwtClaimsSet(signedJwt);
+        final JWTClaimsSet claimsSet = getJwtClaimsSet(signedJwt);
         validateAudience(claimsSet.getAudience(), audience);
 
-        val issuedAt = claimsSet.getIssueTime();
+        final Date issuedAt = claimsSet.getIssueTime();
 
-        val expirationTime = claimsSet.getExpirationTime();
+        final Date expirationTime = claimsSet.getExpirationTime();
         validateExpiration(expirationTime);
 
-        val spiffeId = getSpiffeIdOfSubject(claimsSet);
+        SpiffeId spiffeId;
+        spiffeId = getSpiffeIdOfSubject(claimsSet);
 
-        val claimAudience = new HashSet<>(claimsSet.getAudience());
+        final HashSet<String> claimAudience = new HashSet<>(claimsSet.getAudience());
 
         return new JwtSvid(spiffeId, claimAudience, issuedAt, expirationTime, claimsSet.getClaims(), token, hint);
     }
@@ -269,6 +270,10 @@ public class JwtSvid {
         return new Date(expiry.getTime());
     }
 
+    public Date getIssuedAt() {
+        return new Date(issuedAt.getTime());
+    }
+
     /**
      * Returns the SVID hint.
      *
@@ -278,6 +283,14 @@ public class JwtSvid {
         return hint;
     }
 
+
+    public SpiffeId getSpiffeId() {
+        return spiffeId;
+    }
+
+    public String getToken() {
+        return token;
+    }
 
     /**
      * Returns the map of claims.
@@ -320,7 +333,7 @@ public class JwtSvid {
     private static void verifySignature(final SignedJWT signedJwt, final PublicKey jwtAuthority, final JwtSignatureAlgorithm algorithm, final String keyId) throws JwtSvidException {
         boolean verify;
         try {
-            val verifier = getJwsVerifier(jwtAuthority, algorithm);
+            final JWSVerifier verifier = getJwsVerifier(jwtAuthority, algorithm);
             verify = signedJwt.verify(verifier);
         } catch (ClassCastException | JOSEException e) {
             throw new JwtSvidException(String.format("Error verifying signature with the authority with keyId=%s", keyId), e);
@@ -344,7 +357,7 @@ public class JwtSvid {
     }
 
     private static String getKeyId(final JWSHeader header) throws JwtSvidException {
-        val keyId = header.getKeyID();
+        final String keyId = header.getKeyID();
         if (keyId == null) {
             throw new JwtSvidException("Token header missing key id");
         }
@@ -365,7 +378,7 @@ public class JwtSvid {
     }
 
     private static SpiffeId getSpiffeIdOfSubject(final JWTClaimsSet claimsSet) throws JwtSvidException {
-        val subject = claimsSet.getSubject();
+        final String subject = claimsSet.getSubject();
         if (StringUtils.isBlank(subject)) {
             throw new JwtSvidException("Token missing subject claim");
         }

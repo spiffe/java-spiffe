@@ -3,22 +3,19 @@ package io.spiffe.bundle.jwtbundle;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.val;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a set of JWT bundles keyed by trust domain.
  */
-@Value
-public class JwtBundleSet implements BundleSource<JwtBundle> {
+public final class JwtBundleSet implements BundleSource<JwtBundle> {
 
-    Map<TrustDomain, JwtBundle> bundles;
+    private final Map<TrustDomain, JwtBundle> bundles;
 
     private JwtBundleSet(final Map<TrustDomain, JwtBundle> bundles) {
         this.bundles = new ConcurrentHashMap<>(bundles);
@@ -34,7 +31,9 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      * @param bundles Collection of {@link JwtBundle}
      * @return a {@link JwtBundleSet}
      */
-    public static JwtBundleSet of(@NonNull final Collection<JwtBundle> bundles) {
+    public static JwtBundleSet of(Collection<JwtBundle> bundles) {
+        Objects.requireNonNull(bundles, "bundles must not be null");
+
         if (bundles.size() == 0) {
             throw new IllegalArgumentException("JwtBundle collection is empty");
         }
@@ -62,8 +61,10 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      * @throws BundleNotFoundException if no bundle could be found for the given trust domain
      */
     @Override
-    public JwtBundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
-        val bundle = bundles.get(trustDomain);
+    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+
+        JwtBundle bundle = bundles.get(trustDomain);
         if (bundle == null) {
             throw new BundleNotFoundException(String.format("No JWT bundle for trust domain %s", trustDomain));
         }
@@ -85,7 +86,28 @@ public class JwtBundleSet implements BundleSource<JwtBundle> {
      *
      * @param jwtBundle an instance of a JwtBundle.
      */
-    public void put(@NonNull final JwtBundle jwtBundle) {
+    public void put(JwtBundle jwtBundle) {
+        Objects.requireNonNull(jwtBundle, "jwtBundle must not be null");
         bundles.put(jwtBundle.getTrustDomain(), jwtBundle);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof JwtBundleSet)) return false;
+        JwtBundleSet that = (JwtBundleSet) o;
+        return Objects.equals(bundles, that.bundles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bundles);
+    }
+
+    @Override
+    public String toString() {
+        return "JwtBundleSet{" +
+                "bundles=" + bundles +
+                '}';
     }
 }

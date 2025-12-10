@@ -1,7 +1,6 @@
 package io.spiffe.provider;
 
 import io.spiffe.spiffeid.SpiffeId;
-import lombok.NonNull;
 
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -11,7 +10,7 @@ public class AllowedIdSupplierSpiffeIdVerifier implements SpiffeIdVerifier {
 
     private final Supplier<Set<SpiffeId>> allowedSpiffeIdsSupplier;
 
-    public AllowedIdSupplierSpiffeIdVerifier(@NonNull Supplier<Set<SpiffeId>> allowedSpiffeIdsSupplier) {
+    public AllowedIdSupplierSpiffeIdVerifier(Supplier<Set<SpiffeId>> allowedSpiffeIdsSupplier) {
         this.allowedSpiffeIdsSupplier = allowedSpiffeIdsSupplier;
     }
 

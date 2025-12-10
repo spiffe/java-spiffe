@@ -1,9 +1,9 @@
 package io.spiffe.provider;
 
 import io.spiffe.internal.CertificateUtils;
+import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.svid.x509svid.X509SvidSource;
-import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -17,8 +17,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import static io.spiffe.provider.SpiffeProviderConstants.DEFAULT_ALIAS;
-import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
-import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -52,14 +50,14 @@ public class SpiffeKeyManagerTest {
             new SpiffeKeyManager(null);
             fail();
         } catch (Exception e) {
-            assertEquals("x509SvidSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509SvidSource must not be null", e.getMessage());
         }
     }
 
     @Test
     void getCertificateChain() throws CertificateException {
-        val certificateChain = spiffeKeyManager.getCertificateChain(DEFAULT_ALIAS);
-        val spiffeId = CertificateUtils.getSpiffeId(certificateChain[0]);
+        X509Certificate[] certificateChain = spiffeKeyManager.getCertificateChain(DEFAULT_ALIAS);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId(certificateChain[0]);
 
         assertAll(
                 () -> assertEquals(1, certificateChain.length),
@@ -75,7 +73,7 @@ public class SpiffeKeyManagerTest {
 
     @Test
     void getPrivateKey_aliasIsSpiffe_returnAPrivateKey() {
-        val privateKey = spiffeKeyManager.getPrivateKey(DEFAULT_ALIAS);
+        PrivateKey privateKey = spiffeKeyManager.getPrivateKey(DEFAULT_ALIAS);
         assertNotNull(privateKey);
     }
 

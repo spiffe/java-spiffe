@@ -55,7 +55,7 @@ class JwtBundleSetTest {
             JwtBundleSet.of(null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("bundles is marked non-null but is null", e.getMessage());
+            assertEquals("bundles must not be null", e.getMessage());
         }
     }
 
@@ -99,7 +99,7 @@ class JwtBundleSetTest {
         try {
             bundleSet.getBundleForTrustDomain(null);
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -150,7 +150,7 @@ class JwtBundleSetTest {
         try {
             bundleSet.put(null);
         } catch (NullPointerException e) {
-            assertEquals("jwtBundle is marked non-null but is null", e.getMessage());
+            assertEquals("jwtBundle must not be null", e.getMessage());
         }
     }
 }

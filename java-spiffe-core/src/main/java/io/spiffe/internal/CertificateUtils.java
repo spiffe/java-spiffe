@@ -2,7 +2,6 @@ package io.spiffe.internal;
 
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.val;
 
 import java.io.ByteArrayInputStream;
 import java.security.InvalidAlgorithmParameterException;
@@ -10,15 +9,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -59,7 +50,7 @@ public class CertificateUtils {
             throw new CertificateParsingException("No certificates found");
         }
 
-        val certificateFactory = getCertificateFactory();
+        CertificateFactory certificateFactory = getCertificateFactory();
 
         Collection<? extends Certificate> certificates;
         try {
@@ -98,11 +89,11 @@ public class CertificateUtils {
         if (chain == null || chain.size() == 0) {
             throw new IllegalArgumentException("Chain of certificates is empty");
         }
-        val certificateFactory = getCertificateFactory();
+        CertificateFactory certificateFactory = getCertificateFactory();
         PKIXParameters pkixParameters;
         try {
             pkixParameters = toPkixParameters(trustedCerts);
-            val certPath = certificateFactory.generateCertPath(chain);
+            CertPath certPath = certificateFactory.generateCertPath(chain);
             getCertPathValidator().validate(certPath, pkixParameters);
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
             throw new CertificateException(e);
@@ -121,7 +112,7 @@ public class CertificateUtils {
      *                              the SAN extension cannot be decoded
      */
     public static SpiffeId getSpiffeId(final X509Certificate certificate) throws CertificateException {
-        val spiffeIds = getSpiffeIds(certificate);
+        List<String> spiffeIds = getSpiffeIds(certificate);
 
         if (spiffeIds.size() > 1) {
             throw new CertificateException("Certificate contains multiple SPIFFE IDs");
@@ -142,7 +133,7 @@ public class CertificateUtils {
      * @throws CertificateException
      */
     public static TrustDomain getTrustDomain(final List<X509Certificate> chain) throws CertificateException {
-        val spiffeId = getSpiffeId(chain.get(0));
+        final SpiffeId spiffeId = getSpiffeId(chain.get(0));
         return spiffeId.getTrustDomain();
     }
 
@@ -205,7 +196,7 @@ public class CertificateUtils {
             throw new CertificateException("No trusted Certs");
         }
 
-        val pkixParameters = new PKIXParameters(trustedCerts.stream()
+        PKIXParameters pkixParameters = new PKIXParameters(trustedCerts.stream()
                 .map(c -> new TrustAnchor(c, null))
                 .collect(Collectors.toSet()));
         pkixParameters.setRevocationEnabled(false);
@@ -231,7 +222,7 @@ public class CertificateUtils {
         String privateKeyAsString = new String(privateKeyPem);
         privateKeyAsString = privateKeyAsString.replaceAll("(-+BEGIN PRIVATE KEY-+|-+END PRIVATE KEY-+)", "");
         privateKeyAsString = privateKeyAsString.replaceAll("\r?\n", "");
-        val decoder = Base64.getDecoder();
+        Base64.Decoder decoder = Base64.getDecoder();
         try {
             return decoder.decode(privateKeyAsString);
         } catch (Exception e) {

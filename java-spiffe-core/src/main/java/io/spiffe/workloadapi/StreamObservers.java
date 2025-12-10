@@ -11,13 +11,14 @@ import io.spiffe.exception.X509ContextException;
 import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import io.spiffe.workloadapi.grpc.Workload;
 import io.spiffe.workloadapi.retry.RetryHandler;
-import lombok.extern.java.Log;
-import lombok.val;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-@Log
 final class StreamObservers {
+
+    private static final Logger log =
+            Logger.getLogger(StreamObservers.class.getName());
 
     private static final String INVALID_ARGUMENT = "INVALID_ARGUMENT";
     private static final String STREAM_IS_COMPLETED = "Workload API stream is completed";
@@ -35,7 +36,7 @@ final class StreamObservers {
             @Override
             public void onNext(final Workload.X509SVIDResponse value) {
                 try {
-                    val x509Context = GrpcConversionUtils.toX509Context(value);
+                    final X509Context x509Context = GrpcConversionUtils.toX509Context(value);
                     watcher.onUpdate(x509Context);
                     retryHandler.reset();
                 } catch (X509ContextException e) {
@@ -89,7 +90,7 @@ final class StreamObservers {
             @Override
             public void onNext(final Workload.X509BundlesResponse value) {
                 try {
-                    val x509Context = GrpcConversionUtils.toX509BundleSet(value);
+                    final X509BundleSet x509Context = GrpcConversionUtils.toX509BundleSet(value);
                     watcher.onUpdate(x509Context);
                     retryHandler.reset();
                 } catch (X509BundleException e) {
@@ -143,7 +144,7 @@ final class StreamObservers {
             @Override
             public void onNext(final Workload.JWTBundlesResponse value) {
                 try {
-                    val jwtBundleSet = GrpcConversionUtils.toJwtBundleSet(value);
+                    final JwtBundleSet jwtBundleSet = GrpcConversionUtils.toJwtBundleSet(value);
                     watcher.onUpdate(jwtBundleSet);
                     retryHandler.reset();
                 } catch (JwtBundleException e) {

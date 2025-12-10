@@ -33,7 +33,7 @@ public class AddressTest {
         try {
             Address.parseAddress(null);
         } catch (NullPointerException e) {
-            assertEquals("address is marked non-null but is null", e.getMessage());
+            assertEquals("address must not be null", e.getMessage());
         } catch (SocketEndpointAddressException e) {
             fail();
         }

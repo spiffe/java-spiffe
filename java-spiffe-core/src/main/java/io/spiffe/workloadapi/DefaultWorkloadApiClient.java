@@ -1,6 +1,7 @@
 package io.spiffe.workloadapi;
 
 import io.grpc.Context;
+import io.grpc.stub.StreamObserver;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
@@ -19,24 +20,15 @@ import io.spiffe.workloadapi.internal.ManagedChannelWrapper;
 import io.spiffe.workloadapi.internal.SecurityHeaderInterceptor;
 import io.spiffe.workloadapi.retry.ExponentialBackoffPolicy;
 import io.spiffe.workloadapi.retry.RetryHandler;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.extern.java.Log;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.net.URI;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static io.spiffe.workloadapi.StreamObservers.getJwtBundleStreamObserver;
 import static io.spiffe.workloadapi.StreamObservers.getX509BundlesStreamObserver;
@@ -51,8 +43,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * The watch for updates methods support retries using an exponential backoff policy to reestablish
  * the stream connection to the Workload API.
  */
-@Log
 public final class DefaultWorkloadApiClient implements WorkloadApiClient {
+
+    private static final Logger log =
+            Logger.getLogger(DefaultWorkloadApiClient.class.getName());
 
     private final SpiffeWorkloadAPIStub workloadApiAsyncStub;
     private final SpiffeWorkloadAPIBlockingStub workloadApiBlockingStub;
@@ -105,7 +99,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
      */
     public static WorkloadApiClient newClient() throws SocketEndpointAddressException {
-        val options = ClientOptions.builder().build();
+        final ClientOptions options = ClientOptions.builder().build();
         return newClient(options);
     }
 
@@ -119,9 +113,10 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * @return a {@link WorkloadApiClient}, the instance concrete type is {@link DefaultWorkloadApiClient}
      * @throws SocketEndpointAddressException if the Workload API socket endpoint address is not valid
      */
-    public static WorkloadApiClient newClient(@NonNull final ClientOptions options) throws SocketEndpointAddressException {
+    public static WorkloadApiClient newClient(ClientOptions options) throws SocketEndpointAddressException {
+        Objects.requireNonNull(options, "options must not be null");
 
-        val spiffeSocketPath = StringUtils.isNotBlank(options.spiffeSocketPath)
+        final String spiffeSocketPath = StringUtils.isNotBlank(options.spiffeSocketPath)
                 ? options.spiffeSocketPath
                 : Address.getDefaultAddress();
 
@@ -133,20 +128,20 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
             options.executorService = Executors.newCachedThreadPool();
         }
 
-        val socketEndpointAddress = Address.parseAddress(spiffeSocketPath);
-        val managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress, options.executorService);
-        val securityHeaderInterceptor = new SecurityHeaderInterceptor();
-        val workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
+        final URI socketEndpointAddress = Address.parseAddress(spiffeSocketPath);
+        final ManagedChannelWrapper managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress, options.executorService);
+        final SecurityHeaderInterceptor securityHeaderInterceptor = new SecurityHeaderInterceptor();
+        final SpiffeWorkloadAPIStub workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
                 .newStub(managedChannel.getChannel())
                 .withExecutor(options.executorService)
                 .withInterceptors(securityHeaderInterceptor);
 
-        val workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
+        final SpiffeWorkloadAPIBlockingStub workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
                 .newBlockingStub(managedChannel.getChannel())
                 .withExecutor(options.executorService)
                 .withInterceptors(securityHeaderInterceptor);
 
-        val retryExecutor = Executors.newSingleThreadScheduledExecutor();
+        final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor();
 
         return new DefaultWorkloadApiClient(
                 workloadAPIAsyncStub,
@@ -162,7 +157,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      */
     @Override
     public X509Context fetchX509Context() throws X509ContextException {
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(this::callFetchX509Context);
         } catch (Exception e) {
             throw new X509ContextException("Error fetching X509Context", e);
@@ -173,11 +168,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
-        val retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
-        val cancellableContext = Context.current().withCancellation();
+    public void watchX509Context(Watcher<X509Context> watcher) {
+        Objects.requireNonNull(watcher, "watcher must not be null");
 
-        val streamObserver =
+        final RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+        final Context.CancellableContext cancellableContext = Context.current().withCancellation();
+
+        final StreamObserver<Workload.X509SVIDResponse> streamObserver =
                 getX509ContextStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
 
         cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver));
@@ -189,7 +186,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      */
     @Override
     public X509BundleSet fetchX509Bundles() throws X509BundleException {
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(this::callFetchX509Bundles);
         } catch (Exception e) {
             throw new X509BundleException("Error fetching X.509 bundles", e);
@@ -200,11 +197,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public void watchX509Bundles(@NonNull final Watcher<X509BundleSet> watcher) {
-        val retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
-        val cancellableContext = Context.current().withCancellation();
+    public void watchX509Bundles(Watcher<X509BundleSet> watcher) {
+        Objects.requireNonNull(watcher, "watcher must not be null");
 
-        val streamObserver =
+        final RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+        final Context.CancellableContext cancellableContext = Context.current().withCancellation();
+
+        final StreamObserver<Workload.X509BundlesResponse> streamObserver =
                 getX509BundlesStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
 
         cancellableContext.run(() -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(), streamObserver));
@@ -215,9 +214,11 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public JwtSvid fetchJwtSvid(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(String audience, String... extraAudience) throws JwtSvidException {
+        Objects.requireNonNull(audience, "audience must not be null");
+
         final Set<String> audParam = createAudienceSet(audience, extraAudience);
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvid(audParam));
         } catch (Exception e) {
             throw new JwtSvidException("Error fetching JWT SVID", e);
@@ -228,14 +229,17 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject,
-                                @NonNull final String audience,
+    public JwtSvid fetchJwtSvid(SpiffeId subject,
+                                String audience,
                                 final String... extraAudience)
             throws JwtSvidException {
 
+        Objects.requireNonNull(subject, "subject must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
+
         final Set<String> audParam = createAudienceSet(audience, extraAudience);
 
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvid(subject, audParam));
         } catch (Exception e) {
             throw new JwtSvidException("Error fetching JWT SVID", e);
@@ -246,9 +250,11 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(String audience, String... extraAudience) throws JwtSvidException {
+        Objects.requireNonNull(audience, "audience must not be null");
+
         final Set<String> audParam = createAudienceSet(audience, extraAudience);
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvids(audParam));
         } catch (Exception e) {
             throw new JwtSvidException("Error fetching JWT SVID", e);
@@ -261,14 +267,17 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * @return
      */
     @Override
-    public List<JwtSvid> fetchJwtSvids(@NonNull final SpiffeId subject,
-                                       @NonNull final String audience,
+    public List<JwtSvid> fetchJwtSvids(SpiffeId subject,
+                                       String audience,
                                        final String... extraAudience)
             throws JwtSvidException {
 
+        Objects.requireNonNull(subject, "subject must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
+
         final Set<String> audParam = createAudienceSet(audience, extraAudience);
 
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvids(subject, audParam));
         } catch (Exception e) {
             throw new JwtSvidException("Error fetching JWT SVID", e);
@@ -281,7 +290,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      */
     @Override
     public JwtBundleSet fetchJwtBundles() throws JwtBundleException {
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(this::callFetchBundles);
         } catch (Exception e) {
             throw new JwtBundleException("Error fetching JWT Bundles", e);
@@ -292,13 +301,18 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience)
+    public JwtSvid validateJwtSvid(String token, String audience)
             throws JwtSvidException {
 
-        val request = createJwtSvidRequest(token, audience);
+        Objects.requireNonNull(token, "token must not be null");
+        Objects.requireNonNull(audience, "audience must not be null");
+
+        Objects.requireNonNull(token, "token must not be null");
+
+        final Workload.ValidateJWTSVIDRequest request = createJwtSvidRequest(token, audience);
 
         Workload.ValidateJWTSVIDResponse response;
-        try (val cancellableContext = Context.current().withCancellation()) {
+        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             response = cancellableContext.call(() -> workloadApiBlockingStub.validateJWTSVID(request));
         } catch (Exception e) {
             throw new JwtSvidException("Error validating JWT SVID", e);
@@ -314,11 +328,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * {@inheritDoc}
      */
     @Override
-    public void watchJwtBundles(@NonNull final Watcher<JwtBundleSet> watcher) {
-        val retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
-        val cancellableContext = Context.current().withCancellation();
+    public void watchJwtBundles(Watcher<JwtBundleSet> watcher) {
+        Objects.requireNonNull(watcher, "watcher must not be null");
 
-        val streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+        Context.CancellableContext cancellableContext = Context.current().withCancellation();
+
+        StreamObserver<Workload.JWTBundlesResponse> streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
 
         cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(), streamObserver));
         this.cancellableContexts.add(cancellableContext);
@@ -333,7 +349,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         log.log(Level.FINE, "Closing WorkloadAPI client");
         synchronized (this) {
             if (!closed) {
-                for (val context : cancellableContexts) {
+                for (Context.CancellableContext context : cancellableContexts) {
                     context.close();
                 }
 
@@ -351,46 +367,46 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
 
 
     private X509Context callFetchX509Context() throws X509ContextException {
-        val x509SvidResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
+        Iterator<Workload.X509SVIDResponse> x509SvidResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());
         return GrpcConversionUtils.toX509Context(x509SvidResponse);
     }
 
     private X509BundleSet callFetchX509Bundles() throws X509BundleException {
-        val x509BundlesResponse = workloadApiBlockingStub.fetchX509Bundles(newX509BundlesRequest());
+        Iterator<Workload.X509BundlesResponse> x509BundlesResponse = workloadApiBlockingStub.fetchX509Bundles(newX509BundlesRequest());
         return GrpcConversionUtils.toX509BundleSet(x509BundlesResponse);
     }
 
     private JwtSvid callFetchJwtSvid(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
-        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
+        Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
                 .addAllAudience(audience)
                 .build();
-        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
         return processJwtSvidResponse(response, audience, true).get(0);
     }
 
     private JwtSvid callFetchJwtSvid(final Set<String> audience) throws JwtSvidException {
-        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
+        Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .addAllAudience(audience)
                 .build();
-        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
         return processJwtSvidResponse(response, audience, true).get(0);
     }
 
     private List<JwtSvid> callFetchJwtSvids(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
-        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
+        Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
                 .addAllAudience(audience)
                 .build();
-        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
         return processJwtSvidResponse(response, audience, false);
     }
 
     private List<JwtSvid> callFetchJwtSvids(final Set<String> audience) throws JwtSvidException {
-        val jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
+        Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .addAllAudience(audience)
                 .build();
-        val response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
+        Workload.JWTSVIDResponse response = workloadApiBlockingStub.fetchJWTSVID(jwtSvidRequest);
         return processJwtSvidResponse(response, audience, false);
     }
 
@@ -410,7 +426,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
             if (hints.contains(response.getSvids(i).getHint())) {
                 continue;
             }
-            val svid = JwtSvid.parseInsecure(response.getSvids(i).getSvid(), audience, response.getSvids(i).getHint());
+            JwtSvid svid = JwtSvid.parseInsecure(response.getSvids(i).getSvid(), audience, response.getSvids(i).getHint());
             hints.add(svid.getHint());
             svids.add(svid);
         }
@@ -418,8 +434,8 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     }
 
     private JwtBundleSet callFetchBundles() throws JwtBundleException {
-        val request = Workload.JWTBundlesRequest.newBuilder().build();
-        val bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
+        Workload.JWTBundlesRequest request = Workload.JWTBundlesRequest.newBuilder().build();
+        Iterator<Workload.JWTBundlesResponse> bundlesResponse = workloadApiBlockingStub.fetchJWTBundles(request);
         return GrpcConversionUtils.toJwtBundleSet(bundlesResponse);
     }
 
@@ -462,25 +478,87 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * If it is not provided, an <code>Executors.newCachedThreadPool()</code> is used by default.
      * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
      */
-    @Data
-    public static class ClientOptions {
+    public final static class ClientOptions {
 
-        @Setter(AccessLevel.NONE)
         private String spiffeSocketPath;
-
-        @Setter(AccessLevel.NONE)
         private ExponentialBackoffPolicy exponentialBackoffPolicy;
-
-        @Setter(AccessLevel.NONE)
         private ExecutorService executorService;
 
-        @Builder
-        public ClientOptions(final String spiffeSocketPath,
-                             final ExponentialBackoffPolicy exponentialBackoffPolicy,
-                             final ExecutorService executorService) {
+        public ClientOptions(String spiffeSocketPath,
+                             ExponentialBackoffPolicy exponentialBackoffPolicy,
+                             ExecutorService executorService) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.exponentialBackoffPolicy = exponentialBackoffPolicy;
             this.executorService = executorService;
+        }
+
+        public String getSpiffeSocketPath() {
+            return spiffeSocketPath;
+        }
+
+        public ExponentialBackoffPolicy getExponentialBackoffPolicy() {
+            return exponentialBackoffPolicy;
+        }
+
+        public ExecutorService getExecutorService() {
+            return executorService;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private String spiffeSocketPath;
+            private ExponentialBackoffPolicy exponentialBackoffPolicy;
+            private ExecutorService executorService;
+
+            public Builder spiffeSocketPath(String spiffeSocketPath) {
+                this.spiffeSocketPath = spiffeSocketPath;
+                return this;
+            }
+
+            public Builder exponentialBackoffPolicy(ExponentialBackoffPolicy exponentialBackoffPolicy) {
+                this.exponentialBackoffPolicy = exponentialBackoffPolicy;
+                return this;
+            }
+
+            public Builder executorService(ExecutorService executorService) {
+                this.executorService = executorService;
+                return this;
+            }
+
+            public ClientOptions build() {
+                return new ClientOptions(
+                        spiffeSocketPath,
+                        exponentialBackoffPolicy,
+                        executorService
+                );
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ClientOptions)) return false;
+            ClientOptions that = (ClientOptions) o;
+            return Objects.equals(spiffeSocketPath, that.spiffeSocketPath)
+                    && Objects.equals(exponentialBackoffPolicy, that.exponentialBackoffPolicy)
+                    && Objects.equals(executorService, that.executorService);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(spiffeSocketPath, exponentialBackoffPolicy, executorService);
+        }
+
+        @Override
+        public String toString() {
+            return "ClientOptions{" +
+                    "spiffeSocketPath='" + spiffeSocketPath + '\'' +
+                    ", exponentialBackoffPolicy=" + exponentialBackoffPolicy +
+                    ", executorService=" + executorService +
+                    '}';
         }
     }
 }

@@ -9,21 +9,18 @@ import io.spiffe.workloadapi.DefaultWorkloadApiClient;
 import io.spiffe.workloadapi.Watcher;
 import io.spiffe.workloadapi.WorkloadApiClient;
 import io.spiffe.workloadapi.X509Context;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.extern.java.Log;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Helper for storing X.509 SVIDs and bundles that are automatically fetched and rotated via the Workload API,
@@ -35,8 +32,10 @@ import java.util.logging.Level;
  * The underlying workload api client uses a backoff retry policy to reconnect to the Workload API
  * when the connection is lost.
  */
-@Log
 public class KeyStoreHelper implements Closeable {
+
+    private static final Logger log =
+            Logger.getLogger(KeyStoreHelper.class.getName());
 
     // case insensitive private key default alias
     static final String DEFAULT_ALIAS = "spiffe";
@@ -68,7 +67,8 @@ public class KeyStoreHelper implements Closeable {
      * @throws KeyStoreHelperException        if the KeyStoreHelper cannot be created
      * @throws KeyStoreException if the underlying java KeyStore and TrustStore cannot be created
      */
-    public static KeyStoreHelper create(@NonNull final KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreHelperException, KeyStoreException {
+    public static KeyStoreHelper create(KeyStoreOptions options) throws SocketEndpointAddressException, KeyStoreHelperException, KeyStoreException {
+        Objects.requireNonNull(options, "options must not be null");
 
         if (options.keyStorePath.equals(options.trustStorePath)) {
             throw new KeyStoreHelperException("KeyStore and TrustStore should use different files");
@@ -82,8 +82,8 @@ public class KeyStoreHelper implements Closeable {
             options.keyAlias = DEFAULT_ALIAS;
         }
 
-        val keyStore = createKeyStore(options, options.keyStorePath, options.keyStorePass);
-        val trustStore = createKeyStore(options, options.trustStorePath, options.trustStorePass);
+        final KeyStore keyStore = createKeyStore(options, options.keyStorePath, options.keyStorePass);
+        final KeyStore trustStore = createKeyStore(options, options.trustStorePath, options.trustStorePass);
 
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createNewClient(options.spiffeSocketPath);
@@ -114,13 +114,16 @@ public class KeyStoreHelper implements Closeable {
     /**
      * Closes the KeyStoreHelper instance.
      */
-    @SneakyThrows
     @Override
     public void close() {
         if (!closed) {
             synchronized (this) {
                 if (!closed) {
-                    workloadApiClient.close();
+                    try {
+                        workloadApiClient.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     countDown();
                     closed = true;
                     log.info("KeyStoreHelper is closed");
@@ -152,7 +155,7 @@ public class KeyStoreHelper implements Closeable {
     }
 
     private static WorkloadApiClient createNewClient(final String spiffeSocketPath) throws SocketEndpointAddressException {
-        val clientOptions = DefaultWorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
+        final DefaultWorkloadApiClient.ClientOptions clientOptions = DefaultWorkloadApiClient.ClientOptions.builder().spiffeSocketPath(spiffeSocketPath).build();
         return DefaultWorkloadApiClient.newClient(clientOptions);
     }
 
@@ -184,7 +187,7 @@ public class KeyStoreHelper implements Closeable {
     }
 
     private void storeX509ContextUpdate(final X509Context update) throws KeyStoreException {
-        val privateKeyEntry = PrivateKeyEntry.builder()
+        final PrivateKeyEntry privateKeyEntry = PrivateKeyEntry.builder()
                 .alias(keyAlias)
                 .password(keyPass)
                 .privateKey(update.getDefaultSvid().getPrivateKey())
@@ -193,7 +196,7 @@ public class KeyStoreHelper implements Closeable {
 
         keyStore.storePrivateKeyEntry(privateKeyEntry);
 
-        for (val entry : update.getX509BundleSet().getBundles().entrySet()) {
+        for (final Map.Entry<TrustDomain, X509Bundle> entry : update.getX509BundleSet().getBundles().entrySet()) {
             TrustDomain trustDomain = entry.getKey();
             X509Bundle bundle = entry.getValue();
             storeBundle(trustDomain, bundle);
@@ -204,7 +207,7 @@ public class KeyStoreHelper implements Closeable {
 
     private void storeBundle(final TrustDomain trustDomain, final X509Bundle bundle) throws KeyStoreException {
         int index = 0;
-        for (val certificate : bundle.getX509Authorities()) {
+        for (final X509Certificate certificate : bundle.getX509Authorities()) {
             final AuthorityEntry authorityEntry = AuthorityEntry.builder()
                     .alias(generateAlias(trustDomain, index))
                     .certificate(certificate)
@@ -234,9 +237,9 @@ public class KeyStoreHelper implements Closeable {
     /**
      * Options for creating a {@link KeyStoreHelper}.
      * <p>
-     * <code>keyStorePath</code> Absolute path to File storing the Key Store. Cannot be null.
+     * <code>keyStorePath</code> Absolute path to File storing the Key Store. must not be null.
      * <p>
-     * <code>trustStorePath</code> Absolute path to File storing the Trust Store. Cannot be null.
+     * <code>trustStorePath</code> Absolute path to File storing the Trust Store. must not be null.
      * <p>
      * <code>keyStoreType</code>
      * The type of keystore. Only JKS and PKCS12 are supported. If it's not provided, PKCS12 is used
@@ -263,55 +266,194 @@ public class KeyStoreHelper implements Closeable {
      * <p>
      * <code>client</code> Optional. The a {@link WorkloadApiClient} to fetch the X.509 materials from the Workload API.
      */
-    @Data
     public static class KeyStoreOptions {
 
-        @Setter(AccessLevel.NONE)
         private Path keyStorePath;
-
-        @Setter(AccessLevel.NONE)
         private Path trustStorePath;
-
-        @Setter(AccessLevel.NONE)
         private KeyStoreType keyStoreType;
-
-        @Setter(AccessLevel.NONE)
         private String keyStorePass;
-
-        @Setter(AccessLevel.NONE)
         private String trustStorePass;
-
-        @Setter(AccessLevel.NONE)
         private String keyPass;
-
-        @Setter(AccessLevel.NONE)
         private String keyAlias;
-
-        @Setter(AccessLevel.NONE)
         private String spiffeSocketPath;
-
-        @Setter(AccessLevel.NONE)
         private WorkloadApiClient workloadApiClient;
 
-        @Builder
-        public KeyStoreOptions(@NonNull final Path keyStorePath,
-                               @NonNull final Path trustStorePath,
-                               @NonNull final String keyStorePass,
-                               @NonNull final String trustStorePass,
-                               @NonNull final String keyPass,
+        public KeyStoreOptions(final Path keyStorePath,
+                               final Path trustStorePath,
+                               final String keyStorePass,
+                               final String trustStorePass,
+                               final String keyPass,
                                final KeyStoreType keyStoreType,
                                final String keyAlias,
                                final WorkloadApiClient workloadApiClient,
                                final String spiffeSocketPath) {
-            this.keyStorePath = keyStorePath;
-            this.trustStorePath = trustStorePath;
+
+            this.keyStorePath = Objects.requireNonNull(keyStorePath, "keyStorePath must not be null");
+            this.trustStorePath = Objects.requireNonNull(trustStorePath, "trustStorePath must not be null");
+            this.keyStorePass = Objects.requireNonNull(keyStorePass, "keyStorePass must not be null");
+            this.trustStorePass = Objects.requireNonNull(trustStorePass, "trustStorePass must not be null");
+            this.keyPass = Objects.requireNonNull(keyPass, "keyPass must not be null");
             this.keyStoreType = keyStoreType;
-            this.keyStorePass = keyStorePass;
-            this.trustStorePass = trustStorePass;
-            this.keyPass = keyPass;
             this.keyAlias = keyAlias;
             this.workloadApiClient = workloadApiClient;
             this.spiffeSocketPath = spiffeSocketPath;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private Path keyStorePath;
+            private Path trustStorePath;
+            private KeyStoreType keyStoreType;
+            private String keyStorePass;
+            private String trustStorePass;
+            private String keyPass;
+            private String keyAlias;
+            private String spiffeSocketPath;
+            private WorkloadApiClient workloadApiClient;
+
+            public Builder keyStorePath(Path keyStorePath) {
+                this.keyStorePath = keyStorePath;
+                return this;
+            }
+
+            public Builder trustStorePath(Path trustStorePath) {
+                this.trustStorePath = trustStorePath;
+                return this;
+            }
+
+            public Builder keyStorePass(String keyStorePass) {
+                this.keyStorePass = keyStorePass;
+                return this;
+            }
+
+            public Builder trustStorePass(String trustStorePass) {
+                this.trustStorePass = trustStorePass;
+                return this;
+            }
+
+            public Builder keyPass(String keyPass) {
+                this.keyPass = keyPass;
+                return this;
+            }
+
+            public Builder keyStoreType(KeyStoreType keyStoreType) {
+                this.keyStoreType = keyStoreType;
+                return this;
+            }
+
+            public Builder keyAlias(String keyAlias) {
+                this.keyAlias = keyAlias;
+                return this;
+            }
+
+            public Builder workloadApiClient(WorkloadApiClient workloadApiClient) {
+                this.workloadApiClient = workloadApiClient;
+                return this;
+            }
+
+            public Builder spiffeSocketPath(String spiffeSocketPath) {
+                this.spiffeSocketPath = spiffeSocketPath;
+                return this;
+            }
+
+            public KeyStoreOptions build() {
+                return new KeyStoreOptions(
+                        keyStorePath,
+                        trustStorePath,
+                        keyStorePass,
+                        trustStorePass,
+                        keyPass,
+                        keyStoreType,
+                        keyAlias,
+                        workloadApiClient,
+                        spiffeSocketPath
+                );
+            }
+        }
+
+        public Path getKeyStorePath() {
+            return keyStorePath;
+        }
+
+        public Path getTrustStorePath() {
+            return trustStorePath;
+        }
+
+        public KeyStoreType getKeyStoreType() {
+            return keyStoreType;
+        }
+
+        public String getKeyStorePass() {
+            return keyStorePass;
+        }
+
+        public String getTrustStorePass() {
+            return trustStorePass;
+        }
+
+        public String getKeyPass() {
+            return keyPass;
+        }
+
+        public String getKeyAlias() {
+            return keyAlias;
+        }
+
+        public String getSpiffeSocketPath() {
+            return spiffeSocketPath;
+        }
+
+        public WorkloadApiClient getWorkloadApiClient() {
+            return workloadApiClient;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof KeyStoreOptions)) return false;
+            KeyStoreOptions that = (KeyStoreOptions) o;
+            return Objects.equals(keyStorePath, that.keyStorePath)
+                    && Objects.equals(trustStorePath, that.trustStorePath)
+                    && Objects.equals(keyStoreType, that.keyStoreType)
+                    && Objects.equals(keyStorePass, that.keyStorePass)
+                    && Objects.equals(trustStorePass, that.trustStorePass)
+                    && Objects.equals(keyPass, that.keyPass)
+                    && Objects.equals(keyAlias, that.keyAlias)
+                    && Objects.equals(spiffeSocketPath, that.spiffeSocketPath)
+                    && Objects.equals(workloadApiClient, that.workloadApiClient);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(
+                    keyStorePath,
+                    trustStorePath,
+                    keyStoreType,
+                    keyStorePass,
+                    trustStorePass,
+                    keyPass,
+                    keyAlias,
+                    spiffeSocketPath,
+                    workloadApiClient
+            );
+        }
+
+        @Override
+        public String toString() {
+            return "KeyStoreOptions{" +
+                    "keyStorePath=" + keyStorePath +
+                    ", trustStorePath=" + trustStorePath +
+                    ", keyStoreType=" + keyStoreType +
+                    ", keyStorePass='[PROTECTED]'" +
+                    ", trustStorePass='[PROTECTED]'" +
+                    ", keyPass='[PROTECTED]'" +
+                    ", keyAlias='" + keyAlias + '\'' +
+                    ", spiffeSocketPath='" + spiffeSocketPath + '\'' +
+                    ", workloadApiClient=" + workloadApiClient +
+                    '}';
         }
     }
 }

@@ -4,8 +4,6 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.X509BundleException;
 import io.spiffe.internal.DummyX509Certificate;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.Builder;
-import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -42,7 +40,7 @@ public class X509BundleTest {
             new X509Bundle(null );
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -52,7 +50,7 @@ public class X509BundleTest {
             new X509Bundle(null, new HashSet<>());
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -62,7 +60,7 @@ public class X509BundleTest {
             new X509Bundle(TrustDomain.parse("example.org"), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("x509Authorities is marked non-null but is null", e.getMessage());
+            assertEquals("x509Authorities must not be null", e.getMessage());
         }
     }
 
@@ -105,7 +103,7 @@ public class X509BundleTest {
         } catch (BundleNotFoundException e) {
             fail();
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -136,7 +134,7 @@ public class X509BundleTest {
             X509Bundle.load(null,Paths.get("testdata/x509bundle/non-existent.pem"));
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -146,7 +144,7 @@ public class X509BundleTest {
             X509Bundle.load(TrustDomain.parse("example.org"), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("bundlePath is marked non-null but is null", e.getMessage());
+            assertEquals("bundlePath must not be null", e.getMessage());
         }
     }
 
@@ -156,7 +154,7 @@ public class X509BundleTest {
             X509Bundle.parse(null, "bytes".getBytes());
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -166,7 +164,7 @@ public class X509BundleTest {
             X509Bundle.parse(TrustDomain.parse("example.org"), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("bundleBytes is marked non-null but is null", e.getMessage());
+            assertEquals("bundleBytes must not be null", e.getMessage());
         }
     }
 
@@ -177,7 +175,7 @@ public class X509BundleTest {
             x509Bundle.hasX509Authority(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("x509Authority is marked non-null but is null", e.getMessage());
+            assertEquals("x509Authority must not be null", e.getMessage());
         }
     }
 
@@ -188,7 +186,7 @@ public class X509BundleTest {
             x509Bundle.addX509Authority(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("x509Authority is marked non-null but is null", e.getMessage());
+            assertEquals("x509Authority must not be null", e.getMessage());
         }
     }
 
@@ -199,7 +197,7 @@ public class X509BundleTest {
             x509Bundle.removeX509Authority(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("x509Authority is marked non-null but is null", e.getMessage());
+            assertEquals("x509Authority must not be null", e.getMessage());
         }
     }
 
@@ -324,7 +322,6 @@ public class X509BundleTest {
         );
     }
 
-    @Value
     static class TestCase {
         String name;
         TrustDomain trustDomain;
@@ -332,13 +329,63 @@ public class X509BundleTest {
         int expectedNumberOfAuthorities;
         String expectedError;
 
-        @Builder
-        public TestCase(String name, TrustDomain trustDomain, String path, int expectedNumberOfAuthorities, String expectedError) {
+        public TestCase(String name,
+                        TrustDomain trustDomain,
+                        String path,
+                        int expectedNumberOfAuthorities,
+                        String expectedError) {
             this.name = name;
             this.trustDomain = trustDomain;
             this.path = path;
             this.expectedNumberOfAuthorities = expectedNumberOfAuthorities;
             this.expectedError = expectedError;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private String name;
+            private TrustDomain trustDomain;
+            private String path;
+            private int expectedNumberOfAuthorities;
+            private String expectedError;
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder trustDomain(TrustDomain trustDomain) {
+                this.trustDomain = trustDomain;
+                return this;
+            }
+
+            public Builder path(String path) {
+                this.path = path;
+                return this;
+            }
+
+            public Builder expectedNumberOfAuthorities(int expectedNumberOfAuthorities) {
+                this.expectedNumberOfAuthorities = expectedNumberOfAuthorities;
+                return this;
+            }
+
+            public Builder expectedError(String expectedError) {
+                this.expectedError = expectedError;
+                return this;
+            }
+
+            public TestCase build() {
+                return new TestCase(
+                        name,
+                        trustDomain,
+                        path,
+                        expectedNumberOfAuthorities,
+                        expectedError
+                );
+            }
         }
     }
 }

@@ -5,37 +5,30 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.X509BundleException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.val;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a collection of trusted X.509 authorities for a trust domain.
  */
-@Value
-public class X509Bundle implements BundleSource<X509Bundle> {
+public final class X509Bundle implements BundleSource<X509Bundle> {
 
-    TrustDomain trustDomain;
-    Set<X509Certificate> x509Authorities;
+    private final TrustDomain trustDomain;
+    private final Set<X509Certificate> x509Authorities;
 
     /**
      * Creates a new X.509 bundle for a trust domain.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      */
-    public X509Bundle(@NonNull final TrustDomain trustDomain) {
-        this.trustDomain = trustDomain;
+    public X509Bundle(final TrustDomain trustDomain) {
+        this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         this.x509Authorities = ConcurrentHashMap.newKeySet();
     }
 
@@ -45,8 +38,10 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      * @param x509Authorities a Map of X.509 Certificates
      */
-    public X509Bundle(@NonNull final TrustDomain trustDomain, @NonNull final Set<X509Certificate> x509Authorities) {
-        this.trustDomain = trustDomain;
+    public X509Bundle(TrustDomain trustDomain,
+                      Set<X509Certificate> x509Authorities) {
+        this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(x509Authorities, "x509Authorities must not be null");
         this.x509Authorities = ConcurrentHashMap.newKeySet();
         this.x509Authorities.addAll(x509Authorities);
     }
@@ -61,7 +56,11 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @throws X509BundleException in case of failure accessing the given bundle path or the bundle cannot be parsed
      */
-    public static X509Bundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath) throws X509BundleException {
+    public static X509Bundle load(final TrustDomain trustDomain,
+                                  final Path bundlePath) throws X509BundleException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(bundlePath, "bundlePath must not be null");
+
         final byte[] bundleBytes;
         try {
             bundleBytes = Files.readAllBytes(bundlePath);
@@ -69,9 +68,7 @@ public class X509Bundle implements BundleSource<X509Bundle> {
             throw new X509BundleException("Unable to load X.509 bundle file", e);
         }
 
-        val x509Certificates = generateX509Certificates(bundleBytes);
-        val x509CertificateSet = new HashSet<>(x509Certificates);
-        return new X509Bundle(trustDomain, x509CertificateSet);
+        return parse(trustDomain, bundleBytes);
     }
 
     /**
@@ -85,9 +82,13 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @throws X509BundleException if the bundle cannot be parsed
      */
-    public static X509Bundle parse(@NonNull final TrustDomain trustDomain, @NonNull final byte[] bundleBytes) throws X509BundleException {
-        val x509Certificates = generateX509Certificates(bundleBytes);
-        val x509CertificateSet = new HashSet<>(x509Certificates);
+    public static X509Bundle parse(final TrustDomain trustDomain,
+                                   final byte[] bundleBytes) throws X509BundleException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(bundleBytes, "bundleBytes must not be null");
+
+        List<X509Certificate> x509Certificates = generateX509Certificates(bundleBytes);
+        HashSet<X509Certificate> x509CertificateSet = new HashSet<>(x509Certificates);
         return new X509Bundle(trustDomain, x509CertificateSet);
     }
 
@@ -100,11 +101,14 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      * @throws BundleNotFoundException if no X.509 bundle can be found for the given trust domain
      */
     @Override
-    public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getBundleForTrustDomain(final TrustDomain trustDomain)
+            throws BundleNotFoundException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         if (this.trustDomain.equals(trustDomain)) {
             return this;
         }
-        throw new BundleNotFoundException(String.format("No X.509 bundle found for trust domain %s", trustDomain));
+        throw new BundleNotFoundException(
+                String.format("No X.509 bundle found for trust domain %s", trustDomain));
     }
 
     /**
@@ -122,7 +126,8 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      * @param x509Authority an X.509 certificate
      * @return boolean true if the x509Authority is present in the X.509 bundle, false otherwise
      */
-    public boolean hasX509Authority(@NonNull final X509Certificate x509Authority) {
+    public boolean hasX509Authority(final X509Certificate x509Authority) {
+        Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         return x509Authorities.contains(x509Authority);
     }
 
@@ -131,7 +136,8 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @param x509Authority an X.509 certificate
      */
-    public void addX509Authority(@NonNull final X509Certificate x509Authority) {
+    public void addX509Authority(final X509Certificate x509Authority) {
+        Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         x509Authorities.add(x509Authority);
     }
 
@@ -140,18 +146,45 @@ public class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @param x509Authority an X.509 certificate
      */
-    public void removeX509Authority(@NonNull final X509Certificate x509Authority) {
+    public void removeX509Authority(final X509Certificate x509Authority) {
+        Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         x509Authorities.remove(x509Authority);
     }
 
-    private static List<X509Certificate> generateX509Certificates(byte[] bundleBytes) throws X509BundleException {
-        List<X509Certificate> x509Certificates;
+    private static List<X509Certificate> generateX509Certificates(byte[] bundleBytes)
+            throws X509BundleException {
+        Objects.requireNonNull(bundleBytes, "bundleBytes must not be null");
         try {
-            x509Certificates = CertificateUtils.generateCertificates(bundleBytes);
+            return CertificateUtils.generateCertificates(bundleBytes);
         } catch (CertificateParsingException e) {
-            throw new X509BundleException("Bundle certificates could not be parsed from bundle path", e);
+            throw new X509BundleException(
+                    "Bundle certificates could not be parsed from bundle path", e);
         }
-        return x509Certificates;
     }
 
+    public TrustDomain getTrustDomain() {
+        return trustDomain;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof X509Bundle)) return false;
+        X509Bundle that = (X509Bundle) o;
+        return Objects.equals(trustDomain, that.trustDomain) &&
+                Objects.equals(x509Authorities, that.x509Authorities);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(trustDomain, x509Authorities);
+    }
+
+    @Override
+    public String toString() {
+        return "X509Bundle{" +
+                "trustDomain=" + trustDomain +
+                ", x509Authorities=" + x509Authorities +
+                '}';
+    }
 }

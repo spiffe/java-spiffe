@@ -1,8 +1,5 @@
 package io.spiffe.helper.keystore;
 
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -13,6 +10,7 @@ import java.nio.file.Path;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Objects;
 
 /**
  * Represents a Java KeyStore, provides some functions
@@ -26,20 +24,50 @@ class KeyStore {
     private final String keyStorePassword;
     private final java.security.KeyStore javaKeyStore;
 
-    @Builder
     KeyStore(
-            @NonNull final Path keyStoreFilePath,
-            @NonNull final KeyStoreType keyStoreType,
-            @NonNull final String keyStorePassword)
-            throws KeyStoreException {
+            final Path keyStoreFilePath,
+            final KeyStoreType keyStoreType,
+            final String keyStorePassword) throws KeyStoreException {
 
-        this.keyStoreFilePath = keyStoreFilePath;
-        this.keyStoreType = keyStoreType;
+        this.keyStoreFilePath = Objects.requireNonNull(keyStoreFilePath, "keyStoreFilePath must not be null");
+        this.keyStoreType = Objects.requireNonNull(keyStoreType, "keyStoreType must not be null");
+        Objects.requireNonNull(keyStorePassword, "keyStorePassword must not be null");
+
         if (StringUtils.isBlank(keyStorePassword)) {
             throw new IllegalArgumentException("keyStorePassword cannot be blank");
         }
+
         this.keyStorePassword = keyStorePassword;
         this.javaKeyStore = loadKeyStore();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Path keyStoreFilePath;
+        private KeyStoreType keyStoreType;
+        private String keyStorePassword;
+
+        public Builder keyStoreFilePath(Path keyStoreFilePath) {
+            this.keyStoreFilePath = keyStoreFilePath;
+            return this;
+        }
+
+        public Builder keyStoreType(KeyStoreType keyStoreType) {
+            this.keyStoreType = keyStoreType;
+            return this;
+        }
+
+        public Builder keyStorePassword(String keyStorePassword) {
+            this.keyStorePassword = keyStorePassword;
+            return this;
+        }
+
+        public KeyStore build() throws KeyStoreException {
+            return new KeyStore(keyStoreFilePath, keyStoreType, keyStorePassword);
+        }
     }
 
     private java.security.KeyStore loadKeyStore() throws KeyStoreException {
@@ -50,8 +78,10 @@ class KeyStore {
         }
     }
 
-    private java.security.KeyStore loadKeyStoreFromFile() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+    private java.security.KeyStore loadKeyStoreFromFile()
+            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+
+        java.security.KeyStore keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
         // Initialize KeyStore
         if (Files.exists(keyStoreFilePath)) {
@@ -67,21 +97,18 @@ class KeyStore {
         return keyStore;
     }
 
-
     /**
      * Store a private key and X.509 certificate chain in a Java KeyStore
      *
      * @param keyEntry contains the alias, privateKey, chain, privateKey password
      */
     void storePrivateKeyEntry(final PrivateKeyEntry keyEntry) throws KeyStoreException {
-        // Store PrivateKey Entry in KeyStore
         javaKeyStore.setKeyEntry(
                 keyEntry.getAlias(),
                 keyEntry.getPrivateKey(),
                 keyEntry.getPassword().toCharArray(),
                 keyEntry.getCertificateChain()
         );
-
         this.flush();
     }
 
@@ -89,7 +116,6 @@ class KeyStore {
      * Store an Authority Entry in the KeyStore.
      */
     void storeAuthorityEntry(final AuthorityEntry authorityEntry) throws KeyStoreException {
-        // Store Bundle Entry in KeyStore
         this.javaKeyStore.setCertificateEntry(
                 authorityEntry.getAlias(),
                 authorityEntry.getCertificate()
@@ -99,7 +125,7 @@ class KeyStore {
 
     // Flush KeyStore to disk, to the configured keyStoreFilePath
     private void flush() throws KeyStoreException {
-        try (OutputStream outputStream = Files.newOutputStream(keyStoreFilePath)){
+        try (OutputStream outputStream = Files.newOutputStream(keyStoreFilePath)) {
             javaKeyStore.store(outputStream, keyStorePassword.toCharArray());
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new KeyStoreException(e);

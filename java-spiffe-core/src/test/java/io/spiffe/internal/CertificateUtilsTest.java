@@ -3,13 +3,14 @@ package io.spiffe.internal;
 import com.nimbusds.jose.jwk.Curve;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.utils.CertAndKeyPair;
 import io.spiffe.utils.TestUtils;
-import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -36,8 +37,8 @@ public class CertificateUtilsTest {
 
     @Test
     void generateCertificates_ofPEMByteArray_returnsListWithOneX509Certificate() throws IOException, URISyntaxException {
-        val path = Paths.get(toUri("testdata/internal/cert.pem"));
-        val certBytes = Files.readAllBytes(path);
+        final Path path = Paths.get(toUri("testdata/internal/cert.pem"));
+        final byte[] certBytes = Files.readAllBytes(path);
 
         List<X509Certificate> x509CertificateList;
         SpiffeId spiffeId = null;
@@ -53,14 +54,15 @@ public class CertificateUtilsTest {
 
     @Test
     void validate_certificateThatIsExpired_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
-        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
-        val certBundle = Paths.get(toUri("testdata/internal/bundle.pem"));
+        final Path certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        final Path certBundle = Paths.get(toUri("testdata/internal/bundle.pem"));
 
-        val certBytes = Files.readAllBytes(certPath);
-        val bundleBytes = Files.readAllBytes(certBundle);
+        final byte[] certBytes = Files.readAllBytes(certPath);
+        final byte[] bundleBytes = Files.readAllBytes(certBundle);
 
-        val chain = CertificateUtils.generateCertificates(certBytes);
-        val trustedCert = CertificateUtils.generateCertificates(bundleBytes);
+        final List<X509Certificate> chain = CertificateUtils.generateCertificates(certBytes);
+        List<X509Certificate> trustedCert;
+        trustedCert = CertificateUtils.generateCertificates(bundleBytes);
 
         try {
             CertificateUtils.validate(chain, trustedCert);
@@ -72,9 +74,9 @@ public class CertificateUtilsTest {
 
     @Test
     void validateCerts_nullTrustedCerts() throws URISyntaxException, IOException, CertificateParsingException {
-        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
-        val certBytes = Files.readAllBytes(certPath);
-        val chain = CertificateUtils.generateCertificates(certBytes);
+        final Path certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        final byte[] certBytes = Files.readAllBytes(certPath);
+        final List<X509Certificate> chain = CertificateUtils.generateCertificates(certBytes);
 
         try {
             CertificateUtils.validate(chain, null);
@@ -87,9 +89,9 @@ public class CertificateUtilsTest {
 
     @Test
     void validateCerts_emptyTrustedCerts() throws URISyntaxException, IOException, CertificateParsingException {
-        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
-        val certBytes = Files.readAllBytes(certPath);
-        val chain = CertificateUtils.generateCertificates(certBytes);
+        final Path certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        final byte[] certBytes = Files.readAllBytes(certPath);
+        final List<X509Certificate> chain = CertificateUtils.generateCertificates(certBytes);
 
         try {
             CertificateUtils.validate(chain, Collections.emptyList());
@@ -102,9 +104,9 @@ public class CertificateUtilsTest {
 
     @Test
     void validateCerts_nullChain() throws URISyntaxException, IOException, CertificateParsingException {
-        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
-        val certBytes = Files.readAllBytes(certPath);
-        val certificates = CertificateUtils.generateCertificates(certBytes);
+        final Path certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        final byte[] certBytes = Files.readAllBytes(certPath);
+        final List<X509Certificate> certificates = CertificateUtils.generateCertificates(certBytes);
 
         try {
             CertificateUtils.validate(null, certificates);
@@ -117,9 +119,9 @@ public class CertificateUtilsTest {
 
     @Test
     void validateCerts_emptyChain() throws URISyntaxException, IOException, CertificateParsingException {
-        val certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
-        val certBytes = Files.readAllBytes(certPath);
-        val certificates = CertificateUtils.generateCertificates(certBytes);
+        final Path certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
+        final byte[] certBytes = Files.readAllBytes(certPath);
+        final List<X509Certificate> certificates = CertificateUtils.generateCertificates(certBytes);
 
         try {
             CertificateUtils.validate(Collections.emptyList(), certificates);
@@ -132,8 +134,8 @@ public class CertificateUtilsTest {
 
     @Test
     void testGenerateRsaPrivateKeyFromBytes() throws URISyntaxException, IOException {
-        val keyPath = Paths.get(toUri("testdata/internal/privateKeyRsa.pem"));
-        val keyBytes = Files.readAllBytes(keyPath);
+        final Path keyPath = Paths.get(toUri("testdata/internal/privateKeyRsa.pem"));
+        final byte[] keyBytes = Files.readAllBytes(keyPath);
 
         try {
             PrivateKey privateKey = CertificateUtils.generatePrivateKey(keyBytes, RSA, KeyFileFormat.PEM);
@@ -160,16 +162,16 @@ public class CertificateUtilsTest {
 
     @Test
     void testGetSpiffeId() throws Exception {
-        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test" );
-        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://domain.test/workload", rootCa, false);
+        final CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test");
+        final CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "spiffe://domain.test/workload", rootCa, false);
         SpiffeId spiffeId = CertificateUtils.getSpiffeId(leaf.getCertificate());
         assertEquals(SpiffeId.parse("spiffe://domain.test/workload"), spiffeId);
     }
 
     @Test
     void testGetSpiffeId_certNotContainSpiffeId_throwsCertificateException() throws Exception {
-        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test" );
-        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "", rootCa, false);
+        final CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test");
+        final CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "", rootCa, false);
         try {
             CertificateUtils.getSpiffeId(leaf.getCertificate());
             fail("exception is expected");
@@ -180,11 +182,11 @@ public class CertificateUtilsTest {
 
     @Test
     void testGetTrustDomain() throws Exception {
-        val rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test" );
-        val intermediate = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://domain.test/host", rootCa, true);
-        val leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://domain.test/workload", intermediate, false);
+        final CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test");
+        final CertAndKeyPair intermediate = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "spiffe://domain.test/host", rootCa, true);
+        final CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "spiffe://domain.test/workload", intermediate, false);
 
-        val chain = Arrays.asList(leaf.getCertificate(), intermediate.getCertificate());
+        final List<X509Certificate> chain = Arrays.asList(leaf.getCertificate(), intermediate.getCertificate());
 
         try {
             TrustDomain trustDomain = CertificateUtils.getTrustDomain(chain);

@@ -11,9 +11,6 @@ import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtBundleException;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -23,25 +20,25 @@ import java.security.PublicKey;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a collection of trusted JWT authorities (Public Keys) for a trust domain.
  */
-@Value
-public class JwtBundle implements BundleSource<JwtBundle> {
+public final class JwtBundle implements BundleSource<JwtBundle> {
 
-    TrustDomain trustDomain;
+    private final TrustDomain trustDomain;
 
-    Map<String, PublicKey> jwtAuthorities;
+    private final Map<String, PublicKey> jwtAuthorities;
 
     /**
      * Creates a new JWT bundle for a trust domain.
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      */
-    public JwtBundle(@NonNull final TrustDomain trustDomain) {
-        this.trustDomain = trustDomain;
+    public JwtBundle(final TrustDomain trustDomain) {
+        this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         this.jwtAuthorities = new ConcurrentHashMap<>();
     }
 
@@ -51,8 +48,10 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param trustDomain    a {@link TrustDomain} to associate to the JwtBundle
      * @param jwtAuthorities a Map of public Keys
      */
-    public JwtBundle(@NonNull final TrustDomain trustDomain, @NonNull final Map<String, PublicKey> jwtAuthorities) {
-        this.trustDomain = trustDomain;
+    public JwtBundle(final TrustDomain trustDomain,
+                     final Map<String, PublicKey> jwtAuthorities) {
+        this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(jwtAuthorities, "jwtAuthorities must not be null");
         this.jwtAuthorities = new ConcurrentHashMap<>(jwtAuthorities);
     }
 
@@ -67,13 +66,17 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
      * @throws KeyException       if the bundle file contains a key type that is not supported
      */
-    public static JwtBundle load(@NonNull final TrustDomain trustDomain, @NonNull final Path bundlePath)
+    public static JwtBundle load(final TrustDomain trustDomain,
+                                 final Path bundlePath)
             throws KeyException, JwtBundleException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(bundlePath, "bundlePath must not be null");
+
         try {
-            val jwkSet = JWKSet.load(bundlePath.toFile());
+            final JWKSet jwkSet = JWKSet.load(bundlePath.toFile());
             return toJwtBundle(trustDomain, jwkSet);
         } catch (IllegalArgumentException | IOException | ParseException | JOSEException e) {
-            val error = "Could not load bundle from file: %s";
+            final String error = "Could not load bundle from file: %s";
             throw new JwtBundleException(String.format(error, bundlePath.toString()), e);
         }
     }
@@ -87,11 +90,15 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
      */
     public static JwtBundle parse(
-            @NonNull final TrustDomain trustDomain,
-            @NonNull final byte[] bundleBytes)
+            final TrustDomain trustDomain,
+            final byte[] bundleBytes)
             throws JwtBundleException {
+
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(bundleBytes, "bundleBytes must not be null");
+
         try {
-            val jwkSet = JWKSet.parse(new String(bundleBytes));
+            final JWKSet jwkSet = JWKSet.parse(new String(bundleBytes));
             return toJwtBundle(trustDomain, jwkSet);
         } catch (ParseException | JOSEException | KeyException e) {
             throw new JwtBundleException("Could not parse bundle from bytes", e);
@@ -107,10 +114,12 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      */
     @Override
     public JwtBundle getBundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         if (this.trustDomain.equals(trustDomain)) {
             return this;
         }
-        throw new BundleNotFoundException(String.format("No JWT bundle found for trust domain %s", trustDomain));
+        throw new BundleNotFoundException(
+                String.format("No JWT bundle found for trust domain %s", trustDomain));
     }
 
     /**
@@ -130,11 +139,14 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @throws AuthorityNotFoundException if no Authority is found associated to the Key ID
      */
     public PublicKey findJwtAuthority(final String keyId) throws AuthorityNotFoundException {
-        val key = jwtAuthorities.get(keyId);
+        Objects.requireNonNull(keyId, "keyId must not be null");
+        PublicKey key = jwtAuthorities.get(keyId);
         if (key != null) {
             return key;
         }
-        throw new AuthorityNotFoundException(String.format("No authority found for the trust domain %s and key id %s", this.trustDomain, keyId));
+        throw new AuthorityNotFoundException(
+                String.format("No authority found for the trust domain %s and key id %s",
+                        this.trustDomain, keyId));
     }
 
     /**
@@ -144,6 +156,7 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @return true if the bundle has a JWT authority with the given key ID.
      */
     public boolean hasJwtAuthority(final String keyId) {
+        Objects.requireNonNull(keyId, "keyId must not be null");
         return jwtAuthorities.containsKey(keyId);
     }
 
@@ -151,10 +164,12 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * Adds a JWT authority to the bundle. If a JWT authority already exists
      * under the given key ID, it is replaced. A key ID must be specified.
      *
-     * @param keyId Key ID to associate to the jwtAuthority
+     * @param keyId        Key ID to associate to the jwtAuthority
      * @param jwtAuthority a PublicKey
      */
-    public void putJwtAuthority(@NonNull final String keyId, @NonNull final PublicKey jwtAuthority) {
+    public void putJwtAuthority(final String keyId, final PublicKey jwtAuthority) {
+        Objects.requireNonNull(keyId, "keyId must not be null");
+        Objects.requireNonNull(jwtAuthority, "jwtAuthority must not be null");
         if (StringUtils.isBlank(keyId)) {
             throw new IllegalArgumentException("KeyId cannot be empty");
         }
@@ -167,10 +182,17 @@ public class JwtBundle implements BundleSource<JwtBundle> {
      * @param keyId The key id of the JWT authority to be removed
      */
     public void removeJwtAuthority(final String keyId) {
+        Objects.requireNonNull(keyId, "keyId must not be null");
         jwtAuthorities.remove(keyId);
     }
 
-    private static JwtBundle toJwtBundle(final TrustDomain trustDomain, final JWKSet jwkSet) throws JwtBundleException, JOSEException, ParseException, KeyException {
+    private static JwtBundle toJwtBundle(final TrustDomain trustDomain,
+                                         final JWKSet jwkSet)
+            throws JwtBundleException, JOSEException, ParseException, KeyException {
+
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(jwkSet, "jwkSet must not be null");
+
         final Map<String, PublicKey> authorities = new ConcurrentHashMap<>();
         for (JWK jwk : jwkSet.getKeys()) {
             String keyId = getKeyId(jwk);
@@ -181,15 +203,20 @@ public class JwtBundle implements BundleSource<JwtBundle> {
     }
 
     private static String getKeyId(final JWK jwk) throws JwtBundleException {
-        val keyId = jwk.getKeyID();
+        Objects.requireNonNull(jwk, "jwk must not be null");
+        String keyId = jwk.getKeyID();
         if (StringUtils.isBlank(keyId)) {
             throw new JwtBundleException("Error adding authority of JWKS: keyID cannot be empty");
         }
         return keyId;
     }
 
-    private static PublicKey getPublicKey(final JWK jwk) throws JOSEException, ParseException, KeyException {
-        val family = JwtSignatureAlgorithm.Family.parse(jwk.getKeyType().getValue());
+    private static PublicKey getPublicKey(final JWK jwk)
+            throws JOSEException, ParseException, KeyException {
+        Objects.requireNonNull(jwk, "jwk must not be null");
+
+        JwtSignatureAlgorithm.Family family =
+                JwtSignatureAlgorithm.Family.parse(jwk.getKeyType().getValue());
 
         final PublicKey publicKey;
         switch (family) {
@@ -200,8 +227,35 @@ public class JwtBundle implements BundleSource<JwtBundle> {
                 publicKey = RSAKey.parse(jwk.toJSONString()).toPublicKey();
                 break;
             default:
-                throw new KeyException(String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
+                throw new KeyException(
+                        String.format("Key Type not supported: %s", jwk.getKeyType().getValue()));
         }
         return publicKey;
+    }
+
+    public TrustDomain getTrustDomain() {
+        return trustDomain;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof JwtBundle)) return false;
+        JwtBundle jwtBundle = (JwtBundle) o;
+        return Objects.equals(trustDomain, jwtBundle.trustDomain) &&
+                Objects.equals(jwtAuthorities, jwtBundle.jwtAuthorities);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(trustDomain, jwtAuthorities);
+    }
+
+    @Override
+    public String toString() {
+        return "JwtBundle{" +
+                "trustDomain=" + trustDomain +
+                ", jwtAuthorities=" + jwtAuthorities +
+                '}';
     }
 }

@@ -7,11 +7,11 @@ import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.workloadapi.X509Source;
-import lombok.NonNull;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 import static io.spiffe.utils.TestUtils.toUri;
 
@@ -34,7 +34,8 @@ public class X509SourceStub implements X509Source {
     }
 
     @Override
-    public X509Bundle getBundleForTrustDomain(@NonNull TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         if (TrustDomain.parse("example.org").equals(trustDomain)) {
             return bundle;
         }

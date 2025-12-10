@@ -3,12 +3,12 @@ package io.spiffe.helper.cli;
 import io.spiffe.helper.exception.RunnerException;
 import io.spiffe.helper.keystore.KeyStoreHelper;
 import io.spiffe.helper.keystore.KeyStoreType;
-import lombok.val;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
@@ -19,7 +19,7 @@ class ConfigTest {
 
     @Test
     void parseConfigFileProperties() throws URISyntaxException {
-        val path = Paths.get(toUri("testdata/cli/correct.conf"));
+        final Path path = Paths.get(toUri("testdata/cli/correct.conf"));
 
         Properties properties = null;
         try {
@@ -40,8 +40,8 @@ class ConfigTest {
 
     @Test
     void parseConfigFile_doesNotExist() {
-        val randomFileName = RandomStringUtils.randomAlphabetic(10);
-        val path = Paths.get(randomFileName);
+        final String randomFileName = RandomStringUtils.randomAlphabetic(10);
+        final Path path = Paths.get(randomFileName);
         try {
             Config.parseConfigFileProperties(path);
             fail();
@@ -132,7 +132,7 @@ class ConfigTest {
     }
 
     Properties getValidConfiguration() throws URISyntaxException {
-        val path = Paths.get(toUri("testdata/cli/correct.conf"));
+        final Path path = Paths.get(toUri("testdata/cli/correct.conf"));
         Properties properties = null;
         try {
             return Config.parseConfigFileProperties(path);

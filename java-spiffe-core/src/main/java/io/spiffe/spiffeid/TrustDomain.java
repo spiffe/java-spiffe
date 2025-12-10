@@ -1,20 +1,18 @@
 package io.spiffe.spiffeid;
 
-
 import io.spiffe.exception.InvalidSpiffeIdException;
-import lombok.NonNull;
-import lombok.Value;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 import static io.spiffe.spiffeid.SpiffeId.BAD_TRUST_DOMAIN_CHAR;
 
 /**
  * Represents the name of a SPIFFE trust domain (e.g. 'domain.test').
  */
-@Value
-public class TrustDomain {
+public final class TrustDomain {
 
-    String name;
+    private final String name;
 
     TrustDomain(final String trustDomain) {
         this.name = trustDomain;
@@ -29,7 +27,8 @@ public class TrustDomain {
      * @throws IllegalArgumentException if the given string is empty.
      * @throws InvalidSpiffeIdException if the given string contains an invalid char.
      */
-    public static TrustDomain parse(@NonNull final String idOrName) {
+    public static TrustDomain parse(final String idOrName) {
+        Objects.requireNonNull(idOrName, "idOrName must not be null");
 
         if (StringUtils.isBlank(idOrName)) {
             throw new IllegalArgumentException("Trust domain is missing");
@@ -95,5 +94,22 @@ public class TrustDomain {
         }
 
         return c == '-' || c == '.' || c == '_';
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TrustDomain)) return false;
+        TrustDomain that = (TrustDomain) o;
+        return Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }

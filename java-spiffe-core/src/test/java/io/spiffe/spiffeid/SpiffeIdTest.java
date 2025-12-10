@@ -2,7 +2,6 @@ package io.spiffe.spiffeid;
 
 import com.google.common.collect.Sets;
 import io.spiffe.exception.InvalidSpiffeIdException;
-import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -18,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class SpiffeIdTest {
-
     private static final Set<Character> LOWER_ALPHA = Sets.newHashSet('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
     private static final Set<Character> UPPER_ALPHA = Sets.newHashSet('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -43,8 +41,8 @@ class SpiffeIdTest {
 
     @Test
     void toString_SpiffeId_ReturnsTheSpiffeIdInAStringFormatIncludingTheSchema() {
-        val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2", "path3");
+        final TrustDomain trustDomain = TrustDomain.parse("trustdomain");
+        final SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2", "path3");
         assertEquals("spiffe://trustdomain/path1/path2/path3", spiffeId.toString());
     }
 
@@ -138,7 +136,7 @@ class SpiffeIdTest {
 
     static Stream<Arguments> provideInvalidArguments() {
         return Stream.of(
-                Arguments.of(null, new String[]{""}, "trustDomain is marked non-null but is null"),
+                Arguments.of(null, new String[]{""}, "trustDomain must not be null"),
                 Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/ele%5ment"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
                 Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/path/"}, "Path cannot have a trailing slash"),
                 Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/ /"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
@@ -216,20 +214,24 @@ class SpiffeIdTest {
 
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithSameTrustDomain_ReturnsTrue() {
-        val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
+        final TrustDomain trustDomain = TrustDomain.parse("trustdomain");
+        final SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
 
-        val isMemberOf = spiffeId.memberOf(TrustDomain.parse("trustdomain"));
+        boolean isMemberOf;
+        if (spiffeId.memberOf(TrustDomain.parse("trustdomain"))) isMemberOf = true;
+        else isMemberOf = false;
 
         assertTrue(isMemberOf);
     }
 
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithDifferentTrustDomain_ReturnsFalse() {
-        val trustDomain = TrustDomain.parse("trustdomain");
-        val spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
+        final TrustDomain trustDomain = TrustDomain.parse("trustdomain");
+        final SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
 
-        val isMemberOf = spiffeId.memberOf(TrustDomain.parse("otherdomain"));
+        boolean isMemberOf;
+        if (spiffeId.memberOf(TrustDomain.parse("otherdomain"))) isMemberOf = true;
+        else isMemberOf = false;
 
         assertFalse(isMemberOf);
     }

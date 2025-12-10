@@ -1,9 +1,9 @@
 package io.spiffe.spiffeid;
 
 import io.spiffe.exception.InvalidSpiffeIdException;
-import lombok.NonNull;
-import lombok.Value;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 import static io.spiffe.spiffeid.TrustDomain.isValidTrustDomainChar;
 
@@ -12,8 +12,7 @@ import static io.spiffe.spiffeid.TrustDomain.isValidTrustDomainChar;
  * <p>
  * @see <a href="https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md">https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md</a>
  */
-@Value
-public class SpiffeId {
+public final class SpiffeId {
 
     static final String SPIFFE_SCHEME = "spiffe";
     static final String SCHEME_PREFIX = SPIFFE_SCHEME + "://";
@@ -27,16 +26,14 @@ public class SpiffeId {
     static final String EMPTY_SEGMENT = "Path cannot contain empty segments";
     static final String TRAILING_SLASH = "Path cannot have a trailing slash";
 
+    private final TrustDomain trustDomain;
 
-    TrustDomain trustDomain;
-
-    String path;
+    private final String path;
 
     private SpiffeId(final TrustDomain trustDomain, final String path) {
-        this.trustDomain = trustDomain;
+        this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         this.path = path;
     }
-
 
     /**
      * Returns a new SPIFFE ID in the given trust domain with joined
@@ -49,7 +46,9 @@ public class SpiffeId {
      * @return a {@link SpiffeId}
      * @throws InvalidSpiffeIdException if a given path segment contains an invalid char or empty or dot segment
      */
-    public static SpiffeId fromSegments(@NonNull final TrustDomain trustDomain, final String... segments) {
+    public static SpiffeId fromSegments(final TrustDomain trustDomain, final String... segments) {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+
         StringBuilder path = new StringBuilder();
         for (String p : segments) {
             validatePath(p);
@@ -81,7 +80,7 @@ public class SpiffeId {
 
         int i = 0;
         for (char c : rest.toCharArray()) {
-            if (c == '/'){
+            if (c == '/') {
                 break;
             }
             if (!isValidTrustDomainChar(c)) {
@@ -136,7 +135,7 @@ public class SpiffeId {
         int segmentStart = 0;
         int segmentEnd = 0;
 
-        for ( ; segmentEnd < path.length(); segmentEnd++) {
+        for (; segmentEnd < path.length(); segmentEnd++) {
             char c = path.charAt(segmentEnd);
             if (c == '/') {
                 switch (path.substring(segmentStart, segmentEnd)) {
@@ -171,5 +170,27 @@ public class SpiffeId {
         if (c >= '0' && c <= '9')
             return true;
         return c == '-' || c == '.' || c == '_';
+    }
+
+    public TrustDomain getTrustDomain() {
+        return trustDomain;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SpiffeId)) return false;
+        SpiffeId spiffeId = (SpiffeId) o;
+        return Objects.equals(trustDomain, spiffeId.trustDomain) &&
+                Objects.equals(path, spiffeId.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(trustDomain, path);
     }
 }
