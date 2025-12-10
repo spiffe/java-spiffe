@@ -194,7 +194,7 @@ class DefaultJwtSourceTest {
 
     @Test
     void newSource_success() {
-        final JwtSourceOptions options = JwtSourceOptions
+        JwtSourceOptions options = JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .initTimeout(Duration.ofSeconds(0))
@@ -221,7 +221,7 @@ class DefaultJwtSourceTest {
 
     @Test
     void newSource_errorFetchingJwtBundles() {
-        final JwtSourceOptions options = JwtSourceOptions
+        JwtSourceOptions options = JwtSourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")
@@ -240,7 +240,7 @@ class DefaultJwtSourceTest {
     @Test
     void newSource_FailsBecauseOfTimeOut() throws Exception {
         try {
-            final JwtSourceOptions options = JwtSourceOptions
+            JwtSourceOptions options = JwtSourceOptions
                     .builder()
                     .spiffeSocketPath("unix:/tmp/test")
                     .build();

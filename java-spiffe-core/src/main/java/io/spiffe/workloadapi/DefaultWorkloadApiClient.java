@@ -217,8 +217,8 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     public JwtSvid fetchJwtSvid(String audience, String... extraAudience) throws JwtSvidException {
         Objects.requireNonNull(audience, "audience must not be null");
 
-        final Set<String> audParam = createAudienceSet(audience, extraAudience);
-        try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
+        Set<String> audParam = createAudienceSet(audience, extraAudience);
+        try (Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvid(audParam));
         } catch (Exception e) {
             throw new JwtSvidException("Error fetching JWT SVID", e);
@@ -237,7 +237,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         Objects.requireNonNull(subject, "subject must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
 
-        final Set<String> audParam = createAudienceSet(audience, extraAudience);
+        Set<String> audParam = createAudienceSet(audience, extraAudience);
 
         try (Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvid(subject, audParam));
@@ -253,7 +253,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     public List<JwtSvid> fetchJwtSvids(String audience, String... extraAudience) throws JwtSvidException {
         Objects.requireNonNull(audience, "audience must not be null");
 
-        final Set<String> audParam = createAudienceSet(audience, extraAudience);
+        Set<String> audParam = createAudienceSet(audience, extraAudience);
         try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvids(audParam));
         } catch (Exception e) {
@@ -275,7 +275,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         Objects.requireNonNull(subject, "subject must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
 
-        final Set<String> audParam = createAudienceSet(audience, extraAudience);
+        Set<String> audParam = createAudienceSet(audience, extraAudience);
 
         try (final Context.CancellableContext cancellableContext = Context.current().withCancellation()) {
             return cancellableContext.call(() -> callFetchJwtSvids(subject, audParam));
@@ -376,7 +376,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         return GrpcConversionUtils.toX509BundleSet(x509BundlesResponse);
     }
 
-    private JwtSvid callFetchJwtSvid(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
+    private JwtSvid callFetchJwtSvid(SpiffeId subject, Set<String> audience) throws JwtSvidException {
         Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
                 .addAllAudience(audience)
@@ -385,7 +385,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         return processJwtSvidResponse(response, audience, true).get(0);
     }
 
-    private JwtSvid callFetchJwtSvid(final Set<String> audience) throws JwtSvidException {
+    private JwtSvid callFetchJwtSvid(Set<String> audience) throws JwtSvidException {
         Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .addAllAudience(audience)
                 .build();
@@ -393,7 +393,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         return processJwtSvidResponse(response, audience, true).get(0);
     }
 
-    private List<JwtSvid> callFetchJwtSvids(final SpiffeId subject, final Set<String> audience) throws JwtSvidException {
+    private List<JwtSvid> callFetchJwtSvids(SpiffeId subject, Set<String> audience) throws JwtSvidException {
         Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .setSpiffeId(subject.toString())
                 .addAllAudience(audience)
@@ -402,7 +402,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         return processJwtSvidResponse(response, audience, false);
     }
 
-    private List<JwtSvid> callFetchJwtSvids(final Set<String> audience) throws JwtSvidException {
+    private List<JwtSvid> callFetchJwtSvids(Set<String> audience) throws JwtSvidException {
         Workload.JWTSVIDRequest jwtSvidRequest = Workload.JWTSVIDRequest.newBuilder()
                 .addAllAudience(audience)
                 .build();
@@ -440,7 +440,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     }
 
     private Set<String> createAudienceSet(final String audience, final String[] extraAudience) {
-        final Set<String> audParam = new HashSet<>();
+        Set<String> audParam = new HashSet<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
         return audParam;

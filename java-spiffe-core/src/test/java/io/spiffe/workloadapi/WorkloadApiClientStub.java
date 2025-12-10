@@ -134,7 +134,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     private JwtSvid generateJwtSvid(SpiffeId subject, String audience, String[] extraAudience) throws JwtSvidException {
-        final Set<String> audParam = new HashSet<>();
+        Set<String> audParam = new HashSet<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
 

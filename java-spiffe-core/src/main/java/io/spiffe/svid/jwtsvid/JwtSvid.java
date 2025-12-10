@@ -68,13 +68,13 @@ public class JwtSvid {
     public static final String HEADER_TYP_JWT = "JWT";
     public static final String HEADER_TYP_JOSE = "JOSE";
 
-    private JwtSvid(final SpiffeId spiffeId,
-                    final Set<String> audience,
-                    final Date issuedAt,
-                    final Date expiry,
-                    final Map<String, Object> claims,
-                    final String token,
-                    final String hint
+    private JwtSvid(SpiffeId spiffeId,
+                    Set<String> audience,
+                    Date issuedAt,
+                    Date expiry,
+                    Map<String, Object> claims,
+                    String token,
+                    String hint
     ) {
         this.spiffeId = spiffeId;
         this.audience = audience;
@@ -392,7 +392,7 @@ public class JwtSvid {
     }
 
     // expected audiences must be a subset of the audience claim in the token
-    private static void validateAudience(final List<String> audClaim, final Set<String> expectedAudiences) throws JwtSvidException {
+    private static void validateAudience(List<String> audClaim, Set<String> expectedAudiences) throws JwtSvidException {
         if (!audClaim.containsAll(expectedAudiences)) {
             throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudiences, audClaim));
         }

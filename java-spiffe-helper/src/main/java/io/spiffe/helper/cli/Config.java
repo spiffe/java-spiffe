@@ -51,7 +51,7 @@ class Config {
         return Paths.get(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME).toString();
     }
 
-    static KeyStoreOptions createKeyStoreOptions(final Properties properties) {
+    static KeyStoreOptions createKeyStoreOptions(Properties properties) {
         String keyStorePath = getProperty(properties, "keyStorePath");
         String keyStorePass = getProperty(properties, "keyStorePass");
         String keyPass = getProperty(properties, "keyPass");
@@ -82,7 +82,7 @@ class Config {
 
     }
 
-    static String getProperty(final Properties properties, final String key) {
+    static String getProperty(Properties properties, String key) {
         final String value = properties.getProperty(key);
         if (StringUtils.isBlank(value)) {
             throw new IllegalArgumentException(String.format("Missing value for config property: %s", key));

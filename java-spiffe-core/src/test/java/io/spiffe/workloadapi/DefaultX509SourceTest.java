@@ -98,7 +98,7 @@ class DefaultX509SourceTest {
 
     @Test
     void newSource_success() {
-        final DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .svidPicker((list) -> list.get(0))
@@ -127,7 +127,7 @@ class DefaultX509SourceTest {
     @Test
     void newSource_timeout() throws Exception {
         try {
-            final DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
+            DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                     .builder()
                     .initTimeout(Duration.ofSeconds(1))
                     .spiffeSocketPath("unix:/tmp/test")
@@ -143,7 +143,7 @@ class DefaultX509SourceTest {
 
     @Test
     void newSource_errorFetchingX509Context() {
-        final DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")

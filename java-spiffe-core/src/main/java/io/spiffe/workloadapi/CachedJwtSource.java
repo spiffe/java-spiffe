@@ -94,7 +94,7 @@ public class CachedJwtSource implements JwtSource {
     public static JwtSource newSource(JwtSourceOptions options)
             throws SocketEndpointAddressException, JwtSourceException {
         Objects.requireNonNull(options, "options must not be null");
-        
+
         if (options.getWorkloadApiClient() == null) {
             options.setWorkloadApiClient(createClient(options));
         }
@@ -321,7 +321,7 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    private static WorkloadApiClient createClient(final JwtSourceOptions options)
+    private static WorkloadApiClient createClient(JwtSourceOptions options)
             throws SocketEndpointAddressException {
         DefaultWorkloadApiClient.ClientOptions clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()

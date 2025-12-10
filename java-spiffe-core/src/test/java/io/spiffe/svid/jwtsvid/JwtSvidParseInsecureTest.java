@@ -302,13 +302,13 @@ class JwtSvidParseInsecureTest {
         }
     }
 
-    static JwtSvid newJwtSvidInstance(final SpiffeId spiffeId,
-                                      final Set<String> audience,
-                                      final Date issuedAt,
-                                      final Date expiry,
-                                      final Map<String, Object> claims,
-                                      final String token,
-                                      final String hint
+    static JwtSvid newJwtSvidInstance(SpiffeId spiffeId,
+                                      Set<String> audience,
+                                      Date issuedAt,
+                                      Date expiry,
+                                      Map<String, Object> claims,
+                                      String token,
+                                      String hint
     ) {
         final Constructor<?> constructor = JwtSvid.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);

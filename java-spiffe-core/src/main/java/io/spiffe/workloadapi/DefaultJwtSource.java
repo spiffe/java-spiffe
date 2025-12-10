@@ -232,7 +232,7 @@ public class DefaultJwtSource implements JwtSource {
         }
     }
 
-    private static WorkloadApiClient createClient(final JwtSourceOptions options)
+    private static WorkloadApiClient createClient(JwtSourceOptions options)
             throws SocketEndpointAddressException {
         DefaultWorkloadApiClient.ClientOptions clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
