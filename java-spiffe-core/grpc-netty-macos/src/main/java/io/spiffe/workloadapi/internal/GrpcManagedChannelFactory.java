@@ -34,6 +34,7 @@ public final class GrpcManagedChannelFactory {
      */
     public static ManagedChannelWrapper newChannel(URI address, ExecutorService executorService) {
         Objects.requireNonNull(address, "address must not be null");
+        Objects.requireNonNull(executorService, "executorService must not be null");
 
         String scheme = address.getScheme();
         ManagedChannelWrapper result;
