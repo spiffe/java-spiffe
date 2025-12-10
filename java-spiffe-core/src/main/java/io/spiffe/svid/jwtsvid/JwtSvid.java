@@ -148,7 +148,7 @@ public class JwtSvid {
     public static JwtSvid parseAndValidate(String token,
                                            BundleSource<JwtBundle> jwtBundleSource,
                                            Set<String> audience,
-                                           final String hint
+                                           String hint
     )
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
         Objects.requireNonNull(token, "token must not be null");

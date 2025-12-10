@@ -37,7 +37,7 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      */
-    public JwtBundle(final TrustDomain trustDomain) {
+    public JwtBundle(TrustDomain trustDomain) {
         this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         this.jwtAuthorities = new ConcurrentHashMap<>();
     }
@@ -48,8 +48,8 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @param trustDomain    a {@link TrustDomain} to associate to the JwtBundle
      * @param jwtAuthorities a Map of public Keys
      */
-    public JwtBundle(final TrustDomain trustDomain,
-                     final Map<String, PublicKey> jwtAuthorities) {
+    public JwtBundle(TrustDomain trustDomain,
+                     Map<String, PublicKey> jwtAuthorities) {
         this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         Objects.requireNonNull(jwtAuthorities, "jwtAuthorities must not be null");
         this.jwtAuthorities = new ConcurrentHashMap<>(jwtAuthorities);
@@ -66,17 +66,17 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
      * @throws KeyException       if the bundle file contains a key type that is not supported
      */
-    public static JwtBundle load(final TrustDomain trustDomain,
-                                 final Path bundlePath)
+    public static JwtBundle load(TrustDomain trustDomain,
+                                 Path bundlePath)
             throws KeyException, JwtBundleException {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         Objects.requireNonNull(bundlePath, "bundlePath must not be null");
 
         try {
-            final JWKSet jwkSet = JWKSet.load(bundlePath.toFile());
+            JWKSet jwkSet = JWKSet.load(bundlePath.toFile());
             return toJwtBundle(trustDomain, jwkSet);
         } catch (IllegalArgumentException | IOException | ParseException | JOSEException e) {
-            final String error = "Could not load bundle from file: %s";
+            String error = "Could not load bundle from file: %s";
             throw new JwtBundleException(String.format(error, bundlePath.toString()), e);
         }
     }
@@ -90,15 +90,14 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @throws JwtBundleException if there is an error reading or parsing the file, or if a keyId is empty
      */
     public static JwtBundle parse(
-            final TrustDomain trustDomain,
-            final byte[] bundleBytes)
+            TrustDomain trustDomain,
+            byte[] bundleBytes)
             throws JwtBundleException {
-
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         Objects.requireNonNull(bundleBytes, "bundleBytes must not be null");
 
         try {
-            final JWKSet jwkSet = JWKSet.parse(new String(bundleBytes));
+            JWKSet jwkSet = JWKSet.parse(new String(bundleBytes));
             return toJwtBundle(trustDomain, jwkSet);
         } catch (ParseException | JOSEException | KeyException e) {
             throw new JwtBundleException("Could not parse bundle from bytes", e);
@@ -113,7 +112,7 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @throws BundleNotFoundException if there is no bundle for the given trust domain
      */
     @Override
-    public JwtBundle getBundleForTrustDomain(final TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         if (this.trustDomain.equals(trustDomain)) {
             return this;
@@ -138,7 +137,7 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @return {@link PublicKey} representing the Authority associated to the KeyID.
      * @throws AuthorityNotFoundException if no Authority is found associated to the Key ID
      */
-    public PublicKey findJwtAuthority(final String keyId) throws AuthorityNotFoundException {
+    public PublicKey findJwtAuthority(String keyId) throws AuthorityNotFoundException {
         Objects.requireNonNull(keyId, "keyId must not be null");
         PublicKey key = jwtAuthorities.get(keyId);
         if (key != null) {
@@ -155,7 +154,7 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @param keyId id of a JWT Authority
      * @return true if the bundle has a JWT authority with the given key ID.
      */
-    public boolean hasJwtAuthority(final String keyId) {
+    public boolean hasJwtAuthority(String keyId) {
         Objects.requireNonNull(keyId, "keyId must not be null");
         return jwtAuthorities.containsKey(keyId);
     }
@@ -167,7 +166,7 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      * @param keyId        Key ID to associate to the jwtAuthority
      * @param jwtAuthority a PublicKey
      */
-    public void putJwtAuthority(final String keyId, final PublicKey jwtAuthority) {
+    public void putJwtAuthority(String keyId, PublicKey jwtAuthority) {
         Objects.requireNonNull(keyId, "keyId must not be null");
         Objects.requireNonNull(jwtAuthority, "jwtAuthority must not be null");
         if (StringUtils.isBlank(keyId)) {
@@ -181,13 +180,13 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
      *
      * @param keyId The key id of the JWT authority to be removed
      */
-    public void removeJwtAuthority(final String keyId) {
+    public void removeJwtAuthority(String keyId) {
         Objects.requireNonNull(keyId, "keyId must not be null");
         jwtAuthorities.remove(keyId);
     }
 
-    private static JwtBundle toJwtBundle(final TrustDomain trustDomain,
-                                         final JWKSet jwkSet)
+    private static JwtBundle toJwtBundle(TrustDomain trustDomain,
+                                         JWKSet jwkSet)
             throws JwtBundleException, JOSEException, ParseException, KeyException {
 
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");

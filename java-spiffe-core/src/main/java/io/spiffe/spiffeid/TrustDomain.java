@@ -27,7 +27,7 @@ public final class TrustDomain {
      * @throws IllegalArgumentException if the given string is empty.
      * @throws InvalidSpiffeIdException if the given string contains an invalid char.
      */
-    public static TrustDomain parse(final String idOrName) {
+    public static TrustDomain parse(String idOrName) {
         Objects.requireNonNull(idOrName, "idOrName must not be null");
 
         if (StringUtils.isBlank(idOrName)) {

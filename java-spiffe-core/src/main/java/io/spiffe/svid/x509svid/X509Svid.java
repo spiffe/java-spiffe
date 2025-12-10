@@ -193,7 +193,7 @@ public class X509Svid {
      */
     public static X509Svid parseRaw(byte[] certsBytes,
                                     byte[] privateKeyBytes,
-                                    final String hint) throws X509SvidException {
+                                    String hint) throws X509SvidException {
         Objects.requireNonNull(certsBytes, "certsBytes must not be null");
         Objects.requireNonNull(privateKeyBytes, "privateKeyBytes must not be null");
         return createX509Svid(certsBytes, privateKeyBytes, KeyFileFormat.DER, hint);

@@ -231,7 +231,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     @Override
     public JwtSvid fetchJwtSvid(SpiffeId subject,
                                 String audience,
-                                final String... extraAudience)
+                                String... extraAudience)
             throws JwtSvidException {
 
         Objects.requireNonNull(subject, "subject must not be null");

@@ -57,8 +57,8 @@ public class CertificateUtilsTest {
         final Path certPath = Paths.get(toUri("testdata/internal/cert2.pem"));
         final Path certBundle = Paths.get(toUri("testdata/internal/bundle.pem"));
 
-        final byte[] certBytes = Files.readAllBytes(certPath);
-        final byte[] bundleBytes = Files.readAllBytes(certBundle);
+        byte[] certBytes = Files.readAllBytes(certPath);
+        byte[] bundleBytes = Files.readAllBytes(certBundle);
 
         final List<X509Certificate> chain = CertificateUtils.generateCertificates(certBytes);
         List<X509Certificate> trustedCert;

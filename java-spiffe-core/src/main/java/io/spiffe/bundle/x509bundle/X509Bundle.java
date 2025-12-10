@@ -27,7 +27,7 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @param trustDomain a {@link TrustDomain} to associate to the JwtBundle
      */
-    public X509Bundle(final TrustDomain trustDomain) {
+    public X509Bundle(TrustDomain trustDomain) {
         this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         this.x509Authorities = ConcurrentHashMap.newKeySet();
     }
@@ -56,12 +56,12 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @throws X509BundleException in case of failure accessing the given bundle path or the bundle cannot be parsed
      */
-    public static X509Bundle load(final TrustDomain trustDomain,
-                                  final Path bundlePath) throws X509BundleException {
+    public static X509Bundle load(TrustDomain trustDomain,
+                                  Path bundlePath) throws X509BundleException {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         Objects.requireNonNull(bundlePath, "bundlePath must not be null");
 
-        final byte[] bundleBytes;
+        byte[] bundleBytes;
         try {
             bundleBytes = Files.readAllBytes(bundlePath);
         } catch (IOException e) {
@@ -82,8 +82,8 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @throws X509BundleException if the bundle cannot be parsed
      */
-    public static X509Bundle parse(final TrustDomain trustDomain,
-                                   final byte[] bundleBytes) throws X509BundleException {
+    public static X509Bundle parse(TrustDomain trustDomain,
+                                   byte[] bundleBytes) throws X509BundleException {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         Objects.requireNonNull(bundleBytes, "bundleBytes must not be null");
 
@@ -101,7 +101,7 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      * @throws BundleNotFoundException if no X.509 bundle can be found for the given trust domain
      */
     @Override
-    public X509Bundle getBundleForTrustDomain(final TrustDomain trustDomain)
+    public X509Bundle getBundleForTrustDomain(TrustDomain trustDomain)
             throws BundleNotFoundException {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         if (this.trustDomain.equals(trustDomain)) {
@@ -126,7 +126,7 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      * @param x509Authority an X.509 certificate
      * @return boolean true if the x509Authority is present in the X.509 bundle, false otherwise
      */
-    public boolean hasX509Authority(final X509Certificate x509Authority) {
+    public boolean hasX509Authority(X509Certificate x509Authority) {
         Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         return x509Authorities.contains(x509Authority);
     }
@@ -136,7 +136,7 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @param x509Authority an X.509 certificate
      */
-    public void addX509Authority(final X509Certificate x509Authority) {
+    public void addX509Authority(X509Certificate x509Authority) {
         Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         x509Authorities.add(x509Authority);
     }
@@ -146,7 +146,7 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
      *
      * @param x509Authority an X.509 certificate
      */
-    public void removeX509Authority(final X509Certificate x509Authority) {
+    public void removeX509Authority(X509Certificate x509Authority) {
         Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         x509Authorities.remove(x509Authority);
     }

@@ -25,9 +25,9 @@ class KeyStore {
     private final java.security.KeyStore javaKeyStore;
 
     KeyStore(
-            final Path keyStoreFilePath,
-            final KeyStoreType keyStoreType,
-            final String keyStorePassword) throws KeyStoreException {
+            Path keyStoreFilePath,
+            KeyStoreType keyStoreType,
+            String keyStorePassword) throws KeyStoreException {
 
         this.keyStoreFilePath = Objects.requireNonNull(keyStoreFilePath, "keyStoreFilePath must not be null");
         this.keyStoreType = Objects.requireNonNull(keyStoreType, "keyStoreType must not be null");

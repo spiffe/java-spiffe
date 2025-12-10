@@ -205,9 +205,9 @@ public class KeyStoreHelper implements Closeable {
         log.log(Level.INFO, "Stored X.509 context update in Java KeyStore");
     }
 
-    private void storeBundle(final TrustDomain trustDomain, final X509Bundle bundle) throws KeyStoreException {
+    private void storeBundle(TrustDomain trustDomain, X509Bundle bundle) throws KeyStoreException {
         int index = 0;
-        for (final X509Certificate certificate : bundle.getX509Authorities()) {
+        for (X509Certificate certificate : bundle.getX509Authorities()) {
             final AuthorityEntry authorityEntry = AuthorityEntry.builder()
                     .alias(generateAlias(trustDomain, index))
                     .certificate(certificate)
@@ -278,15 +278,15 @@ public class KeyStoreHelper implements Closeable {
         private String spiffeSocketPath;
         private WorkloadApiClient workloadApiClient;
 
-        public KeyStoreOptions(final Path keyStorePath,
-                               final Path trustStorePath,
-                               final String keyStorePass,
-                               final String trustStorePass,
-                               final String keyPass,
-                               final KeyStoreType keyStoreType,
-                               final String keyAlias,
-                               final WorkloadApiClient workloadApiClient,
-                               final String spiffeSocketPath) {
+        public KeyStoreOptions(Path keyStorePath,
+                               Path trustStorePath,
+                               String keyStorePass,
+                               String trustStorePass,
+                               String keyPass,
+                               KeyStoreType keyStoreType,
+                               String keyAlias,
+                               WorkloadApiClient workloadApiClient,
+                               String spiffeSocketPath) {
 
             this.keyStorePath = Objects.requireNonNull(keyStorePath, "keyStorePath must not be null");
             this.trustStorePath = Objects.requireNonNull(trustStorePath, "trustStorePath must not be null");

@@ -41,8 +41,8 @@ class SpiffeIdTest {
 
     @Test
     void toString_SpiffeId_ReturnsTheSpiffeIdInAStringFormatIncludingTheSchema() {
-        final TrustDomain trustDomain = TrustDomain.parse("trustdomain");
-        final SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2", "path3");
+        TrustDomain trustDomain = TrustDomain.parse("trustdomain");
+        SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2", "path3");
         assertEquals("spiffe://trustdomain/path1/path2/path3", spiffeId.toString());
     }
 
@@ -214,8 +214,8 @@ class SpiffeIdTest {
 
     @Test
     void memberOf_aTrustDomainAndASpiffeIdWithSameTrustDomain_ReturnsTrue() {
-        final TrustDomain trustDomain = TrustDomain.parse("trustdomain");
-        final SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
+        TrustDomain trustDomain = TrustDomain.parse("trustdomain");
+        SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "path1", "path2");
 
         boolean isMemberOf;
         if (spiffeId.memberOf(TrustDomain.parse("trustdomain"))) isMemberOf = true;

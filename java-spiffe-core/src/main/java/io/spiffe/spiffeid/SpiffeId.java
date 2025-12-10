@@ -30,7 +30,7 @@ public final class SpiffeId {
 
     private final String path;
 
-    private SpiffeId(final TrustDomain trustDomain, final String path) {
+    private SpiffeId(TrustDomain trustDomain, String path) {
         this.trustDomain = Objects.requireNonNull(trustDomain, "trustDomain must not be null");
         this.path = path;
     }
@@ -46,7 +46,7 @@ public final class SpiffeId {
      * @return a {@link SpiffeId}
      * @throws InvalidSpiffeIdException if a given path segment contains an invalid char or empty or dot segment
      */
-    public static SpiffeId fromSegments(final TrustDomain trustDomain, final String... segments) {
+    public static SpiffeId fromSegments(TrustDomain trustDomain, String... segments) {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
 
         StringBuilder path = new StringBuilder();

@@ -63,7 +63,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
-    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, final String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException {
         Objects.requireNonNull(subject, "subject must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
         return null;
@@ -76,7 +76,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
-    public List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, final String... extraAudience) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException {
         Objects.requireNonNull(subject, "subject must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
         return null;
