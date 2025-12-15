@@ -2,7 +2,6 @@ package io.spiffe.svid.jwtsvid;
 
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.spiffeid.SpiffeId;
-import lombok.NonNull;
 
 import java.util.List;
 
@@ -40,7 +39,7 @@ public interface JwtSvidSource {
      * @return all of {@link JwtSvid} object
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException;
+    List<JwtSvid> fetchJwtSvids(String audience, String... extraAudience) throws JwtSvidException;
 
     /**
      * Fetches all SPIFFE JWT-SVIDs on one-shot blocking call.
@@ -51,5 +50,5 @@ public interface JwtSvidSource {
      * @return all of {@link JwtSvid} object
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    List<JwtSvid> fetchJwtSvids(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException;
+    List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException;
 }

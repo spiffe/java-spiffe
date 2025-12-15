@@ -4,19 +4,21 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.helper.exception.KeyStoreHelperException;
 import io.spiffe.helper.exception.RunnerException;
 import io.spiffe.helper.keystore.KeyStoreHelper;
-import lombok.extern.java.Log;
-import lombok.val;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.nio.file.Paths;
 import java.security.KeyStoreException;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Entry point of the java-spiffe-helper CLI application.
  */
-@Log
 public class Runner {
+
+    private static final Logger log =
+            Logger.getLogger(Runner.class.getName());
 
     private Runner() {
     }
@@ -35,10 +37,10 @@ public class Runner {
 
     static void runApplication(final String... args) throws RunnerException, ParseException {
         try {
-            val configFilePath = Config.getCliConfigOption(args);
-            val properties = Config.parseConfigFileProperties(Paths.get(configFilePath));
-            val options = Config.createKeyStoreOptions(properties);
-            try (val keyStoreHelper = KeyStoreHelper.create(options)) {
+            String configFilePath = Config.getCliConfigOption(args);
+            Properties properties = Config.parseConfigFileProperties(Paths.get(configFilePath));
+            KeyStoreHelper.KeyStoreOptions options = Config.createKeyStoreOptions(properties);
+            try (KeyStoreHelper keyStoreHelper = KeyStoreHelper.create(options)) {
                 keyStoreHelper.run(true);
             }
         } catch (SocketEndpointAddressException | KeyStoreHelperException | KeyStoreException e) {

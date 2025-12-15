@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [ 17, 21 ]
+        java-version: [ 17, 21, 25 ]
 
     steps:
       - uses: actions/checkout@v6
@@ -51,7 +51,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        java-version: [ 17, 21 ]
+        java-version: [ 17, 21, 25 ]
 
     steps:
       - uses: actions/checkout@v6

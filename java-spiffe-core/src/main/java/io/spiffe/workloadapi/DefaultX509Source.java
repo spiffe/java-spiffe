@@ -10,21 +10,18 @@ import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.svid.x509svid.X509SvidSource;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.extern.java.Log;
-import lombok.val;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static io.spiffe.workloadapi.internal.ThreadUtils.await;
@@ -41,8 +38,10 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
  * dropping the connection to the Workload API. Other source methods will return an error
  * after close has been called.
  */
-@Log
 public final class DefaultX509Source implements X509Source {
+
+    private static final Logger log =
+            Logger.getLogger(DefaultX509Source.class.getName());
 
     private static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newX509Source.timeout";
     private static final Duration DEFAULT_TIMEOUT = Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
@@ -76,7 +75,7 @@ public final class DefaultX509Source implements X509Source {
      * @throws X509SourceException            if the source could not be initialized
      */
     public static DefaultX509Source newSource() throws SocketEndpointAddressException, X509SourceException {
-        val x509SourceOptions = X509SourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
+        X509SourceOptions x509SourceOptions = X509SourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
         return newSource(x509SourceOptions);
     }
 
@@ -100,8 +99,10 @@ public final class DefaultX509Source implements X509Source {
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws X509SourceException            if the source could not be initialized
      */
-    public static DefaultX509Source newSource(@NonNull final X509SourceOptions options)
+    public static DefaultX509Source newSource(X509SourceOptions options)
             throws SocketEndpointAddressException, X509SourceException {
+        Objects.requireNonNull(options, "options must not be null");
+
         if (options.workloadApiClient == null) {
             options.workloadApiClient = createClient(options);
         }
@@ -110,7 +111,7 @@ public final class DefaultX509Source implements X509Source {
             options.initTimeout = DEFAULT_TIMEOUT;
         }
 
-        val x509Source = new DefaultX509Source(options.svidPicker, options.workloadApiClient);
+        DefaultX509Source x509Source = new DefaultX509Source(options.svidPicker, options.workloadApiClient);
 
         try {
             x509Source.init(options.initTimeout);
@@ -144,7 +145,7 @@ public final class DefaultX509Source implements X509Source {
      * @throws IllegalStateException   if the source is closed
      */
     @Override
-    public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public X509Bundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
             throw new IllegalStateException("X.509 bundle source is closed");
         }
@@ -155,16 +156,17 @@ public final class DefaultX509Source implements X509Source {
      * Closes this source, dropping the connection to the Workload API.
      * Other source methods will return an error after close has been called.
      * <p>
-     * It is marked with {@link SneakyThrows} because it is not expected to throw
-     * the checked exception defined on the {@link Closeable} interface.
      */
-    @SneakyThrows
     @Override
     public void close() {
         if (!closed) {
             synchronized (this) {
                 if (!closed) {
-                    workloadApiClient.close();
+                    try {
+                        workloadApiClient.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     closed = true;
                 }
             }
@@ -173,7 +175,7 @@ public final class DefaultX509Source implements X509Source {
 
     private static WorkloadApiClient createClient(final X509SourceOptions options)
             throws SocketEndpointAddressException {
-        val clientOptions = DefaultWorkloadApiClient.ClientOptions
+        DefaultWorkloadApiClient.ClientOptions clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.spiffeSocketPath)
                 .build();
@@ -181,7 +183,7 @@ public final class DefaultX509Source implements X509Source {
     }
 
     private void init(final Duration timeout) throws TimeoutException {
-        val done = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(1);
         setX509ContextWatcher(done);
 
         final boolean success;
@@ -248,7 +250,6 @@ public final class DefaultX509Source implements X509Source {
      * <code>workloadApiClient</code> A custom instance of a {@link WorkloadApiClient}, if it is not set, a new client
      * will be created.
      */
-    @Data
     public static class X509SourceOptions {
 
         private String spiffeSocketPath;
@@ -256,16 +257,112 @@ public final class DefaultX509Source implements X509Source {
         private Function<List<X509Svid>, X509Svid> svidPicker;
         private WorkloadApiClient workloadApiClient;
 
-        @Builder
-        public X509SourceOptions(final String spiffeSocketPath,
-                                 final Duration initTimeout,
-                                 final Function<List<X509Svid>, X509Svid> svidPicker,
-                                 final WorkloadApiClient workloadApiClient) {
+        public X509SourceOptions(String spiffeSocketPath,
+                                 Duration initTimeout,
+                                 Function<List<X509Svid>, X509Svid> svidPicker,
+                                 WorkloadApiClient workloadApiClient) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.initTimeout = initTimeout;
             this.svidPicker = svidPicker;
             this.workloadApiClient = workloadApiClient;
         }
-    }
 
+        public String getSpiffeSocketPath() {
+            return spiffeSocketPath;
+        }
+
+        public Duration getInitTimeout() {
+            return initTimeout;
+        }
+
+        public Function<List<X509Svid>, X509Svid> getSvidPicker() {
+            return svidPicker;
+        }
+
+        public WorkloadApiClient getWorkloadApiClient() {
+            return workloadApiClient;
+        }
+
+        public void setSpiffeSocketPath(String spiffeSocketPath) {
+            this.spiffeSocketPath = spiffeSocketPath;
+        }
+
+        public void setInitTimeout(Duration initTimeout) {
+            this.initTimeout = initTimeout;
+        }
+
+        public void setSvidPicker(Function<List<X509Svid>, X509Svid> svidPicker) {
+            this.svidPicker = svidPicker;
+        }
+
+        public void setWorkloadApiClient(WorkloadApiClient workloadApiClient) {
+            this.workloadApiClient = workloadApiClient;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private String spiffeSocketPath;
+            private Duration initTimeout;
+            private Function<List<X509Svid>, X509Svid> svidPicker;
+            private WorkloadApiClient workloadApiClient;
+
+            public Builder spiffeSocketPath(String spiffeSocketPath) {
+                this.spiffeSocketPath = spiffeSocketPath;
+                return this;
+            }
+
+            public Builder initTimeout(Duration initTimeout) {
+                this.initTimeout = initTimeout;
+                return this;
+            }
+
+            public Builder svidPicker(Function<List<X509Svid>, X509Svid> svidPicker) {
+                this.svidPicker = svidPicker;
+                return this;
+            }
+
+            public Builder workloadApiClient(WorkloadApiClient workloadApiClient) {
+                this.workloadApiClient = workloadApiClient;
+                return this;
+            }
+
+            public X509SourceOptions build() {
+                return new X509SourceOptions(
+                        spiffeSocketPath,
+                        initTimeout,
+                        svidPicker,
+                        workloadApiClient
+                );
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof X509SourceOptions)) return false;
+            X509SourceOptions that = (X509SourceOptions) o;
+            return Objects.equals(spiffeSocketPath, that.spiffeSocketPath) &&
+                    Objects.equals(initTimeout, that.initTimeout) &&
+                    Objects.equals(svidPicker, that.svidPicker) &&
+                    Objects.equals(workloadApiClient, that.workloadApiClient);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(spiffeSocketPath, initTimeout, svidPicker, workloadApiClient);
+        }
+
+        @Override
+        public String toString() {
+            return "X509SourceOptions(" +
+                    "spiffeSocketPath='" + spiffeSocketPath + '\'' +
+                    ", initTimeout=" + initTimeout +
+                    ", svidPicker=" + svidPicker +
+                    ", workloadApiClient=" + workloadApiClient +
+                    ')';
+        }
+    }
 }

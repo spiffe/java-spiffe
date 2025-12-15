@@ -7,7 +7,6 @@ import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
-import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +22,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -54,20 +54,20 @@ public class KeyStoreTest {
 
     @Test
     void testStore_PrivateKey_and_Cert_in_PKCS12_KeyStore() throws UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException {
-        val fileName = RandomStringUtils.randomAlphabetic(10);
+        String fileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(fileName);
 
-        val keyStoreType = KeyStoreType.getDefaultType();
-        val keyStorePassword = RandomStringUtils.randomAscii(12);
-        val privateKeyPassword = RandomStringUtils.randomAlphanumeric(12);
+        KeyStoreType keyStoreType = KeyStoreType.getDefaultType();
+        String keyStorePassword = RandomStringUtils.randomAscii(12);
+        String privateKeyPassword = RandomStringUtils.randomAlphanumeric(12);
 
-        val keyStore = KeyStore.builder()
+        KeyStore keyStore = KeyStore.builder()
                 .keyStoreFilePath(keyStoreFilePath)
                 .keyStoreType(keyStoreType)
                 .keyStorePassword(keyStorePassword)
                 .build();
 
-        val privateKeyEntry = PrivateKeyEntry.builder()
+        PrivateKeyEntry privateKeyEntry = PrivateKeyEntry.builder()
                 .alias(ENTRY_ALIAS)
                 .privateKey(x509Svid.getPrivateKey())
                 .certificateChain(x509Svid.getChainArray())
@@ -81,25 +81,25 @@ public class KeyStoreTest {
 
     @Test
     void testStoreBundle_in_JKS_KeyStore() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {
-        val fileName = RandomStringUtils.randomAlphabetic(10);
-        val keyStoreType = KeyStoreType.JKS;
-        val keyStorePassword = RandomStringUtils.randomAlphanumeric(12);
+        String fileName = RandomStringUtils.randomAlphabetic(10);
+        KeyStoreType keyStoreType = KeyStoreType.JKS;
+        String keyStorePassword = RandomStringUtils.randomAlphanumeric(12);
         keyStoreFilePath = Paths.get(fileName);
 
-        val keyStore = KeyStore.builder()
+        KeyStore keyStore = KeyStore.builder()
                 .keyStoreFilePath(keyStoreFilePath)
                 .keyStoreType(keyStoreType)
                 .keyStorePassword(keyStorePassword)
                 .build();
 
-        val authority1Alias = x509Bundle.getTrustDomain().getName() + ".1";
-        val authority2Alias = x509Bundle.getTrustDomain().getName() + ".2";
-        val entry1 = AuthorityEntry.builder()
+        String authority1Alias = x509Bundle.getTrustDomain().getName() + ".1";
+        String authority2Alias = x509Bundle.getTrustDomain().getName() + ".2";
+        AuthorityEntry entry1 = AuthorityEntry.builder()
                 .alias(authority1Alias)
                 .certificate(x509Bundle.getX509Authorities().iterator().next())
                 .build();
 
-        val entry2 = AuthorityEntry.builder()
+        AuthorityEntry entry2 = AuthorityEntry.builder()
                 .alias(authority2Alias)
                 .certificate(x509Bundle.getX509Authorities().iterator().next())
                 .build();
@@ -113,20 +113,20 @@ public class KeyStoreTest {
 
     @Test
     void testNewKeyStore_from_existing_file() throws UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException {
-        val fileName = RandomStringUtils.randomAlphabetic(10);
+        String fileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(fileName);
 
-        val keyStoreType = KeyStoreType.getDefaultType();
-        val keyStorePassword = RandomStringUtils.randomAscii(12);
-        val privateKeyPassword = RandomStringUtils.randomAlphanumeric(12);
+        KeyStoreType keyStoreType = KeyStoreType.getDefaultType();
+        String keyStorePassword = RandomStringUtils.randomAscii(12);
+        String privateKeyPassword = RandomStringUtils.randomAlphanumeric(12);
 
-        val keyStore = KeyStore.builder()
+        KeyStore keyStore = KeyStore.builder()
                 .keyStoreFilePath(keyStoreFilePath)
                 .keyStoreType(keyStoreType)
                 .keyStorePassword(keyStorePassword)
                 .build();
 
-        val privateKeyEntry = PrivateKeyEntry.builder()
+        PrivateKeyEntry privateKeyEntry = PrivateKeyEntry.builder()
                 .alias(ENTRY_ALIAS)
                 .privateKey(x509Svid.getPrivateKey())
                 .certificateChain(x509Svid.getChainArray())
@@ -149,7 +149,7 @@ public class KeyStoreTest {
             KeyStore.builder().build();
             fail("exception expected");
         } catch (NullPointerException e) {
-            assertEquals("keyStoreFilePath is marked non-null but is null", e.getMessage());
+            assertEquals("keyStoreFilePath must not be null", e.getMessage());
         }
     }
 
@@ -161,7 +161,7 @@ public class KeyStoreTest {
                     .build();
             fail("exception expected");
         } catch (NullPointerException e) {
-            assertEquals("keyStoreType is marked non-null but is null", e.getMessage());
+            assertEquals("keyStoreType must not be null", e.getMessage());
         }
     }
 
@@ -174,7 +174,7 @@ public class KeyStoreTest {
                     .build();
             fail("exception expected: keyStorePassword cannot be blank");
         } catch (NullPointerException e) {
-            assertEquals("keyStorePassword is marked non-null but is null", e.getMessage());
+            assertEquals("keyStorePassword must not be null", e.getMessage());
         }
     }
 
@@ -221,12 +221,12 @@ public class KeyStoreTest {
                                       String alias)
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException {
 
-        val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+        java.security.KeyStore keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
         keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
-        val chain = keyStore.getCertificateChain(alias);
-        val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) chain[0]);
-        val privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword.toCharArray());
+        Certificate[] chain = keyStore.getCertificateChain(alias);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId((X509Certificate) chain[0]);
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword.toCharArray());
 
         assertEquals(1, chain.length);
         assertEquals("spiffe://example.org/workload-server", spiffeId.toString());
@@ -239,12 +239,12 @@ public class KeyStoreTest {
                                     String alias)
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
 
-        val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+        java.security.KeyStore keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
         keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
-        val certificate = keyStore.getCertificate(alias);
+        Certificate certificate = keyStore.getCertificate(alias);
         assertNotNull(certificate);
 
-        val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
         assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
     }
 

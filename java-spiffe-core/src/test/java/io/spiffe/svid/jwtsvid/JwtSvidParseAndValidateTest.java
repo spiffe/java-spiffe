@@ -9,8 +9,6 @@ import io.spiffe.exception.JwtSvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.TestUtils;
-import lombok.Builder;
-import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -74,7 +72,7 @@ class JwtSvidParseAndValidateTest {
         try {
             JwtSvid.parseAndValidate(null, jwtBundle, audience);
         } catch (NullPointerException e) {
-            assertEquals("token is marked non-null but is null", e.getMessage());
+            assertEquals("token must not be null", e.getMessage());
         }
     }
 
@@ -87,7 +85,7 @@ class JwtSvidParseAndValidateTest {
         try {
             JwtSvid.parseAndValidate("", jwtBundle, audience);
         } catch (IllegalArgumentException e) {
-            assertEquals("Token cannot be blank", e.getMessage());
+            assertEquals("token cannot be blank", e.getMessage());
         }
     }
 
@@ -97,7 +95,7 @@ class JwtSvidParseAndValidateTest {
         try {
             JwtSvid.parseAndValidate("token", null, audience);
         } catch (NullPointerException e) {
-            assertEquals("jwtBundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("jwtBundleSource must not be null", e.getMessage());
         }
     }
 
@@ -109,7 +107,7 @@ class JwtSvidParseAndValidateTest {
         try {
             JwtSvid.parseAndValidate("token", jwtBundle, null);
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         }
     }
 
@@ -304,7 +302,6 @@ class JwtSvidParseAndValidateTest {
         );
     }
 
-    @Value
     static class TestCase {
         String name;
         JwtBundle jwtBundle;
@@ -314,9 +311,13 @@ class JwtSvidParseAndValidateTest {
         Exception expectedException;
         JwtSvid expectedJwtSvid;
 
-        @Builder
-        public TestCase(String name, JwtBundle jwtBundle, Set<String> expectedAudience, Supplier<String> generateToken,
-                        Exception expectedException, JwtSvid expectedJwtSvid, String hint) {
+        public TestCase(String name,
+                        JwtBundle jwtBundle,
+                        Set<String> expectedAudience,
+                        Supplier<String> generateToken,
+                        Exception expectedException,
+                        JwtSvid expectedJwtSvid,
+                        String hint) {
             this.name = name;
             this.jwtBundle = jwtBundle;
             this.audience = expectedAudience;
@@ -324,6 +325,67 @@ class JwtSvidParseAndValidateTest {
             this.expectedException = expectedException;
             this.expectedJwtSvid = expectedJwtSvid;
             this.hint = hint;
+        }
+
+        public static TestCaseBuilder builder() {
+            return new TestCaseBuilder();
+        }
+
+        public static class TestCaseBuilder {
+            private String name;
+            private JwtBundle jwtBundle;
+            private Set<String> audience;
+            private String hint;
+            private Supplier<String> generateToken;
+            private Exception expectedException;
+            private JwtSvid expectedJwtSvid;
+
+            public TestCaseBuilder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public TestCaseBuilder jwtBundle(JwtBundle jwtBundle) {
+                this.jwtBundle = jwtBundle;
+                return this;
+            }
+
+            public TestCaseBuilder expectedAudience(Set<String> audience) {
+                this.audience = audience;
+                return this;
+            }
+
+            public TestCaseBuilder generateToken(Supplier<String> generateToken) {
+                this.generateToken = generateToken;
+                return this;
+            }
+
+            public TestCaseBuilder expectedException(Exception expectedException) {
+                this.expectedException = expectedException;
+                return this;
+            }
+
+            public TestCaseBuilder expectedJwtSvid(JwtSvid expectedJwtSvid) {
+                this.expectedJwtSvid = expectedJwtSvid;
+                return this;
+            }
+
+            public TestCaseBuilder hint(String hint) {
+                this.hint = hint;
+                return this;
+            }
+
+            public TestCase build() {
+                return new TestCase(
+                        name,
+                        jwtBundle,
+                        audience,
+                        generateToken,
+                        expectedException,
+                        expectedJwtSvid,
+                        hint
+                );
+            }
         }
     }
 }

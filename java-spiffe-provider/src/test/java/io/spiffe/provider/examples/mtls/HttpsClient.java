@@ -9,7 +9,6 @@ import io.spiffe.provider.SpiffeTrustManager;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.SpiffeIdUtils;
 import io.spiffe.workloadapi.DefaultX509Source;
-import lombok.val;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -56,11 +55,11 @@ public class HttpsClient {
 
     void run() throws IOException, SocketEndpointAddressException, KeyManagementException, NoSuchAlgorithmException, X509SourceException {
 
-        val sourceOptions = DefaultX509Source.X509SourceOptions
+        DefaultX509Source.X509SourceOptions sourceOptions = DefaultX509Source.X509SourceOptions
                 .builder()
                 .spiffeSocketPath(spiffeSocket)
                 .build();
-        val x509Source = DefaultX509Source.newSource(sourceOptions);
+        DefaultX509Source x509Source = DefaultX509Source.newSource(sourceOptions);
 
         SslContextOptions sslContextOptions = SslContextOptions
                 .builder()

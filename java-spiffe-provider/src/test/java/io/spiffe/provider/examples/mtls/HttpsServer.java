@@ -9,7 +9,6 @@ import io.spiffe.provider.SpiffeTrustManager;
 import io.spiffe.provider.X509SourceManager;
 import io.spiffe.provider.exception.SpiffeProviderException;
 import io.spiffe.workloadapi.X509Source;
-import lombok.val;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -56,7 +55,7 @@ public class HttpsServer {
             throw new SpiffeProviderException("Error at getting the X509Source instance", e);
         }
 
-        val sslContextOptions = SslContextOptions
+        final SslContextOptions sslContextOptions = SslContextOptions
                 .builder()
                 .x509Source(x509Source)
                 .build();

@@ -6,7 +6,6 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.x509svid.X509SvidValidator;
-import lombok.NonNull;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
@@ -14,6 +13,7 @@ import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -26,7 +26,8 @@ import java.util.function.Supplier;
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
-    private static final SpiffeIdVerifier ALLOW_ANY_SPIFFE_ID_VERIFIER = (spiffeId, verifiedChain) -> {};
+    private static final SpiffeIdVerifier ALLOW_ANY_SPIFFE_ID_VERIFIER = (spiffeId, verifiedChain) -> {
+    };
 
     private final BundleSource<X509Bundle> x509BundleSource;
     private final SpiffeIdVerifier spiffeIdVerifier;
@@ -40,8 +41,10 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * @param x509BundleSource          an implementation of a {@link BundleSource}
      * @param acceptedSpiffeIdsSupplier a {@link Supplier} of a Set of accepted SPIFFE IDs.
      */
-    public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
-                              @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
+    public SpiffeTrustManager(BundleSource<X509Bundle> x509BundleSource,
+                              Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
+        Objects.requireNonNull(x509BundleSource, "x509BundleSource must not be null");
+        Objects.requireNonNull(acceptedSpiffeIdsSupplier, "acceptedSpiffeIdsSupplier must not be null");
         this.x509BundleSource = x509BundleSource;
         this.spiffeIdVerifier = new AllowedIdSupplierSpiffeIdVerifier(acceptedSpiffeIdsSupplier);
     }
@@ -53,11 +56,13 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * and a {@link SpiffeIdVerifier} which will be called to determine if a {@link SpiffeId} should be accepted
      * during peer SVID validation.
      *
-     * @param x509BundleSource          an implementation of a {@link BundleSource}
-     * @param spiffeIdVerifier          a {@link SpiffeIdVerifier} that will be called to determine if a peer's SPIFFE ID is acceptable
+     * @param x509BundleSource an implementation of a {@link BundleSource}
+     * @param spiffeIdVerifier a {@link SpiffeIdVerifier} that will be called to determine if a peer's SPIFFE ID is acceptable
      */
-    public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource,
-                              @NonNull final SpiffeIdVerifier spiffeIdVerifier) {
+    public SpiffeTrustManager(BundleSource<X509Bundle> x509BundleSource,
+                              SpiffeIdVerifier spiffeIdVerifier) {
+        Objects.requireNonNull(x509BundleSource, "x509BundleSource must not be null");
+        Objects.requireNonNull(spiffeIdVerifier, "spiffeIdVerifier must not be null");
         this.x509BundleSource = x509BundleSource;
         this.spiffeIdVerifier = spiffeIdVerifier;
     }
@@ -70,9 +75,10 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * <p>
      * Any SPIFFE ID will be accepted during peer SVID validation.
      *
-     * @param x509BundleSource  an implementation of a {@link BundleSource}
+     * @param x509BundleSource an implementation of a {@link BundleSource}
      */
-    public SpiffeTrustManager(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
+    public SpiffeTrustManager(BundleSource<X509Bundle> x509BundleSource) {
+        Objects.requireNonNull(x509BundleSource, "x509BundleSource must not be null");
         this.x509BundleSource = x509BundleSource;
         this.spiffeIdVerifier = ALLOW_ANY_SPIFFE_ID_VERIFIER;
     }
@@ -90,8 +96,9 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * @throws CertificateException when the chain or the SPIFFE ID presented are not trusted.
      */
     @Override
-    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType)
+    public void checkClientTrusted(X509Certificate[] chain, String authType)
             throws CertificateException {
+        Objects.requireNonNull(chain, "chain must not be null");
         validatePeerChain(chain);
     }
 
@@ -108,8 +115,9 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * @throws CertificateException when the chain or the SPIFFE ID presented are not trusted.
      */
     @Override
-    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType)
+    public void checkServerTrusted(X509Certificate[] chain, String authType)
             throws CertificateException {
+        Objects.requireNonNull(chain, "chain must not be null");
         validatePeerChain(chain);
     }
 
@@ -122,7 +130,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkClientTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType, final Socket socket)
+    public void checkClientTrusted(X509Certificate[] chain, final String authType, final Socket socket)
             throws CertificateException {
         checkClientTrusted(chain, authType);
     }
@@ -131,7 +139,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkServerTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType, final Socket socket)
+    public void checkServerTrusted(X509Certificate[] chain, final String authType, final Socket socket)
             throws CertificateException {
         checkServerTrusted(chain, authType);
     }
@@ -140,7 +148,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkClientTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkClientTrusted(@NonNull final X509Certificate[] chain, final String authType, final SSLEngine sslEngine)
+    public void checkClientTrusted(X509Certificate[] chain, final String authType, final SSLEngine sslEngine)
             throws CertificateException {
         checkClientTrusted(chain, authType);
     }
@@ -149,7 +157,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
      * {@link #checkServerTrusted(X509Certificate[], String)}
      */
     @Override
-    public void checkServerTrusted(@NonNull final X509Certificate[] chain, final String authType, final SSLEngine sslEngine)
+    public void checkServerTrusted(X509Certificate[] chain, final String authType, final SSLEngine sslEngine)
             throws CertificateException {
         checkServerTrusted(chain, authType);
     }

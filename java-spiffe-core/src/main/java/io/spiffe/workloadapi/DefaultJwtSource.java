@@ -7,26 +7,26 @@ import io.spiffe.exception.*;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.extern.java.Log;
-import lombok.val;
 
-import java.io.Closeable;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 
 /**
  * Represents a source of SPIFFE JWT SVIDs and JWT bundles maintained via the Workload API.
  */
-@Log
 public class DefaultJwtSource implements JwtSource {
+
+    private static final Logger log =
+            Logger.getLogger(DefaultJwtSource.class.getName());
 
     static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
 
@@ -77,8 +77,10 @@ public class DefaultJwtSource implements JwtSource {
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull final JwtSourceOptions options)
+    public static JwtSource newSource(JwtSourceOptions options)
             throws SocketEndpointAddressException, JwtSourceException {
+        Objects.requireNonNull(options, "options must not be null");
+
         if (options.getWorkloadApiClient()== null) {
             options.setWorkloadApiClient(createClient(options));
         }
@@ -156,7 +158,7 @@ public class DefaultJwtSource implements JwtSource {
      * @throws IllegalStateException if the source is closed
      */
     @Override
-    public JwtBundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
             throw new IllegalStateException("JWT bundle source is closed");
         }
@@ -167,16 +169,17 @@ public class DefaultJwtSource implements JwtSource {
      * Closes this source, dropping the connection to the Workload API.
      * Other source methods will return an error after close has been called.
      * <p>
-     * It is marked with {@link SneakyThrows} because it is not expected to throw
-     * the checked exception defined on the {@link Closeable} interface.
      */
-    @SneakyThrows
     @Override
     public void close() {
         if (!closed) {
             synchronized (this) {
                 if (!closed) {
-                    workloadApiClient.close();
+                    try {
+                        workloadApiClient.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     closed = true;
                 }
             }
@@ -229,9 +232,9 @@ public class DefaultJwtSource implements JwtSource {
         }
     }
 
-    private static WorkloadApiClient createClient(final JwtSourceOptions options)
+    private static WorkloadApiClient createClient(JwtSourceOptions options)
             throws SocketEndpointAddressException {
-        val clientOptions = DefaultWorkloadApiClient.ClientOptions
+        DefaultWorkloadApiClient.ClientOptions clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.getSpiffeSocketPath())
                 .build();

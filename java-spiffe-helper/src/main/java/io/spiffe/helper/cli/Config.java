@@ -3,7 +3,6 @@ package io.spiffe.helper.cli;
 import io.spiffe.helper.exception.RunnerException;
 import io.spiffe.helper.keystore.KeyStoreHelper.KeyStoreOptions;
 import io.spiffe.helper.keystore.KeyStoreType;
-import lombok.val;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -33,7 +32,7 @@ class Config {
         try (InputStream in = Files.newInputStream(configFilePath)) {
             properties.load(in);
         } catch (IOException e) {
-            val error = String.format("Cannot open config file: %s", configFilePath);
+            String error = String.format("Cannot open config file: %s", configFilePath);
             throw new RunnerException(error, e);
         }
         return properties;
@@ -52,16 +51,16 @@ class Config {
         return Paths.get(System.getProperty("user.dir"), DEFAULT_CONFIG_FILENAME).toString();
     }
 
-    static KeyStoreOptions createKeyStoreOptions(final Properties properties) {
-        val keyStorePath = getProperty(properties, "keyStorePath");
-        val keyStorePass = getProperty(properties, "keyStorePass");
-        val keyPass = getProperty(properties, "keyPass");
-        val trustStorePath = getProperty(properties, "trustStorePath");
-        val trustStorePass = getProperty(properties, "trustStorePass");
+    static KeyStoreOptions createKeyStoreOptions(Properties properties) {
+        String keyStorePath = getProperty(properties, "keyStorePath");
+        String keyStorePass = getProperty(properties, "keyStorePass");
+        String keyPass = getProperty(properties, "keyPass");
+        String trustStorePath = getProperty(properties, "trustStorePath");
+        String trustStorePass = getProperty(properties, "trustStorePass");
 
-        val keyAlias = properties.getProperty("keyAlias", null);
-        val spiffeSocketPath = properties.getProperty("spiffeSocketPath", null);
-        val keyStoreTypeProp = properties.getProperty("keyStoreType", null);
+        String keyAlias = properties.getProperty("keyAlias", null);
+        String spiffeSocketPath = properties.getProperty("spiffeSocketPath", null);
+        String keyStoreTypeProp = properties.getProperty("keyStoreType", null);
 
         KeyStoreType keyStoreType;
         if (StringUtils.isNotBlank(keyStoreTypeProp)) {
@@ -83,7 +82,7 @@ class Config {
 
     }
 
-    static String getProperty(final Properties properties, final String key) {
+    static String getProperty(Properties properties, String key) {
         final String value = properties.getProperty(key);
         if (StringUtils.isBlank(value)) {
             throw new IllegalArgumentException(String.format("Missing value for config property: %s", key));

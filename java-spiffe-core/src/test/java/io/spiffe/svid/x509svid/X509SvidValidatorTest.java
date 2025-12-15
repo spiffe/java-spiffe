@@ -6,7 +6,6 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.CertAndKeyPair;
-import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +33,8 @@ public class X509SvidValidatorTest {
     @BeforeEach
     void setUp() throws Exception {
         rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org" );
-        val intermediate1 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE",  "spiffe://example.org/host", rootCa, true);
-        val intermediate2 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://example.org/host2", intermediate1, true);
+        CertAndKeyPair intermediate1 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE", "spiffe://example.org/host", rootCa, true);
+        CertAndKeyPair intermediate2 = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "spiffe://example.org/host2", intermediate1, true);
         leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE",  "spiffe://example.org/test", intermediate2, false);
         chain = Arrays.asList(leaf.getCertificate(), intermediate2.getCertificate(), intermediate1.getCertificate());
         otherRootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org" );
@@ -47,7 +46,7 @@ public class X509SvidValidatorTest {
         x509Authorities.add(rootCa.getCertificate());
         x509Authorities.add(otherRootCa.getCertificate());
 
-        val x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), x509Authorities);
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), x509Authorities);
         X509SvidValidator.verifyChain(chain, x509Bundle);
     }
 
@@ -56,7 +55,7 @@ public class X509SvidValidatorTest {
         HashSet<X509Certificate> x509Authorities = new HashSet<>();
         x509Authorities.add(otherRootCa.getCertificate());
 
-        val x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), x509Authorities);
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), x509Authorities);
         try {
             X509SvidValidator.verifyChain(chain, x509Bundle);
             fail("exception is expected");
@@ -70,7 +69,7 @@ public class X509SvidValidatorTest {
         HashSet<X509Certificate> x509Authorities = new HashSet<>();
         x509Authorities.add(otherRootCa.getCertificate());
 
-        val x509Bundle = new X509Bundle(TrustDomain.parse("other.org"), x509Authorities);
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("other.org"), x509Authorities);
 
         try {
             X509SvidValidator.verifyChain(chain, x509Bundle);
@@ -82,19 +81,19 @@ public class X509SvidValidatorTest {
 
     @Test
     void verifySpiffeId_givenASpiffeIdInTheListOfAcceptedIds_doesntThrowException() throws IOException, CertificateException, URISyntaxException {
-        val spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
-        val spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
+        SpiffeId spiffeId1 = SpiffeId.parse("spiffe://example.org/test");
+        SpiffeId spiffeId2 = SpiffeId.parse("spiffe://example.org/test2");
 
-        val spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
+        HashSet<SpiffeId> spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
 
         X509SvidValidator.verifySpiffeId(leaf.getCertificate(), () -> spiffeIdSet);
     }
 
     @Test
     void verifySpiffeId_givenASpiffeIdNotInTheListOfAcceptedIds_throwsCertificateException() throws IOException, CertificateException, URISyntaxException {
-        val spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
-        val spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
-        val spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
+        SpiffeId spiffeId1 = SpiffeId.parse("spiffe://example.org/other1");
+        SpiffeId spiffeId2 = SpiffeId.parse("spiffe://example.org/other2");
+        final HashSet<SpiffeId> spiffeIdSet = Sets.newHashSet(spiffeId1, spiffeId2);
 
         try {
             X509SvidValidator.verifySpiffeId(leaf.getCertificate(), () -> spiffeIdSet);
@@ -121,7 +120,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifySpiffeId(null, Collections::emptySet);
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
-            assertEquals("x509Certificate is marked non-null but is null", e.getMessage());
+            assertEquals("x509Certificate must not be null", e.getMessage());
         }
     }
 
@@ -131,7 +130,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifySpiffeId(leaf.getCertificate(), null);
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
-            assertEquals("acceptedSpiffeIdsSupplier is marked non-null but is null", e.getMessage());
+            assertEquals("acceptedSpiffeIdsSupplier must not be null", e.getMessage());
         }
     }
 
@@ -141,7 +140,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifyChain(null, new X509Bundle(TrustDomain.parse("example.org")));
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
     }
 
@@ -151,7 +150,7 @@ public class X509SvidValidatorTest {
             X509SvidValidator.verifyChain(chain, null);
             fail("should have thrown an exception");
         } catch (NullPointerException e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
     }
 }

@@ -1,8 +1,7 @@
 package io.spiffe.provider;
 
+import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.svid.x509svid.X509SvidSource;
-import lombok.NonNull;
-import lombok.val;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
@@ -29,7 +28,8 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
      *
      * @param x509SvidSource source of X.509 SVIDs
      */
-    public SpiffeKeyManager(@NonNull final X509SvidSource x509SvidSource) {
+    public SpiffeKeyManager(X509SvidSource x509SvidSource) {
+        Objects.requireNonNull(x509SvidSource, "x509SvidSource must not be null");
         this.x509SvidSource = x509SvidSource;
     }
 
@@ -44,7 +44,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
         if (!Objects.equals(alias, DEFAULT_ALIAS)) {
             return new X509Certificate[0];
         }
-        val x509Svid = x509SvidSource.getX509Svid();
+        final X509Svid x509Svid = x509SvidSource.getX509Svid();
         return x509Svid.getChainArray();
     }
 
@@ -62,7 +62,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
             return null;
         }
 
-        val x509Svid = x509SvidSource.getX509Svid();
+        final X509Svid x509Svid = x509SvidSource.getX509Svid();
         return x509Svid.getPrivateKey();
     }
 
@@ -100,9 +100,9 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     // If the algorithm of the PrivateKey is supported (is in the list of keyTypes), then returns
     // the ALIAS handled by the current KeyManager, if it's not supported returns null
     private String getAlias(final String... keyTypes) {
-        val x509Svid = x509SvidSource.getX509Svid();
+        final X509Svid x509Svid = x509SvidSource.getX509Svid();
 
-        val privateKeyAlgorithm = x509Svid.getPrivateKey().getAlgorithm();
+        final String privateKeyAlgorithm = x509Svid.getPrivateKey().getAlgorithm();
         if (Arrays.asList(keyTypes).contains(privateKeyAlgorithm)) {
             return DEFAULT_ALIAS;
         }
@@ -110,7 +110,7 @@ public final class SpiffeKeyManager extends X509ExtendedKeyManager {
     }
 
     private String[] getAliases(final String keyType) {
-        val alias = getAlias(keyType);
+        final String alias = getAlias(keyType);
         return new String[]{alias};
     }
 }

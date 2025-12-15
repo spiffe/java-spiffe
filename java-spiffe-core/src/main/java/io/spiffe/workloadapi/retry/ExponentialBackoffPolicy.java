@@ -1,18 +1,12 @@
 package io.spiffe.workloadapi.retry;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Setter;
-import lombok.val;
-
 import java.time.Duration;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
  * Represents a backoff policy for performing retries using exponential increasing delays.
  */
-@Data
 public class ExponentialBackoffPolicy {
 
     public static final ExponentialBackoffPolicy DEFAULT = new ExponentialBackoffPolicy();
@@ -23,35 +17,91 @@ public class ExponentialBackoffPolicy {
     private static final int BACKOFF_MULTIPLIER = 2;
 
     // The first backoff delay period.
-    @Setter(AccessLevel.NONE)
     private Duration initialDelay = Duration.ofSeconds(1);
 
     // Max time of delay for the backoff period.
-    @Setter(AccessLevel.NONE)
     private Duration maxDelay = Duration.ofSeconds(60);
 
     // Max number of retries, unlimited by default.
-    @Setter(AccessLevel.NONE)
     private int maxRetries = UNLIMITED_RETRIES;
 
-    @Setter(AccessLevel.NONE)
     private int backoffMultiplier = BACKOFF_MULTIPLIER;
 
-    @Setter(AccessLevel.NONE)
     private UnaryOperator<Duration> backoffFunction = d -> d.multipliedBy(backoffMultiplier);
 
-    @Builder
-    public ExponentialBackoffPolicy(final Duration initialDelay,
-                                    final Duration maxDelay,
-                                    final int maxRetries,
-                                    final int backoffMultiplier) {
+    public ExponentialBackoffPolicy(Duration initialDelay,
+                                    Duration maxDelay,
+                                    int maxRetries,
+                                    int backoffMultiplier) {
+
         this.initialDelay = initialDelay != null ? initialDelay : Duration.ofSeconds(1);
         this.maxDelay = maxDelay != null ? maxDelay : Duration.ofSeconds(60);
         this.maxRetries = maxRetries != 0 ? maxRetries : UNLIMITED_RETRIES;
         this.backoffMultiplier = backoffMultiplier != 0 ? backoffMultiplier : BACKOFF_MULTIPLIER;
+        this.backoffFunction = d -> d.multipliedBy(this.backoffMultiplier);
     }
 
     private ExponentialBackoffPolicy() {
+    }
+
+    public Duration getInitialDelay() {
+        return initialDelay;
+    }
+
+    public Duration getMaxDelay() {
+        return maxDelay;
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    public int getBackoffMultiplier() {
+        return backoffMultiplier;
+    }
+
+    public UnaryOperator<Duration> getBackoffFunction() {
+        return backoffFunction;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Duration initialDelay;
+        private Duration maxDelay;
+        private int maxRetries;
+        private int backoffMultiplier;
+
+        public Builder initialDelay(Duration initialDelay) {
+            this.initialDelay = initialDelay;
+            return this;
+        }
+
+        public Builder maxDelay(Duration maxDelay) {
+            this.maxDelay = maxDelay;
+            return this;
+        }
+
+        public Builder maxRetries(int maxRetries) {
+            this.maxRetries = maxRetries;
+            return this;
+        }
+
+        public Builder backoffMultiplier(int backoffMultiplier) {
+            this.backoffMultiplier = backoffMultiplier;
+            return this;
+        }
+
+        public ExponentialBackoffPolicy build() {
+            return new ExponentialBackoffPolicy(
+                    initialDelay,
+                    maxDelay,
+                    maxRetries,
+                    backoffMultiplier
+            );
+        }
     }
 
     /**
@@ -81,10 +131,38 @@ public class ExponentialBackoffPolicy {
     }
 
     private Duration calculateNextDelay(final Duration currentDelay) {
-        val next = backoffFunction.apply(currentDelay);
+        Duration next = backoffFunction.apply(currentDelay);
         if (next.compareTo(maxDelay) > 0) {
             return maxDelay;
         }
         return next;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ExponentialBackoffPolicy)) return false;
+        ExponentialBackoffPolicy that = (ExponentialBackoffPolicy) o;
+        return maxRetries == that.maxRetries &&
+                backoffMultiplier == that.backoffMultiplier &&
+                Objects.equals(initialDelay, that.initialDelay) &&
+                Objects.equals(maxDelay, that.maxDelay) &&
+                Objects.equals(backoffFunction, that.backoffFunction);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(initialDelay, maxDelay, maxRetries, backoffMultiplier, backoffFunction);
+    }
+
+    @Override
+    public String toString() {
+        return "ExponentialBackoffPolicy(" +
+                "initialDelay=" + initialDelay +
+                ", maxDelay=" + maxDelay +
+                ", maxRetries=" + maxRetries +
+                ", backoffMultiplier=" + backoffMultiplier +
+                ", backoffFunction=" + backoffFunction +
+                ')';
     }
 }

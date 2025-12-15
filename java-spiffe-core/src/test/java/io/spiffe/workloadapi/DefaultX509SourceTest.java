@@ -7,7 +7,6 @@ import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
-import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +57,7 @@ class DefaultX509SourceTest {
             x509Source.getBundleForTrustDomain(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         } catch (BundleNotFoundException e) {
             fail();
         }
@@ -99,7 +98,7 @@ class DefaultX509SourceTest {
 
     @Test
     void newSource_success() {
-        val options = DefaultX509Source.X509SourceOptions
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClient)
                 .svidPicker((list) -> list.get(0))
@@ -119,7 +118,7 @@ class DefaultX509SourceTest {
             DefaultX509Source.newSource(null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("options is marked non-null but is null", e.getMessage());
+            assertEquals("options must not be null", e.getMessage());
         } catch (SocketEndpointAddressException | X509SourceException e) {
             fail();
         }
@@ -128,7 +127,7 @@ class DefaultX509SourceTest {
     @Test
     void newSource_timeout() throws Exception {
         try {
-            val options = DefaultX509Source.X509SourceOptions
+            DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                     .builder()
                     .initTimeout(Duration.ofSeconds(1))
                     .spiffeSocketPath("unix:/tmp/test")
@@ -144,7 +143,7 @@ class DefaultX509SourceTest {
 
     @Test
     void newSource_errorFetchingX509Context() {
-        val options = DefaultX509Source.X509SourceOptions
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                 .builder()
                 .workloadApiClient(workloadApiClientErrorStub)
                 .spiffeSocketPath("unix:/tmp/test")

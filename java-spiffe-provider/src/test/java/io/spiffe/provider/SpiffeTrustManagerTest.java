@@ -6,7 +6,7 @@ import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.val;
+import io.spiffe.utils.CertAndKeyPair;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,21 +47,21 @@ public class SpiffeTrustManagerTest {
 
     @BeforeAll
     static void setupClass() throws Exception {
-        val subject = "C = US, O = SPIRE";
-        val issuerSubject = "C = US, O = SPIFFE";
+        final String subject = "C = US, O = SPIRE";
+        final String issuerSubject = "C = US, O = SPIFFE";
 
-        val trustDomain = TrustDomain.parse("spiffe://example.org");
-        val spiffeIdRoot = trustDomain.newSpiffeId();
-        val spiffeIdHost1 = SpiffeId.fromSegments(trustDomain, "host1");
-        val spiffeIdHost2 = SpiffeId.fromSegments(trustDomain, "host2");
-        val spiffeIdTest = SpiffeId.fromSegments(trustDomain, "test");
+        final TrustDomain trustDomain = TrustDomain.parse("spiffe://example.org");
+        final SpiffeId spiffeIdRoot = trustDomain.newSpiffeId();
+        final SpiffeId spiffeIdHost1 = SpiffeId.fromSegments(trustDomain, "host1");
+        final SpiffeId spiffeIdHost2 = SpiffeId.fromSegments(trustDomain, "host2");
+        final SpiffeId spiffeIdTest = SpiffeId.fromSegments(trustDomain, "test");
 
-        val rootCa = createRootCA(issuerSubject, spiffeIdRoot.toString() );
-        val otherRootCa = createRootCA(issuerSubject, spiffeIdRoot.toString());
+        final CertAndKeyPair rootCa = createRootCA(issuerSubject, spiffeIdRoot.toString());
+        final CertAndKeyPair otherRootCa = createRootCA(issuerSubject, spiffeIdRoot.toString());
 
-        val intermediate1 = createCertificate(subject, issuerSubject,  spiffeIdHost1.toString(), rootCa, true);
-        val intermediate2 = createCertificate(subject, subject,  spiffeIdHost2.toString(), intermediate1, true);
-        val leaf = createCertificate(subject, subject,  spiffeIdTest.toString(), intermediate2, false);
+        final CertAndKeyPair intermediate1 = createCertificate(subject, issuerSubject, spiffeIdHost1.toString(), rootCa, true);
+        final CertAndKeyPair intermediate2 = createCertificate(subject, subject, spiffeIdHost2.toString(), intermediate1, true);
+        final CertAndKeyPair leaf = createCertificate(subject, subject, spiffeIdTest.toString(), intermediate2, false);
 
         chain = new X509Certificate[]{leaf.getCertificate(), intermediate2.getCertificate(), intermediate1.getCertificate()};
 
@@ -81,7 +81,7 @@ public class SpiffeTrustManagerTest {
             new SpiffeTrustManager(null);
             fail();
         } catch (Exception e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
     }
 
@@ -91,7 +91,7 @@ public class SpiffeTrustManagerTest {
             new SpiffeTrustManager(bundleSource, (Supplier<Set<SpiffeId>>) null);
             fail();
         } catch (Exception e) {
-            assertEquals("acceptedSpiffeIdsSupplier is marked non-null but is null", e.getMessage());
+            assertEquals("acceptedSpiffeIdsSupplier must not be null", e.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ public class SpiffeTrustManagerTest {
             new SpiffeTrustManager(bundleSource, (SpiffeIdVerifier) null);
             fail();
         } catch (Exception e) {
-            assertEquals("spiffeIdVerifier is marked non-null but is null", e.getMessage());
+            assertEquals("spiffeIdVerifier must not be null", e.getMessage());
         }
     }
 
@@ -111,14 +111,14 @@ public class SpiffeTrustManagerTest {
             new SpiffeTrustManager(null, (Supplier<Set<SpiffeId>>) null);
             fail();
         } catch (Exception e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
 
         try {
             new SpiffeTrustManager(null, (SpiffeIdVerifier) null);
             fail();
         } catch (Exception e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
     }
 
@@ -169,21 +169,21 @@ public class SpiffeTrustManagerTest {
             spiffeTrustManager.checkClientTrusted(null, "");
             fail();
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
 
         try {
             spiffeTrustManager.checkClientTrusted(null, "", new Socket());
             fail();
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
 
         try {
             spiffeTrustManager.checkClientTrusted(null, "", getSslEngineStub());
             fail();
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
     }
 
@@ -234,21 +234,21 @@ public class SpiffeTrustManagerTest {
             spiffeTrustManager.checkServerTrusted(null, "");
             fail();
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
 
         try {
             spiffeTrustManager.checkServerTrusted(null, "", new Socket());
             fail();
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
 
         try {
             spiffeTrustManager.checkServerTrusted(null, "", getSslEngineStub());
             fail();
         } catch (NullPointerException e) {
-            assertEquals("chain is marked non-null but is null", e.getMessage());
+            assertEquals("chain must not be null", e.getMessage());
         }
     }
 

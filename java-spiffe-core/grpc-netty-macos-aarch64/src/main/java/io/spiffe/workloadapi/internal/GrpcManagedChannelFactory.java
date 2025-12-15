@@ -8,11 +8,10 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.kqueue.KQueueDomainSocketChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.unix.DomainSocketAddress;
-import lombok.NonNull;
-import lombok.val;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -33,8 +32,10 @@ public final class GrpcManagedChannelFactory {
      * @param executorService the executor to configure the event loop group
      * @return a instance of a {@link ManagedChannelWrapper}
      */
-    public static ManagedChannelWrapper newChannel(@NonNull URI address, ExecutorService executorService) {
-        val scheme = address.getScheme();
+    public static ManagedChannelWrapper newChannel(URI address, ExecutorService executorService) {
+        Objects.requireNonNull(address, "address must not be null");
+
+        String scheme = address.getScheme();
         ManagedChannelWrapper result;
         switch (scheme) {
             case UNIX_SCHEME:
@@ -50,7 +51,7 @@ public final class GrpcManagedChannelFactory {
     }
 
     // Create a Native Socket Channel pointing to the spiffeSocketPath
-    private static ManagedChannelWrapper createNativeSocketChannel(@NonNull URI address, ExecutorService executorService) {
+    private static ManagedChannelWrapper createNativeSocketChannel(URI address, ExecutorService executorService) {
         NettyChannelBuilder channelBuilder = NettyChannelBuilder.
                 forAddress(new DomainSocketAddress(address.getPath()));
         EventLoopGroup eventLoopGroup = configureNativeSocketChannel(channelBuilder, executorService);
@@ -58,14 +59,14 @@ public final class GrpcManagedChannelFactory {
         return new ManagedChannelWrapper(managedChannel, eventLoopGroup);
     }
 
-    private static ManagedChannelWrapper createTcpChannel(@NonNull URI address) {
+    private static ManagedChannelWrapper createTcpChannel(URI address) {
         ManagedChannel managedChannel = NettyChannelBuilder.forAddress(address.getHost(), address.getPort())
                 .negotiationType(NegotiationType.PLAINTEXT)
                 .build();
         return new ManagedChannelWrapper(managedChannel);
     }
 
-    private static EventLoopGroup configureNativeSocketChannel(@NonNull NettyChannelBuilder channelBuilder, ExecutorService executorService) {
+    private static EventLoopGroup configureNativeSocketChannel(NettyChannelBuilder channelBuilder, ExecutorService executorService) {
         if (SystemUtils.IS_OS_MAC) {
             // nThreads = 0 -> use Netty default
             KQueueEventLoopGroup eventLoopGroup = new KQueueEventLoopGroup(0, executorService);

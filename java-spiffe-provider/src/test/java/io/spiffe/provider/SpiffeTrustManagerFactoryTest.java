@@ -75,7 +75,7 @@ class SpiffeTrustManagerFactoryTest {
         try {
             new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(null);
         } catch (NullPointerException e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
     }
 
@@ -84,7 +84,7 @@ class SpiffeTrustManagerFactoryTest {
         try {
             new SpiffeTrustManagerFactory().engineGetTrustManagers(null);
         } catch (NullPointerException e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
     }
 
@@ -93,7 +93,7 @@ class SpiffeTrustManagerFactoryTest {
         try {
             new SpiffeTrustManagerFactory().engineGetTrustManagers(null, null);
         } catch (NullPointerException e) {
-            assertEquals("x509BundleSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSource must not be null", e.getMessage());
         }
     }
 
@@ -103,7 +103,7 @@ class SpiffeTrustManagerFactoryTest {
         try {
             new SpiffeTrustManagerFactory().engineGetTrustManagers(source, null);
         } catch (NullPointerException e) {
-            assertEquals("acceptedSpiffeIdsSupplier is marked non-null but is null", e.getMessage());
+            assertEquals("acceptedSpiffeIdsSupplier must not be null", e.getMessage());
         }
     }
 

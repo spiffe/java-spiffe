@@ -1,6 +1,5 @@
 package io.spiffe.provider;
 
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.Security;
@@ -23,7 +22,7 @@ final class EnvironmentUtils {
      * @return a String with a value
      */
     static String getProperty(final String variableName, final String defaultValue) {
-        val value = getProperty(variableName);
+        final String value = getProperty(variableName);
         if (StringUtils.isNotBlank(value)) {
             return value;
         }

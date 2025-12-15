@@ -20,7 +20,7 @@ class X509ContextTest {
             X509Context.of(null, createBundleSet());
             fail();
         } catch (NullPointerException e) {
-            assertEquals("x509Svids is marked non-null but is null", e.getMessage());
+            assertEquals("x509Svids must not be null", e.getMessage());
         }
     }
 
@@ -40,7 +40,7 @@ class X509ContextTest {
             X509Context.of(Collections.emptyList(), null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("x509BundleSet is marked non-null but is null", e.getMessage());
+            assertEquals("x509BundleSet must not be null", e.getMessage());
         }
     }
     

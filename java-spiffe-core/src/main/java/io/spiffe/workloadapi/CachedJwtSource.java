@@ -8,28 +8,20 @@ import io.spiffe.exception.*;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.extern.java.Log;
-import lombok.val;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static io.spiffe.workloadapi.internal.ThreadUtils.await;
 
@@ -38,8 +30,11 @@ import static io.spiffe.workloadapi.internal.ThreadUtils.await;
  * The JWT SVIDs are cached and fetchJwtSvid methods return from cache
  * checking that the JWT SVID has still at least half of its lifetime.
  */
-@Log
 public class CachedJwtSource implements JwtSource {
+
+    private static final Logger log =
+            Logger.getLogger(CachedJwtSource.class.getName());
+
     static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newJwtSource.timeout";
 
     static final Duration DEFAULT_TIMEOUT =
@@ -96,8 +91,10 @@ public class CachedJwtSource implements JwtSource {
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
      * @throws JwtSourceException             if the source could not be initialized
      */
-    public static JwtSource newSource(@NonNull final JwtSourceOptions options)
+    public static JwtSource newSource(JwtSourceOptions options)
             throws SocketEndpointAddressException, JwtSourceException {
+        Objects.requireNonNull(options, "options must not be null");
+
         if (options.getWorkloadApiClient() == null) {
             options.setWorkloadApiClient(createClient(options));
         }
@@ -194,7 +191,7 @@ public class CachedJwtSource implements JwtSource {
      * @throws IllegalStateException   if the source is closed
      */
     @Override
-    public JwtBundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
+    public JwtBundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
         if (isClosed()) {
             throw new IllegalStateException("JWT bundle source is closed");
         }
@@ -205,16 +202,17 @@ public class CachedJwtSource implements JwtSource {
      * Closes this source, dropping the connection to the Workload API.
      * Other source methods will return an error after close has been called.
      * <p>
-     * It is marked with {@link SneakyThrows} because it is not expected to throw
-     * the checked exception defined on the {@link Closeable} interface.
      */
-    @SneakyThrows
     @Override
     public void close() {
         if (!closed) {
             synchronized (this) {
                 if (!closed) {
-                    workloadApiClient.close();
+                    try {
+                        workloadApiClient.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     closed = true;
                 }
             }
@@ -271,8 +269,8 @@ public class CachedJwtSource implements JwtSource {
 
     private boolean isTokenPastHalfLifetime(JwtSvid jwtSvid) {
         Instant now = clock.instant();
-        val halfLife = new Date(jwtSvid.getExpiry().getTime() - (jwtSvid.getExpiry().getTime() - jwtSvid.getIssuedAt().getTime()) / 2);
-        val halfLifeInstant = Instant.ofEpochMilli(halfLife.getTime());
+        Date halfLife = new Date(jwtSvid.getExpiry().getTime() - (jwtSvid.getExpiry().getTime() - jwtSvid.getIssuedAt().getTime()) / 2);
+        Instant halfLifeInstant = Instant.ofEpochMilli(halfLife.getTime());
         return now.isAfter(halfLifeInstant);
     }
 
@@ -323,9 +321,9 @@ public class CachedJwtSource implements JwtSource {
         }
     }
 
-    private static WorkloadApiClient createClient(final JwtSourceOptions options)
+    private static WorkloadApiClient createClient(JwtSourceOptions options)
             throws SocketEndpointAddressException {
-        val clientOptions = DefaultWorkloadApiClient.ClientOptions
+        DefaultWorkloadApiClient.ClientOptions clientOptions = DefaultWorkloadApiClient.ClientOptions
                 .builder()
                 .spiffeSocketPath(options.getSpiffeSocketPath())
                 .build();

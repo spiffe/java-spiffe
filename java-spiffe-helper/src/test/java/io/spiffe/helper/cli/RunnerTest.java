@@ -1,7 +1,6 @@
 package io.spiffe.helper.cli;
 
 import io.spiffe.helper.exception.RunnerException;
-import lombok.val;
 import org.apache.commons.cli.ParseException;
 import org.junit.jupiter.api.Test;
 
@@ -74,10 +73,10 @@ class RunnerTest {
 
     @Test
     void test_Main_throwsExceptionIfTheKeystoreCannotBeCreated() throws URISyntaxException, IOException, ParseException {
-        val file = new File("keystore123.p12");
+        File file = new File("keystore123.p12");
         file.createNewFile();
 
-        val configPath = Paths.get(toUri("testdata/cli/correct.conf"));
+        Path configPath = Paths.get(toUri("testdata/cli/correct.conf"));
         try {
             Runner.runApplication("-c", configPath.toString());
         } catch (RunnerException e) {

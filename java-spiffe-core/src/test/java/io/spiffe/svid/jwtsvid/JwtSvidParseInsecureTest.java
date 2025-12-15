@@ -7,14 +7,12 @@ import io.spiffe.exception.JwtSvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.utils.TestUtils;
-import lombok.Builder;
-import lombok.Value;
-import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.KeyPair;
 import java.util.Collections;
@@ -29,16 +27,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class JwtSvidParseInsecureTest {
 
-    private static final String HS256TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImF1dGhvcml0eTEifQ." +
-            "eyJzdWIiOiJzcGlmZmU6Ly90ZXN0LmRvbWFpbi9ob3N0IiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxMjM0MzQzNTM0NTUsImlh" +
-            "dCI6MTUxNjIzOTAyMiwiYXVkIjoiYXVkaWVuY2UifQ.wNm5pQGSLCw5N9ddgSF2hkgmQpGnG9le_gpiFmyBhao";
-
     @ParameterizedTest
     @MethodSource("provideSuccessScenarios")
     void parseValidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid jwtSvid = JwtSvid.parseInsecure(token, testCase.audience, testCase.hint);
+            JwtSvid jwtSvid = JwtSvid.parseInsecure(token, testCase.expectedAudience, testCase.hint);
 
             assertEquals(testCase.expectedJwtSvid.getSpiffeId(), jwtSvid.getSpiffeId());
             assertEquals(testCase.expectedJwtSvid.getAudience(), jwtSvid.getAudience());
@@ -55,7 +49,7 @@ class JwtSvidParseInsecureTest {
     void parseInvalidJwt(TestCase testCase) {
         try {
             String token = testCase.generateToken.get();
-            JwtSvid.parseInsecure(token, testCase.audience);
+            JwtSvid.parseInsecure(token, testCase.expectedAudience);
             fail("expected error: " + testCase.expectedException.getMessage());
         } catch (Exception e) {
             assertEquals(testCase.expectedException.getClass(), e.getClass());
@@ -71,7 +65,7 @@ class JwtSvidParseInsecureTest {
         try {
             JwtSvid.parseInsecure(null, audience);
         } catch (NullPointerException e) {
-            assertEquals("token is marked non-null but is null", e.getMessage());
+            assertEquals("token must not be null", e.getMessage());
         }
     }
 
@@ -81,7 +75,7 @@ class JwtSvidParseInsecureTest {
         try {
             JwtSvid.parseInsecure("", audience);
         } catch (IllegalArgumentException e) {
-            assertEquals("Token cannot be blank", e.getMessage());
+            assertEquals("token cannot be blank", e.getMessage());
         }
     }
 
@@ -98,7 +92,7 @@ class JwtSvidParseInsecureTest {
             JwtSvid.parseInsecure(TestUtils.generateToken(claims, key1, "authority1"), null);
 
         } catch (NullPointerException e) {
-            assertEquals("audience is marked non-null but is null", e.getMessage());
+            assertEquals("audience must not be null", e.getMessage());
         }
     }
 
@@ -230,36 +224,93 @@ class JwtSvidParseInsecureTest {
         );
     }
 
-    @Value
     static class TestCase {
         String name;
-        Set<String> audience;
+        Set<String> expectedAudience;
         String hint;
         Supplier<String> generateToken;
         Exception expectedException;
         JwtSvid expectedJwtSvid;
 
-        @Builder
-        public TestCase(String name, Set<String> expectedAudience, Supplier<String> generateToken,
-                        Exception expectedException, JwtSvid expectedJwtSvid, String hint) {
+        public TestCase(String name,
+                        Set<String> expectedAudience,
+                        Supplier<String> generateToken,
+                        Exception expectedException,
+                        JwtSvid expectedJwtSvid,
+                        String hint) {
+
             this.name = name;
-            this.audience = expectedAudience;
+            this.expectedAudience = expectedAudience;
             this.generateToken = generateToken;
             this.expectedException = expectedException;
             this.expectedJwtSvid = expectedJwtSvid;
             this.hint = hint;
         }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private String name;
+            private Set<String> expectedAudience;
+            private Supplier<String> generateToken;
+            private Exception expectedException;
+            private JwtSvid expectedJwtSvid;
+            private String hint;
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder expectedAudience(Set<String> audience) {
+                this.expectedAudience = audience;
+                return this;
+            }
+
+            public Builder generateToken(Supplier<String> generateToken) {
+                this.generateToken = generateToken;
+                return this;
+            }
+
+            public Builder expectedException(Exception expectedException) {
+                this.expectedException = expectedException;
+                return this;
+            }
+
+            public Builder expectedJwtSvid(JwtSvid expectedJwtSvid) {
+                this.expectedJwtSvid = expectedJwtSvid;
+                return this;
+            }
+
+            public Builder hint(String hint) {
+                this.hint = hint;
+                return this;
+            }
+
+            public TestCase build() {
+                return new TestCase(
+                        name,
+                        expectedAudience,
+                        generateToken,
+                        expectedException,
+                        expectedJwtSvid,
+                        hint
+                );
+            }
+        }
     }
 
-    static JwtSvid newJwtSvidInstance(final SpiffeId spiffeId,
-                                      final Set<String> audience,
-                                      final Date issuedAt,
-                                      final Date expiry,
-                                      final Map<String, Object> claims,
-                                      final String token,
-                                      final String hint
+    static JwtSvid newJwtSvidInstance(SpiffeId spiffeId,
+                                      Set<String> audience,
+                                      Date issuedAt,
+                                      Date expiry,
+                                      Map<String, Object> claims,
+                                      String token,
+                                      String hint
     ) {
-        val constructor = JwtSvid.class.getDeclaredConstructors()[0];
+        final Constructor<?> constructor = JwtSvid.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
         try {
             return (JwtSvid) constructor.newInstance(spiffeId, audience, issuedAt, expiry, claims, token, hint);

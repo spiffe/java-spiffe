@@ -87,7 +87,7 @@ class SpiffeSslContextFactoryTest {
         try {
             SpiffeSslContextFactory.getSslContext(null);
         } catch (NullPointerException e) {
-            assertEquals("options is marked non-null but is null", e.getMessage());
+            assertEquals("options must not be null", e.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ class SpiffeSslContextFactoryTest {
         try {
             SpiffeSslContextFactory.getSslContext(options);
         } catch (IllegalArgumentException e) {
-            assertEquals("x509Source option cannot be null, an X.509 Source must be provided", e.getMessage());
+            assertEquals("x509Source option must not be null, an X.509 Source must be provided", e.getMessage());
         }
     }
 
