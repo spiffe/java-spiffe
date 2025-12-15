@@ -25,7 +25,7 @@ subprojects {
         shadowVersion = '9.0.0'
 
         //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.2.8.Final'
+        nettyVersion = '4.2.9.Final'
     }
 
     apply plugin: 'java-library'
