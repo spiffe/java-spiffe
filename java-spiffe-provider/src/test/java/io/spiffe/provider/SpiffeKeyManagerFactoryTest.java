@@ -54,7 +54,7 @@ class SpiffeKeyManagerFactoryTest {
         try {
             new SpiffeKeyManagerFactory().engineGetKeyManagers(null);
         } catch (NullPointerException e) {
-            assertEquals("x509SvidSource is marked non-null but is null", e.getMessage());
+            assertEquals("x509SvidSource must not be null", e.getMessage());
         }
     }
 

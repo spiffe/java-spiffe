@@ -13,7 +13,6 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.workloadapi.grpc.Workload;
-import lombok.val;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,7 +34,7 @@ final class GrpcConversionUtils {
             throw new X509ContextException("X.509 Context response from the Workload API is empty");
         }
 
-        val x509SvidResponse = x509SvidResponseIterator.next();
+        final Workload.X509SVIDResponse x509SvidResponse = x509SvidResponseIterator.next();
         return toX509Context(x509SvidResponse);
     }
 
@@ -44,9 +43,9 @@ final class GrpcConversionUtils {
             throw new X509ContextException("X.509 Context response from the Workload API is empty");
         }
 
-        val x509SvidList = getListOfX509Svid(x509SvidResponse);
-        val x509BundleList = getListOfX509Bundles(x509SvidResponse);
-        val bundleSet = X509BundleSet.of(x509BundleList);
+        final List<X509Svid> x509SvidList = getListOfX509Svid(x509SvidResponse);
+        final List<X509Bundle> x509BundleList = getListOfX509Bundles(x509SvidResponse);
+        final X509BundleSet bundleSet = X509BundleSet.of(x509BundleList);
         return X509Context.of(x509SvidList, bundleSet);
     }
 
@@ -55,12 +54,12 @@ final class GrpcConversionUtils {
             throw new X509BundleException("X.509 Bundle response from the Workload API is empty");
         }
 
-        val bundlesResponse = bundlesResponseIterator.next();
+        final Workload.X509BundlesResponse bundlesResponse = bundlesResponseIterator.next();
         return toX509BundleSet(bundlesResponse);
     }
 
     static X509BundleSet toX509BundleSet(final Workload.X509BundlesResponse bundlesResponse) throws X509BundleException {
-        val bundlesCount = bundlesResponse.getBundlesCount();
+        final int bundlesCount = bundlesResponse.getBundlesCount();
         if (bundlesCount == 0) {
             throw new X509BundleException("X.509 Bundle response from the Workload API is empty");
         }
@@ -78,7 +77,7 @@ final class GrpcConversionUtils {
             throw new JwtBundleException("JWT Bundle response from the Workload API is empty");
         }
 
-        val bundlesResponse = bundlesResponseIterator.next();
+        final Workload.JWTBundlesResponse bundlesResponse = bundlesResponseIterator.next();
         return toJwtBundleSet(bundlesResponse);
     }
 
@@ -116,7 +115,7 @@ final class GrpcConversionUtils {
         for (Map.Entry<String, ByteString> bundleEntry : federatedBundles) {
             TrustDomain trustDomain = TrustDomain.parse(bundleEntry.getKey());
             byte[] bundleBytes = bundleEntry.getValue().toByteArray();
-            val bundle = parseX509Bundle(trustDomain, bundleBytes);
+            final X509Bundle bundle = parseX509Bundle(trustDomain, bundleBytes);
             x509BundleList.add(bundle);
         }
 
@@ -124,7 +123,7 @@ final class GrpcConversionUtils {
     }
 
     private static X509Bundle createX509Bundle(Workload.X509SVID x509Svid) throws X509ContextException {
-        val spiffeId = SpiffeId.parse(x509Svid.getSpiffeId());
+        final SpiffeId spiffeId = SpiffeId.parse(x509Svid.getSpiffeId());
         TrustDomain trustDomain = spiffeId.getTrustDomain();
         byte[] bundleBytes = x509Svid.getBundle().toByteArray();
         return parseX509Bundle(trustDomain, bundleBytes);
@@ -141,7 +140,7 @@ final class GrpcConversionUtils {
             if (hints.contains(x509SVID.getHint())) {
                 continue;
             }
-            val svid = createAndValidateX509Svid(x509SVID);
+            final X509Svid svid = createAndValidateX509Svid(x509SVID);
             hints.add(svid.getHint());
             result.add(svid);
         }
@@ -159,15 +158,15 @@ final class GrpcConversionUtils {
             throw new X509ContextException("X.509 SVID response could not be processed", e);
         }
 
-        val spiffeIdResponse = x509SVID.getSpiffeId();
-        val spiffeIdSvid = svid.getSpiffeId();
+        final String spiffeIdResponse = x509SVID.getSpiffeId();
+        final SpiffeId spiffeIdSvid = svid.getSpiffeId();
         validateSpiffeId(spiffeIdSvid.toString(), spiffeIdResponse);
         return svid;
     }
 
     private static void validateSpiffeId(String spiffeIdSvid, String spiffeIdResponse) throws X509ContextException {
         if (!spiffeIdSvid.equals(spiffeIdResponse.trim())) {
-            val format = "SPIFFE ID in X509SVIDResponse (%s) does not match SPIFFE ID in X.509 certificate (%s)";
+            final String format = "SPIFFE ID in X509SVIDResponse (%s) does not match SPIFFE ID in X.509 certificate (%s)";
             throw new X509ContextException(String.format(format, spiffeIdResponse, spiffeIdSvid));
         }
     }

@@ -34,7 +34,7 @@ class X509BundleSetTest {
             X509BundleSet.of(null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("bundles is marked non-null but is null", e.getMessage());
+            assertEquals("bundles must not be null", e.getMessage());
         }
     }
 
@@ -105,7 +105,7 @@ class X509BundleSetTest {
             bundleSet.put(null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("x509Bundle is marked non-null but is null", e.getMessage());
+            assertEquals("x509Bundle must not be null", e.getMessage());
         }
     }
 
@@ -146,7 +146,7 @@ class X509BundleSetTest {
             bundleSet.getBundleForTrustDomain(null);
             fail("expected exception");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 }

@@ -2,8 +2,8 @@ package io.spiffe.provider.examples.mtls;
 
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
+import io.spiffe.workloadapi.DefaultJwtSource;
 import io.spiffe.workloadapi.X509Source;
-import lombok.extern.java.Log;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -15,9 +15,12 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-@Log
 class WorkloadThread extends Thread {
+
+    private static final Logger log =
+            Logger.getLogger(WorkloadThread.class.getName());
 
     private final X509Source x509Source;
     private SSLSocket sslSocket;

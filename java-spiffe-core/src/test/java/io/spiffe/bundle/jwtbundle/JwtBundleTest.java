@@ -65,7 +65,7 @@ class JwtBundleTest {
             new JwtBundle(null, authorities);
             fail("NullPointerException was expected");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -75,7 +75,7 @@ class JwtBundleTest {
             new JwtBundle(TrustDomain.parse("example.org"), null);
             fail("NullPointerException was expected");
         } catch (NullPointerException e) {
-            assertEquals("jwtAuthorities is marked non-null but is null", e.getMessage());
+            assertEquals("jwtAuthorities must not be null", e.getMessage());
         }
     }
 
@@ -85,7 +85,7 @@ class JwtBundleTest {
             new JwtBundle(null);
             fail("NullPointerException was expected");
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -188,7 +188,7 @@ class JwtBundleTest {
         try {
             JwtBundle.load(null, Paths.get("path-to-file"));
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -197,7 +197,7 @@ class JwtBundleTest {
         try {
             JwtBundle.load(TrustDomain.parse("example.org"), null);
         } catch (NullPointerException e) {
-            assertEquals("bundlePath is marked non-null but is null", e.getMessage());
+            assertEquals("bundlePath must not be null", e.getMessage());
         }
     }
 
@@ -268,7 +268,7 @@ class JwtBundleTest {
         try {
             JwtBundle.parse(null, "json".getBytes());
         } catch (NullPointerException e) {
-            assertEquals("trustDomain is marked non-null but is null", e.getMessage());
+            assertEquals("trustDomain must not be null", e.getMessage());
         }
     }
 
@@ -277,7 +277,7 @@ class JwtBundleTest {
         try {
             JwtBundle.parse(TrustDomain.parse("example.org"), null);
         } catch (NullPointerException e) {
-            assertEquals("bundleBytes is marked non-null but is null", e.getMessage());
+            assertEquals("bundleBytes must not be null", e.getMessage());
         }
     }
 
@@ -355,7 +355,7 @@ class JwtBundleTest {
         try {
             jwtBundle.putJwtAuthority(null, new DummyPublicKey());
         } catch (NullPointerException e) {
-            assertEquals("keyId is marked non-null but is null", e.getMessage());
+            assertEquals("keyId must not be null", e.getMessage());
         }
     }
 
@@ -365,7 +365,7 @@ class JwtBundleTest {
         try {
             jwtBundle.putJwtAuthority("key1", null);
         } catch (NullPointerException e) {
-            assertEquals("jwtAuthority is marked non-null but is null", e.getMessage());
+            assertEquals("jwtAuthority must not be null", e.getMessage());
         }
     }
 }

@@ -14,8 +14,6 @@ import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.utils.TestUtils;
-import lombok.NonNull;
-import lombok.val;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -51,8 +49,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
-    public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
-        val update = generateX509Context();
+    public void watchX509Context(Watcher<X509Context> watcher) {
+        X509Context update = generateX509Context();
         watcher.onUpdate(update);
     }
 
@@ -62,25 +60,25 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
-    public void watchX509Bundles(@NonNull Watcher<X509BundleSet> watcher) {
-        val x509BundleSet = generateX509BundleSet();
+    public void watchX509Bundles(Watcher<X509BundleSet> watcher) {
+        X509BundleSet x509BundleSet = generateX509BundleSet();
         watcher.onUpdate(x509BundleSet);
     }
 
     @Override
-    public JwtSvid fetchJwtSvid(@NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(String audience, final String... extraAudience) throws JwtSvidException {
         fetchJwtSvidCallCount++;
         return generateJwtSvid(subject, audience, extraAudience);
     }
 
     @Override
-    public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException {
         fetchJwtSvidCallCount++;
         return generateJwtSvid(subject, audience, extraAudience);
     }
 
     @Override
-    public List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(String audience, String... extraAudience) throws JwtSvidException {
         fetchJwtSvidCallCount++;
         List<JwtSvid> svids = new ArrayList<>();
         svids.add(generateJwtSvid(subject, audience, extraAudience));
@@ -89,7 +87,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
-    public List<JwtSvid> fetchJwtSvids(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException {
         fetchJwtSvidCallCount++;
         List<JwtSvid> svids = new ArrayList<>();
         svids.add(generateJwtSvid(subject, audience, extraAudience));
@@ -102,21 +100,21 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     @Override
-    public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience) throws JwtSvidException {
+    public JwtSvid validateJwtSvid(String token, String audience) throws JwtSvidException {
         return null;
     }
 
     @Override
-    public void watchJwtBundles(@NonNull final Watcher<JwtBundleSet> watcher) {
-        val jwtBundleSet = generateJwtBundleSet();
+    public void watchJwtBundles(Watcher<JwtBundleSet> watcher) {
+        JwtBundleSet jwtBundleSet = generateJwtBundleSet();
         watcher.onUpdate(jwtBundleSet);
     }
 
     private JwtBundleSet generateJwtBundleSet() {
         try {
-            val pathBundle = Paths.get(toUri(jwtBundle));
+            Path pathBundle = Paths.get(toUri(jwtBundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            val jwtBundle = JwtBundle.parse(TrustDomain.parse("example.org"), bundleBytes);
+            JwtBundle jwtBundle = JwtBundle.parse(TrustDomain.parse("example.org"), bundleBytes);
             return JwtBundleSet.of(Collections.singleton(jwtBundle));
         } catch (IOException | JwtBundleException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -125,18 +123,18 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
     private X509BundleSet generateX509BundleSet() {
         try {
-            val pathBundle = Paths.get(toUri(x509Bundle));
+            Path pathBundle = Paths.get(toUri(x509Bundle));
             byte[] bundleBytes = Files.readAllBytes(pathBundle);
-            val x509Bundle1 = X509Bundle.parse(TrustDomain.parse("example.org"), bundleBytes);
-            val x509Bundle2 = X509Bundle.parse(TrustDomain.parse("domain.test"), bundleBytes);
+            X509Bundle x509Bundle1 = X509Bundle.parse(TrustDomain.parse("example.org"), bundleBytes);
+            X509Bundle x509Bundle2 = X509Bundle.parse(TrustDomain.parse("domain.test"), bundleBytes);
             return X509BundleSet.of(Arrays.asList(x509Bundle1, x509Bundle2));
         } catch (IOException | X509BundleException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private JwtSvid generateJwtSvid(final @NonNull SpiffeId subject, final @NonNull String audience, final String[] extraAudience) throws JwtSvidException {
-        final Set<String> audParam = new HashSet<>();
+    private JwtSvid generateJwtSvid(SpiffeId subject, String audience, String[] extraAudience) throws JwtSvidException {
+        Set<String> audParam = new HashSet<>();
         audParam.add(audience);
         Collections.addAll(audParam, extraAudience);
 
@@ -161,9 +159,9 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
     }
 
     private X509Context generateX509Context() {
-        val x509Svid = getX509Svid();
-        val x509Bundle = getX509Bundle();
-        val bundleSet = X509BundleSet.of(Collections.singleton(x509Bundle));
+        X509Svid x509Svid = getX509Svid();
+        X509Bundle x509Bundle = getX509Bundle();
+        X509BundleSet bundleSet = X509BundleSet.of(Collections.singleton(x509Bundle));
         return X509Context.of(Collections.singletonList(x509Svid), bundleSet);
     }
 

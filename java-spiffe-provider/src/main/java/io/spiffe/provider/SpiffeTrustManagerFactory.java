@@ -9,8 +9,6 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.SpiffeIdUtils;
 import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
-import lombok.NonNull;
-import lombok.val;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
@@ -88,7 +86,7 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned
      * is {@link SpiffeTrustManager}
      */
-    public TrustManager[] engineGetTrustManagers(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
+    public TrustManager[] engineGetTrustManagers(BundleSource<X509Bundle> x509BundleSource) {
         final SpiffeTrustManager spiffeTrustManager;
 
         if (ACCEPT_ANY_SPIFFE_ID) {
@@ -106,8 +104,8 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @param x509BundleSource a source of X.509 bundles
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
-    public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(@NonNull final BundleSource<X509Bundle> x509BundleSource) {
-        val spiffeTrustManager = new SpiffeTrustManager(x509BundleSource);
+    public TrustManager[] engineGetTrustManagersAcceptAnySpiffeId(BundleSource<X509Bundle> x509BundleSource) {
+        final SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource);
         return new TrustManager[]{spiffeTrustManager};
     }
 
@@ -120,10 +118,10 @@ public class SpiffeTrustManagerFactory extends TrustManagerFactorySpi {
      * @return an instance of a {@link TrustManager} wrapped in an array. The actual type returned is {@link SpiffeTrustManager}
      */
     public TrustManager[] engineGetTrustManagers(
-            @NonNull final BundleSource<X509Bundle> x509BundleSource,
-            @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
+            BundleSource<X509Bundle> x509BundleSource,
+            Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier) {
 
-        val spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, acceptedSpiffeIdsSupplier);
+        final SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(x509BundleSource, acceptedSpiffeIdsSupplier);
         return new TrustManager[]{spiffeTrustManager};
     }
 

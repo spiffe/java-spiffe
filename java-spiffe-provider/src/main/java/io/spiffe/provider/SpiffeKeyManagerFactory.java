@@ -6,8 +6,6 @@ import io.spiffe.provider.exception.SpiffeProviderException;
 import io.spiffe.svid.x509svid.X509SvidSource;
 import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
-import lombok.NonNull;
-import lombok.val;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
@@ -36,8 +34,8 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      */
     @Override
     protected KeyManager[] engineGetKeyManagers() {
-        val x509Source = getX509Source();
-        val spiffeKeyManager = new SpiffeKeyManager(x509Source);
+        final X509Source x509Source = getX509Source();
+        final SpiffeKeyManager spiffeKeyManager = new SpiffeKeyManager(x509Source);
         return new KeyManager[]{spiffeKeyManager};
     }
 
@@ -47,8 +45,8 @@ public final class SpiffeKeyManagerFactory extends KeyManagerFactorySpi {
      * @param x509SvidSource an instance of a {@link X509SvidSource}
      * @return an array with an instance of a {@link KeyManager}
      */
-    public KeyManager[] engineGetKeyManagers(@NonNull final X509SvidSource x509SvidSource) {
-        val spiffeKeyManager = new SpiffeKeyManager(x509SvidSource);
+    public KeyManager[] engineGetKeyManagers(X509SvidSource x509SvidSource) {
+        final SpiffeKeyManager spiffeKeyManager = new SpiffeKeyManager(x509SvidSource);
         return new KeyManager[]{spiffeKeyManager};
     }
 

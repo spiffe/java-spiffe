@@ -8,7 +8,6 @@ import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.svid.jwtsvid.JwtSvid;
-import lombok.NonNull;
 
 import java.io.Closeable;
 import java.util.List;
@@ -37,7 +36,7 @@ public interface WorkloadApiClient extends Closeable {
      *
      * @param watcher an instance that implements a {@link Watcher}.
      */
-    void watchX509Context(@NonNull Watcher<X509Context> watcher);
+    void watchX509Context(Watcher<X509Context> watcher);
 
     /**
      * Fetches the X.509 bundles on a one-shot blocking call.
@@ -56,7 +55,7 @@ public interface WorkloadApiClient extends Closeable {
      *
      * @param watcher an instance that implements a {@link Watcher} for {@link X509BundleSet}.
      */
-    void watchX509Bundles(@NonNull Watcher<X509BundleSet> watcher);
+    void watchX509Bundles(Watcher<X509BundleSet> watcher);
 
     /**
      * Fetches a SPIFFE JWT-SVID on one-shot blocking call.
@@ -66,7 +65,7 @@ public interface WorkloadApiClient extends Closeable {
      * @return an instance of a {@link JwtSvid}
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    JwtSvid fetchJwtSvid(@NonNull String audience, String... extraAudience) throws JwtSvidException;
+    JwtSvid fetchJwtSvid(String audience, String... extraAudience) throws JwtSvidException;
 
     /**
      * Fetches a SPIFFE JWT-SVID on one-shot blocking call.
@@ -77,7 +76,7 @@ public interface WorkloadApiClient extends Closeable {
      * @return an instance of a {@link JwtSvid}
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    JwtSvid fetchJwtSvid(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException;
+    JwtSvid fetchJwtSvid(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException;
 
     /**
      * Fetches all SPIFFE JWT-SVIDs on one-shot blocking call.
@@ -87,7 +86,7 @@ public interface WorkloadApiClient extends Closeable {
      * @return all of {@link JwtSvid} object
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    List<JwtSvid> fetchJwtSvids(@NonNull String audience, String... extraAudience) throws JwtSvidException;
+    List<JwtSvid> fetchJwtSvids(String audience, String... extraAudience) throws JwtSvidException;
 
     /**
      * Fetches a SPIFFE JWT-SVID on one-shot blocking call.
@@ -98,7 +97,7 @@ public interface WorkloadApiClient extends Closeable {
      * @return all of {@link JwtSvid} objectÏ
      * @throws JwtSvidException if there is an error fetching or processing the JWT from the Workload API
      */
-    List<JwtSvid> fetchJwtSvids(@NonNull SpiffeId subject, @NonNull String audience, String... extraAudience) throws JwtSvidException;
+    List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException;
 
     /**
      * Fetches the JWT bundles for JWT-SVID validation, keyed by trust domain.
@@ -116,7 +115,7 @@ public interface WorkloadApiClient extends Closeable {
      * @return a {@link JwtSvid} if the token and audience could be validated.
      * @throws JwtSvidException when the token cannot be validated with the audience
      */
-    JwtSvid validateJwtSvid(@NonNull String token, @NonNull String audience) throws JwtSvidException;
+    JwtSvid validateJwtSvid(String token, String audience) throws JwtSvidException;
 
     /**
      * Watches for JWT bundles updates.
@@ -127,5 +126,5 @@ public interface WorkloadApiClient extends Closeable {
      *
      * @param watcher receives the update for JwtBundles.
      */
-    void watchJwtBundles(@NonNull Watcher<JwtBundleSet> watcher);
+    void watchJwtBundles(Watcher<JwtBundleSet> watcher);
 }

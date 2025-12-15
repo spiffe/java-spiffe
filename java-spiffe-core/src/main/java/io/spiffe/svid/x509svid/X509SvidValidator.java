@@ -5,22 +5,24 @@ import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
-import lombok.NonNull;
-import lombok.extern.java.Log;
-import lombok.val;
+import io.spiffe.spiffeid.TrustDomain;
 
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 /**
  * Provides methods to validate a chain of X.509 certificates using an X.509 bundle source.
  */
-@Log
 public final class X509SvidValidator {
+
+    private static final Logger log =
+            Logger.getLogger(X509SvidValidator.class.getName());
 
     private X509SvidValidator() {
     }
@@ -35,12 +37,14 @@ public final class X509SvidValidator {
      * @throws NullPointerException    if the given chain or 509BundleSource are null
      */
     public static void verifyChain(
-            @NonNull final List<X509Certificate> chain,
-            @NonNull final BundleSource<X509Bundle> x509BundleSource)
+            List<X509Certificate> chain,
+            BundleSource<X509Bundle> x509BundleSource)
             throws CertificateException, BundleNotFoundException {
+        Objects.requireNonNull(chain, "chain must not be null");
+        Objects.requireNonNull(x509BundleSource, "x509BundleSource must not be null");
 
-        val trustDomain = CertificateUtils.getTrustDomain(chain);
-        val x509Bundle = x509BundleSource.getBundleForTrustDomain(trustDomain);
+        TrustDomain trustDomain = CertificateUtils.getTrustDomain(chain);
+        X509Bundle x509Bundle = x509BundleSource.getBundleForTrustDomain(trustDomain);
 
         try {
             CertificateUtils.validate(chain, x509Bundle.getX509Authorities());
@@ -59,19 +63,22 @@ public final class X509SvidValidator {
      *                              x509Certificate
      * @throws NullPointerException if the given x509Certificate or acceptedSpiffeIdsSupplier are null
      */
-    public static void verifySpiffeId(@NonNull final X509Certificate x509Certificate,
-                                      @NonNull final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier)
+    public static void verifySpiffeId(X509Certificate x509Certificate,
+                                      Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier)
             throws CertificateException {
-        val spiffeIdSet = acceptedSpiffeIdsSupplier.get();
+        Objects.requireNonNull(x509Certificate, "x509Certificate must not be null");
+        Objects.requireNonNull(acceptedSpiffeIdsSupplier, "acceptedSpiffeIdsSupplier must not be null");
+
+        Set<SpiffeId> spiffeIdSet = acceptedSpiffeIdsSupplier.get();
         if (spiffeIdSet.isEmpty()) {
             String error = "The supplier of accepted SPIFFE IDs supplied an empty set";
             log.warning(error);
             throw new CertificateException(error);
         }
 
-        val spiffeId = CertificateUtils.getSpiffeId(x509Certificate);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId(x509Certificate);
         if (!spiffeIdSet.contains(spiffeId)) {
-            val error = String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId);
+            String error = String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId);
             log.warning(String.format("Client SPIFFE ID validation failed: %s", error));
             throw new CertificateException(String.format(error, spiffeId));
         }

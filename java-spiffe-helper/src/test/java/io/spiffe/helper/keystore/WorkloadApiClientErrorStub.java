@@ -11,7 +11,6 @@ import io.spiffe.svid.jwtsvid.JwtSvid;
 import io.spiffe.workloadapi.Watcher;
 import io.spiffe.workloadapi.WorkloadApiClient;
 import io.spiffe.workloadapi.X509Context;
-import lombok.NonNull;
 
 import java.util.List;
 import java.io.IOException;
@@ -24,7 +23,7 @@ public class WorkloadApiClientErrorStub implements WorkloadApiClient {
     }
 
     @Override
-    public void watchX509Context(@NonNull final Watcher<X509Context> watcher) {
+    public void watchX509Context(Watcher<X509Context> watcher) {
         watcher.onError(new X509ContextException("Testing exception"));
     }
 
@@ -34,26 +33,26 @@ public class WorkloadApiClientErrorStub implements WorkloadApiClient {
     }
 
     @Override
-    public void watchX509Bundles(@NonNull Watcher<X509BundleSet> watcher) {
+    public void watchX509Bundles(Watcher<X509BundleSet> watcher) {
         watcher.onError(new X509BundleException("Testing exception"));
     }
 
     @Override
-    public JwtSvid fetchJwtSvid(@NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(String audience, final String... extraAudience) throws JwtSvidException {
         throw new JwtSvidException("Testing exception");
     }
 
     @Override
-    public JwtSvid fetchJwtSvid(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+    public JwtSvid fetchJwtSvid(SpiffeId subject, final String audience, final String... extraAudience) throws JwtSvidException {
         throw new JwtSvidException("Testing exception");
     }
     @Override
-    public List<JwtSvid> fetchJwtSvids(@NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(String audience, final String... extraAudience) throws JwtSvidException {
         throw new JwtSvidException("Testing exception");
     }
 
     @Override
-    public List<JwtSvid> fetchJwtSvids(@NonNull final SpiffeId subject, @NonNull final String audience, final String... extraAudience) throws JwtSvidException {
+    public List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, final String... extraAudience) throws JwtSvidException {
         throw new JwtSvidException("Testing exception");
     }
     @Override
@@ -62,12 +61,12 @@ public class WorkloadApiClientErrorStub implements WorkloadApiClient {
     }
 
     @Override
-    public JwtSvid validateJwtSvid(@NonNull final String token, @NonNull final String audience) throws JwtSvidException {
+    public JwtSvid validateJwtSvid(String token, String audience) throws JwtSvidException {
         return null;
     }
 
     @Override
-    public void watchJwtBundles(@NonNull final Watcher<JwtBundleSet> watcher) {
+    public void watchJwtBundles(Watcher<JwtBundleSet> watcher) {
         watcher.onError(new JwtBundleException("Testing exception"));
     }
 

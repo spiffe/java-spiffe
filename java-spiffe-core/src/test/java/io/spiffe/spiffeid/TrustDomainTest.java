@@ -1,7 +1,6 @@
 package io.spiffe.spiffeid;
 
 import io.spiffe.exception.InvalidSpiffeIdException;
-import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -69,7 +68,7 @@ class TrustDomainTest {
         return Stream.of(
                 Arguments.of("", "Trust domain is missing"),
                 Arguments.of("spiffe://", "Trust domain is missing"),
-                Arguments.of(null, "idOrName is marked non-null but is null"),
+                Arguments.of(null, "idOrName must not be null"),
                 Arguments.of("Trustdomain", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("spiffe://Domain.test", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("spiffe://domain.test/spiffe://domain.test/path/element", "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
@@ -102,7 +101,7 @@ class TrustDomainTest {
 
     @Test
     void test_toIdString() {
-        val trustDomain = TrustDomain.parse("domain.test");
+        final TrustDomain trustDomain = TrustDomain.parse("domain.test");
         assertEquals("spiffe://domain.test", trustDomain.toIdString());
     }
 }

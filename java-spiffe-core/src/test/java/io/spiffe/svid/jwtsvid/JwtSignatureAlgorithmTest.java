@@ -1,8 +1,6 @@
 package io.spiffe.svid.jwtsvid;
 
 import io.spiffe.internal.JwtSignatureAlgorithm;
-import lombok.Builder;
-import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -38,15 +36,36 @@ class JwtSignatureAlgorithmTest {
         );
     }
 
-    @Value
     static class TestCase {
         String name;
         JwtSignatureAlgorithm expectedAlgorithm;
 
-        @Builder
         public TestCase(String name, JwtSignatureAlgorithm expectedAlgorithm) {
             this.name = name;
             this.expectedAlgorithm = expectedAlgorithm;
+        }
+
+        public static TestCaseBuilder builder() {
+            return new TestCaseBuilder();
+        }
+
+        public static class TestCaseBuilder {
+            private String name;
+            private JwtSignatureAlgorithm expectedAlgorithm;
+
+            public TestCaseBuilder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public TestCaseBuilder expectedAlgorithm(JwtSignatureAlgorithm expectedAlgorithm) {
+                this.expectedAlgorithm = expectedAlgorithm;
+                return this;
+            }
+
+            public TestCase build() {
+                return new TestCase(name, expectedAlgorithm);
+            }
         }
     }
 

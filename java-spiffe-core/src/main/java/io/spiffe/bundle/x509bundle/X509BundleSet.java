@@ -3,24 +3,21 @@ package io.spiffe.bundle.x509bundle;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.NonNull;
-import lombok.Value;
-import lombok.val;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a set of X.509 bundles keyed by trust domain.
  */
-@Value
-public class X509BundleSet implements BundleSource<X509Bundle> {
+public final class X509BundleSet implements BundleSource<X509Bundle> {
 
-    Map<TrustDomain, X509Bundle> bundles;
+    private final Map<TrustDomain, X509Bundle> bundles;
 
-    private X509BundleSet(final Map<TrustDomain, X509Bundle> bundles) {
+    private X509BundleSet(Map<TrustDomain, X509Bundle> bundles) {
         this.bundles = new ConcurrentHashMap<>(bundles);
     }
 
@@ -34,7 +31,9 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      * @param bundles Collection of {@link X509Bundle}
      * @return a {@link X509BundleSet} initialized with the list of bundles
      */
-    public static X509BundleSet of(@NonNull final Collection<X509Bundle> bundles) {
+    public static X509BundleSet of(Collection<X509Bundle> bundles) {
+        Objects.requireNonNull(bundles, "bundles must not be null");
+        
         if (bundles.size() == 0) {
             throw new IllegalArgumentException("X509Bundles collection is empty");
         }
@@ -61,7 +60,8 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      *
      * @param x509Bundle a {@link X509Bundle}
      */
-    public void put(@NonNull final X509Bundle x509Bundle){
+    public void put(X509Bundle x509Bundle) {
+        Objects.requireNonNull(x509Bundle, "x509Bundle must not be null");
         bundles.put(x509Bundle.getTrustDomain(), x509Bundle);
     }
 
@@ -73,10 +73,14 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      * @throws BundleNotFoundException if no bundle could be found for the given trust domain
      */
     @Override
-    public X509Bundle getBundleForTrustDomain(@NonNull final TrustDomain trustDomain) throws BundleNotFoundException {
-        val bundle = bundles.get(trustDomain);
+    public X509Bundle getBundleForTrustDomain(TrustDomain trustDomain) throws BundleNotFoundException {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+
+        X509Bundle bundle = bundles.get(trustDomain);
         if (bundle == null) {
-            throw new BundleNotFoundException(String.format("No X.509 bundle for trust domain %s", trustDomain));
+            throw new BundleNotFoundException(
+                    String.format("No X.509 bundle for trust domain %s", trustDomain)
+            );
         }
         return bundle;
     }
@@ -88,5 +92,25 @@ public class X509BundleSet implements BundleSource<X509Bundle> {
      */
     public Map<TrustDomain, X509Bundle> getBundles() {
         return Collections.unmodifiableMap(bundles);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof X509BundleSet)) return false;
+        X509BundleSet that = (X509BundleSet) o;
+        return Objects.equals(bundles, that.bundles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bundles);
+    }
+
+    @Override
+    public String toString() {
+        return "X509BundleSet(" +
+                "bundles=" + bundles +
+                ')';
     }
 }

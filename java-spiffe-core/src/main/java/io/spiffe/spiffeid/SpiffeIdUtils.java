@@ -1,7 +1,6 @@
 package io.spiffe.spiffeid;
 
 import com.google.common.collect.Sets;
-import lombok.val;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +10,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -38,7 +38,7 @@ public final class SpiffeIdUtils {
      * @throws IllegalArgumentException if any of the SPIFFE IDs in the file cannot be parsed
      */
     public static Set<SpiffeId> getSpiffeIdSetFromFile(final Path spiffeIdsFile) throws IOException {
-        try (val lines = Files.lines(spiffeIdsFile)) {
+        try (Stream<String> lines = Files.lines(spiffeIdsFile)) {
             return lines
                     .map(SpiffeId::parse)
                     .collect(Collectors.toSet());
@@ -63,7 +63,7 @@ public final class SpiffeIdUtils {
             throw new IllegalArgumentException("Separator character is not supported.");
         }
 
-        val array = parseArray(spiffeIds, separator);
+        String[] array = parseArray(spiffeIds, separator);
         return Arrays.stream(array)
                 .map(SpiffeId::parse)
                 .collect(Collectors.toSet());
@@ -81,7 +81,7 @@ public final class SpiffeIdUtils {
     }
 
     private static String[] parseArray(final String spiffeIds, final char separator) {
-        val regex = Pattern.quote(String.valueOf(separator));
+        String regex = Pattern.quote(String.valueOf(separator));
         return spiffeIds.trim().split(regex);
     }
 

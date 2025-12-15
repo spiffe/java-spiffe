@@ -20,7 +20,6 @@ subprojects {
         grpcVersion = '1.77.0'
         jupiterVersion = '5.13.4'
         mockitoVersion = '4.11.0'
-        lombokVersion = '1.18.42'
         nimbusVersion = '10.6'
         shadowVersion = '9.0.0'
 
@@ -107,12 +106,6 @@ subprojects {
         } else {
             testImplementation group: 'uk.org.webcompere', name: 'system-stubs-core', version: '2.1.8'
         }
-
-        // Project Lombok dependency
-        compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
-        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
-        testCompileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
-        testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
     }
 
     testing {

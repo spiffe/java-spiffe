@@ -4,11 +4,8 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.helper.exception.KeyStoreHelperException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
-import io.spiffe.utils.TestUtils;
 import io.spiffe.workloadapi.Address;
 import io.spiffe.workloadapi.WorkloadApiClient;
-import lombok.SneakyThrows;
-import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,10 +16,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -43,7 +42,6 @@ class KeyStoreHelperTest {
         workloadApiClientErrorStub = new WorkloadApiClientErrorStub();
     }
 
-    @SneakyThrows
     @AfterEach
     void tearDown() {
         deleteFile(keyStoreFilePath);
@@ -53,17 +51,17 @@ class KeyStoreHelperTest {
     @Test
     void testNewHelper_certs_are_stored_successfully() throws SocketEndpointAddressException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, IOException, KeyStoreException {
 
-        val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
+        String keyStorefileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(keyStorefileName);
 
-        val trustStoreFileName = RandomStringUtils.randomAlphabetic(10);
+        String trustStoreFileName = RandomStringUtils.randomAlphabetic(10);
         trustStoreFilePath = Paths.get(trustStoreFileName);
 
-        val trustStorePass = "truststore123";
-        val keyStorePass = "keystore123";
-        val keyPass = "keypass123";
-        val alias = "other_alias";
-        val keyStoreType = KeyStoreType.JKS;
+        String trustStorePass = "truststore123";
+        String keyStorePass = "keystore123";
+        String keyPass = "keypass123";
+        String alias = "other_alias";
+        KeyStoreType keyStoreType = KeyStoreType.JKS;
 
         final KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions
                 .builder()
@@ -78,29 +76,29 @@ class KeyStoreHelperTest {
                 .build();
 
         // run KeyStoreHelper
-        try (val keystoreHelper = KeyStoreHelper.create(options)) {
+        try (KeyStoreHelper keystoreHelper = KeyStoreHelper.create(options)) {
             keystoreHelper.run(false);
         } catch (KeyStoreHelperException e) {
             fail(e);
         }
 
         checkPrivateKeyEntry(keyStoreFilePath, keyStorePass, keyPass, keyStoreType, alias);
-        val authority1Alias = "example.org.0";
+        String authority1Alias = "example.org.0";
         checkBundleEntries(trustStoreFilePath, trustStorePass, keyStoreType, authority1Alias);
     }
 
     @Test
     void testNewHelper_use_default_type_and_alias() throws KeyStoreException, SocketEndpointAddressException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException, IOException {
 
-        val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
+        String keyStorefileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(keyStorefileName);
 
-        val trustStoreFileName = RandomStringUtils.randomAlphabetic(10);
+        String trustStoreFileName = RandomStringUtils.randomAlphabetic(10);
         trustStoreFilePath = Paths.get(trustStoreFileName);
 
-        val trustStorePass = "truststore123";
-        val keyStorePass = "keystore123";
-        val keyPass = "keypass123";
+        String trustStorePass = "truststore123";
+        String keyStorePass = "keystore123";
+        String keyPass = "keypass123";
 
         final KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions
                 .builder()
@@ -112,27 +110,27 @@ class KeyStoreHelperTest {
                 .workloadApiClient(workloadApiClient)
                 .build();
 
-        try (val keystoreHelper = KeyStoreHelper.create(options)) {
+        try (KeyStoreHelper keystoreHelper = KeyStoreHelper.create(options)) {
             keystoreHelper.run(false);
         } catch (KeyStoreHelperException e) {
             fail();
         }
 
         checkPrivateKeyEntry(keyStoreFilePath, keyStorePass, keyPass, KeyStoreType.getDefaultType(), KeyStoreHelper.DEFAULT_ALIAS);
-        val authority1Alias = "example.org.0";
+        String authority1Alias = "example.org.0";
         checkBundleEntries(trustStoreFilePath, trustStorePass, KeyStoreType.getDefaultType(), authority1Alias);
     }
 
     @Test
     void testCreateHelper_keyStore_trustStore_same_file_throwsException() throws SocketEndpointAddressException {
 
-        val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
+        String keyStorefileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(keyStorefileName);
 
-        val trustStorePass = "truststore123";
-        val keyStorePass = "keystore123";
-        val keyPass = "keypass123";
-        val alias = "other_alias";
+        String trustStorePass = "truststore123";
+        String keyStorePass = "keystore123";
+        String keyPass = "keypass123";
+        String alias = "other_alias";
 
         final KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions
                 .builder()
@@ -161,10 +159,10 @@ class KeyStoreHelperTest {
         keyStoreFilePath = Paths.get("dummy://invalid");
         trustStoreFilePath = Paths.get("dummy://otherinvalid");
 
-        val trustStorePass = "truststore123";
-        val keyStorePass = "keystore123";
-        val keyPass = "keypass123";
-        val alias = "other_alias";
+        String trustStorePass = "truststore123";
+        String keyStorePass = "keystore123";
+        String keyPass = "keypass123";
+        String alias = "other_alias";
 
         final KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions
                 .builder()
@@ -192,7 +190,7 @@ class KeyStoreHelperTest {
     @Test
     void testCreateKeyStoreHelper_createNewClient() throws Exception {
         new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test").execute(() -> {
-            val options = getKeyStoreValidOptions(null);
+            KeyStoreHelper.KeyStoreOptions options = getKeyStoreValidOptions(null);
             try {
                 KeyStoreHelper.create(options);
             } catch (KeyStoreHelperException e) {
@@ -206,7 +204,7 @@ class KeyStoreHelperTest {
         try {
             KeyStoreHelper.create(null);
         } catch (NullPointerException e) {
-            assertEquals("options is marked non-null but is null", e.getMessage());
+            assertEquals("options must not be null", e.getMessage());
         } catch (SocketEndpointAddressException | KeyStoreHelperException | KeyStoreException e) {
             fail();
         }
@@ -214,7 +212,7 @@ class KeyStoreHelperTest {
 
     @Test
     void testCreateKeyStoreHelper_cannotRunIfClosed() throws Exception {
-        val options = getKeyStoreValidOptions(workloadApiClient);
+        KeyStoreHelper.KeyStoreOptions options = getKeyStoreValidOptions(workloadApiClient);
         try {
             KeyStoreHelper helper = KeyStoreHelper.create(options);
             helper.close();
@@ -228,7 +226,7 @@ class KeyStoreHelperTest {
 
     @Test
     void testCreateKeyStoreHelper_throwsExceptionWhenNoUpdateCanBeFetched() throws Exception {
-        val options = getKeyStoreValidOptions(workloadApiClientErrorStub);
+        KeyStoreHelper.KeyStoreOptions options = getKeyStoreValidOptions(workloadApiClientErrorStub);
         try {
             KeyStoreHelper helper = KeyStoreHelper.create(options);
             helper.run(false);
@@ -243,7 +241,7 @@ class KeyStoreHelperTest {
         try {
             KeyStoreHelper.KeyStoreOptions.builder().build();
         } catch (NullPointerException e) {
-            assertEquals("keyStorePath is marked non-null but is null", e.getMessage());
+            assertEquals("keyStorePath must not be null", e.getMessage());
         }
     }
 
@@ -255,7 +253,7 @@ class KeyStoreHelperTest {
                     .keyStorePath(Paths.get("test"))
                     .build();
         } catch (NullPointerException e) {
-            assertEquals("trustStorePath is marked non-null but is null", e.getMessage());
+            assertEquals("trustStorePath must not be null", e.getMessage());
         }
     }
 
@@ -268,7 +266,7 @@ class KeyStoreHelperTest {
                     .trustStorePath(Paths.get("example"))
                     .build();
         } catch (NullPointerException e) {
-            assertEquals("keyStorePass is marked non-null but is null", e.getMessage());
+            assertEquals("keyStorePass must not be null", e.getMessage());
         }
     }
 
@@ -282,7 +280,7 @@ class KeyStoreHelperTest {
                     .keyStorePass("example1")
                     .build();
         } catch (NullPointerException e) {
-            assertEquals("trustStorePass is marked non-null but is null", e.getMessage());
+            assertEquals("trustStorePass must not be null", e.getMessage());
         }
     }
 
@@ -297,23 +295,23 @@ class KeyStoreHelperTest {
                     .trustStorePass("example2")
                     .build();
         } catch (NullPointerException e) {
-            assertEquals("keyPass is marked non-null but is null", e.getMessage());
+            assertEquals("keyPass must not be null", e.getMessage());
         }
     }
 
 
     private KeyStoreHelper.KeyStoreOptions getKeyStoreValidOptions(WorkloadApiClient workloadApiClient) {
-        val keyStorefileName = RandomStringUtils.randomAlphabetic(10);
+        String keyStorefileName = RandomStringUtils.randomAlphabetic(10);
         keyStoreFilePath = Paths.get(keyStorefileName);
-        val trustStorefileName = RandomStringUtils.randomAlphabetic(10);
+        String trustStorefileName = RandomStringUtils.randomAlphabetic(10);
         trustStoreFilePath = Paths.get(trustStorefileName);
 
-        val trustStorePass = "truststore123";
-        val keyStorePass = "keystore123";
-        val keyPass = "keypass123";
-        val alias = "other_alias";
+        String trustStorePass = "truststore123";
+        String keyStorePass = "keystore123";
+        String keyPass = "keypass123";
+        String alias = "other_alias";
 
-        val options = KeyStoreHelper.KeyStoreOptions
+        KeyStoreHelper.KeyStoreOptions.Builder options = KeyStoreHelper.KeyStoreOptions
                 .builder()
                 .keyStorePath(keyStoreFilePath)
                 .keyStorePass(keyStorePass)
@@ -337,12 +335,12 @@ class KeyStoreHelperTest {
                                       String alias)
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException {
 
-        val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+        KeyStore keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
 
         keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
-        val chain = keyStore.getCertificateChain(alias);
-        val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) chain[0]);
-        val privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword.toCharArray());
+        Certificate[] chain = keyStore.getCertificateChain(alias);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId((X509Certificate) chain[0]);
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, privateKeyPassword.toCharArray());
 
         assertEquals(1, chain.length);
         assertEquals("spiffe://example.org/workload-server", spiffeId.toString());
@@ -355,12 +353,12 @@ class KeyStoreHelperTest {
                                     String alias)
             throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
 
-        val keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+        KeyStore keyStore = java.security.KeyStore.getInstance(keyStoreType.value());
         keyStore.load(Files.newInputStream(keyStoreFilePath), keyStorePassword.toCharArray());
-        val certificate = keyStore.getCertificate(alias);
+        Certificate certificate = keyStore.getCertificate(alias);
         assertNotNull(certificate);
 
-        val spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId((X509Certificate) certificate);
         assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId);
     }
 

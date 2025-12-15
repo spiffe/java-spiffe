@@ -3,8 +3,6 @@ package io.spiffe.svid.x509svid;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
-import lombok.Builder;
-import lombok.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -219,7 +217,7 @@ class X509SvidTest {
             X509Svid.parseRaw(null, new byte[]{});
             fail();
         } catch (NullPointerException e) {
-            assertEquals("certsBytes is marked non-null but is null", e.getMessage());
+            assertEquals("certsBytes must not be null", e.getMessage());
         } catch (X509SvidException e) {
             fail();
         }
@@ -231,7 +229,7 @@ class X509SvidTest {
             X509Svid.parseRaw(new byte[]{}, null);
             fail();
         } catch (NullPointerException e) {
-            assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());
+            assertEquals("privateKeyBytes must not be null", e.getMessage());
         } catch (X509SvidException e) {
             fail();
         }
@@ -265,7 +263,7 @@ class X509SvidTest {
             X509Svid.load(null, Paths.get(toUri(keyRSA)));
             fail("should have thrown exception");
         } catch (NullPointerException | X509SvidException e) {
-            assertEquals("certsFilePath is marked non-null but is null", e.getMessage());
+            assertEquals("certsFilePath must not be null", e.getMessage());
         }
     }
 
@@ -275,7 +273,7 @@ class X509SvidTest {
             X509Svid.load(Paths.get(toUri(certSingle)), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("privateKeyFilePath is marked non-null but is null", e.getMessage());
+            assertEquals("privateKeyFilePath must not be null", e.getMessage());
         }
     }
 
@@ -285,7 +283,7 @@ class X509SvidTest {
             X509Svid.parse(null, "key".getBytes());
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("certsBytes is marked non-null but is null", e.getMessage());
+            assertEquals("certsBytes must not be null", e.getMessage());
         }
     }
 
@@ -295,7 +293,7 @@ class X509SvidTest {
             X509Svid.parse("cert".getBytes(), null);
             fail("should have thrown exception");
         } catch (NullPointerException e) {
-            assertEquals("privateKeyBytes is marked non-null but is null", e.getMessage());
+            assertEquals("privateKeyBytes must not be null", e.getMessage());
         }
     }
 
@@ -326,7 +324,7 @@ class X509SvidTest {
             byte[] certBytes = Files.readAllBytes(certPath);
             byte[] keyBytes = Files.readAllBytes(keyPath);
 
-            X509Svid x509Svid = X509Svid.parse(certBytes, keyBytes, testCase.getHint());
+            X509Svid x509Svid = X509Svid.parse(certBytes, keyBytes, testCase.hint);
 
             if (StringUtils.isNotBlank(testCase.expectedError)) {
                 fail(String.format("Error was expected: %s", testCase.expectedError));
@@ -349,7 +347,6 @@ class X509SvidTest {
         }
     }
 
-    @Value
     static class TestCase {
         String name;
         String certsPath;
@@ -361,8 +358,16 @@ class X509SvidTest {
         String expectedHint;
         String expectedError;
 
-        @Builder
-        public TestCase(String name, String certsPath, String keyPath, String hint, SpiffeId expectedSpiffeId, int expectedNumberOfCerts, String expectedPrivateKeyAlgorithm, String expectedHint, String expectedError) {
+        public TestCase(String name,
+                        String certsPath,
+                        String keyPath,
+                        String hint,
+                        SpiffeId expectedSpiffeId,
+                        int expectedNumberOfCerts,
+                        String expectedPrivateKeyAlgorithm,
+                        String expectedHint,
+                        String expectedError) {
+
             this.name = name;
             this.certsPath = certsPath;
             this.keyPath = keyPath;
@@ -370,8 +375,85 @@ class X509SvidTest {
             this.expectedSpiffeId = expectedSpiffeId;
             this.expectedNumberOfCerts = expectedNumberOfCerts;
             this.expectedPrivateKeyAlgorithm = expectedPrivateKeyAlgorithm;
-            this.expectedError = expectedError;
             this.expectedHint = expectedHint;
+            this.expectedError = expectedError;
+        }
+
+        // ----- Builder -----
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private String name;
+            private String certsPath;
+            private String keyPath;
+            private String hint;
+            private SpiffeId expectedSpiffeId;
+            private int expectedNumberOfCerts;
+            private String expectedPrivateKeyAlgorithm;
+            private String expectedHint;
+            private String expectedError;
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder certsPath(String certsPath) {
+                this.certsPath = certsPath;
+                return this;
+            }
+
+            public Builder keyPath(String keyPath) {
+                this.keyPath = keyPath;
+                return this;
+            }
+
+            public Builder hint(String hint) {
+                this.hint = hint;
+                return this;
+            }
+
+            public Builder expectedSpiffeId(SpiffeId expectedSpiffeId) {
+                this.expectedSpiffeId = expectedSpiffeId;
+                return this;
+            }
+
+            public Builder expectedNumberOfCerts(int expectedNumberOfCerts) {
+                this.expectedNumberOfCerts = expectedNumberOfCerts;
+                return this;
+            }
+
+            public Builder expectedPrivateKeyAlgorithm(String expectedPrivateKeyAlgorithm) {
+                this.expectedPrivateKeyAlgorithm = expectedPrivateKeyAlgorithm;
+                return this;
+            }
+
+            public Builder expectedHint(String expectedHint) {
+                this.expectedHint = expectedHint;
+                return this;
+            }
+
+            public Builder expectedError(String expectedError) {
+                this.expectedError = expectedError;
+                return this;
+            }
+
+            public TestCase build() {
+                return new TestCase(
+                        name,
+                        certsPath,
+                        keyPath,
+                        hint,
+                        expectedSpiffeId,
+                        expectedNumberOfCerts,
+                        expectedPrivateKeyAlgorithm,
+                        expectedHint,
+                        expectedError
+                );
+            }
         }
     }
 }

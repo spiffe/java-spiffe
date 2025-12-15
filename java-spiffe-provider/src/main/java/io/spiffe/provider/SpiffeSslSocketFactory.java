@@ -7,8 +7,6 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.SpiffeIdUtils;
 import io.spiffe.workloadapi.DefaultX509Source;
 import io.spiffe.workloadapi.X509Source;
-import lombok.extern.java.Log;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.SSLContext;
@@ -21,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPERTY;
 
@@ -28,8 +27,10 @@ import static io.spiffe.provider.SpiffeProviderConstants.SSL_SPIFFE_ACCEPT_PROPE
  * Implementation of {@link SSLSocketFactory} that provides methods to create {@link javax.net.ssl.SSLSocket}
  * backed by a SPIFFE SSLContext {@link SpiffeSslContextFactory}.
  */
-@Log
 public class SpiffeSslSocketFactory extends SSLSocketFactory {
+
+    private static final Logger log =
+            Logger.getLogger(SpiffeSslSocketFactory.class.getName());
 
     private final SSLSocketFactory delegate;
 
@@ -81,7 +82,7 @@ public class SpiffeSslSocketFactory extends SSLSocketFactory {
      */
     public SpiffeSslSocketFactory(final SslContextOptions contextOptions)
             throws KeyManagementException, NoSuchAlgorithmException {
-        val sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
+        final SSLContext sslContext = SpiffeSslContextFactory.getSslContext(contextOptions);
         delegate = sslContext.getSocketFactory();
     }
 

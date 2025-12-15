@@ -1,7 +1,5 @@
 package io.spiffe.internal;
 
-import lombok.NonNull;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -103,7 +101,7 @@ public enum JwtSignatureAlgorithm {
         }
     }
 
-    public static JwtSignatureAlgorithm parse(@NonNull final String s) {
+    public static JwtSignatureAlgorithm parse(String s) {
         final JwtSignatureAlgorithm algorithm;
         if (s.equals(RS256.getName())) {
             algorithm = RS256;

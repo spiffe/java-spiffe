@@ -1,9 +1,9 @@
 package io.spiffe.spiffeid;
 
-import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
@@ -50,8 +50,8 @@ class SpiffeIdUtilsTest {
 
     @Test
     void toSetOfSpiffeIdsDefaultSeparator() {
-        val spiffeIdsAsString = "spiffe://example.org/workload1|spiffe://example.org/workload2";
-        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString);
+        final String spiffeIdsAsString = "spiffe://example.org/workload1|spiffe://example.org/workload2";
+        final Set<SpiffeId> spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString);
 
         assertNotNull(spiffeIdSet);
         assertEquals(2, spiffeIdSet.size());
@@ -61,8 +61,8 @@ class SpiffeIdUtilsTest {
 
     @Test
     void toSetOfSpiffeIdsBlankSpaceSeparator() {
-        val spiffeIdsAsString = "spiffe://example.org/workload1 spiffe://example.org/workload2";
-        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ' ');
+        final String spiffeIdsAsString = "spiffe://example.org/workload1 spiffe://example.org/workload2";
+        final Set<SpiffeId> spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ' ');
 
         assertNotNull(spiffeIdSet);
         assertEquals(2, spiffeIdSet.size());
@@ -72,8 +72,8 @@ class SpiffeIdUtilsTest {
 
     @Test
     void toSetOfSpiffeIdsCommaSeparator() {
-        val spiffeIdsAsString = "spiffe://example.org/workload1,spiffe://example.org/workload2";
-        val spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ',');
+        final String spiffeIdsAsString = "spiffe://example.org/workload1,spiffe://example.org/workload2";
+        final Set<SpiffeId> spiffeIdSet = SpiffeIdUtils.toSetOfSpiffeIds(spiffeIdsAsString, ',');
 
         assertNotNull(spiffeIdSet);
         assertEquals(2, spiffeIdSet.size());
@@ -95,7 +95,7 @@ class SpiffeIdUtilsTest {
 
     @Test
     void testPrivateConstructor_InstanceCannotBeCreated() throws IllegalAccessException, InstantiationException {
-        val constructor = SpiffeIdUtils.class.getDeclaredConstructors()[0];
+        final Constructor<?> constructor = SpiffeIdUtils.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
         try {
             constructor.newInstance();
