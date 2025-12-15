@@ -1,11 +1,11 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "${shadowVersion}"
+    id "com.gradleup.shadow" version "${shadowVersion}"
 }
 
 description = "Java Security Provider implementation supporting X.509-SVIDs and methods for " +
               "creating SSLContexts that are backed by the Workload API."
 
-apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.gradleup.shadow'
 
 assemble.dependsOn shadowJar
 

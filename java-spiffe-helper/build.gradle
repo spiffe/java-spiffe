@@ -1,10 +1,10 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "${shadowVersion}"
+    id "com.gradleup.shadow" version "${shadowVersion}"
 }
 
 description = "Java SPIFFE Library Helper module to store X.509 SVIDs and Bundles in a Java KeyStore in disk"
 
-apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.gradleup.shadow'
 
 assemble.dependsOn shadowJar
 
