@@ -252,9 +252,9 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
 
     @Override
     public String toString() {
-        return "JwtBundle{" +
+        return "JwtBundle(" +
                 "trustDomain=" + trustDomain +
                 ", jwtAuthorities=" + jwtAuthorities +
-                '}';
+                ')';
     }
 }

@@ -157,12 +157,12 @@ public class ExponentialBackoffPolicy {
 
     @Override
     public String toString() {
-        return "ExponentialBackoffPolicy{" +
+        return "ExponentialBackoffPolicy(" +
                 "initialDelay=" + initialDelay +
                 ", maxDelay=" + maxDelay +
                 ", maxRetries=" + maxRetries +
                 ", backoffMultiplier=" + backoffMultiplier +
                 ", backoffFunction=" + backoffFunction +
-                '}';
+                ')';
     }
 }

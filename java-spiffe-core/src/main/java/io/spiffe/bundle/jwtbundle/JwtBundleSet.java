@@ -106,8 +106,8 @@ public final class JwtBundleSet implements BundleSource<JwtBundle> {
 
     @Override
     public String toString() {
-        return "JwtBundleSet{" +
+        return "JwtBundleSet(" +
                 "bundles=" + bundles +
-                '}';
+                ')';
     }
 }

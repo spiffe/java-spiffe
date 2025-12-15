@@ -95,11 +95,11 @@ class PrivateKeyEntry {
 
     @Override
     public String toString() {
-        return "PrivateKeyEntry{" +
+        return "PrivateKeyEntry(" +
                 "alias='" + alias + '\'' +
                 ", privateKey=" + privateKey +
                 ", password='[PROTECTED]'" +
                 ", certificateChain=" + Arrays.toString(certificateChain) +
-                '}';
+                ')';
     }
 }

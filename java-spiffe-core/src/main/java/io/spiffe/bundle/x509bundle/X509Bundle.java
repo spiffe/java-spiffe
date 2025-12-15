@@ -182,9 +182,9 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
 
     @Override
     public String toString() {
-        return "X509Bundle{" +
+        return "X509Bundle(" +
                 "trustDomain=" + trustDomain +
                 ", x509Authorities=" + x509Authorities +
-                '}';
+                ')';
     }
 }

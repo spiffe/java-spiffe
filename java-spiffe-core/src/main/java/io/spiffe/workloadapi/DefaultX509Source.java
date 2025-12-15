@@ -357,12 +357,12 @@ public final class DefaultX509Source implements X509Source {
 
         @Override
         public String toString() {
-            return "X509SourceOptions{" +
+            return "X509SourceOptions(" +
                     "spiffeSocketPath='" + spiffeSocketPath + '\'' +
                     ", initTimeout=" + initTimeout +
                     ", svidPicker=" + svidPicker +
                     ", workloadApiClient=" + workloadApiClient +
-                    '}';
+                    ')';
         }
     }
 }

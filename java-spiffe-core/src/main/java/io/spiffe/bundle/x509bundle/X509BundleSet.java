@@ -94,8 +94,6 @@ public final class X509BundleSet implements BundleSource<X509Bundle> {
         return Collections.unmodifiableMap(bundles);
     }
 
-    // -------- equals, hashCode, toString (replacement for @Value) --------
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -111,8 +109,8 @@ public final class X509BundleSet implements BundleSource<X509Bundle> {
 
     @Override
     public String toString() {
-        return "X509BundleSet{" +
+        return "X509BundleSet(" +
                 "bundles=" + bundles +
-                '}';
+                ')';
     }
 }

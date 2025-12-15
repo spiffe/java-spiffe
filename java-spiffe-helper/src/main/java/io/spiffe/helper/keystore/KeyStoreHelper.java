@@ -443,7 +443,7 @@ public class KeyStoreHelper implements Closeable {
 
         @Override
         public String toString() {
-            return "KeyStoreOptions{" +
+            return "KeyStoreOptions(" +
                     "keyStorePath=" + keyStorePath +
                     ", trustStorePath=" + trustStorePath +
                     ", keyStoreType=" + keyStoreType +
@@ -453,7 +453,7 @@ public class KeyStoreHelper implements Closeable {
                     ", keyAlias='" + keyAlias + '\'' +
                     ", spiffeSocketPath='" + spiffeSocketPath + '\'' +
                     ", workloadApiClient=" + workloadApiClient +
-                    '}';
+                    ')';
         }
     }
 }

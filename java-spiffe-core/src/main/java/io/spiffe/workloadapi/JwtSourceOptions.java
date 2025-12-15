@@ -102,10 +102,10 @@ public class JwtSourceOptions {
 
     @Override
     public String toString() {
-        return "JwtSourceOptions{" +
+        return "JwtSourceOptions(" +
                 "spiffeSocketPath='" + spiffeSocketPath + '\'' +
                 ", initTimeout=" + initTimeout +
                 ", workloadApiClient=" + workloadApiClient +
-                '}';
+                ')';
     }
 }
