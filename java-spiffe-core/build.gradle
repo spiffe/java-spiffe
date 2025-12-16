@@ -44,15 +44,26 @@ tasks.register('integrationTest', Test) {
     shouldRunAfter(tasks.named('test'))
 }
 
-def protocClassifier = "${osdetector.classifier}@exe"
+def protocExe = "com.google.protobuf:protoc:3.25.5:${osdetector.classifier}@exe"
+def grpcExe   = "io.grpc:protoc-gen-grpc-java:${grpcVersion}:${osdetector.classifier}@exe"
+
+configurations {
+    protocTool
+    grpcTool
+}
+
+dependencies {
+    protocTool protocExe
+    grpcTool   grpcExe
+}
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.25.5:${protocClassifier}"
+        path = configurations.protocTool.singleFile.absolutePath
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}:${protocClassifier}"
+            path = configurations.grpcTool.singleFile.absolutePath
         }
     }
     generateProtoTasks {
