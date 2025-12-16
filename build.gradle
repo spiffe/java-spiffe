@@ -1,5 +1,4 @@
 plugins {
-    id 'com.github.kt3k.coveralls' version '2.12.2'
     id 'com.google.osdetector' version '1.7.3'
     id 'jvm-test-suite'
     id 'com.vanniktech.maven.publish' version '0.35.0'
@@ -151,13 +150,6 @@ jacocoTestReport.dependsOn {
     subprojects.collectMany { project ->
         project.tasks.matching { it.name in ['test'] }
     }
-}
-
-coveralls {
-    jacocoReportPath 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
-    sourceDirs = ['java-spiffe-core/src/main/java',
-                  'java-spiffe-helper/src/main/java',
-                  'java-spiffe-provider/src/main/java']
 }
 
 // copy submodules jars to a common folder for deploy
