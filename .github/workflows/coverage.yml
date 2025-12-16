@@ -13,7 +13,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: 'adopt'
 
       - name: Generate JaCoCo report
         run: ./gradlew test jacocoTestReport
