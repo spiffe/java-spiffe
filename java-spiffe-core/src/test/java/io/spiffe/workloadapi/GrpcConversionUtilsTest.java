@@ -8,16 +8,20 @@ import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.svid.x509svid.X509Svid;
 import io.spiffe.workloadapi.grpc.Workload;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -127,5 +131,87 @@ class GrpcConversionUtilsTest {
                 .putBundles(TrustDomain.parse("example.org").getName(), bundleByteString)
                 .putBundles(TrustDomain.parse("domain.test").getName(), federatedByteString)
                 .build();
+    }
+
+    @Test
+    void getListOfX509Svid_dedupesOnlyNonEmptyHints() throws Exception {
+
+        ByteString certA = loadTestResource("testdata/certs/leaf-a.crt.der");
+        ByteString keyA  = loadTestResource("testdata/certs/leaf-a.key.der");
+
+        ByteString certB = loadTestResource("testdata/certs/leaf-b.crt.der");
+        ByteString keyB  = loadTestResource("testdata/certs/leaf-b.key.der");
+
+        ByteString certC = loadTestResource("testdata/certs/leaf-c.crt.der");
+        ByteString keyC  = loadTestResource("testdata/certs/leaf-c.key.der");
+
+        ByteString certD = loadTestResource("testdata/certs/leaf-d.crt.der");
+        ByteString keyD  = loadTestResource("testdata/certs/leaf-d.key.der");
+
+        ByteString certE = loadTestResource("testdata/certs/leaf-e.crt.der");
+        ByteString keyE  = loadTestResource("testdata/certs/leaf-e.key.der");
+
+        Workload.X509SVID svidA = Workload.X509SVID.newBuilder()
+                .setHint("")
+                .setSpiffeId("spiffe://test/a")
+                .setX509Svid(certA)
+                .setX509SvidKey(keyA)
+                .build();
+
+        Workload.X509SVID svidB = Workload.X509SVID.newBuilder()
+                .setHint("")
+                .setSpiffeId("spiffe://test/b")
+                .setX509Svid(certB)
+                .setX509SvidKey(keyB)
+                .build();
+
+        Workload.X509SVID svidC = Workload.X509SVID.newBuilder()
+                .setHint("hintX")
+                .setSpiffeId("spiffe://test/c")
+                .setX509Svid(certC)
+                .setX509SvidKey(keyC)
+                .build();
+
+        Workload.X509SVID svidD = Workload.X509SVID.newBuilder()
+                .setHint("hintX")
+                .setSpiffeId("spiffe://test/d")
+                .setX509Svid(certD)
+                .setX509SvidKey(keyD)
+                .build();
+
+        Workload.X509SVID svidE = Workload.X509SVID.newBuilder()
+                .setHint("hintY")
+                .setSpiffeId("spiffe://test/e")
+                .setX509Svid(certE)
+                .setX509SvidKey(keyE)
+                .build();
+
+        Workload.X509SVIDResponse resp = Workload.X509SVIDResponse.newBuilder()
+                .addSvids(svidA)
+                .addSvids(svidB)
+                .addSvids(svidC)
+                .addSvids(svidD)
+                .addSvids(svidE)
+                .build();
+
+        // Act
+        List<X509Svid> out = GrpcConversionUtils.getListOfX509Svid(resp);
+
+        // Assert: B must NOT be removed; D must be removed; order preserved
+        assertEquals(4, out.size());
+        assertEquals("spiffe://test/a", out.get(0).getSpiffeId().toString());
+        assertEquals("spiffe://test/b", out.get(1).getSpiffeId().toString());
+        assertEquals("spiffe://test/c", out.get(2).getSpiffeId().toString());
+        assertEquals("spiffe://test/e", out.get(3).getSpiffeId().toString());
+
+    }
+
+    private static ByteString loadTestResource(String resourcePath) throws IOException {
+        try (InputStream in = GrpcConversionUtilsTest.class.getResourceAsStream("/" + resourcePath)) {
+            if (in == null) {
+                throw new FileNotFoundException("Resource not found on classpath: " + resourcePath);
+            }
+            return ByteString.copyFrom(in.readAllBytes());
+        }
     }
 }
