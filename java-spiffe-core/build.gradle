@@ -31,6 +31,9 @@ configurations {
     integrationTestImplementation.extendsFrom(testImplementation)
     integrationTestRuntimeOnly.extendsFrom(testRuntimeOnly)
     integrationTestCompileOnly.extendsFrom(testCompileOnly)
+
+    protocTool
+    grpcTool
 }
 
 tasks.register('integrationTest', Test) {
@@ -47,14 +50,39 @@ tasks.register('integrationTest', Test) {
 def protocExe = "com.google.protobuf:protoc:3.25.5:${osdetector.classifier}@exe"
 def grpcExe   = "io.grpc:protoc-gen-grpc-java:${grpcVersion}:${osdetector.classifier}@exe"
 
-configurations {
-    protocTool
-    grpcTool
-}
-
 dependencies {
     protocTool protocExe
     grpcTool   grpcExe
+
+    def osArch = System.getProperty("os.arch")
+
+    if (osdetector.os.is('osx')) {
+        if (osArch == "x86_64") {
+            compileOnly(project('grpc-netty-macos'))
+            testImplementation(project('grpc-netty-macos'))
+        } else if (osArch == "aarch64") {
+            compileOnly(project('grpc-netty-macos-aarch64'))
+            testImplementation(project('grpc-netty-macos-aarch64'))
+        } else {
+            throw new GradleException("Architecture not supported: ${osArch}")
+        }
+    } else {
+        compileOnly(project('grpc-netty-linux'))
+        testImplementation(project('grpc-netty-linux'))
+    }
+
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    testImplementation "io.grpc:grpc-inprocess:${grpcVersion}"
+    testImplementation "io.grpc:grpc-testing:${grpcVersion}"
+
+    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+
+    implementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
+    testFixturesImplementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
+
+    testFixturesImplementation "org.bouncycastle:bcpkix-jdk15on:1.70"
+    testFixturesImplementation "org.apache.commons:commons-lang3:3.20.0"
 }
 
 protobuf {
@@ -75,55 +103,19 @@ protobuf {
     }
 }
 
-dependencies {
-    def osArch = System.getProperty("os.arch")
-
-    if (osdetector.os.is('osx') ) {
-        if (osArch == "x86_64") {
-            compileOnly(project('grpc-netty-macos'))
-            testImplementation(project('grpc-netty-macos'))
-        } else if (osArch == "aarch64") {
-            compileOnly(project('grpc-netty-macos-aarch64'))
-            testImplementation(project('grpc-netty-macos-aarch64'))
-        } else {
-            throw new GradleException("Architecture not supported: ${osArch}")
-        }
-    } else {
-        compileOnly(project('grpc-netty-linux'))
-        testImplementation(project('grpc-netty-linux'))
-    }
-
-    project.ext.osArch = System.getProperty("os.arch")
-
-
-    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
-    implementation "io.grpc:grpc-stub:${grpcVersion}"
-    testImplementation "io.grpc:grpc-inprocess:${grpcVersion}"
-    testImplementation "io.grpc:grpc-testing:${grpcVersion}"
-
-    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
-
-    implementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
-    testFixturesImplementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
-
-    testFixturesImplementation "org.bouncycastle:bcpkix-jdk15on:1.70"
-    testFixturesImplementation "org.apache.commons:commons-lang3:3.20.0"
-}
-
 import com.google.protobuf.gradle.GenerateProtoTask
-// Ensure protoc and plugins are executable in container/CI environments
-tasks.withType(GenerateProtoTask).configureEach { t ->
-    doFirst {
-        def protocPath = protobuf.protoc.path
-        if (protocPath) {
-            file(protocPath).setExecutable(true, false)
-        }
 
-        def grpcPluginPath = protobuf.plugins.findByName("grpc")?.path
-        if (grpcPluginPath) {
-            file(grpcPluginPath).setExecutable(true, false)
-        }
+def protocBin = configurations.protocTool.singleFile
+def grpcBin   = configurations.grpcTool.singleFile
+
+tasks.register("makeProtoToolsExecutable") {
+    inputs.files(protocBin, grpcBin)
+    doLast {
+        protocBin.setExecutable(true, false)
+        grpcBin.setExecutable(true, false)
     }
 }
 
-
+tasks.withType(GenerateProtoTask).configureEach {
+    dependsOn(tasks.named("makeProtoToolsExecutable"))
+}
