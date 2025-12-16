@@ -6,20 +6,25 @@ on:
 
 jobs:
   create-coverage:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v6
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           java-version: '17'
-          distribution: 'adopt'
-      - name: Generate and upload coverage report
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: ./gradlew jacocoTestReport coveralls
+          distribution: 'temurin'
+
+      - name: Generate JaCoCo report
+        run: ./gradlew test jacocoTestReport
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+          format: jacoco
+
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.

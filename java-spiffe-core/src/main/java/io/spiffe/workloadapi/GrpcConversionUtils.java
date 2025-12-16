@@ -129,21 +129,25 @@ final class GrpcConversionUtils {
         return parseX509Bundle(trustDomain, bundleBytes);
     }
 
-    private static List<X509Svid> getListOfX509Svid(final Workload.X509SVIDResponse x509SvidResponse) throws X509ContextException{
+    static List<X509Svid> getListOfX509Svid(final Workload.X509SVIDResponse x509SvidResponse) throws X509ContextException{
 
         final List<X509Svid> result = new ArrayList<>();
-        HashSet<String> hints = new HashSet<>();
+        final Set<String> seenHints = new HashSet<>();
 
         for (Workload.X509SVID x509SVID : x509SvidResponse.getSvidsList()) {
-            // In the event of more than one X509SVID message with the same hint value set, then the first message in the
-            // list SHOULD be selected.
-            if (hints.contains(x509SVID.getHint())) {
-                continue;
+
+            final String hint = x509SVID.getHint();
+
+            if (!hint.isEmpty()) {
+                if (seenHints.contains(hint)) {
+                    continue;
+                }
+                seenHints.add(hint);
             }
-            final X509Svid svid = createAndValidateX509Svid(x509SVID);
-            hints.add(svid.getHint());
-            result.add(svid);
+
+            result.add(createAndValidateX509Svid(x509SVID));
         }
+
         return result;
     }
 
