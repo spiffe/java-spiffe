@@ -1,17 +1,10 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.9.5'
-    }
+plugins {
+    id 'com.google.protobuf' version '0.9.5'
+    id 'java-library'
+    id 'java-test-fixtures'
 }
 
 description = "Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundles from the Workload API."
-
-apply plugin: 'com.google.protobuf'
-apply plugin: 'java-test-fixtures'
 
 sourceSets {
     main {
@@ -22,59 +15,67 @@ sourceSets {
     }
 
     integrationTest {
-        java {
-            compileClasspath += main.output + test.output
-            runtimeClasspath += main.output + test.output
-            srcDir file('src/integrationTest/java')
-        }
+        java.srcDir file('src/integrationTest/java')
         resources.srcDir file('src/integrationTest/resources')
+
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
     }
 }
 
-sourcesJar.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-configurations {
-    integrationTestImplementation.extendsFrom testImplementation
-    integrationTestCompile.extendsFrom testCompile
-    integrationTestCompileOnly.extendsFrom testCompileOnly
-    integrationTestRuntime.extendsFrom testRuntime
-    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+tasks.named('sourcesJar') {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-task integrationTest(type: Test) {
+configurations {
+    integrationTestImplementation.extendsFrom(testImplementation)
+    integrationTestRuntimeOnly.extendsFrom(testRuntimeOnly)
+    integrationTestCompileOnly.extendsFrom(testCompileOnly)
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
     useJUnitPlatform()
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-    outputs.upToDateWhen { false }
+
+    shouldRunAfter(tasks.named('test'))
 }
+
+def protocClassifier = "${osdetector.classifier}@exe"
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.25.5'
+        artifact = "com.google.protobuf:protoc:3.25.5:${protocClassifier}"
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}:${protocClassifier}"
         }
     }
     generateProtoTasks {
-        all()*.plugins {
-            grpc {}
+        all().configureEach {
+            plugins {
+                grpc {}
+            }
         }
     }
 }
 
 dependencies {
+    def osArch = System.getProperty("os.arch")
+
     if (osdetector.os.is('osx') ) {
-        project.ext.osArch = System.getProperty("os.arch")
-        if ("x86_64" == project.ext.osArch) {
+        if (osArch == "x86_64") {
             compileOnly(project('grpc-netty-macos'))
             testImplementation(project('grpc-netty-macos'))
-        } else if ("aarch64" == project.ext.osArch) {
+        } else if ( osArch == "aarch64") {
             compileOnly(project('grpc-netty-macos-aarch64'))
             testImplementation(project('grpc-netty-macos-aarch64'))
         } else {
-            throw new GradleException("Architecture not supported: " + project.ext.osArch)
+            throw new GradleException("Architecture not supported: ${osArch}")
         }
     } else {
         compileOnly(project('grpc-netty-linux'))
@@ -84,18 +85,17 @@ dependencies {
     project.ext.osArch = System.getProperty("os.arch")
 
 
-    implementation group: 'io.grpc', name: 'grpc-protobuf', version: "${grpcVersion}"
-    implementation group: 'io.grpc', name: 'grpc-stub', version: "${grpcVersion}"
-    testImplementation group: 'io.grpc', name: 'grpc-inprocess', version: "${grpcVersion}"
-    testImplementation group: 'io.grpc', name: 'grpc-testing', version: "${grpcVersion}"
-    compileOnly group: 'org.apache.tomcat', name: 'annotations-api', version: '6.0.53' // necessary for Java 9+
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    testImplementation "io.grpc:grpc-inprocess:${grpcVersion}"
+    testImplementation "io.grpc:grpc-testing:${grpcVersion}"
 
-    // library for processing JWT tokens and JOSE JWK bundles
-    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
-    testFixturesImplementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: "${nimbusVersion}"
+    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 
-    // using bouncy castle for generating X.509 certs for testing purposes
-    testFixturesImplementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.70'
-    testFixturesImplementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.20.0'
+    implementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
+    testFixturesImplementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
+
+    testFixturesImplementation "org.bouncycastle:bcpkix-jdk15on:1.70"
+    testFixturesImplementation "org.apache.commons:commons-lang3:3.20.0"
 }
 
