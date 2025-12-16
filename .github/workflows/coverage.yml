@@ -3,7 +3,6 @@ name: coverage
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: {}
 
 jobs:
   create-coverage:
