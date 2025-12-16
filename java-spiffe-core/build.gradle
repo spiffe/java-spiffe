@@ -71,7 +71,7 @@ dependencies {
         if (osArch == "x86_64") {
             compileOnly(project('grpc-netty-macos'))
             testImplementation(project('grpc-netty-macos'))
-        } else if ( osArch == "aarch64") {
+        } else if (osArch == "aarch64") {
             compileOnly(project('grpc-netty-macos-aarch64'))
             testImplementation(project('grpc-netty-macos-aarch64'))
         } else {
