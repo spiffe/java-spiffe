@@ -1,4 +1,3 @@
-SHELL := /bin/bash
 GRADLEW := ./gradlew
 
 GRADLE_FLAGS ?=
