@@ -3,29 +3,30 @@ plugins {
 }
 
 description = "Java Security Provider implementation supporting X.509-SVIDs and methods for " +
-              "creating SSLContexts that are backed by the Workload API."
+        "creating SSLContexts that are backed by the Workload API."
 
-apply plugin: 'com.gradleup.shadow'
-
-assemble.dependsOn shadowJar
+tasks.named('assemble') {
+    dependsOn(tasks.named('shadowJar'))
+}
 
 shadowJar {
     mergeServiceFiles()
-    archiveClassifier = "all-".concat(osdetector.classifier)
+    archiveClassifier = "all-${osdetector.classifier}"
 }
 
 dependencies {
     api(project(":java-spiffe-core"))
 
     // runtimeOnly grpc-netty dependency module will be included in the shadowJar
-    if (osdetector.os.is('osx') ) {
-        project.ext.osArch = System.getProperty("os.arch")
-        if ("x86_64" == project.ext.osArch) {
+    def osArch = System.getProperty("os.arch")
+
+    if (osdetector.os.is('osx')) {
+        if (osArch == 'x86_64') {
             runtimeOnly(project(':java-spiffe-core:grpc-netty-macos'))
-        } else if ("aarch64" == project.ext.osArch) {
+        } else if (osArch == 'aarch64') {
             runtimeOnly(project(':java-spiffe-core:grpc-netty-macos-aarch64'))
         } else {
-            throw new GradleException("Architecture not supported: " + project.ext.osArch)
+            throw new GradleException("Architecture not supported: ${osArch}")
         }
     } else {
         runtimeOnly(project(':java-spiffe-core:grpc-netty-linux'))

@@ -1,9 +1,9 @@
 description = "Java SPIFFE Library GRPC-Netty Linux support module"
 
 dependencies {
-    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: "${grpcVersion}"
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
 }
 
 jar {
-    archiveClassifier = ""
+    archiveClassifier = ''
 }
