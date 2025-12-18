@@ -22,7 +22,7 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+          file: build/reports/jacoco/jacoco.xml
           format: jacoco
 
       - name: Cleanup Gradle Cache
