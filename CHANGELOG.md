@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.15] - 2025-12-23
+
+### Fixed
+
+* Fix X509SVID hint deduplication to apply only to non-empty hints (#385)
+
+### Dependency updates
+
+* Remove lombok and replace all annotations with plain java implementations (#377)
+* Bump io.netty:netty-transport-native-kqueue to 4.2.9.Final (#381)
+* Bump com.google.protobuf to 0.9.6 (#389)
+
+### Build 
+
+* Upgrade to Gradle 9.2.1 and migrate Shadow plugin (#380)
+* Remove deprecations and prep for Gradle 10 (#384)
+* Add Makefile (#388)
+
+
 ## [0.8.14] - 2025-12-09
 
 ### Dependency updates
