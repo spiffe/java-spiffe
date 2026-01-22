@@ -46,8 +46,17 @@ public final class DefaultX509Source implements X509Source {
     private static final String TIMEOUT_SYSTEM_PROPERTY = "spiffe.newX509Source.timeout";
     private static final Duration DEFAULT_TIMEOUT = Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
-    private X509Svid svid;
-    private X509BundleSet bundles;
+    private static final class X509Snapshot {
+        final X509Svid svid;
+        final X509BundleSet bundles;
+
+        X509Snapshot(X509Svid svid, X509BundleSet bundles) {
+            this.svid = svid;
+            this.bundles = bundles;
+        }
+    }
+
+    private volatile X509Snapshot snapshot;
 
     private final Function<List<X509Svid>, X509Svid> picker;
     private final WorkloadApiClient workloadApiClient;
@@ -134,7 +143,11 @@ public final class DefaultX509Source implements X509Source {
         if (isClosed()) {
             throw new IllegalStateException("X.509 SVID source is closed");
         }
-        return svid;
+        X509Snapshot snap = snapshot;
+        if (snap == null) {
+            throw new IllegalStateException("X.509 SVID source not initialized");
+        }
+        return snap.svid;
     }
 
     /**
@@ -149,7 +162,11 @@ public final class DefaultX509Source implements X509Source {
         if (isClosed()) {
             throw new IllegalStateException("X.509 bundle source is closed");
         }
-        return bundles.getBundleForTrustDomain(trustDomain);
+        X509Snapshot snap = snapshot;
+        if (snap == null) {
+            throw new IllegalStateException("X.509 bundle source not initialized");
+        }
+        return snap.bundles.getBundleForTrustDomain(trustDomain);
     }
 
     /**
@@ -224,10 +241,13 @@ public final class DefaultX509Source implements X509Source {
         } else {
             svidUpdate = picker.apply(update.getX509Svids());
         }
-        synchronized (this) {
-            this.svid = svidUpdate;
-            this.bundles = update.getX509BundleSet();
+
+        X509BundleSet bundleSet = update.getX509BundleSet();
+        if (bundleSet == null) {
+            throw new IllegalArgumentException("X509Context bundle set cannot be null");
         }
+
+        this.snapshot = new X509Snapshot(svidUpdate, bundleSet);
     }
 
     private boolean isClosed() {
