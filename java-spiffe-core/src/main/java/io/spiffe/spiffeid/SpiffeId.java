@@ -72,7 +72,7 @@ public final class SpiffeId {
             throw new IllegalArgumentException(EMPTY);
         }
 
-        if (!id.contains(SCHEME_PREFIX)) {
+        if (!id.startsWith(SCHEME_PREFIX)) {
             throw new InvalidSpiffeIdException(WRONG_SCHEME);
         }
 
