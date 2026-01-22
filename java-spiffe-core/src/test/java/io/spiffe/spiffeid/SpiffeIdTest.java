@@ -98,7 +98,8 @@ class SpiffeIdTest {
                 Arguments.of("spiffe://trustdomain/./other", "Path cannot contain dot segments"),
                 Arguments.of("spiffe://trustdomain/../other", "Path cannot contain dot segments"),
                 Arguments.of("spiffe://trustdomain/", "Path cannot have a trailing slash"),
-                Arguments.of("spiffe://trustdomain/path/", "Path cannot have a trailing slash")
+                Arguments.of("spiffe://trustdomain/path/", "Path cannot have a trailing slash"),
+                Arguments.of("xspiffe://trustdomain/path", "Scheme is missing or invalid")
         );
     }
 
