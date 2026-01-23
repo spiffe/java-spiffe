@@ -10,7 +10,6 @@ import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -228,7 +227,7 @@ public class CachedJwtSource implements JwtSource {
         ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, audiencesSet);
 
         List<JwtSvid> svidList = jwtSvids.get(cacheKey);
-        if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
+        if (svidList != null && !svidList.isEmpty() && !isTokenPastHalfLifetime(svidList.get(0))) {
             return svidList;
         }
 
@@ -238,7 +237,7 @@ public class CachedJwtSource implements JwtSource {
             // If it does not exist or the JWT-SVID has passed half its lifetime, call the Workload API to fetch new JWT-SVIDs,
             // add them to the cache map, and return the list of JWT-SVIDs.
             svidList = jwtSvids.get(cacheKey);
-            if (svidList != null && !isTokenPastHalfLifetime(svidList.get(0))) {
+            if (svidList != null && !svidList.isEmpty() && !isTokenPastHalfLifetime(svidList.get(0))) {
                 return svidList;
             }
 
@@ -246,6 +245,9 @@ public class CachedJwtSource implements JwtSource {
                 svidList = workloadApiClient.fetchJwtSvids(audience, extraAudiences);
             } else {
                 svidList = workloadApiClient.fetchJwtSvids(cacheKey.left, audience, extraAudiences);
+            }
+            if (svidList == null || svidList.isEmpty()) {
+                throw new JwtSvidException("Workload API returned empty JWT SVID list");
             }
             jwtSvids.put(cacheKey, svidList);
             return svidList;
@@ -332,5 +334,17 @@ public class CachedJwtSource implements JwtSource {
 
     void setClock(Clock clock) {
         this.clock = clock;
+    }
+
+    // Visible for testing only.
+    // This method exists to allow deterministic testing of cache edge cases
+    // (e.g. empty cached lists) without relying on reflection or timing-based
+    // behavior, which would be more brittle and less safe.
+    void putCachedJwtSvidsForTest(SpiffeId subject, Set<String> audiences, List<JwtSvid> svids) {
+        Objects.requireNonNull(subject, "subject must not be null");
+        Objects.requireNonNull(audiences, "audiences must not be null");
+        Objects.requireNonNull(svids, "svids must not be null");
+        ImmutablePair<SpiffeId, Set<String>> cacheKey = new ImmutablePair<>(subject, new HashSet<>(audiences));
+        jwtSvids.put(cacheKey, new ArrayList<>(svids));
     }
 }

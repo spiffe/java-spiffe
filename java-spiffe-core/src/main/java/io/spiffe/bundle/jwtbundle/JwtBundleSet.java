@@ -39,6 +39,7 @@ public final class JwtBundleSet implements BundleSource<JwtBundle> {
         }
         final Map<TrustDomain, JwtBundle> bundleMap = new ConcurrentHashMap<>();
         for (JwtBundle bundle : bundles) {
+            Objects.requireNonNull(bundle, "bundle must not be null");
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
         return new JwtBundleSet(bundleMap);

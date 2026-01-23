@@ -179,6 +179,22 @@ class JwtSvidParseAndValidateTest {
                                 TestUtils.generateToken(claims, key3, "authority3"),
                                 ""
                         ))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("audience contains expected - success")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(Collections.singleton("audience1"))
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
+                        .expectedException(null)
+                        .expectedJwtSvid(newJwtSvidInstance(
+                                trustDomain.newSpiffeId("host"),
+                                audience,
+                                issuedAt,
+                                expiration,
+                                claims.getClaims(),
+                                TestUtils.generateToken(claims, key1, "authority1"),
+                                null
+                        ))
                         .build())
         );
     }
@@ -242,6 +258,27 @@ class JwtSvidParseAndValidateTest {
                         .expectedAudience(Collections.singleton("another"))
                         .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience2, audience1])"))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("missing audience claim")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(new JWTClaimsSet.Builder()
+                                .subject(spiffeId.toString())
+                                .expirationTime(expiration)
+                                .build(), key1, "authority1"))
+                        .expectedException(new JwtSvidException("Token missing audience claim"))
+                        .build()),
+                Arguments.of(TestCase.builder()
+                        .name("empty audience claim")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(audience)
+                        .generateToken(() -> TestUtils.generateToken(new JWTClaimsSet.Builder()
+                                .subject(spiffeId.toString())
+                                .expirationTime(expiration)
+                                .audience(Collections.emptyList())
+                                .build(), key1, "authority1"))
+                        .expectedException(new JwtSvidException("Token missing audience claim"))
                         .build()),
                 Arguments.of(TestCase.builder()
                         .name("invalid subject claim")

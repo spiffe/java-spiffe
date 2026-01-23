@@ -34,12 +34,11 @@ public final class TrustDomain {
             throw new IllegalArgumentException("Trust domain is missing");
         }
 
-        // Something looks kinda like a scheme separator, let's try to parse as
-        // an ID. We use :/ instead of :// since the diagnostics are better for
-        // a bad input like spiffe:/trustdomain.
+        // Heuristic: if the input resembles a SPIFFE ID or a URI scheme
+        // (e.g. spiffe://..., spiffe:/..., or <scheme>:/...), delegate parsing
+        // to SpiffeId.parse() so scheme-related errors are reported consistently.
         if (idOrName.contains(":/")) {
-            SpiffeId spiffeId = SpiffeId.parse(idOrName);
-            return spiffeId.getTrustDomain();
+            return SpiffeId.parse(idOrName).getTrustDomain();
         }
 
         validateTrustDomainName(idOrName);

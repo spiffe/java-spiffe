@@ -20,7 +20,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +32,9 @@ import static io.spiffe.workloadapi.WorkloadApiClientStub.JWT_TTL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CachedJwtSourceTest {
+    private static final SpiffeId TEST_SUBJECT = SpiffeId.parse("spiffe://example.org/workload-server");
+    private static final String TEST_AUDIENCE = "aud1";
+
     private CachedJwtSource jwtSource;
     private WorkloadApiClientStub workloadApiClient;
     private WorkloadApiClientErrorStub workloadApiClientErrorStub;
@@ -519,4 +524,109 @@ class CachedJwtSourceTest {
             }
         });
     }
+
+    @Test
+    void testFetchJwtSvids_cacheContainsEmptyList_refetchesFromWorkloadApi() throws JwtSvidException, JwtSourceException, SocketEndpointAddressException {
+        // Test that if cache somehow contains empty list (edge case), it refetches
+        JwtSourceOptions options = JwtSourceOptions.builder()
+                .workloadApiClient(workloadApiClient)
+                .initTimeout(Duration.ofSeconds(0))
+                .build();
+        CachedJwtSource customJwtSource = (CachedJwtSource) CachedJwtSource.newSource(options);
+        customJwtSource.setClock(clock);
+
+        try {
+            // Seed cache with empty list to simulate edge case
+            Set<String> audiences = Collections.singleton(TEST_AUDIENCE);
+            customJwtSource.putCachedJwtSvidsForTest(TEST_SUBJECT, audiences, Collections.emptyList());
+
+            int initialCallCount = workloadApiClient.getFetchJwtSvidCallCount();
+
+            // Fetch should refetch from Workload API (empty list in cache triggers refetch)
+            List<JwtSvid> svids = customJwtSource.fetchJwtSvids(TEST_SUBJECT, TEST_AUDIENCE);
+            assertNotNull(svids);
+            assertEquals(1, svids.size());
+            // Should have called Workload API
+            assertEquals(initialCallCount + 1, workloadApiClient.getFetchJwtSvidCallCount());
+
+            // Subsequent fetch should NOT call Workload API again (proves valid list was cached after refetch)
+            List<JwtSvid> svids2 = customJwtSource.fetchJwtSvids(TEST_SUBJECT, TEST_AUDIENCE);
+            assertNotNull(svids2);
+            assertEquals(1, svids2.size());
+            assertEquals(initialCallCount + 1, workloadApiClient.getFetchJwtSvidCallCount());
+        } finally {
+            customJwtSource.close();
+        }
+    }
+
+    @Test
+    void testFetchJwtSvids_workloadApiReturnsEmptyList_throwsJwtSvidException() throws JwtSourceException, SocketEndpointAddressException {
+        // Create a custom client that always returns empty list
+        WorkloadApiClientStub emptyListClient = new WorkloadApiClientStub() {
+            @Override
+            public List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException {
+                super.fetchJwtSvids(subject, audience, extraAudience); // increment counter
+                return Collections.emptyList();
+            }
+        };
+        emptyListClient.setClock(clock);
+
+        JwtSourceOptions options = JwtSourceOptions.builder()
+                .workloadApiClient(emptyListClient)
+                .initTimeout(Duration.ofSeconds(0))
+                .build();
+        CachedJwtSource customJwtSource = (CachedJwtSource) CachedJwtSource.newSource(options);
+        customJwtSource.setClock(clock);
+
+        try {
+            JwtSvidException exception = assertThrows(JwtSvidException.class,
+                    () -> customJwtSource.fetchJwtSvids(TEST_SUBJECT, TEST_AUDIENCE));
+            assertEquals("Workload API returned empty JWT SVID list", exception.getMessage());
+        } finally {
+            customJwtSource.close();
+        }
+    }
+
+    @Test
+    void testFetchJwtSvids_emptyListNeverCached() throws JwtSvidException, JwtSourceException, SocketEndpointAddressException {
+        // Create a custom client that returns empty list on first call, then valid SVIDs
+        final int[] callCount = new int[1];
+        WorkloadApiClientStub customClient = new WorkloadApiClientStub() {
+            @Override
+            public List<JwtSvid> fetchJwtSvids(SpiffeId subject, String audience, String... extraAudience) throws JwtSvidException {
+                callCount[0]++;
+                if (callCount[0] == 1) {
+                    return Collections.emptyList();
+                } else {
+                    return super.fetchJwtSvids(subject, audience, extraAudience);
+                }
+            }
+        };
+        customClient.setClock(clock);
+
+        JwtSourceOptions options = JwtSourceOptions.builder()
+                .workloadApiClient(customClient)
+                .initTimeout(Duration.ofSeconds(0))
+                .build();
+        CachedJwtSource customJwtSource = (CachedJwtSource) CachedJwtSource.newSource(options);
+        customJwtSource.setClock(clock);
+
+        try {
+            // First call returns empty, should throw (empty list is not cached)
+            JwtSvidException exception = assertThrows(JwtSvidException.class,
+                    () -> customJwtSource.fetchJwtSvids(TEST_SUBJECT, TEST_AUDIENCE));
+            assertEquals("Workload API returned empty JWT SVID list", exception.getMessage());
+
+            // Verify empty list was not cached: second call should fetch again and succeed
+            int callCountBeforeSecondCall = callCount[0];
+            List<JwtSvid> svids = customJwtSource.fetchJwtSvids(TEST_SUBJECT, TEST_AUDIENCE);
+            assertNotNull(svids);
+            assertEquals(1, svids.size());
+            // Verify that second call actually made a fetch (callCount increased)
+            assertEquals(callCountBeforeSecondCall + 1, callCount[0]);
+        } finally {
+            customJwtSource.close();
+        }
+    }
 }
+
