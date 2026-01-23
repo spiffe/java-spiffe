@@ -12,6 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -152,5 +153,13 @@ class JwtBundleSetTest {
         } catch (NullPointerException e) {
             assertEquals("jwtBundle must not be null", e.getMessage());
         }
+    }
+
+    @Test
+    void testOf_nullElementInCollection_throwsNullPointerException() {
+        JwtBundle jwtBundle1 = new JwtBundle(TrustDomain.parse("example.org"));
+        List<JwtBundle> bundles = Arrays.asList(jwtBundle1, null);
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> JwtBundleSet.of(bundles));
+        assertEquals("bundle must not be null", exception.getMessage());
     }
 }

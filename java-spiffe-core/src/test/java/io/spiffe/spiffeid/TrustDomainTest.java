@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import static io.spiffe.spiffeid.SpiffeIdTest.TD_CHARS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class TrustDomainTest {
@@ -103,5 +104,29 @@ class TrustDomainTest {
     void test_toIdString() {
         final TrustDomain trustDomain = TrustDomain.parse("domain.test");
         assertEquals("spiffe://domain.test", trustDomain.toIdString());
+    }
+
+    @Test
+    void testParseFromSpiffeIdWithPath_extractsTrustDomain() {
+        TrustDomain trustDomain = TrustDomain.parse("spiffe://example.org/foo");
+        assertEquals("example.org", trustDomain.getName());
+    }
+
+    @Test
+    void testParseInvalidScheme_spiffeWithSingleSlash_throwsInvalidScheme() {
+        assertThrows(InvalidSpiffeIdException.class,
+                () -> TrustDomain.parse("spiffe:/example.org"));
+    }
+
+    @Test
+    void testParseInvalidScheme_httpScheme_throwsInvalidScheme() {
+        assertThrows(InvalidSpiffeIdException.class,
+                () -> TrustDomain.parse("http://example.org"));
+    }
+
+    @Test
+    void testParseColonNotFollowedBySlash_validatesAsTrustDomain() {
+        assertThrows(InvalidSpiffeIdException.class,
+                () -> TrustDomain.parse("trustdomain:test"));
     }
 }

@@ -393,6 +393,9 @@ public class JwtSvid {
 
     // expected audiences must be a subset of the audience claim in the token
     private static void validateAudience(List<String> audClaim, Set<String> expectedAudiences) throws JwtSvidException {
+        if (audClaim == null || audClaim.isEmpty()) {
+            throw new JwtSvidException("Token missing audience claim");
+        }
         if (!audClaim.containsAll(expectedAudiences)) {
             throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudiences, audClaim));
         }

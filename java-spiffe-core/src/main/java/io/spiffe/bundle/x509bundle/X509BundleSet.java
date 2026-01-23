@@ -40,6 +40,7 @@ public final class X509BundleSet implements BundleSource<X509Bundle> {
 
         final Map<TrustDomain, X509Bundle> bundleMap = new ConcurrentHashMap<>();
         for (X509Bundle bundle : bundles) {
+            Objects.requireNonNull(bundle, "bundle must not be null");
             bundleMap.put(bundle.getTrustDomain(), bundle);
         }
         return new X509BundleSet(bundleMap);

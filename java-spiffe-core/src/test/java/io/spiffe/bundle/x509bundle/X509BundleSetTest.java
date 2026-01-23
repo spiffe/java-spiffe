@@ -12,6 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -148,5 +149,13 @@ class X509BundleSetTest {
         } catch (NullPointerException e) {
             assertEquals("trustDomain must not be null", e.getMessage());
         }
+    }
+
+    @Test
+    void testOf_nullElementInCollection_throwsNullPointerException() {
+        X509Bundle x509Bundle1 = new X509Bundle(TrustDomain.parse("example.org"));
+        List<X509Bundle> bundles = Arrays.asList(x509Bundle1, null);
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> X509BundleSet.of(bundles));
+        assertEquals("bundle must not be null", exception.getMessage());
     }
 }
