@@ -17,7 +17,7 @@ subprojects {
 
     ext {
         grpcVersion = '1.79.0'
-        jupiterVersion = '5.13.4'
+        jupiterVersion = '6.0.3'
         mockitoVersion = '4.11.0'
         nimbusVersion = '10.7'
         shadowVersion = '9.0.0'
@@ -96,7 +96,7 @@ subprojects {
         testRuntimeOnly "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
 
         if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
-            testImplementation "uk.org.webcompere:system-stubs-core:2.0.3"
+            testImplementation "uk.org.webcompere:system-stubs-core:2.1.8"
         } else {
             testImplementation "uk.org.webcompere:system-stubs-core:2.1.8"
         }
