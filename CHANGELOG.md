@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.16] - 2026-02-24
+
+### Fixed
+
+* Require `spiffe://` prefix when parsing SPIFFE IDs, tightening scheme validation (#398)
+* Ensure atomic snapshot of X.509 SVID and bundles in `DefaultX509Source`, preventing torn reads under concurrency (#397)
+* Reject null bundles and empty cached SVID lists in core parsing/cache paths (#399)
+* Validate presence of JWT audience claim during parsing (#399)
+
+### Dependency updates
+
+* Bump grpcVersion from 1.77.0 to 1.79.0 (#392, #402)
+* Bump com.nimbusds:nimbus-jose-jwt from 10.6 to 10.7 (#395)
+* Bump gradle-wrapper from 9.2.1 to 9.3.1 (#400, #401)
+
+### Build
+
+* Simplify Dependabot config and group coupled Gradle dependencies (#403)
+
 ## [0.8.15] - 2025-12-23
 
 ### Fixed
