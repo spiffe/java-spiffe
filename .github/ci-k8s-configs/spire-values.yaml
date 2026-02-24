@@ -1,6 +1,6 @@
 spire-server:
-  ca_subject:
-    common_name: common_name
+  caSubject:
+    commonName: common_name
   controllerManager:
     identities:
       clusterSPIFFEIDs:
