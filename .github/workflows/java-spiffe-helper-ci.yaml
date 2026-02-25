@@ -11,8 +11,8 @@ jobs:
     strategy:
       matrix:
         spire-chart-version:
-          - spire: '0.17.x'
-            crds: '0.3.x'
+          - spire: '0.28.x'
+            crds: '0.5.x'
 
     env:
       HELM_REPOSITORY: https://spiffe.github.io/helm-charts-hardened/
@@ -57,7 +57,7 @@ jobs:
             --repo ${{ env.HELM_REPOSITORY }} \
             --version ${{ matrix.spire-chart-version.spire }} \
             --values .github/ci-k8s-configs/spire-values.yaml \
-            --set spire-server.ca_subject.common_name="$TRUSTSTORE_COMMON_NAME" \
+            --set spire-server.caSubject.commonName="$TRUSTSTORE_COMMON_NAME" \
             --set spire-server.controllerManager.identities.clusterSPIFFEIDs.java-spiffe-helper.dnsNameTemplates[0]="$KEYSTORE_COMMON_NAME"
       - name: Deploy java-spiffe-helper pod to local cluster
         run: kubectl apply -f .github/ci-k8s-configs/java-spiffe-helper.yaml
