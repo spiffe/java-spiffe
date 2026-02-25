@@ -12,7 +12,7 @@
 ### Dependency updates
 
 * Bump grpcVersion from 1.77.0 to 1.79.0 (#392, #402)
-* Bump com.nimbusds:nimbus-jose-jwt from 10.6 to 10.7 (#395)
+* Bump com.nimbusds:nimbus-jose-jwt from 10.6 to 10.8 (#395, #409)
 * Bump gradle-wrapper from 9.2.1 to 9.3.1 (#400, #401)
 
 ### Build
