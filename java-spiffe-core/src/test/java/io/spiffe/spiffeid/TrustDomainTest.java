@@ -7,8 +7,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
-
-import static io.spiffe.spiffeid.SpiffeIdTest.TD_CHARS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -19,6 +17,12 @@ class TrustDomainTest {
     @Test
     void testTrustDomainFromName() {
         TrustDomain trustDomain = TrustDomain.parse("trustdomain");
+        assertEquals("trustdomain", trustDomain.getName());
+    }
+
+    @Test
+    void testTrustDomainFromNameMixedCase_isNormalizedToLowercase() {
+        TrustDomain trustDomain = TrustDomain.parse("TrUsTdOmAiN");
         assertEquals("trustdomain", trustDomain.getName());
     }
 
@@ -41,9 +45,10 @@ class TrustDomainTest {
             char c = (char) i;
             String td = "trustdomain" + c;
 
-            if (TD_CHARS.contains(c)) {
+            char normalizedTdChar = Character.toLowerCase(c);
+            if (TrustDomain.isValidTrustDomainChar(normalizedTdChar)) {
                 TrustDomain trustDomain = TrustDomain.parse(td);
-                assertEquals(td, trustDomain.getName());
+                assertEquals("trustdomain" + normalizedTdChar, trustDomain.getName());
             } else {
                 try {
                     TrustDomain.parse(td);
@@ -70,8 +75,8 @@ class TrustDomainTest {
                 Arguments.of("", "Trust domain is missing"),
                 Arguments.of("spiffe://", "Trust domain is missing"),
                 Arguments.of(null, "idOrName must not be null"),
-                Arguments.of("Trustdomain", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
-                Arguments.of("spiffe://Domain.test", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
+                Arguments.of("trustdomain!", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
+                Arguments.of("spiffe://domain!.test", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("spiffe://domain.test/spiffe://domain.test/path/element", "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("http://domain.test", "Scheme is missing or invalid"),
                 Arguments.of("spiffe:// domain.test ", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
@@ -109,6 +114,12 @@ class TrustDomainTest {
     @Test
     void testParseFromSpiffeIdWithPath_extractsTrustDomain() {
         TrustDomain trustDomain = TrustDomain.parse("spiffe://example.org/foo");
+        assertEquals("example.org", trustDomain.getName());
+    }
+
+    @Test
+    void testParseFromSpiffeIdWithPath_mixedCaseSchemeAndTrustDomain_normalizesTrustDomain() {
+        TrustDomain trustDomain = TrustDomain.parse("SpIfFe://ExAmPlE.OrG/foo");
         assertEquals("example.org", trustDomain.getName());
     }
 
