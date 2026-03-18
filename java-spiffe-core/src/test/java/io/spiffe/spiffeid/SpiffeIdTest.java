@@ -64,7 +64,9 @@ class SpiffeIdTest {
                 Arguments.of("spiffe://trustdomain/path", TrustDomain.parse("trustdomain"), "/path"),
                 Arguments.of("spiffe://trustdomain/path1/path2", TrustDomain.parse("trustdomain"), "/path1/path2"),
                 Arguments.of("spiffe://trustdomain/PATH1/PATH2", TrustDomain.parse("trustdomain"), "/PATH1/PATH2"),
-                Arguments.of("spiffe://trustdomain/9eebccd2-12bf-40a6-b262-65fe0487d453", TrustDomain.parse("trustdomain"), "/9eebccd2-12bf-40a6-b262-65fe0487d453")
+                Arguments.of("spiffe://trustdomain/9eebccd2-12bf-40a6-b262-65fe0487d453", TrustDomain.parse("trustdomain"), "/9eebccd2-12bf-40a6-b262-65fe0487d453"),
+                Arguments.of("SPIFFE://trustdomain/path", TrustDomain.parse("trustdomain"), "/path"),
+                Arguments.of("SpIfFe://TrUsTdOmAiN/Workload", TrustDomain.parse("trustdomain"), "/Workload")
         );
     }
 
@@ -92,7 +94,7 @@ class SpiffeIdTest {
                 Arguments.of("spiffe://user:password@test.org/path/element", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("spiffe:path/element", "Scheme is missing or invalid"),
                 Arguments.of("spiffe:/path/element", "Scheme is missing or invalid"),
-                Arguments.of("SPIFFE://path/element", "Scheme is missing or invalid"),
+                Arguments.of("spiffe://", "Trust domain is missing"),
                 Arguments.of("spiffe://domain.test/path/elem%5uent", "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("spiffe://trustdomain/path//", "Path cannot contain empty segments"),
                 Arguments.of("spiffe://trustdomain/./other", "Path cannot contain dot segments"),
@@ -173,9 +175,10 @@ class SpiffeIdTest {
 
             String td = "spiffe://trustdomain" + c;
 
-            if (TD_CHARS.contains(c)) {
+            char normalizedTdChar = Character.toLowerCase(c);
+            if (TrustDomain.isValidTrustDomainChar(normalizedTdChar)) {
                 SpiffeId spiffeId = SpiffeId.parse(td);
-                assertEquals(spiffeId.toString(), td);
+                assertEquals("spiffe://trustdomain" + normalizedTdChar, spiffeId.toString());
             } else {
                 try {
                     SpiffeId.parse(td);

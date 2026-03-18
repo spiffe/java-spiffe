@@ -72,18 +72,25 @@ public final class SpiffeId {
             throw new IllegalArgumentException(EMPTY);
         }
 
-        if (!id.startsWith(SCHEME_PREFIX)) {
+        int schemeSeparatorIndex = id.indexOf("://");
+        if (schemeSeparatorIndex <= 0) {
             throw new InvalidSpiffeIdException(WRONG_SCHEME);
         }
 
-        String rest = id.substring(SCHEME_PREFIX.length());
+        String scheme = id.substring(0, schemeSeparatorIndex);
+        if (!SPIFFE_SCHEME.equalsIgnoreCase(scheme)) {
+            throw new InvalidSpiffeIdException(WRONG_SCHEME);
+        }
+
+        String rest = id.substring(schemeSeparatorIndex + 3);
 
         int i = 0;
         for (char c : rest.toCharArray()) {
             if (c == '/') {
                 break;
             }
-            if (!isValidTrustDomainChar(c)) {
+            char normalized = Character.toLowerCase(c);
+            if (!isValidTrustDomainChar(normalized)) {
                 throw new InvalidSpiffeIdException(BAD_TRUST_DOMAIN_CHAR);
             }
             i++;
@@ -100,7 +107,8 @@ public final class SpiffeId {
             validatePath(path);
         }
 
-        return new SpiffeId(new TrustDomain(td), path);
+        String normalizedTrustDomain = td.toLowerCase();
+        return new SpiffeId(new TrustDomain(normalizedTrustDomain), path);
     }
 
     /**
