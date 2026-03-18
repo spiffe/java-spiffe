@@ -41,8 +41,9 @@ public final class TrustDomain {
             return SpiffeId.parse(idOrName).getTrustDomain();
         }
 
-        validateTrustDomainName(idOrName);
-        return new TrustDomain(idOrName);
+        String normalizedName = idOrName.toLowerCase();
+        validateTrustDomainName(normalizedName);
+        return new TrustDomain(normalizedName);
     }
 
     /**
