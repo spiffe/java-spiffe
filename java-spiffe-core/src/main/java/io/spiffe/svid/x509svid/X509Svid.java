@@ -217,6 +217,7 @@ public class X509Svid {
         final PrivateKey privateKey = generatePrivateKey(privateKeyBytes, keyFileFormat, x509Certificates);
         final SpiffeId spiffeId = getSpiffeId(x509Certificates);
 
+        validateLeafSpiffeId(spiffeId);
         validateLeafCertificate(x509Certificates.get(0));
 
         // there are intermediate CA certificates
@@ -225,6 +226,13 @@ public class X509Svid {
         }
 
         return new X509Svid(spiffeId, x509Certificates, privateKey, hint);
+    }
+
+    private static void validateLeafSpiffeId(final SpiffeId spiffeId) throws X509SvidException {
+        final String path = spiffeId.getPath();
+        if (path == null || path.isEmpty()) {
+            throw new X509SvidException("Leaf certificate SPIFFE ID must have a non-root path");
+        }
     }
 
     private static SpiffeId getSpiffeId(final List<X509Certificate> x509Certificates) throws X509SvidException {

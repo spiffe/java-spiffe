@@ -1,8 +1,10 @@
 package io.spiffe.svid.x509svid;
 
+import io.spiffe.exception.InvalidSpiffeIdException;
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
+import io.spiffe.utils.CertAndKeyPair;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -18,8 +20,11 @@ import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
 
 import static io.spiffe.utils.TestUtils.toUri;
+import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
+import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class X509SvidTest {
@@ -313,6 +318,38 @@ class X509SvidTest {
         X509Certificate[] x509CertificatesArray = x509Svid.getChainArray();
         assertEquals(x509Svid.getChain().get(0), x509CertificatesArray[0]);
         assertEquals(x509Svid.getChain().get(1), x509CertificatesArray[1]);
+    }
+
+    @Test
+    void parseRaw_leafSpiffeIdWithoutPath_isRejected() throws Exception {
+        CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org");
+        CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE", "spiffe://example.org", rootCa, false);
+
+        byte[] certBytes = leaf.getCertificate().getEncoded();
+        byte[] keyBytes = leaf.getKeyPair().getPrivate().getEncoded();
+
+        X509SvidException exception = assertThrows(
+                X509SvidException.class,
+                () -> X509Svid.parseRaw(certBytes, keyBytes)
+        );
+
+        assertEquals("Leaf certificate SPIFFE ID must have a non-root path", exception.getMessage());
+    }
+
+    @Test
+    void parseRaw_leafSpiffeIdWithRootOnlyPath_isRejected() throws Exception {
+        CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org");
+        CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE", "spiffe://example.org/", rootCa, false);
+
+        byte[] certBytes = leaf.getCertificate().getEncoded();
+        byte[] keyBytes = leaf.getKeyPair().getPrivate().getEncoded();
+
+        InvalidSpiffeIdException exception = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> X509Svid.parseRaw(certBytes, keyBytes)
+        );
+
+        assertEquals("Path cannot have a trailing slash", exception.getMessage());
     }
 
     @ParameterizedTest
