@@ -139,9 +139,8 @@ class JwtBundleTest {
 
         assertNotNull(jwtBundle);
         assertEquals(TrustDomain.parse("domain.test"), jwtBundle.getTrustDomain());
-        assertEquals(2, jwtBundle.getJwtAuthorities().size());
+        assertEquals(1, jwtBundle.getJwtAuthorities().size());
         assertNotNull(jwtBundle.getJwtAuthorities().get("14cc39cd-838d-426d-9bb1-77f3468fba96"));
-        assertNotNull(jwtBundle.getJwtAuthorities().get("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
     }
 
     @Test
@@ -158,16 +157,20 @@ class JwtBundleTest {
     }
 
     @Test
-    void testLoadFile_InvalidKeyType_ThrowsKeyException() throws URISyntaxException, KeyException {
+    void testLoadFile_InvalidKeyType_IsIgnored() throws URISyntaxException, KeyException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
         TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
+        JwtBundle jwtBundle = null;
         try {
-            JwtBundle.load(trustDomain, path);
-            fail("should have thrown exception");
+            jwtBundle = JwtBundle.load(trustDomain, path);
         } catch (JwtBundleException e) {
-            assertEquals("Unsupported JWT family algorithm: OKP", e.getCause().getMessage());
+            fail(e);
         }
+
+        assertNotNull(jwtBundle);
+        assertEquals(trustDomain, jwtBundle.getTrustDomain());
+        assertTrue(jwtBundle.getJwtAuthorities().isEmpty());
     }
 
     @Test
@@ -215,9 +218,8 @@ class JwtBundleTest {
 
         assertNotNull(jwtBundle);
         assertEquals(TrustDomain.parse("domain.test"), jwtBundle.getTrustDomain());
-        assertEquals(2, jwtBundle.getJwtAuthorities().size());
+        assertEquals(1, jwtBundle.getJwtAuthorities().size());
         assertNotNull(jwtBundle.getJwtAuthorities().get("14cc39cd-838d-426d-9bb1-77f3468fba96"));
-        assertNotNull(jwtBundle.getJwtAuthorities().get("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
     }
 
     @Test

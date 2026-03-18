@@ -194,6 +194,14 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
 
         final Map<String, PublicKey> authorities = new ConcurrentHashMap<>();
         for (JWK jwk : jwkSet.getKeys()) {
+            String use = getUse(jwk);
+
+            // Only JWT-SVID signing keys are considered JWT authorities.
+            // JWK entries without a supported or known use are ignored.
+            if (!"jwt-svid".equals(use)) {
+                continue;
+            }
+
             String keyId = getKeyId(jwk);
             PublicKey publicKey = getPublicKey(jwk);
             authorities.put(keyId, publicKey);
@@ -208,6 +216,12 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
             throw new JwtBundleException("Error adding authority of JWKS: keyID cannot be empty");
         }
         return keyId;
+    }
+
+    private static String getUse(final JWK jwk) {
+        Objects.requireNonNull(jwk, "jwk must not be null");
+        Object use = jwk.toJSONObject().get("use");
+        return use != null ? use.toString() : null;
     }
 
     private static PublicKey getPublicKey(final JWK jwk)
