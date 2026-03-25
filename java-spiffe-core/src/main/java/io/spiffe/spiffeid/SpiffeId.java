@@ -25,6 +25,7 @@ public final class SpiffeId {
     static final String DOT_SEGMENT = "Path cannot contain dot segments";
     static final String EMPTY_SEGMENT = "Path cannot contain empty segments";
     static final String TRAILING_SLASH = "Path cannot have a trailing slash";
+    static final String MISSING_LEADING_SLASH = "Path must start with '/'";
 
     private final TrustDomain trustDomain;
 
@@ -51,7 +52,7 @@ public final class SpiffeId {
 
         StringBuilder path = new StringBuilder();
         for (String p : segments) {
-            validatePath(p);
+            validatePathSegment(p);
             path.append('/');
             path.append(p);
         }
@@ -137,37 +138,70 @@ public final class SpiffeId {
      */
     public static void validatePath(String path) {
         if (StringUtils.isBlank(path)) {
-            throw new IllegalArgumentException(EMPTY);
+            throw new InvalidSpiffeIdException(EMPTY);
         }
 
-        int segmentStart = 0;
-        int segmentEnd = 0;
+        if (path.charAt(0) != '/') {
+            throw new InvalidSpiffeIdException(MISSING_LEADING_SLASH);
+        }
 
-        for (; segmentEnd < path.length(); segmentEnd++) {
-            char c = path.charAt(segmentEnd);
+        int rawSegmentStart = 0;
+        int rawSegmentEnd = 0;
+
+        for (; rawSegmentEnd < path.length(); rawSegmentEnd++) {
+            char c = path.charAt(rawSegmentEnd);
             if (c == '/') {
-                switch (path.substring(segmentStart, segmentEnd)) {
+                String rawSegment = path.substring(rawSegmentStart, rawSegmentEnd);
+                switch (rawSegment) {
                     case "/":
                         throw new InvalidSpiffeIdException(EMPTY_SEGMENT);
                     case "/.":
                     case "/..":
                         throw new InvalidSpiffeIdException(DOT_SEGMENT);
                 }
-                segmentStart = segmentEnd;
-                continue;
-            }
-            if (!isValidPathSegmentChar(c)) {
-                throw new InvalidSpiffeIdException(BAD_PATH_SEGMENT_CHAR);
+                if (!isLeadingPathSeparator(rawSegmentStart, rawSegmentEnd)) {
+                    validatePathSegment(stripLeadingSlash(rawSegment));
+                }
+                rawSegmentStart = rawSegmentEnd;
             }
         }
 
-        switch (path.substring(segmentStart, segmentEnd)) {
+        String rawSegment = path.substring(rawSegmentStart, rawSegmentEnd);
+        switch (rawSegment) {
             case "/":
                 throw new InvalidSpiffeIdException(TRAILING_SLASH);
             case "/.":
             case "/..":
                 throw new InvalidSpiffeIdException(DOT_SEGMENT);
         }
+
+        validatePathSegment(stripLeadingSlash(rawSegment));
+    }
+
+    private static void validatePathSegment(String segment) {
+        if (StringUtils.isEmpty(segment)) {
+            throw new InvalidSpiffeIdException(EMPTY);
+        }
+
+        switch (segment) {
+            case ".":
+            case "..":
+                throw new InvalidSpiffeIdException(DOT_SEGMENT);
+        }
+
+        for (char c : segment.toCharArray()) {
+            if (!isValidPathSegmentChar(c)) {
+                throw new InvalidSpiffeIdException(BAD_PATH_SEGMENT_CHAR);
+            }
+        }
+    }
+
+    private static boolean isLeadingPathSeparator(int rawSegmentStart, int rawSegmentEnd) {
+        return rawSegmentStart == 0 && rawSegmentEnd == 0;
+    }
+
+    private static String stripLeadingSlash(String rawSegment) {
+        return rawSegment.startsWith("/") ? rawSegment.substring(1) : rawSegment;
     }
 
     private static boolean isValidPathSegmentChar(char c) {

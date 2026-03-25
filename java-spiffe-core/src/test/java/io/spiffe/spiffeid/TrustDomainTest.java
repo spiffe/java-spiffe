@@ -27,6 +27,25 @@ class TrustDomainTest {
     }
 
     @Test
+    void testTrustDomainFromNameWithUnderscore() {
+        TrustDomain trustDomain = TrustDomain.parse("trust_domain_name.example.com");
+        assertEquals("trust_domain_name.example.com", trustDomain.getName());
+    }
+
+    @Test
+    void testTrustDomainFromIpv4Name() {
+        TrustDomain trustDomain = TrustDomain.parse("1.2.3.4");
+        assertEquals("1.2.3.4", trustDomain.getName());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideNonDnsShapedTrustDomains")
+    void testTrustDomainFromNonDnsShapedName_isAccepted(String input) {
+        TrustDomain trustDomain = TrustDomain.parse(input);
+        assertEquals(input, trustDomain.getName());
+    }
+
+    @Test
     void testFromIdStringWithoutPath() {
         TrustDomain trustDomain = TrustDomain.parse("spiffe://trustdomain");
         assertEquals("trustdomain", trustDomain.getName());
@@ -90,6 +109,16 @@ class TrustDomainTest {
         );
     }
 
+    static Stream<String> provideNonDnsShapedTrustDomains() {
+        return Stream.of(
+                "example..org",
+                ".example.org",
+                "example.org.",
+                "-example.org",
+                "example-.org"
+        );
+    }
+
     @Test
     void testNewSpiffeId() {
         TrustDomain trustDomain = TrustDomain.parse("test.domain");
@@ -133,6 +162,12 @@ class TrustDomainTest {
     void testParseInvalidScheme_httpScheme_throwsInvalidScheme() {
         assertThrows(InvalidSpiffeIdException.class,
                 () -> TrustDomain.parse("http://example.org"));
+    }
+
+    @Test
+    void testParseIpv6TrustDomain_throwsInvalidTrustDomain() {
+        assertThrows(InvalidSpiffeIdException.class,
+                () -> TrustDomain.parse("[::1]"));
     }
 
     @Test
