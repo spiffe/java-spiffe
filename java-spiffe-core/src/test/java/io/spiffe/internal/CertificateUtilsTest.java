@@ -28,7 +28,9 @@ import java.util.List;
 import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
 import static io.spiffe.utils.TestUtils.toUri;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
+import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithoutKeyUsage;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -195,5 +197,22 @@ public class CertificateUtilsTest {
         } catch (CertificateException e) {
             fail(e);
         }
+    }
+
+    @Test
+    void keyUsageChecks_noKeyUsageExtension() throws Exception {
+        final CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test");
+        final CertAndKeyPair leaf = createCertificateWithoutKeyUsage(
+                "C = US, O = SPIRE",
+                "C = US, O = SPIRE",
+                "spiffe://domain.test/workload",
+                rootCa,
+                false
+        );
+
+        X509Certificate certificate = leaf.getCertificate();
+        assertFalse(CertificateUtils.hasKeyUsageDigitalSignature(certificate));
+        assertFalse(CertificateUtils.hasKeyUsageCertSign(certificate));
+        assertFalse(CertificateUtils.hasKeyUsageCRLSign(certificate));
     }
 }
