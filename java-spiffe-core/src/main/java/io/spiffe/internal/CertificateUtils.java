@@ -118,7 +118,7 @@ public class CertificateUtils {
             throw new CertificateException("Certificate contains multiple SPIFFE IDs");
         }
 
-        if (spiffeIds.size() < 1) {
+        if (spiffeIds.isEmpty()) {
             throw new CertificateException("Certificate does not contain SPIFFE ID in the URI SAN");
         }
 
@@ -143,16 +143,25 @@ public class CertificateUtils {
 
     public static boolean hasKeyUsageCertSign(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
+        if (keyUsage == null) {
+            return false;
+        }
         return keyUsage[KEY_CERT_SIGN.index()];
     }
 
     public static boolean hasKeyUsageDigitalSignature(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
+        if (keyUsage == null) {
+            return false;
+        }
         return keyUsage[DIGITAL_SIGNATURE.index()];
     }
 
     public static boolean hasKeyUsageCRLSign(final X509Certificate cert) {
         boolean[] keyUsage = cert.getKeyUsage();
+        if (keyUsage == null) {
+            return false;
+        }
         return keyUsage[CRL_SIGN.index()];
     }
 

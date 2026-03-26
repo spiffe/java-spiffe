@@ -17,10 +17,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
+import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithUriSans;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -113,7 +115,7 @@ class X509SvidTest {
                         .certsPath(leafEmptyID)
                         .keyPath(keyRSA)
                         .hint("")
-                        .expectedError("Certificate does not contain SPIFFE ID in the URI SAN")
+                        .expectedError("Leaf certificate must contain exactly one URI SAN")
                         .build()
                 ),
                 Arguments.of(TestCase
@@ -350,6 +352,28 @@ class X509SvidTest {
         );
 
         assertEquals("Path cannot have a trailing slash", exception.getMessage());
+    }
+
+   @Test
+    void parseRaw_leafWithMultipleUriSans_isRejected() throws Exception {
+        CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://example.org");
+        CertAndKeyPair leaf = createCertificateWithUriSans(
+                "C = US, O = SPIRE",
+                "C = US, O = SPIFFE",
+                Arrays.asList("spiffe://example.org/workload", "https://example.org/workload"),
+                rootCa,
+                false
+        );
+
+        byte[] certBytes = leaf.getCertificate().getEncoded();
+        byte[] keyBytes = leaf.getKeyPair().getPrivate().getEncoded();
+
+        X509SvidException exception = assertThrows(
+                X509SvidException.class,
+                () -> X509Svid.parseRaw(certBytes, keyBytes)
+        );
+
+        assertEquals("Leaf certificate must contain exactly one URI SAN", exception.getMessage());
     }
 
     @ParameterizedTest

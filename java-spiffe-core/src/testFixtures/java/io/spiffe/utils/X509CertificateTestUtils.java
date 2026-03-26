@@ -28,7 +28,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 public class X509CertificateTestUtils {
 
@@ -53,7 +56,43 @@ public class X509CertificateTestUtils {
         KeyPair certKeyPair = generateKeyPair();
         PrivateKey issuerKey = issuer.keyPair.getPrivate();
         JcaX509v3CertificateBuilder builder = getCertificateBuilder(certKeyPair, subject, issuerSubject);
-        addCertExtensions(builder, spiffeId, isCa);
+        addCertExtensions(builder, Collections.singletonList(spiffeId), isCa, true);
+        X509Certificate cert = getSignedX509Certificate(issuerKey, builder);
+        return new CertAndKeyPair(cert, certKeyPair);
+    }
+
+    /**
+     * Creates a certificate with a custom list of URI SAN values.
+     */
+    public static CertAndKeyPair createCertificateWithUriSans(
+            String subject,
+            String issuerSubject,
+            List<String> uriSans,
+            CertAndKeyPair issuer,
+            boolean isCa
+    ) throws Exception {
+        KeyPair certKeyPair = generateKeyPair();
+        PrivateKey issuerKey = issuer.keyPair.getPrivate();
+        JcaX509v3CertificateBuilder builder = getCertificateBuilder(certKeyPair, subject, issuerSubject);
+        addCertExtensions(builder, uriSans, isCa, true);
+        X509Certificate cert = getSignedX509Certificate(issuerKey, builder);
+        return new CertAndKeyPair(cert, certKeyPair);
+    }
+
+    /**
+     * Creates a certificate without a KeyUsage extension.
+     */
+    public static CertAndKeyPair createCertificateWithoutKeyUsage(
+            String subject,
+            String issuerSubject,
+            String spiffeId,
+            CertAndKeyPair issuer,
+            boolean isCa
+    ) throws Exception {
+        KeyPair certKeyPair = generateKeyPair();
+        PrivateKey issuerKey = issuer.keyPair.getPrivate();
+        JcaX509v3CertificateBuilder builder = getCertificateBuilder(certKeyPair, subject, issuerSubject);
+        addCertExtensions(builder, Collections.singletonList(spiffeId), isCa, false);
         X509Certificate cert = getSignedX509Certificate(issuerKey, builder);
         return new CertAndKeyPair(cert, certKeyPair);
     }
@@ -63,15 +102,24 @@ public class X509CertificateTestUtils {
         return keyGen.generateKeyPair();
     }
 
-    private static void addCertExtensions(JcaX509v3CertificateBuilder builder, String spiffeId, boolean isCa) throws CertIOException {
+    private static void addCertExtensions(
+            JcaX509v3CertificateBuilder builder,
+            List<String> uriSans,
+            boolean isCa,
+            boolean includeKeyUsage
+    ) throws CertIOException {
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(isCa));
 
         if (isCa) {
-            KeyUsage usage = new KeyUsage(KeyUsage.keyCertSign | KeyUsage.digitalSignature | KeyUsage.cRLSign);
-            builder.addExtension(Extension.keyUsage, true, usage);
+            if (includeKeyUsage) {
+                KeyUsage usage = new KeyUsage(KeyUsage.keyCertSign | KeyUsage.digitalSignature | KeyUsage.cRLSign);
+                builder.addExtension(Extension.keyUsage, true, usage);
+            }
         } else {
-            KeyUsage usage = new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.keyAgreement);
-            builder.addExtension(Extension.keyUsage, true, usage);
+            if (includeKeyUsage) {
+                KeyUsage usage = new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.keyAgreement);
+                builder.addExtension(Extension.keyUsage, true, usage);
+            }
 
             ASN1EncodableVector purposes = new ASN1EncodableVector();
             purposes.add(KeyPurposeId.id_kp_serverAuth);
@@ -79,9 +127,16 @@ public class X509CertificateTestUtils {
             builder.addExtension(Extension.extendedKeyUsage, false, new DERSequence(purposes));
         }
 
-        if (StringUtils.isNotBlank(spiffeId)) {
+        List<GeneralName> uriGeneralNames = new ArrayList<>();
+        for (String uriSan : uriSans) {
+            if (StringUtils.isNotBlank(uriSan)) {
+                uriGeneralNames.add(new GeneralName(GeneralName.uniformResourceIdentifier, uriSan));
+            }
+        }
+
+        if (!uriGeneralNames.isEmpty()) {
             builder.addExtension(Extension.subjectAlternativeName, false,
-                    new GeneralNames(new GeneralName(GeneralName.uniformResourceIdentifier, spiffeId )));
+                    new GeneralNames(uriGeneralNames.toArray(new GeneralName[0])));
         }
     }
 
