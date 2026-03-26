@@ -11,8 +11,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -61,12 +64,25 @@ class SpiffeIdTest {
 
     static Stream<Arguments> provideTestValidSpiffeIds() {
         return Stream.of(
+                Arguments.of("spiffe://trustdomain", TrustDomain.parse("trustdomain"), ""),
                 Arguments.of("spiffe://trustdomain/path", TrustDomain.parse("trustdomain"), "/path"),
                 Arguments.of("spiffe://trustdomain/path1/path2", TrustDomain.parse("trustdomain"), "/path1/path2"),
                 Arguments.of("spiffe://trustdomain/PATH1/PATH2", TrustDomain.parse("trustdomain"), "/PATH1/PATH2"),
                 Arguments.of("spiffe://trustdomain/9eebccd2-12bf-40a6-b262-65fe0487d453", TrustDomain.parse("trustdomain"), "/9eebccd2-12bf-40a6-b262-65fe0487d453"),
+                Arguments.of("spiffe://a_b.example/foo", TrustDomain.parse("a_b.example"), "/foo"),
+                Arguments.of("spiffe://1.2.3.4/service", TrustDomain.parse("1.2.3.4"), "/service"),
                 Arguments.of("SPIFFE://trustdomain/path", TrustDomain.parse("trustdomain"), "/path"),
                 Arguments.of("SpIfFe://TrUsTdOmAiN/Workload", TrustDomain.parse("trustdomain"), "/Workload")
+        );
+    }
+
+    static Stream<String> provideNonDnsShapedTrustDomains() {
+        return Stream.of(
+                "example..org",
+                ".example.org",
+                "example.org.",
+                "-example.org",
+                "example-.org"
         );
     }
 
@@ -101,6 +117,8 @@ class SpiffeIdTest {
                 Arguments.of("spiffe://trustdomain/../other", "Path cannot contain dot segments"),
                 Arguments.of("spiffe://trustdomain/", "Path cannot have a trailing slash"),
                 Arguments.of("spiffe://trustdomain/path/", "Path cannot have a trailing slash"),
+                Arguments.of("spiffe://[::1]/service", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
+                Arguments.of("spiffe://[2001:db8::1]/service", "Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores"),
                 Arguments.of("xspiffe://trustdomain/path", "Scheme is missing or invalid")
         );
     }
@@ -140,13 +158,13 @@ class SpiffeIdTest {
     static Stream<Arguments> provideInvalidArguments() {
         return Stream.of(
                 Arguments.of(null, new String[]{""}, "trustDomain must not be null"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/ele%5ment"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/path/"}, "Path cannot have a trailing slash"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/ /"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/"}, "Path cannot have a trailing slash"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"//"}, "Path cannot contain empty segments"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/./"}, "Path cannot contain dot segments"),
-                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/../"}, "Path cannot contain dot segments")
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{""}, "Cannot be empty"),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"ele%5ment"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"/service"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"service/"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"foo/bar"}, "Path segment characters are limited to letters, numbers, dots, dashes, and underscores"),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{"."}, "Path cannot contain dot segments"),
+                Arguments.of(TrustDomain.parse("trustdomain"), new String[]{".."}, "Path cannot contain dot segments")
         );
     }
 
@@ -238,5 +256,115 @@ class SpiffeIdTest {
         else isMemberOf = false;
 
         assertFalse(isMemberOf);
+    }
+
+    @Test
+    void parseMixedCaseSchemeAndTrustDomain_toStringReturnsCanonicalFormAndPreservesPathCase() {
+        SpiffeId spiffeId = SpiffeId.parse("SPIFFE://EXAMPLE.ORG/MyService");
+
+        assertEquals("spiffe://example.org/MyService", spiffeId.toString());
+    }
+
+    @Test
+    void parseEquivalentIdsWithDifferentSchemeAndTrustDomainCase_areEqual() {
+        SpiffeId lowercase = SpiffeId.parse("spiffe://example.org/service");
+        SpiffeId uppercaseScheme = SpiffeId.parse("SPIFFE://example.org/service");
+        SpiffeId uppercaseTrustDomain = SpiffeId.parse("spiffe://EXAMPLE.ORG/service");
+        SpiffeId uppercaseBoth = SpiffeId.parse("SPIFFE://EXAMPLE.ORG/service");
+
+        assertEquals(lowercase, uppercaseScheme);
+        assertEquals(lowercase, uppercaseTrustDomain);
+        assertEquals(lowercase, uppercaseBoth);
+        assertEquals(lowercase.hashCode(), uppercaseBoth.hashCode());
+    }
+
+    @Test
+    void parseIdsWithDifferentPathCase_areNotEqual() {
+        SpiffeId lowercasePath = SpiffeId.parse("spiffe://example.org/service");
+        SpiffeId uppercasePath = SpiffeId.parse("spiffe://example.org/Service");
+
+        assertNotEquals(lowercasePath, uppercasePath);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideNonDnsShapedTrustDomains")
+    void parseSpiffeIdWithNonDnsShapedTrustDomain_isAccepted(String trustDomainName) {
+        SpiffeId spiffeId = SpiffeId.parse("spiffe://" + trustDomainName + "/service");
+
+        assertEquals(TrustDomain.parse(trustDomainName), spiffeId.getTrustDomain());
+        assertEquals("/service", spiffeId.getPath());
+        assertEquals("spiffe://" + trustDomainName + "/service", spiffeId.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideNonDnsShapedTrustDomains")
+    void fromSegmentsWithNonDnsShapedTrustDomain_isAccepted(String trustDomainName) {
+        TrustDomain trustDomain = TrustDomain.parse(trustDomainName);
+
+        SpiffeId spiffeId = SpiffeId.fromSegments(trustDomain, "service");
+
+        assertEquals(trustDomain, spiffeId.getTrustDomain());
+        assertEquals("/service", spiffeId.getPath());
+        assertEquals("spiffe://" + trustDomainName + "/service", spiffeId.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidSegmentsForFromSegments")
+    void fromSegments_invalidSegment_throwsInvalidSpiffeIdException(String segment, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.fromSegments(TrustDomain.parse("example.org"), segment));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    static Stream<Arguments> provideInvalidSegmentsForFromSegments() {
+        return Stream.of(
+                Arguments.of(null, SpiffeId.EMPTY),
+                Arguments.of("", SpiffeId.EMPTY),
+                Arguments.of(" ", SpiffeId.BAD_PATH_SEGMENT_CHAR)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidPathsForValidatePath")
+    void validatePath_invalidPath_throwsInvalidSpiffeIdException(String path, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.validatePath(path));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    static Stream<Arguments> provideInvalidPathsForValidatePath() {
+        return Stream.of(
+                Arguments.of("   ", SpiffeId.EMPTY),
+                Arguments.of("foo", SpiffeId.MISSING_LEADING_SLASH),
+                Arguments.of("foo/bar", SpiffeId.MISSING_LEADING_SLASH),
+                Arguments.of("/foo//bar", SpiffeId.EMPTY_SEGMENT),
+                Arguments.of("/./other", SpiffeId.DOT_SEGMENT),
+                Arguments.of("/../other", SpiffeId.DOT_SEGMENT),
+                Arguments.of("/foo/.", SpiffeId.DOT_SEGMENT),
+                Arguments.of("/foo/..", SpiffeId.DOT_SEGMENT),
+                Arguments.of("/foo/", SpiffeId.TRAILING_SLASH),
+                Arguments.of("/", SpiffeId.TRAILING_SLASH),
+                Arguments.of("/ ", SpiffeId.BAD_PATH_SEGMENT_CHAR),
+                Arguments.of("/foo%5Cbar", SpiffeId.BAD_PATH_SEGMENT_CHAR),
+                Arguments.of("/foo bar", SpiffeId.BAD_PATH_SEGMENT_CHAR)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideValidPathsForValidatePath")
+    void validatePath_validPath_doesNotThrow(String path) {
+        assertDoesNotThrow(() -> SpiffeId.validatePath(path));
+    }
+
+    static Stream<String> provideValidPathsForValidatePath() {
+        return Stream.of(
+                "/foo",
+                "/foo/bar",
+                "/PATH/path",
+                "/.../svc",
+                "/9eebccd2-12bf-40a6-b262-65fe0487d453"
+        );
     }
 }

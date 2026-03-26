@@ -84,7 +84,7 @@ class JwtSvidParseInsecureTest {
         try {
             KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
             TrustDomain trustDomain = TrustDomain.parse("test.domain");
-            SpiffeId spiffeId = trustDomain.newSpiffeId("/host");
+            SpiffeId spiffeId = trustDomain.newSpiffeId("host");
             Set<String> audience = Collections.singleton("audience");
             Date expiration = new Date(System.currentTimeMillis() + 3600000);
             JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
