@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.17] - 2026-04-20
+
+### Fixed
+
+* Enforce SPIFFE-spec-compliant URI SAN validation for X.509-SVID leaf certificates (#421)
+* Require a non-root SPIFFE ID path for X.509-SVID leaf certificates, per the SPIFFE spec (#417)
+* Tighten SPIFFE ID path validation and segment construction to match the SPIFFE spec (#420)
+* Parse SPIFFE IDs case-insensitively and normalize trust domains to lowercase in accordance with the SPIFFE spec (#416)
+
+### Dependency updates
+
+* Bump grpcVersion from 1.79.0 to 1.80.0 (#414)
+* Bump com.nimbusds:nimbus-jose-jwt from 10.8 to 10.9 (#423)
+* Bump gradle-wrapper from 9.3.1 to 9.4.1 (#412, #419)
+
+
 ## [0.8.16] - 2026-02-25
 
 ### Fixed
