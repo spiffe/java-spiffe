@@ -3,6 +3,7 @@ package io.spiffe.svid.x509svid;
 import io.spiffe.bundle.BundleSource;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
@@ -42,6 +43,12 @@ public final class X509SvidValidator {
             throws CertificateException, BundleNotFoundException {
         Objects.requireNonNull(chain, "chain must not be null");
         Objects.requireNonNull(x509BundleSource, "x509BundleSource must not be null");
+
+        try {
+            X509SvidProfile.validateLeaf(chain.get(0));
+        } catch (X509SvidException e) {
+            throw new CertificateException(e.getMessage(), e);
+        }
 
         TrustDomain trustDomain = CertificateUtils.getTrustDomain(chain);
         X509Bundle x509Bundle = x509BundleSource.getBundleForTrustDomain(trustDomain);
