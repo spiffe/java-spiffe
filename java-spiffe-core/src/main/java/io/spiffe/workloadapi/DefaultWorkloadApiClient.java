@@ -171,14 +171,18 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     public void watchX509Context(Watcher<X509Context> watcher) {
         Objects.requireNonNull(watcher, "watcher must not be null");
 
-        final RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
-        final Context.CancellableContext cancellableContext = Context.current().withCancellation();
+        synchronized (this) {
+            assertOpen();
 
-        final StreamObserver<Workload.X509SVIDResponse> streamObserver =
-                getX509ContextStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+            final RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+            final Context.CancellableContext cancellableContext = Context.current().withCancellation();
 
-        cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver));
-        this.cancellableContexts.add(cancellableContext);
+            final StreamObserver<Workload.X509SVIDResponse> streamObserver =
+                    getX509ContextStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+
+            cancellableContext.run(() -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(), streamObserver));
+            this.cancellableContexts.add(cancellableContext);
+        }
     }
 
     /**
@@ -200,14 +204,18 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     public void watchX509Bundles(Watcher<X509BundleSet> watcher) {
         Objects.requireNonNull(watcher, "watcher must not be null");
 
-        final RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
-        final Context.CancellableContext cancellableContext = Context.current().withCancellation();
+        synchronized (this) {
+            assertOpen();
 
-        final StreamObserver<Workload.X509BundlesResponse> streamObserver =
-                getX509BundlesStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+            final RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+            final Context.CancellableContext cancellableContext = Context.current().withCancellation();
 
-        cancellableContext.run(() -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(), streamObserver));
-        this.cancellableContexts.add(cancellableContext);
+            final StreamObserver<Workload.X509BundlesResponse> streamObserver =
+                    getX509BundlesStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+
+            cancellableContext.run(() -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(), streamObserver));
+            this.cancellableContexts.add(cancellableContext);
+        }
     }
 
     /**
@@ -331,13 +339,17 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
     public void watchJwtBundles(Watcher<JwtBundleSet> watcher) {
         Objects.requireNonNull(watcher, "watcher must not be null");
 
-        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
-        Context.CancellableContext cancellableContext = Context.current().withCancellation();
+        synchronized (this) {
+            assertOpen();
 
-        StreamObserver<Workload.JWTBundlesResponse> streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+            RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, retryExecutor);
+            Context.CancellableContext cancellableContext = Context.current().withCancellation();
 
-        cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(), streamObserver));
-        this.cancellableContexts.add(cancellableContext);
+            StreamObserver<Workload.JWTBundlesResponse> streamObserver = getJwtBundleStreamObserver(watcher, retryHandler, cancellableContext, workloadApiAsyncStub);
+
+            cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(), streamObserver));
+            this.cancellableContexts.add(cancellableContext);
+        }
     }
 
     /**
@@ -349,7 +361,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         log.log(Level.FINE, "Closing WorkloadAPI client");
         synchronized (this) {
             if (!closed) {
-                for (Context.CancellableContext context : cancellableContexts) {
+                final List<Context.CancellableContext> contexts;
+                synchronized (cancellableContexts) {
+                    contexts = new ArrayList<>(cancellableContexts);
+                    cancellableContexts.clear();
+                }
+
+                for (Context.CancellableContext context : contexts) {
                     context.close();
                 }
 
@@ -365,6 +383,12 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
         log.log(Level.INFO, "WorkloadAPI client is closed");
     }
 
+
+    private void assertOpen() {
+        if (closed) {
+            throw new IllegalStateException("Cannot register watch on closed Workload API client");
+        }
+    }
 
     private X509Context callFetchX509Context() throws X509ContextException {
         Iterator<Workload.X509SVIDResponse> x509SvidResponse = workloadApiBlockingStub.fetchX509SVID(newX509SvidRequest());

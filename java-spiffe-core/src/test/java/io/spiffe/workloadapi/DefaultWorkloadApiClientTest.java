@@ -1,6 +1,7 @@
 package io.spiffe.workloadapi;
 
 import com.nimbusds.jose.jwk.Curve;
+import io.grpc.Context;
 import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.bundle.jwtbundle.JwtBundleSet;
@@ -23,10 +24,14 @@ import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.security.KeyPair;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -34,6 +39,7 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -157,6 +163,16 @@ class DefaultWorkloadApiClientTest {
     }
 
     @Test
+    void testWatchX509ContextAfterClose_throwsIllegalStateException() {
+        workloadApiClient.close();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> workloadApiClient.watchX509Context(noopWatcher()));
+
+        assertEquals("Cannot register watch on closed Workload API client", exception.getMessage());
+    }
+
+    @Test
     void testFetchX509Bundles() {
         X509BundleSet x509BundleSet = null;
         try {
@@ -218,6 +234,16 @@ class DefaultWorkloadApiClientTest {
         } catch (NullPointerException e) {
             assertEquals("watcher must not be null", e.getMessage());
         }
+    }
+
+    @Test
+    void testWatchX509BundlesAfterClose_throwsIllegalStateException() {
+        workloadApiClient.close();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> workloadApiClient.watchX509Bundles(noopWatcher()));
+
+        assertEquals("Cannot register watch on closed Workload API client", exception.getMessage());
     }
 
 
@@ -454,6 +480,32 @@ class DefaultWorkloadApiClientTest {
         }
     }
 
+    @Test
+    void testWatchJwtBundlesAfterClose_throwsIllegalStateException() {
+        workloadApiClient.close();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> workloadApiClient.watchJwtBundles(noopWatcher()));
+
+        assertEquals("Cannot register watch on closed Workload API client", exception.getMessage());
+    }
+
+    @Test
+    void testCloseClosesRegisteredContextsFromSynchronizedSnapshot() throws Exception {
+        Context.CancellableContext firstContext = Context.current().withCancellation();
+        Context.CancellableContext secondContext = Context.current().withCancellation();
+        MonitorCheckingCancellableContexts contexts = new MonitorCheckingCancellableContexts();
+        contexts.add(firstContext);
+        contexts.add(secondContext);
+        replaceCancellableContexts(contexts);
+
+        workloadApiClient.close();
+
+        assertTrue(firstContext.isCancelled());
+        assertTrue(secondContext.isCancelled());
+        assertTrue(contexts.isEmpty());
+    }
+
 
     private String generateToken(String sub, List<String> aud) {
         Map<String, Object> claims = new HashMap<>();
@@ -464,6 +516,68 @@ class DefaultWorkloadApiClientTest {
 
         KeyPair keyPair = TestUtils.generateECKeyPair(Curve.P_256);
         return TestUtils.generateToken(claims, keyPair, "authority1");
+    }
+
+    private static <T> Watcher<T> noopWatcher() {
+        return new Watcher<T>() {
+            @Override
+            public void onUpdate(T update) {
+            }
+
+            @Override
+            public void onError(Throwable e) {
+            }
+        };
+    }
+
+    private void replaceCancellableContexts(List<Context.CancellableContext> contexts) throws Exception {
+        Field field = DefaultWorkloadApiClient.class.getDeclaredField("cancellableContexts");
+        field.setAccessible(true);
+        field.set(workloadApiClient, contexts);
+    }
+
+    private static final class MonitorCheckingCancellableContexts extends AbstractList<Context.CancellableContext> {
+
+        private final List<Context.CancellableContext> delegate = new ArrayList<>();
+
+        @Override
+        public Context.CancellableContext get(int index) {
+            return delegate.get(index);
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public boolean add(Context.CancellableContext context) {
+            return delegate.add(context);
+        }
+
+        @Override
+        public Iterator<Context.CancellableContext> iterator() {
+            assertListMonitorHeld();
+            return delegate.iterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            assertListMonitorHeld();
+            return delegate.toArray();
+        }
+
+        @Override
+        public void clear() {
+            assertListMonitorHeld();
+            delegate.clear();
+        }
+
+        private void assertListMonitorHeld() {
+            if (!Thread.holdsLock(this)) {
+                throw new AssertionError("cancellableContexts must be accessed while synchronized on the list");
+            }
+        }
     }
 
 }
