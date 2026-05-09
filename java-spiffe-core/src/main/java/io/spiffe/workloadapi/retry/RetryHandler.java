@@ -39,7 +39,7 @@ public class RetryHandler {
         }
 
         try {
-            executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
+            executor.schedule(runnable, nextDelay.toMillis(), TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException e) {
             return false;
         }
