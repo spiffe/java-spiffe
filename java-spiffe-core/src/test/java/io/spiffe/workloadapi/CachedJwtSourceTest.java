@@ -1,6 +1,8 @@
 package io.spiffe.workloadapi;
 
 import com.google.common.collect.Sets;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jwt.JWTClaimsSet;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtSourceException;
@@ -9,18 +11,21 @@ import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
+import io.spiffe.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
+import java.security.KeyPair;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -173,6 +178,24 @@ class CachedJwtSourceTest {
         } catch (JwtSvidException e) {
             fail(e);
         }
+    }
+
+   @Test
+    void testFetchJwtSvidWithSubject_cachedJwtSvidWithoutIssuedAt_refetchesWithoutThrowingNullPointerException() throws JwtSvidException {
+        Set<String> audience = Collections.singleton(TEST_AUDIENCE);
+        Date expiration = Date.from(clock.instant().plus(JWT_TTL));
+        JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, TEST_SUBJECT.toString(), expiration);
+        KeyPair keyPair = TestUtils.generateECKeyPair(Curve.P_521);
+        JwtSvid svidWithoutIssuedAt = JwtSvid.parseInsecure(TestUtils.generateToken(claims, keyPair, "authority1"), audience);
+
+        jwtSource.putCachedJwtSvidsForTest(TEST_SUBJECT, audience, Collections.singletonList(svidWithoutIssuedAt));
+        int initialCallCount = workloadApiClient.getFetchJwtSvidCallCount();
+
+        JwtSvid svid = assertDoesNotThrow(() -> jwtSource.fetchJwtSvid(TEST_SUBJECT, TEST_AUDIENCE));
+
+        assertNotNull(svid);
+        assertEquals(TEST_SUBJECT, svid.getSpiffeId());
+        assertEquals(initialCallCount + 1, workloadApiClient.getFetchJwtSvidCallCount());
     }
 
     @Test
