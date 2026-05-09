@@ -97,6 +97,28 @@ public class X509CertificateTestUtils {
         return new CertAndKeyPair(cert, certKeyPair);
     }
 
+    /**
+     * Creates a non-CA certificate with a custom KeyUsage extension.
+     */
+    public static CertAndKeyPair createCertificateWithKeyUsage(
+            String subject,
+            String issuerSubject,
+            String spiffeId,
+            CertAndKeyPair issuer,
+            boolean digitalSignature,
+            boolean keyCertSign,
+            boolean crlSign
+    ) throws Exception {
+        KeyPair certKeyPair = generateKeyPair();
+        PrivateKey issuerKey = issuer.keyPair.getPrivate();
+        JcaX509v3CertificateBuilder builder = getCertificateBuilder(certKeyPair, subject, issuerSubject);
+        addCertExtensions(builder, Collections.singletonList(spiffeId), false, true);
+        builder.replaceExtension(Extension.keyUsage, true,
+                new KeyUsage(keyUsage(digitalSignature, keyCertSign, crlSign)));
+        X509Certificate cert = getSignedX509Certificate(issuerKey, builder);
+        return new CertAndKeyPair(cert, certKeyPair);
+    }
+
     private static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         return keyGen.generateKeyPair();
@@ -149,6 +171,20 @@ public class X509CertificateTestUtils {
                 new GeneralNames(new GeneralName(GeneralName.uniformResourceIdentifier, spiffeId)));
 
         builder.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(certKeyPair.getPublic().getEncoded()));
+    }
+
+    private static int keyUsage(boolean digitalSignature, boolean keyCertSign, boolean crlSign) {
+        int usage = 0;
+        if (digitalSignature) {
+            usage |= KeyUsage.digitalSignature;
+        }
+        if (keyCertSign) {
+            usage |= KeyUsage.keyCertSign;
+        }
+        if (crlSign) {
+            usage |= KeyUsage.cRLSign;
+        }
+        return usage;
     }
 
     private static JcaX509v3CertificateBuilder getCertificateBuilder(KeyPair certKeyPair, String subject, String issuerSubject) {
