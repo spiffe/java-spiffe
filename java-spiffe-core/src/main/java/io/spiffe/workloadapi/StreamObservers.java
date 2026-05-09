@@ -12,6 +12,8 @@ import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
 import io.spiffe.workloadapi.grpc.Workload;
 import io.spiffe.workloadapi.retry.RetryHandler;
 
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,8 +22,15 @@ final class StreamObservers {
     private static final Logger log =
             Logger.getLogger(StreamObservers.class.getName());
 
-    private static final String INVALID_ARGUMENT = "INVALID_ARGUMENT";
     private static final String STREAM_IS_COMPLETED = "Workload API stream is completed";
+    // Retry only transient stream failures. Caller/client cancellation and terminal API errors fail the watch closed.
+    private static final Set<Status.Code> NON_RETRYABLE_CODES = EnumSet.of(
+            Status.Code.INVALID_ARGUMENT,
+            Status.Code.CANCELLED,
+            Status.Code.PERMISSION_DENIED,
+            Status.Code.UNAUTHENTICATED,
+            Status.Code.UNIMPLEMENTED,
+            Status.Code.FAILED_PRECONDITION);
 
     private StreamObservers() {
     }
@@ -63,13 +72,15 @@ final class StreamObservers {
             private void handleX509ContextRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
                     log.log(Level.FINE, "Retrying connecting to Workload API to register X.509 context watcher");
-                    retryHandler.scheduleRetry(() ->
+                    boolean retryScheduled = retryHandler.scheduleRetry(() ->
                             cancellableContext.run(
                                     () -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(),
                                             this)));
-                } else {
-                    watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
+                    if (retryScheduled) {
+                        return;
+                    }
                 }
+                watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
             }
 
             @Override
@@ -117,13 +128,15 @@ final class StreamObservers {
             private void handleX509BundlesRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
                     log.log(Level.FINE, "Retrying connecting to Workload API to register X.509 bundles watcher");
-                    retryHandler.scheduleRetry(() ->
+                    boolean retryScheduled = retryHandler.scheduleRetry(() ->
                             cancellableContext.run(
                                     () -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(),
                                             this)));
-                } else {
-                    watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
+                    if (retryScheduled) {
+                        return;
+                    }
                 }
+                watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
             }
 
             @Override
@@ -171,12 +184,14 @@ final class StreamObservers {
             private void handleJwtBundleRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
                     log.log(Level.FINE, "Retrying connecting to Workload API to register JWT Bundles watcher");
-                    retryHandler.scheduleRetry(() ->
+                    boolean retryScheduled = retryHandler.scheduleRetry(() ->
                             cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(),
                                     this)));
-                } else {
-                    watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
+                    if (retryScheduled) {
+                        return;
+                    }
                 }
+                watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
             }
 
             @Override
@@ -188,7 +203,7 @@ final class StreamObservers {
     }
 
     private static boolean isErrorNotRetryable(Throwable t) {
-        return INVALID_ARGUMENT.equals(Status.fromThrowable(t).getCode().name());
+        return NON_RETRYABLE_CODES.contains(Status.fromThrowable(t).getCode());
     }
 
     private static Workload.X509SVIDRequest newX509SvidRequest() {
