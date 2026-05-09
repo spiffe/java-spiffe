@@ -44,7 +44,7 @@ public class CachedJwtSource implements JwtSource {
     private final
     Map<ImmutablePair<SpiffeId, Set<String>>, List<JwtSvid>> jwtSvids = new ConcurrentHashMap<>();
 
-    private JwtBundleSet bundles;
+    private volatile JwtBundleSet bundles;
 
     private final WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
