@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -25,6 +26,7 @@ import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithUriSans;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -346,12 +348,15 @@ class X509SvidTest {
         byte[] certBytes = leaf.getCertificate().getEncoded();
         byte[] keyBytes = leaf.getKeyPair().getPrivate().getEncoded();
 
-        InvalidSpiffeIdException exception = assertThrows(
-                InvalidSpiffeIdException.class,
+        X509SvidException exception = assertThrows(
+                X509SvidException.class,
                 () -> X509Svid.parseRaw(certBytes, keyBytes)
         );
 
-        assertEquals("Path cannot have a trailing slash", exception.getMessage());
+        assertEquals("Certificate contains invalid SPIFFE ID in the URI SAN", exception.getMessage());
+        assertInstanceOf(CertificateException.class, exception.getCause());
+        assertInstanceOf(InvalidSpiffeIdException.class, exception.getCause().getCause());
+        assertEquals("Path cannot have a trailing slash", exception.getCause().getCause().getMessage());
     }
 
    @Test
