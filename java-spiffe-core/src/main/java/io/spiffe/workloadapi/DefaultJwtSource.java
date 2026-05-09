@@ -33,7 +33,7 @@ public class DefaultJwtSource implements JwtSource {
     static final Duration DEFAULT_TIMEOUT =
             Duration.parse(System.getProperty(TIMEOUT_SYSTEM_PROPERTY, "PT0S"));
 
-    private JwtBundleSet bundles;
+    private volatile JwtBundleSet bundles;
 
     private final WorkloadApiClient workloadApiClient;
     private volatile boolean closed;
