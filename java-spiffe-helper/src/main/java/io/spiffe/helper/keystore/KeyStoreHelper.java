@@ -15,7 +15,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.KeyStoreException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -206,18 +211,44 @@ public class KeyStoreHelper implements Closeable {
     }
 
     private void storeBundle(TrustDomain trustDomain, X509Bundle bundle) throws KeyStoreException {
+        List<X509Certificate> authorities = sortedAuthorities(bundle);
+        trustStore.deleteEntriesByAliasPrefix(generateAliasPrefix(trustDomain));
+
         int index = 0;
-        for (X509Certificate certificate : bundle.getX509Authorities()) {
+        for (X509Certificate certificate : authorities) {
             final AuthorityEntry authorityEntry = AuthorityEntry.builder()
                     .alias(generateAlias(trustDomain, index))
                     .certificate(certificate)
                     .build();
             trustStore.storeAuthorityEntry(authorityEntry);
+            index++;
         }
     }
 
+    private List<X509Certificate> sortedAuthorities(X509Bundle bundle) throws KeyStoreException {
+        List<X509Certificate> authorities = new ArrayList<>(bundle.getX509Authorities());
+        try {
+            authorities.sort(Comparator.comparing(this::certificateSortKey));
+        } catch (IllegalArgumentException e) {
+            throw new KeyStoreException("X.509 authority cannot be encoded", e);
+        }
+        return authorities;
+    }
+
+    private String certificateSortKey(final X509Certificate certificate) {
+        try {
+            return Base64.getEncoder().encodeToString(certificate.getEncoded());
+        } catch (CertificateEncodingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private String generateAliasPrefix(final TrustDomain trustDomain) {
+        return trustDomain.getName().concat(".");
+    }
+
     private String generateAlias(final TrustDomain trustDomain, int index) {
-        return trustDomain.getName().concat(".").concat(String.valueOf(index));
+        return generateAliasPrefix(trustDomain).concat(String.valueOf(index));
     }
 
     private boolean isClosed() {

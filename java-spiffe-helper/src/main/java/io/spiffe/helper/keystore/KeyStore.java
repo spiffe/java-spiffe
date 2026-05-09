@@ -10,6 +10,9 @@ import java.nio.file.Path;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -120,6 +123,23 @@ class KeyStore {
                 authorityEntry.getAlias(),
                 authorityEntry.getCertificate()
         );
+        this.flush();
+    }
+
+    void deleteEntriesByAliasPrefix(final String aliasPrefix) throws KeyStoreException {
+        List<String> aliasesToDelete = new ArrayList<>();
+        Enumeration<String> aliases = javaKeyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (alias.startsWith(aliasPrefix)) {
+                aliasesToDelete.add(alias);
+            }
+        }
+
+        for (String alias : aliasesToDelete) {
+            javaKeyStore.deleteEntry(alias);
+        }
+
         this.flush();
     }
 
