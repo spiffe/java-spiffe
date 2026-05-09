@@ -1,5 +1,6 @@
 package io.spiffe.internal;
 
+import io.spiffe.exception.InvalidSpiffeIdException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 
@@ -24,7 +25,6 @@ import static io.spiffe.internal.AsymmetricKeyAlgorithm.RSA;
 import static io.spiffe.internal.KeyUsage.CRL_SIGN;
 import static io.spiffe.internal.KeyUsage.DIGITAL_SIGNATURE;
 import static io.spiffe.internal.KeyUsage.KEY_CERT_SIGN;
-import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
  * Common certificate utility methods.
@@ -32,7 +32,9 @@ import static org.apache.commons.lang3.StringUtils.startsWith;
 public class CertificateUtils {
 
     private static final String SPIFFE_PREFIX = "spiffe://";
+    private static final int SAN_TYPE_INDEX = 0;
     private static final int SAN_VALUE_INDEX = 1;
+    private static final int URI_SAN_TYPE = 6;
     private static final String PUBLIC_KEY_INFRASTRUCTURE_ALGORITHM = "PKIX";
     private static final String X509_CERTIFICATE_TYPE = "X.509";
 
@@ -122,7 +124,11 @@ public class CertificateUtils {
             throw new CertificateException("Certificate does not contain SPIFFE ID in the URI SAN");
         }
 
-        return SpiffeId.parse(spiffeIds.get(0));
+        try {
+            return SpiffeId.parse(spiffeIds.get(0));
+        } catch (InvalidSpiffeIdException | IllegalArgumentException e) {
+            throw new CertificateException("Certificate contains invalid SPIFFE ID in the URI SAN", e);
+        }
     }
 
     /**
@@ -182,8 +188,9 @@ public class CertificateUtils {
         }
         return certificate.getSubjectAlternativeNames()
                 .stream()
+                .filter(san -> URI_SAN_TYPE == (Integer) san.get(SAN_TYPE_INDEX))
                 .map(san -> (String) san.get(SAN_VALUE_INDEX))
-                .filter(uri -> startsWith(uri, SPIFFE_PREFIX))
+                .filter(uri -> uri != null && uri.startsWith(SPIFFE_PREFIX))
                 .collect(Collectors.toList());
     }
 

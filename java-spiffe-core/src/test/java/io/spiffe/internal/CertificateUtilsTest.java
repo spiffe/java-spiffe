@@ -22,6 +22,7 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,6 +34,8 @@ import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class CertificateUtilsTest {
@@ -171,6 +174,43 @@ public class CertificateUtilsTest {
     }
 
     @Test
+    void testGetSpiffeId_certWithDnsAndIpSans_doesNotThrowClassCastException() throws Exception {
+        X509Certificate certificate = new CertificateWithSubjectAlternativeNames(Arrays.asList(
+                Arrays.asList(6, "spiffe://domain.test/workload"),
+                Arrays.asList(2, "workload.domain.test"),
+                Arrays.asList(7, "127.0.0.1")
+        ));
+
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId(certificate);
+
+        assertEquals(SpiffeId.parse("spiffe://domain.test/workload"), spiffeId);
+    }
+
+    @Test
+    void testGetSpiffeId_certWithNonStringSanType_doesNotThrowClassCastException() throws Exception {
+        X509Certificate certificate = new CertificateWithSubjectAlternativeNames(Arrays.asList(
+                Arrays.asList(6, "spiffe://domain.test/workload"),
+                Arrays.asList(0, new byte[]{1, 2, 3})
+        ));
+
+        SpiffeId spiffeId = CertificateUtils.getSpiffeId(certificate);
+
+        assertEquals(SpiffeId.parse("spiffe://domain.test/workload"), spiffeId);
+    }
+
+    @Test
+    void testGetSpiffeId_certWithMalformedSpiffeUriSan_throwsCertificateException() throws Exception {
+        X509Certificate certificate = new CertificateWithSubjectAlternativeNames(Collections.singletonList(
+                Arrays.asList(6, "spiffe://domain.test/workload/invalid path")
+        ));
+
+        CertificateException exception = assertThrows(CertificateException.class, () -> CertificateUtils.getSpiffeId(certificate));
+
+        assertEquals("Certificate contains invalid SPIFFE ID in the URI SAN", exception.getMessage());
+        assertInstanceOf(RuntimeException.class, exception.getCause());
+    }
+
+    @Test
     void testGetSpiffeId_certNotContainSpiffeId_throwsCertificateException() throws Exception {
         final CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", "spiffe://domain.test");
         final CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIRE", "", rootCa, false);
@@ -214,5 +254,18 @@ public class CertificateUtilsTest {
         assertFalse(CertificateUtils.hasKeyUsageDigitalSignature(certificate));
         assertFalse(CertificateUtils.hasKeyUsageCertSign(certificate));
         assertFalse(CertificateUtils.hasKeyUsageCRLSign(certificate));
+    }
+
+    private static class CertificateWithSubjectAlternativeNames extends DummyX509Certificate {
+        private final Collection<List<?>> subjectAlternativeNames;
+
+        private CertificateWithSubjectAlternativeNames(Collection<List<?>> subjectAlternativeNames) {
+            this.subjectAlternativeNames = subjectAlternativeNames;
+        }
+
+        @Override
+        public Collection<List<?>> getSubjectAlternativeNames() throws CertificateParsingException {
+            return subjectAlternativeNames;
+        }
     }
 }
