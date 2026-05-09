@@ -1,6 +1,7 @@
 package io.spiffe.workloadapi.retry;
 
 import java.time.Duration;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -26,18 +27,26 @@ public class RetryHandler {
      * Updates the next delay and retries count.
      *
      * @param runnable the task to be scheduled for execution
+     * @return true if the retry was scheduled, false otherwise
      */
-    public void scheduleRetry(final Runnable runnable) {
+    public boolean scheduleRetry(final Runnable runnable) {
         if (executor.isShutdown()) {
-            return;
+            return false;
         }
 
         if (exponentialBackoffPolicy.reachedMaxRetries(retryCount)) {
-            return;
+            return false;
         }
-        executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
+
+        try {
+            executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
+        } catch (RejectedExecutionException e) {
+            return false;
+        }
+
         nextDelay = exponentialBackoffPolicy.nextDelay(nextDelay);
         retryCount++;
+        return true;
     }
 
     /**
