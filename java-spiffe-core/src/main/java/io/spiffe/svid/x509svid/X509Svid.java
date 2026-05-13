@@ -16,7 +16,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -27,8 +26,6 @@ import java.util.Objects;
  * Contains a SPIFFE ID, a private key and a chain of X.509 certificates.
  */
 public class X509Svid {
-
-    private static final int URI_SAN_TYPE = 6;
 
     SpiffeId spiffeId;
 
@@ -242,35 +239,12 @@ public class X509Svid {
         final SpiffeId spiffeId;
         try {
             X509Certificate leaf = x509Certificates.get(0);
-            validateLeafHasSingleUriSan(leaf);
+            X509SvidProfile.validateLeafHasSingleUriSan(leaf);
             spiffeId = CertificateUtils.getSpiffeId(leaf);
         } catch (CertificateException e) {
             throw new X509SvidException(e.getMessage(), e);
         }
         return spiffeId;
-    }
-
-    private static void validateLeafHasSingleUriSan(final X509Certificate leaf)
-            throws CertificateException, X509SvidException {
-        final Collection<List<?>> subjectAlternativeNames = leaf.getSubjectAlternativeNames();
-
-        int uriSanCount = 0;
-        if (subjectAlternativeNames != null) {
-            for (List<?> sanEntry : subjectAlternativeNames) {
-                if (sanEntry == null || sanEntry.isEmpty()) {
-                    continue;
-                }
-
-                Object sanType = sanEntry.get(0);
-                if (sanType instanceof Integer && (Integer) sanType == URI_SAN_TYPE) {
-                    uriSanCount++;
-                }
-            }
-        }
-
-        if (uriSanCount != 1) {
-            throw new X509SvidException("Leaf certificate must contain exactly one URI SAN");
-        }
     }
 
     private static PrivateKey generatePrivateKey(final byte[] privateKeyBytes,
@@ -315,21 +289,6 @@ public class X509Svid {
     }
 
     private static void validateLeafCertificate(final X509Certificate leaf) throws X509SvidException {
-        if (CertificateUtils.isCA(leaf)) {
-            throw new X509SvidException("Leaf certificate must not have CA flag set to true");
-        }
-        validateKeyUsageOfLeafCertificate(leaf);
-    }
-
-    private static void validateKeyUsageOfLeafCertificate(final X509Certificate leaf) throws X509SvidException {
-        if (!CertificateUtils.hasKeyUsageDigitalSignature(leaf)) {
-            throw new X509SvidException("Leaf certificate must have 'digitalSignature' as key usage");
-        }
-        if (CertificateUtils.hasKeyUsageCertSign(leaf)) {
-            throw new X509SvidException("Leaf certificate must not have 'keyCertSign' as key usage");
-        }
-        if (CertificateUtils.hasKeyUsageCRLSign(leaf)) {
-            throw new X509SvidException("Leaf certificate must not have 'cRLSign' as key usage");
-        }
+        X509SvidProfile.validateLeafCertificate(leaf);
     }
 }

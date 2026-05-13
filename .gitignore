@@ -1,4 +1,11 @@
 .gradle
 .idea
+.vscode
 build
 out
+bin
+**/bin/
+*.class
+
+# macOS
+.DS_Store

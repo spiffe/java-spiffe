@@ -21,14 +21,19 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificate;
+import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithKeyUsage;
+import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithUriSans;
+import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithoutKeyUsage;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
@@ -334,6 +339,67 @@ public class SpiffeTrustManagerTest {
     }
 
     @Test
+    void checkTrusted_leafCertificateWithCaTrue_throwsCertificateException() throws Exception {
+        PeerChain peerChain = createPeerChain((subject, issuerSubject, spiffeId, issuer) ->
+                createCertificate(subject, issuerSubject, spiffeId, issuer, true));
+
+        assertPeerChainRejected(
+                peerChain,
+                "Leaf certificate must not have CA flag set to true"
+        );
+    }
+
+    @Test
+    void checkTrusted_leafCertificateWithoutDigitalSignature_throwsCertificateException() throws Exception {
+        PeerChain peerChain = createPeerChain((subject, issuerSubject, spiffeId, issuer) ->
+                createCertificateWithoutKeyUsage(subject, issuerSubject, spiffeId, issuer, false));
+
+        assertPeerChainRejected(
+                peerChain,
+                "Leaf certificate must have 'digitalSignature' as key usage"
+        );
+    }
+
+    @Test
+    void checkTrusted_leafCertificateWithKeyCertSign_throwsCertificateException() throws Exception {
+        PeerChain peerChain = createPeerChain((subject, issuerSubject, spiffeId, issuer) ->
+                createCertificateWithKeyUsage(subject, issuerSubject, spiffeId, issuer, true, true, false));
+
+        assertPeerChainRejected(
+                peerChain,
+                "Leaf certificate must not have 'keyCertSign' as key usage"
+        );
+    }
+
+    @Test
+    void checkTrusted_leafCertificateWithCrlSign_throwsCertificateException() throws Exception {
+        PeerChain peerChain = createPeerChain((subject, issuerSubject, spiffeId, issuer) ->
+                createCertificateWithKeyUsage(subject, issuerSubject, spiffeId, issuer, true, false, true));
+
+        assertPeerChainRejected(
+                peerChain,
+                "Leaf certificate must not have 'cRLSign' as key usage"
+        );
+    }
+
+    @Test
+    void checkTrusted_leafCertificateWithAdditionalNonSpiffeUriSan_throwsCertificateException() throws Exception {
+        PeerChain peerChain = createPeerChain((subject, issuerSubject, spiffeId, issuer) ->
+                createCertificateWithUriSans(
+                        subject,
+                        issuerSubject,
+                        Arrays.asList(spiffeId, "https://example.org/workload"),
+                        issuer,
+                        false
+                ));
+
+        assertPeerChainRejected(
+                peerChain,
+                "Leaf certificate must contain exactly one URI SAN"
+        );
+    }
+
+    @Test
     void checkServerTrusted_verifierResult_ThrowCertificateException() throws BundleNotFoundException {
         when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
         final SpiffeId expected = SpiffeId.parse("spiffe://example.org/test");
@@ -370,6 +436,71 @@ public class SpiffeTrustManagerTest {
     void getAcceptedIssuers() {
         X509Certificate[] acceptedIssuers = spiffeTrustManager.getAcceptedIssuers();
         assertEquals(0, acceptedIssuers.length);
+    }
+
+    private PeerChain createPeerChain(LeafCertificateFactory leafCertificateFactory) throws Exception {
+        final String subject = "C = US, O = SPIRE";
+        final String issuerSubject = "C = US, O = SPIFFE";
+
+        final TrustDomain trustDomain = TrustDomain.parse("spiffe://example.org");
+        final SpiffeId spiffeIdRoot = trustDomain.newSpiffeId();
+        final SpiffeId spiffeIdHost1 = SpiffeId.fromSegments(trustDomain, "host1");
+        final SpiffeId spiffeIdHost2 = SpiffeId.fromSegments(trustDomain, "host2");
+        final SpiffeId spiffeIdTest = SpiffeId.fromSegments(trustDomain, "test");
+
+        final CertAndKeyPair rootCa = createRootCA(issuerSubject, spiffeIdRoot.toString());
+        final CertAndKeyPair intermediate1 = createCertificate(subject, issuerSubject, spiffeIdHost1.toString(), rootCa, true);
+        final CertAndKeyPair intermediate2 = createCertificate(subject, subject, spiffeIdHost2.toString(), intermediate1, true);
+        final CertAndKeyPair leaf = leafCertificateFactory.create(
+                subject,
+                subject,
+                spiffeIdTest.toString(),
+                intermediate2
+        );
+
+        X509Certificate[] chain = new X509Certificate[]{
+                leaf.getCertificate(),
+                intermediate2.getCertificate(),
+                intermediate1.getCertificate()
+        };
+        X509Bundle bundle = X509Bundle.parse(trustDomain, rootCa.getCertificate().getEncoded());
+        return new PeerChain(trustDomain, spiffeIdTest, chain, bundle);
+    }
+
+    private void assertPeerChainRejected(PeerChain peerChain, String expectedError) throws BundleNotFoundException {
+        acceptedSpiffeIds = Collections.singleton(peerChain.spiffeId);
+        when(bundleSource.getBundleForTrustDomain(peerChain.trustDomain)).thenReturn(peerChain.bundle);
+
+        CertificateException clientException = assertThrows(
+                CertificateException.class,
+                () -> spiffeTrustManager.checkClientTrusted(peerChain.chain, "")
+        );
+        assertEquals(expectedError, clientException.getMessage());
+
+        CertificateException serverException = assertThrows(
+                CertificateException.class,
+                () -> spiffeTrustManager.checkServerTrusted(peerChain.chain, "")
+        );
+        assertEquals(expectedError, serverException.getMessage());
+    }
+
+    private interface LeafCertificateFactory {
+        CertAndKeyPair create(String subject, String issuerSubject, String spiffeId, CertAndKeyPair issuer)
+                throws Exception;
+    }
+
+    private static class PeerChain {
+        TrustDomain trustDomain;
+        SpiffeId spiffeId;
+        X509Certificate[] chain;
+        X509Bundle bundle;
+
+        PeerChain(TrustDomain trustDomain, SpiffeId spiffeId, X509Certificate[] chain, X509Bundle bundle) {
+            this.trustDomain = trustDomain;
+            this.spiffeId = spiffeId;
+            this.chain = chain;
+            this.bundle = bundle;
+        }
     }
 
     private SSLEngine getSslEngineStub() {
