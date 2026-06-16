@@ -210,6 +210,12 @@ class JwtSvidParseInsecureTest {
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience])"))
                         .build()),
                 Arguments.of(TestCase.builder()
+                        .name("empty expected audience")
+                        .expectedAudience(Collections.emptySet())
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
+                        .expectedException(new IllegalArgumentException("audience cannot be empty"))
+                        .build()),
+                Arguments.of(TestCase.builder()
                         .name("invalid subject claim")
                         .expectedAudience(audience)
                         .generateToken(() -> TestUtils.generateToken(TestUtils.buildJWTClaimSet(audience, "non-spiffe-subject", expiration), key1, "authority1"))
