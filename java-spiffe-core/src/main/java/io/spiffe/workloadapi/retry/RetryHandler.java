@@ -35,7 +35,7 @@ public class RetryHandler {
         if (exponentialBackoffPolicy.reachedMaxRetries(retryCount)) {
             return;
         }
-        executor.schedule(runnable, nextDelay.getSeconds(), TimeUnit.SECONDS);
+        executor.schedule(runnable, nextDelay.toMillis(), TimeUnit.MILLISECONDS);
         nextDelay = exponentialBackoffPolicy.nextDelay(nextDelay);
         retryCount++;
     }
