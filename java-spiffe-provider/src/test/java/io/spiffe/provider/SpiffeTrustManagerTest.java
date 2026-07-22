@@ -33,6 +33,7 @@ import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithUriS
 import static io.spiffe.utils.X509CertificateTestUtils.createCertificateWithoutKeyUsage;
 import static io.spiffe.utils.X509CertificateTestUtils.createRootCA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
@@ -430,6 +431,22 @@ public class SpiffeTrustManagerTest {
         } catch (CertificateException e) {
             assertEquals("Stub failure.", e.getMessage());
         }
+    }
+
+    @Test
+    void checkServerTrusted_untrustedChain_verifierNotInvoked() throws BundleNotFoundException {
+        when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleUnknown);
+        final AtomicBoolean verifierInvoked = new AtomicBoolean(false);
+        final SpiffeIdVerifier verifier = (spiffeId, verifiedChain) -> verifierInvoked.set(true);
+
+        SpiffeTrustManager spiffeTrustManager = new SpiffeTrustManager(bundleSource, verifier);
+        try {
+            spiffeTrustManager.checkServerTrusted(chain, "");
+            fail("CertificateException was expected");
+        } catch (CertificateException e) {
+            assertEquals("Cert chain cannot be verified", e.getMessage());
+        }
+        assertFalse(verifierInvoked.get(), "verifier must not be invoked when the chain cannot be verified");
     }
 
     @Test
