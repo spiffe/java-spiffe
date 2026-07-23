@@ -260,6 +260,13 @@ class JwtSvidParseAndValidateTest {
                         .expectedException(new JwtSvidException("expected audience in [another] (audience=[audience2, audience1])"))
                         .build()),
                 Arguments.of(TestCase.builder()
+                        .name("empty expected audience")
+                        .jwtBundle(jwtBundle)
+                        .expectedAudience(Collections.emptySet())
+                        .generateToken(() -> TestUtils.generateToken(claims, key1, "authority1"))
+                        .expectedException(new IllegalArgumentException("audience cannot be empty"))
+                        .build()),
+                Arguments.of(TestCase.builder()
                         .name("missing audience claim")
                         .jwtBundle(jwtBundle)
                         .expectedAudience(audience)

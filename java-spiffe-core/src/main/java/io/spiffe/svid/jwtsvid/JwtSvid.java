@@ -103,7 +103,8 @@ public class JwtSvid {
      *                                    when the signature cannot be verified,
      *                                    when the 'aud' claim has an audience that is not in the audience list
      *                                    provided as parameter
-     * @throws IllegalArgumentException   when the token is blank or cannot be parsed
+     * @throws IllegalArgumentException   when the token is blank, when the audience is empty, or when the token
+     *                                    cannot be parsed
      * @throws BundleNotFoundException    if the bundle for the trust domain of the spiffe id from the 'sub'
      *                                    cannot be found in the JwtBundleSource
      * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
@@ -111,11 +112,12 @@ public class JwtSvid {
      */
     public static JwtSvid parseAndValidate(String token,
                                            BundleSource<JwtBundle> jwtBundleSource,
-                                           Set<String> audience)
+                                           Set<String>   audience)
             throws JwtSvidException, BundleNotFoundException, AuthorityNotFoundException {
         Objects.requireNonNull(token, "token must not be null");
         Objects.requireNonNull(jwtBundleSource, "jwtBundleSource must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
+        requireNonEmptyAudience(audience);
 
         return parseAndValidate(token, jwtBundleSource, audience, null);
     }
@@ -139,7 +141,8 @@ public class JwtSvid {
      *                                    when the signature cannot be verified,
      *                                    when the 'aud' claim has an audience that is not in the audience list
      *                                    provided as parameter
-     * @throws IllegalArgumentException   when the token is blank or cannot be parsed
+     * @throws IllegalArgumentException   when the token is blank, when the audience is empty, or when the token
+     *                                    cannot be parsed
      * @throws BundleNotFoundException    if the bundle for the trust domain of the spiffe id from the 'sub'
      *                                    cannot be found in the JwtBundleSource
      * @throws AuthorityNotFoundException if the authority cannot be found in the bundle using the value from
@@ -154,6 +157,7 @@ public class JwtSvid {
         Objects.requireNonNull(token, "token must not be null");
         Objects.requireNonNull(jwtBundleSource, "jwtBundleSource must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
+        requireNonEmptyAudience(audience);
 
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("token cannot be blank");
@@ -198,11 +202,12 @@ public class JwtSvid {
      *                                  when the 'aud' has an audience that is not in the audience provided as parameter,
      *                                  when the 'alg' is not supported (See {@link JwtSignatureAlgorithm}),
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
-     * @throws IllegalArgumentException when the token cannot be parsed
+     * @throws IllegalArgumentException when the audience is empty or when the token cannot be parsed
      */
     public static JwtSvid parseInsecure(String token, Set<String> audience) throws JwtSvidException {
         Objects.requireNonNull(token, "token must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
+        requireNonEmptyAudience(audience);
         return parseInsecure(token, audience, null);
     }
 
@@ -220,11 +225,12 @@ public class JwtSvid {
      *                                  when the 'aud' has an audience that is not in the audience provided as parameter,
      *                                  when the 'alg' is not supported (See {@link JwtSignatureAlgorithm}),
      *                                  when the header 'typ' is present and is not 'JWT' or 'JOSE'.
-     * @throws IllegalArgumentException when the token cannot be parsed
+     * @throws IllegalArgumentException when the audience is empty or when the token cannot be parsed
      */
     public static JwtSvid parseInsecure(String token, Set<String> audience, final String hint) throws JwtSvidException {
         Objects.requireNonNull(token, "token must not be null");
         Objects.requireNonNull(audience, "audience must not be null");
+        requireNonEmptyAudience(audience);
         if (StringUtils.isBlank(token)) {
             throw new IllegalArgumentException("token cannot be blank");
         }
@@ -398,6 +404,12 @@ public class JwtSvid {
         }
         if (!audClaim.containsAll(expectedAudiences)) {
             throw new JwtSvidException(String.format("expected audience in %s (audience=%s)", expectedAudiences, audClaim));
+        }
+    }
+
+    private static void requireNonEmptyAudience(Set<String> audience) {
+        if (audience.isEmpty()) {
+            throw new IllegalArgumentException("audience cannot be empty");
         }
     }
 
