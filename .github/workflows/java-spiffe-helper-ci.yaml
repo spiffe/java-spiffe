@@ -2,6 +2,7 @@ name: Java SPIFFE Helper CI
 
 on:
   - pull_request
+  - workflow_dispatch
 
 jobs:
   test:
