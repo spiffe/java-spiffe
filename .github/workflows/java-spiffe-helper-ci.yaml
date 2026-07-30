@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         spire-chart-version:
-          - spire: '0.28.x'
+          - spire: '0.29.x'
             crds: '0.5.x'
 
     env:
