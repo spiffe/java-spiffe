@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.9.0] - 2026-08-11
+
+### Breaking changes
+
+* `RetryHandler.scheduleRetry(Runnable)` now returns `boolean` instead of `void` to indicate whether a retry was scheduled.
+  This is source-compatible but binary-incompatible, so existing 0.8.x-compiled artifacts must be rebuilt (#436)
+
+### Changed
+
+* Registering a watch on a closed `WorkloadApiClient` now throws `IllegalStateException` instead of being accepted (#435)
+* X.509-SVID and JWT-SVID validation is stricter and rejects material that earlier versions accepted. See the
+  fixes below for details
+
+### Fixed
+
+* Validate the peer certificate chain against the trust bundle before invoking `SpiffeIdVerifier` (#449)
+* Enforce the X.509-SVID leaf profile when validating SVID certificates (#433)
+* Harden SPIFFE URI SAN parsing when extracting SPIFFE IDs from certificates (#434)
+* Reject empty JWT-SVID audience values (#431)
+* Publish JWT bundle updates safely to avoid torn reads (#429)
+* Refresh cached JWT-SVIDs that do not carry an `iat` claim (#430)
+* Reject new watches after the Workload API client is closed (#435)
+* Notify watchers when retries stop instead of failing silently (#436)
+* Preserve sub-second retry delays in the retry handler (#432)
+* Preserve multiple X.509 bundle authorities in the helper KeyStore (#428)
+
+### Dependency updates
+
+* Bump grpcVersion from 1.80.0 to 1.83.1 (#427, #440, #442, #446, #453)
+* Bump com.nimbusds:nimbus-jose-jwt from 10.9 to 10.9.1 (#438)
+* Bump commons-validator:commons-validator from 1.10.1 to 1.11.0 (#455)
+* Bump com.google.protobuf from 0.9.6 to 0.10.0 (#425)
+* Bump com.vanniktech.maven.publish from 0.35.0 to 0.37.0 (#445)
+* Bump gradle-wrapper from 9.4.1 to 9.6.1 (#426, #437, #443)
+* Bump the github-actions group with 2 updates (#441)
+
+
 ## [0.8.17] - 2026-04-20
 
 ### Fixed
