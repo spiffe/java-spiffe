@@ -78,6 +78,7 @@ dependencies {
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 
+    implementation "com.google.guava:guava:${guavaVersion}"
     implementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
     testFixturesImplementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
 

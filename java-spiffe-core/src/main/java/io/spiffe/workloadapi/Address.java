@@ -1,8 +1,8 @@
 package io.spiffe.workloadapi;
 
+import com.google.common.net.InetAddresses;
 import io.spiffe.exception.SocketEndpointAddressException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.InetAddressValidator;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -158,7 +158,7 @@ public class Address {
         }
 
         boolean ipValid;
-        ipValid = InetAddressValidator.getInstance().isValid(parsedAddress.getHost());
+        ipValid = InetAddresses.isInetAddress(parsedAddress.getHost());
         if (!ipValid) {
             String error = "Workload endpoint tcp socket URI host component must be an IP:port: %s";
             throw new SocketEndpointAddressException(String.format(error, parsedAddress));
