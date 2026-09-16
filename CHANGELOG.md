@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Breaking changes
+
+* `RetryHandler.scheduleRetry(Runnable)` now returns `boolean` instead of `void`.
+  Consumers compiled against the previous signature must recompile before upgrading.
+  This existing unreleased change is explicitly excluded from the binary compatibility check.
+
+### Build
+
+* Check core and provider binary compatibility against the latest stable Maven Central release.
+
 ## [0.8.17] - 2026-04-20
 
 ### Fixed
