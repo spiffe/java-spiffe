@@ -72,7 +72,7 @@ final class StreamObservers {
             private void handleX509ContextRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
                     log.log(Level.FINE, "Retrying connecting to Workload API to register X.509 context watcher");
-                    boolean retryScheduled = retryHandler.scheduleRetry(() ->
+                    boolean retryScheduled = retryHandler.tryScheduleRetry(() ->
                             cancellableContext.run(
                                     () -> workloadApiAsyncStub.fetchX509SVID(newX509SvidRequest(),
                                             this)));
@@ -128,7 +128,7 @@ final class StreamObservers {
             private void handleX509BundlesRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
                     log.log(Level.FINE, "Retrying connecting to Workload API to register X.509 bundles watcher");
-                    boolean retryScheduled = retryHandler.scheduleRetry(() ->
+                    boolean retryScheduled = retryHandler.tryScheduleRetry(() ->
                             cancellableContext.run(
                                     () -> workloadApiAsyncStub.fetchX509Bundles(newX509BundlesRequest(),
                                             this)));
@@ -184,7 +184,7 @@ final class StreamObservers {
             private void handleJwtBundleRetry(Throwable t) {
                 if (retryHandler.shouldRetry()) {
                     log.log(Level.FINE, "Retrying connecting to Workload API to register JWT Bundles watcher");
-                    boolean retryScheduled = retryHandler.scheduleRetry(() ->
+                    boolean retryScheduled = retryHandler.tryScheduleRetry(() ->
                             cancellableContext.run(() -> workloadApiAsyncStub.fetchJWTBundles(newJwtBundlesRequest(),
                                     this)));
                     if (retryScheduled) {
