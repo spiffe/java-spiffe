@@ -1,0 +1,65 @@
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+
+def baselineVersion = providers.gradleProperty('baselineVersion').getOrElse('+')
+def firstRelease = baselineVersion == 'none'
+def moduleGroup = project.group.toString()
+def moduleName = project.name
+
+// A detached configuration avoids resolving this module to the project being built.
+def baseline = configurations.detachedConfiguration()
+baseline.with {
+    resolutionStrategy {
+        useGlobalDependencySubstitutionRules = false
+        cacheDynamicVersionsFor 0, 'seconds'
+        componentSelection {
+            all { selection ->
+                if (selection.candidate.group == moduleGroup
+                        && selection.candidate.module == moduleName
+                        && !(selection.candidate.version ==~ /\d+\.\d+\.\d+/)) {
+                    selection.reject('The binary compatibility baseline must be a stable release')
+                }
+            }
+        }
+    }
+}
+
+if (!firstRelease) {
+    baseline.dependencies.add(dependencies.create("${moduleGroup}:${moduleName}:${baselineVersion}"))
+}
+
+def japicmp = tasks.named('japicmp') {
+    group = 'verification'
+    description = 'Checks binary compatibility against the latest published stable release.'
+    onlyIf {
+        if (firstRelease) {
+            logger.warn("No binary compatibility baseline for ${project.path}: first release explicitly requested.")
+        }
+        !firstRelease
+    }
+
+    // Compare only this module's JAR; dependencies are used to resolve referenced types.
+    oldArchives.from(baseline.incoming.artifactView {
+        componentFilter { id ->
+            id instanceof ModuleComponentIdentifier && id.group == moduleGroup && id.module == moduleName
+        }
+    }.files)
+    oldClasspath.from(baseline)
+    newArchives.from(tasks.named('jar'))
+    newClasspath.from(sourceSets.main.compileClasspath)
+
+    accessModifier = 'protected'
+    includeSynthetic = true
+    packageExcludes = ['io.spiffe.internal', 'io.spiffe.*.internal', 'io.spiffe.*.grpc']
+    onlyModified = true
+    // In this plugin, failOnModification rejects binary breaks, not compatible additions.
+    failOnModification = true
+    failOnSourceIncompatibility = false
+    ignoreMissingClasses = false
+
+    txtOutputFile = layout.buildDirectory.file('reports/japicmp/japicmp.txt')
+    htmlOutputFile = layout.buildDirectory.file('reports/japicmp/japicmp.html')
+}
+
+tasks.named('check') {
+    dependsOn(japicmp)
+}
