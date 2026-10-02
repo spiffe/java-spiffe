@@ -24,12 +24,26 @@ public class RetryHandler {
 
     /**
      * Schedule to execute a Runnable, based on the backoff policy
-     * Updates the next delay and retries count.
+     * Updates the next delay and retries count if the retry is scheduled.
+     * <p>
+     * This method does not report whether the retry was scheduled. Use {@link #tryScheduleRetry(Runnable)}
+     * to detect retries that could not be scheduled.
      *
      * @param runnable the task to be scheduled for execution
-     * @return true if the retry was scheduled, false otherwise
      */
-    public boolean scheduleRetry(final Runnable runnable) {
+    public void scheduleRetry(final Runnable runnable) {
+        tryScheduleRetry(runnable);
+    }
+
+    /**
+     * Attempts to schedule the execution of a Runnable, based on the backoff policy.
+     * Updates the next delay and retries count only if the retry is scheduled.
+     *
+     * @param runnable the task to be scheduled for execution
+     * @return true if the retry was scheduled; false if the executor is shut down, the maximum number of
+     * retries has been reached, or the executor rejected the task
+     */
+    public boolean tryScheduleRetry(final Runnable runnable) {
         if (executor.isShutdown()) {
             return false;
         }

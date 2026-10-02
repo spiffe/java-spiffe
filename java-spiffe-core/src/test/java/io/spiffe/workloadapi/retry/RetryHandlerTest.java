@@ -8,6 +8,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Duration;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -34,31 +35,45 @@ class RetryHandlerTest {
     }
 
     @Test
-    void testScheduleRetry_defaultPolicy() {
+    void testTryScheduleRetry_defaultPolicy() {
         Runnable runnable = () -> { };
         ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
 
         RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
 
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
 
         verify(scheduledExecutorService).schedule(runnable, 1000, TimeUnit.MILLISECONDS);
         assertEquals(1, retryHandler.getRetryCount());
 
         // second retry
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
         assertEquals(2, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 2000, TimeUnit.MILLISECONDS);
 
         // third retry
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
         assertEquals(3, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 4000, TimeUnit.MILLISECONDS);
 
         // fourth retry
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
         assertEquals(4, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 8000, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void testScheduleRetry_legacyVoidMethod_schedulesRetry() {
+        Runnable runnable = () -> { };
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
+
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
+
+        retryHandler.scheduleRetry(runnable);
+
+        verify(scheduledExecutorService).schedule(runnable, 1000, TimeUnit.MILLISECONDS);
+        assertEquals(1, retryHandler.getRetryCount());
+        assertEquals(Duration.ofSeconds(2), retryHandler.getNextDelay());
     }
 
     @Test
@@ -77,47 +92,81 @@ class RetryHandlerTest {
     }
 
     @Test
-    void testScheduleRetry_maxRetries() {
+    void testTryScheduleRetry_maxRetries() {
         Runnable runnable = () -> { };
         ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.builder().maxRetries(3).build();
 
         RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
 
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
 
         verify(scheduledExecutorService).schedule(runnable, 1000, TimeUnit.MILLISECONDS);
         assertEquals(1, retryHandler.getRetryCount());
 
         // second retry
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
         assertEquals(2, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 2000, TimeUnit.MILLISECONDS);
 
         // third retry
-        assertTrue(retryHandler.scheduleRetry(runnable));
+        assertTrue(retryHandler.tryScheduleRetry(runnable));
         assertEquals(3, retryHandler.getRetryCount());
         verify(scheduledExecutorService).schedule(runnable, 4000, TimeUnit.MILLISECONDS);
 
         Mockito.reset(scheduledExecutorService);
 
         // fourth retry exceeds max retries
-        assertFalse(retryHandler.scheduleRetry(runnable));
+        assertFalse(retryHandler.tryScheduleRetry(runnable));
         verify(scheduledExecutorService).isShutdown();
         verifyNoMoreInteractions(scheduledExecutorService);
+        assertEquals(3, retryHandler.getRetryCount());
+        assertEquals(Duration.ofSeconds(8), retryHandler.getNextDelay());
     }
 
     @Test
-    void testScheduleRetry_executorShutdown() {
+    void testTryScheduleRetry_executorShutdown() {
         Runnable runnable = () -> { };
         ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
         when(scheduledExecutorService.isShutdown()).thenReturn(true);
 
         RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
 
-        assertFalse(retryHandler.scheduleRetry(runnable));
+        assertFalse(retryHandler.tryScheduleRetry(runnable));
         verify(scheduledExecutorService).isShutdown();
         verifyNoMoreInteractions(scheduledExecutorService);
         assertEquals(0, retryHandler.getRetryCount());
+        assertEquals(Duration.ofSeconds(1), retryHandler.getNextDelay());
+    }
+
+    @Test
+    void testTryScheduleRetry_rejectedExecution_leavesStateUnchanged() {
+        Runnable runnable = () -> { };
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
+        when(scheduledExecutorService.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class)))
+                .thenThrow(new RejectedExecutionException("rejected"));
+
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
+
+        assertFalse(retryHandler.tryScheduleRetry(runnable));
+        verify(scheduledExecutorService).schedule(runnable, 1000, TimeUnit.MILLISECONDS);
+        assertEquals(0, retryHandler.getRetryCount());
+        assertEquals(Duration.ofSeconds(1), retryHandler.getNextDelay());
+    }
+
+    @Test
+    void testScheduleRetry_legacyVoidMethod_rejectedExecution_leavesStateUnchanged() {
+        Runnable runnable = () -> { };
+        ExponentialBackoffPolicy exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
+        when(scheduledExecutorService.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class)))
+                .thenThrow(new RejectedExecutionException("rejected"));
+
+        RetryHandler retryHandler = new RetryHandler(exponentialBackoffPolicy, scheduledExecutorService);
+
+        retryHandler.scheduleRetry(runnable);
+
+        verify(scheduledExecutorService).schedule(runnable, 1000, TimeUnit.MILLISECONDS);
+        assertEquals(0, retryHandler.getRetryCount());
+        assertEquals(Duration.ofSeconds(1), retryHandler.getNextDelay());
     }
 
     @Test
