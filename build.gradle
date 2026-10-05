@@ -3,6 +3,7 @@ plugins {
     id 'com.google.osdetector' version '1.7.3'
     id 'jvm-test-suite'
     id 'com.vanniktech.maven.publish' version '0.37.0' apply false
+    id 'me.champeau.gradle.japicmp' version '0.4.6' apply false
 }
 
 allprojects {
@@ -126,6 +127,12 @@ subprojects {
     }
 }
 
+configure([project(':java-spiffe-core'), project(':java-spiffe-provider')]) {
+    apply plugin: 'me.champeau.gradle.japicmp'
+    tasks.register('japicmp', me.champeau.gradle.japicmp.JapicmpTask)
+    apply from: rootProject.file('gradle/binary-compatibility.gradle')
+}
+
 tasks.register('jacocoTestReport', JacocoReport) {
     dependsOn(subprojects.collect { it.tasks.named('test') })
 
@@ -167,4 +174,25 @@ def copyJars = tasks.register('copyJars', Copy) {
 
 tasks.named('assemble') {
     finalizedBy(copyJars)
+}
+
+testing {
+    suites {
+        binaryCompatibilityTest(JvmTestSuite) {
+            useJUnitJupiter('5.13.4')
+            dependencies {
+                implementation gradleTestKit()
+            }
+            targets.all {
+                testTask.configure {
+                    inputs.file(layout.projectDirectory.file('gradle/binary-compatibility.gradle'))
+                    systemProperty 'compatibilityScript', file('gradle/binary-compatibility.gradle').absolutePath
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn(testing.suites.binaryCompatibilityTest)
 }

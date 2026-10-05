@@ -127,6 +127,79 @@ On Linux or MacOS, run:
 
 All `jar` files are placed in `build/libs` folder.  
 
+### Binary compatibility
+
+`./gradlew check` (and `./gradlew build`) runs japicmp for `java-spiffe-core` and
+`java-spiffe-provider`. It compares each module's regular JAR against its latest
+stable Maven Central release, selecting versions of the form `major.minor.patch`
+and rejecting prereleases. Helper, native transport, test-fixture and shaded JARs
+are not compared. Dependencies are resolved separately on each side to look up
+referenced types, not treated as APIs belonging to this project.
+
+The gate checks public and protected APIs, including synthetic bridge methods,
+and excludes the `internal` and generated `grpc` packages excluded from Javadoc.
+Binary-incompatible changes fail the build; compatible additions and source-only
+incompatibilities do not. Text and HTML reports are written to
+`<module>/build/reports/japicmp/`, including when an incompatibility fails the task.
+
+Run just the compatibility checks locally (no SPIRE agent is required):
+
+```sh
+./gradlew :java-spiffe-core:japicmp :java-spiffe-provider:japicmp
+```
+
+For a maintenance branch, pin the release from which that branch was developed:
+
+```sh
+./gradlew check -PbaselineVersion=0.8.17
+```
+
+The default baseline refreshes Maven metadata on each invocation. Gradle can reuse
+a successful comparison when its API inputs are unchanged; changes to either
+JAR, its dependencies or the comparison configuration invalidate that result.
+Use a pinned baseline and `--offline` when the required artifacts are already
+cached. Resolution errors fail the build rather than silently skipping the check.
+For a first-ever release with no published baseline, explicitly use
+`-PbaselineVersion=none`; this skips the comparison with a warning. Do not use
+that opt-out to accept breaking changes in an existing library.
+
+#### Intentional breaking changes
+
+Add the narrowest possible exclusion to the affected module's `japicmp` task,
+with a rationale and a **Breaking changes** entry in `CHANGELOG.md`. For example:
+
+```groovy
+tasks.named('japicmp') {
+    methodExcludes.add('io.spiffe.example.Example#method(java.lang.String)')
+}
+```
+
+Use `fieldExcludes` for individual fields. Reserve `classExcludes` for deliberate
+removal of an entire type; avoid package-wide exclusions or disabling failure.
+Method signatures include parameter types but not return types, so an exclusion
+also hides future changes to that method. Remove exclusions once the baseline
+contains the accepted change. Document whether consumers need to recompile or
+migrate; deprecation alone does not make an ABI break compatible.
+
+#### Testing the gate
+
+```sh
+./gradlew binaryCompatibilityTest
+```
+
+These Gradle TestKit tests compile small Java APIs and publish them to temporary
+local Maven repositories. They exercise compatible additions, removed public and
+protected methods, builder return-type changes, stable baseline selection,
+version pinning, missing baselines, narrow exclusions and up-to-date invalidation.
+They also compare the published 0.8.14 and 0.8.15 core JARs and assert that the
+`X509SourceOptionsBuilder` regression is detected. This historical test downloads
+those releases from Maven Central; all tests use the project's Gradle version
+and the JDK running the build. To run only the historical regression:
+
+```sh
+./gradlew binaryCompatibilityTest --tests '*detectsPublishedBuilderRegressionFrom0814To0815'
+```
+
 #### Jars that include all dependencies 
 
 For the module [java-spiffe-provider](java-spiffe-provider), a fat jar is generated with the classifier `-all-[os-classifier]`.

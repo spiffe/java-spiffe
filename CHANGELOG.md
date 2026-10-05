@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Build
+
+* Check core and provider binary compatibility against the latest stable Maven Central release.
+
 ## [0.8.17] - 2026-04-20
 
 ### Fixed
