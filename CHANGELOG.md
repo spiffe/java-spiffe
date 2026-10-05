@@ -2,12 +2,6 @@
 
 ## [Unreleased]
 
-### Breaking changes
-
-* `RetryHandler.scheduleRetry(Runnable)` now returns `boolean` instead of `void`.
-  Consumers compiled against the previous signature must recompile before upgrading.
-  This existing unreleased change is explicitly excluded from the binary compatibility check.
-
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.
@@ -214,4 +208,3 @@ Automated build and publish process via GitHub Actions.
 
 - A `JwtSource` implementation,`CachedJwtSource`, that caches the JWT SVIDs based on their subjects and audiences (#116)
 - Support for the `hint` field in the SVIDs retrieved by Workload API client (#114)
-

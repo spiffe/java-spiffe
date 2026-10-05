@@ -6,11 +6,6 @@ plugins {
 
 description = "Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundles from the Workload API."
 
-tasks.named('japicmp') {
-    // Existing unreleased return-type change; see CHANGELOG.md (Unreleased).
-    methodExcludes.add('io.spiffe.workloadapi.retry.RetryHandler#scheduleRetry(java.lang.Runnable)')
-}
-
 sourceSets {
     main {
         java {
