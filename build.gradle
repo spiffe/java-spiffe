@@ -19,7 +19,7 @@ subprojects {
     ext {
         grpcVersion = '1.84.0'
         //Keep at or above gRPC's guava version.
-        guavaVersion = '33.6.0-jre'
+        guavaVersion = '33.7.2-jre'
 
         jupiterVersion = '5.13.4'
         mockitoVersion = '4.11.0'
