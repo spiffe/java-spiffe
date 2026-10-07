@@ -83,7 +83,7 @@ dependencies {
     testFixturesImplementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
 
     testFixturesImplementation "org.bouncycastle:bcpkix-jdk15on:1.70"
-    testFixturesImplementation "org.apache.commons:commons-lang3:3.20.0"
+    testFixturesImplementation "org.apache.commons:commons-lang3:3.21.0"
 }
 
 protobuf {
