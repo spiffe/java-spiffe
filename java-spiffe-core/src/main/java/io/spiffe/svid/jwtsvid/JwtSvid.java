@@ -276,7 +276,18 @@ public class JwtSvid {
         return new Date(expiry.getTime());
     }
 
+    /**
+     * Returns a copy of the issued at date time of the JWT SVID.
+     *
+     * @return a copy of the issued at date time of the JWT SVID, or {@code null} if the token
+     * does not have an 'iat' claim
+     */
     public Date getIssuedAt() {
+        // the 'iat' claim is optional in a JWT-SVID
+        if (issuedAt == null) {
+            return null;
+        }
+        // defensive copy to prevent exposing a mutable object
         return new Date(issuedAt.getTime());
     }
 
