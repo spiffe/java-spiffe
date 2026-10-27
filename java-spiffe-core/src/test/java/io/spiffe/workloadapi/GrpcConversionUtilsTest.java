@@ -54,6 +54,22 @@ class GrpcConversionUtilsTest {
     }
 
     @Test
+    void test_toJwtBundleSet_unsupportedKeyType() throws URISyntaxException, IOException {
+        byte[] bundleBytes = Files.readAllBytes(Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json")));
+        Workload.JWTBundlesResponse response = Workload.JWTBundlesResponse
+                .newBuilder()
+                .putBundles("example.org", ByteString.copyFrom(bundleBytes))
+                .build();
+
+        try {
+            GrpcConversionUtils.toJwtBundleSet(response);
+            fail("should have thrown exception");
+        } catch (JwtBundleException e) {
+            assertEquals("Could not parse bundle from bytes", e.getMessage());
+        }
+    }
+
+    @Test
     void test_parseX509Bundle_corruptedBytes() {
         try {
             GrpcConversionUtils.parseX509Bundle(TrustDomain.parse("example.org"), "corrupted".getBytes());
