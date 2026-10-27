@@ -157,8 +157,9 @@ public class Address {
             throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
+        // URI.getHost() returns IPv6 literals enclosed in square brackets (e.g. '[::1]')
         boolean ipValid;
-        ipValid = InetAddresses.isInetAddress(parsedAddress.getHost());
+        ipValid = InetAddresses.isUriInetAddress(parsedAddress.getHost());
         if (!ipValid) {
             String error = "Workload endpoint tcp socket URI host component must be an IP:port: %s";
             throw new SocketEndpointAddressException(String.format(error, parsedAddress));
