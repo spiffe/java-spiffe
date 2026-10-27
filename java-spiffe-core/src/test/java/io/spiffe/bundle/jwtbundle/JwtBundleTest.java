@@ -254,6 +254,21 @@ class JwtBundleTest {
     }
 
     @Test
+    void testParse_InvalidKeyType_ThrowsJwtBundleException() throws URISyntaxException, IOException {
+        Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
+        byte[] bundleBytes = Files.readAllBytes(path);
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
+
+        try {
+            JwtBundle.parse(trustDomain, bundleBytes);
+            fail("should have thrown exception");
+        } catch (JwtBundleException e) {
+            assertEquals("Could not parse bundle from bytes", e.getMessage());
+            assertEquals("Unsupported JWT family algorithm: OKP", e.getCause().getMessage());
+        }
+    }
+
+    @Test
     void testParseInvalidJson() throws KeyException {
         try {
             JwtBundle.parse(TrustDomain.parse("example.org"), "invalid json".getBytes());
