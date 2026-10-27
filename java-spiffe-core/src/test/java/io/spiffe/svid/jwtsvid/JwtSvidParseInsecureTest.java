@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class JwtSvidParseInsecureTest {
@@ -94,6 +96,40 @@ class JwtSvidParseInsecureTest {
         } catch (NullPointerException e) {
             assertEquals("audience must not be null", e.getMessage());
         }
+    }
+
+    @Test
+    void testParseInsecure_missingIssuedAt_getIssuedAtReturnsNull() throws JwtSvidException {
+        KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
+        SpiffeId spiffeId = TrustDomain.parse("test.domain").newSpiffeId("host");
+        Set<String> audience = Collections.singleton("audience");
+        Date expiration = new Date(System.currentTimeMillis() + 3600000);
+        JWTClaimsSet claims = TestUtils.buildJWTClaimSet(audience, spiffeId.toString(), expiration);
+
+        JwtSvid jwtSvid = JwtSvid.parseInsecure(TestUtils.generateToken(claims, key1, "authority1"), audience);
+
+        assertNull(jwtSvid.getIssuedAt());
+    }
+
+    @Test
+    void testParseInsecure_withIssuedAt_getIssuedAtReturnsCopy() throws JwtSvidException {
+        KeyPair key1 = TestUtils.generateECKeyPair(Curve.P_521);
+        SpiffeId spiffeId = TrustDomain.parse("test.domain").newSpiffeId("host");
+        Set<String> audience = Collections.singleton("audience");
+        Date issuedAt = new Date((System.currentTimeMillis() / 1000) * 1000);
+        Date expiration = new Date(issuedAt.getTime() + 3600000);
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .subject(spiffeId.toString())
+                .audience(new ArrayList<>(audience))
+                .issueTime(issuedAt)
+                .expirationTime(expiration)
+                .build();
+
+        JwtSvid jwtSvid = JwtSvid.parseInsecure(TestUtils.generateToken(claims, key1, "authority1"), audience);
+
+        assertEquals(issuedAt, jwtSvid.getIssuedAt());
+        jwtSvid.getIssuedAt().setTime(0);
+        assertEquals(issuedAt, jwtSvid.getIssuedAt());
     }
 
     static Stream<Arguments> provideSuccessScenarios() {

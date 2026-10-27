@@ -270,13 +270,13 @@ public class CachedJwtSource implements JwtSource {
     }
 
     private boolean isTokenPastHalfLifetime(JwtSvid jwtSvid) {
-        Object issuedAtClaim = jwtSvid.getClaims().get("iat");
-        if (!(issuedAtClaim instanceof Date)) {
+        Date issuedAt = jwtSvid.getIssuedAt();
+        if (issuedAt == null) {
             return true;
         }
 
         long expiryTime = jwtSvid.getExpiry().getTime();
-        long issuedAtTime = ((Date) issuedAtClaim).getTime();
+        long issuedAtTime = issuedAt.getTime();
         long halfLifeTime = expiryTime - (expiryTime - issuedAtTime) / 2;
 
         return clock.instant().toEpochMilli() > halfLifeTime;
