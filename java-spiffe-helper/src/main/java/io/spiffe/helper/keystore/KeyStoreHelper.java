@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -166,6 +167,7 @@ public class KeyStoreHelper implements Closeable {
 
     private void setX509ContextWatcher(boolean keepRunning) {
         countDownLatch = new CountDownLatch(1);
+        AtomicReference<Throwable> watchError = new AtomicReference<>();
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
             public void onUpdate(X509Context update) {
@@ -183,12 +185,21 @@ public class KeyStoreHelper implements Closeable {
             @Override
             public void onError(Throwable e) {
                 log.log(Level.SEVERE, e.getMessage());
-                countDownLatch.countDown();
-                throw new WatcherException("Error processing X.509 context update", e);
+                // The Workload API client reports errors on its own threads, so throwing here would not reach the
+                // caller of run. Record the error so that run fails with it once the latch is released.
+                if (countDownLatch.getCount() > 0) {
+                    watchError.compareAndSet(null, e);
+                    countDownLatch.countDown();
+                }
             }
         });
 
         await(countDownLatch);
+
+        Throwable error = watchError.get();
+        if (error != null) {
+            throw new WatcherException("Error processing X.509 context update", error);
+        }
     }
 
     private void storeX509ContextUpdate(final X509Context update) throws KeyStoreException {
