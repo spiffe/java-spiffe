@@ -157,9 +157,10 @@ public class Address {
             throw new SocketEndpointAddressException(String.format(error, parsedAddress));
         }
 
-        // URI.getHost() returns IPv6 literals enclosed in square brackets (e.g. '[::1]')
-        boolean ipValid;
-        ipValid = InetAddresses.isUriInetAddress(parsedAddress.getHost());
+        // URI.getHost() returns IPv6 literals enclosed in square brackets (e.g. '[::1]').
+        // Zone IDs (e.g. '[fe80::1%eth0]') are not allowed by RFC 3986, so hosts containing '%' are rejected.
+        String host = parsedAddress.getHost();
+        boolean ipValid = host.indexOf('%') < 0 && InetAddresses.isUriInetAddress(host);
         if (!ipValid) {
             String error = "Workload endpoint tcp socket URI host component must be an IP:port: %s";
             throw new SocketEndpointAddressException(String.format(error, parsedAddress));
