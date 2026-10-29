@@ -33,6 +33,15 @@ public interface WorkloadApiClient extends Closeable {
      * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update based on the SVIDs TTL.
+     * {@link DefaultWorkloadApiClient} retries eligible errors with backoff. It suppresses
+     * {@code PERMISSION_DENIED} before the first successfully delivered update while retries can be scheduled.
+     * After an update, it reports that status immediately to {@link Watcher#onError(Throwable)} and continues
+     * retrying if the callback returns normally. Repeated denials are not reported again until another update
+     * is successfully delivered. Retry exhaustion or scheduling failure is reported unless the failure is
+     * another {@code PERMISSION_DENIED} already reported since the last successful update. Failures with
+     * other statuses are reported even after a denial.
+     * It reports rejected updates to {@code onError}; if that callback returns normally, the watch remains active.
+     * An exception thrown by {@code onError} escapes the callback and prevents further retries.
      *
      * @param watcher an instance that implements a {@link Watcher}.
      */
@@ -52,6 +61,15 @@ public interface WorkloadApiClient extends Closeable {
      * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update.
+     * {@link DefaultWorkloadApiClient} retries eligible errors with backoff. It suppresses
+     * {@code PERMISSION_DENIED} before the first successfully delivered update while retries can be scheduled.
+     * After an update, it reports that status immediately to {@link Watcher#onError(Throwable)} and continues
+     * retrying if the callback returns normally. Repeated denials are not reported again until another update
+     * is successfully delivered. Retry exhaustion or scheduling failure is reported unless the failure is
+     * another {@code PERMISSION_DENIED} already reported since the last successful update. Failures with
+     * other statuses are reported even after a denial.
+     * It reports rejected updates to {@code onError}; if that callback returns normally, the watch remains active.
+     * An exception thrown by {@code onError} escapes the callback and prevents further retries.
      *
      * @param watcher an instance that implements a {@link Watcher} for {@link X509BundleSet}.
      */
@@ -123,6 +141,15 @@ public interface WorkloadApiClient extends Closeable {
      * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update based on the SVIDs TTL.
+     * {@link DefaultWorkloadApiClient} retries eligible errors with backoff. It suppresses
+     * {@code PERMISSION_DENIED} before the first successfully delivered update while retries can be scheduled.
+     * After an update, it reports that status immediately to {@link Watcher#onError(Throwable)} and continues
+     * retrying if the callback returns normally. Repeated denials are not reported again until another update
+     * is successfully delivered. Retry exhaustion or scheduling failure is reported unless the failure is
+     * another {@code PERMISSION_DENIED} already reported since the last successful update. Failures with
+     * other statuses are reported even after a denial.
+     * It reports rejected updates to {@code onError}; if that callback returns normally, the watch remains active.
+     * An exception thrown by {@code onError} escapes the callback and prevents further retries.
      *
      * @param watcher receives the update for JwtBundles.
      */

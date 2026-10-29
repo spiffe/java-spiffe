@@ -12,6 +12,7 @@
 
 ### Fixed
 
+* Report terminal Workload API watch failures with other statuses after a permission denial, preserving the exception type and cause.
 * Replace the Helper's complete trust bundle set with one TrustStore write per update, remove authorities for absent trust domains, and preserve the live store when preparing a replacement fails. Only certificate aliases of the form `<trust-domain>.<ASCII numeric index>` are Helper-managed (#492)
 * Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
 * Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
