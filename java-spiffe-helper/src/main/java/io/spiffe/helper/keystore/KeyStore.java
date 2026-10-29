@@ -126,12 +126,18 @@ class KeyStore {
         this.flush();
     }
 
-    void deleteEntriesByAliasPrefix(final String aliasPrefix) throws KeyStoreException {
+    /**
+     * Replaces authority entries whose aliases consist of the given prefix followed by a numeric index.
+     * The updated in-memory KeyStore is flushed once after deletion and insertion.
+     */
+    void replaceAuthorityEntries(
+            final String aliasPrefix,
+            final List<AuthorityEntry> authorityEntries) throws KeyStoreException {
         List<String> aliasesToDelete = new ArrayList<>();
         Enumeration<String> aliases = javaKeyStore.aliases();
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
-            if (alias.startsWith(aliasPrefix)) {
+            if (isIndexedAlias(alias, aliasPrefix)) {
                 aliasesToDelete.add(alias);
             }
         }
@@ -140,7 +146,28 @@ class KeyStore {
             javaKeyStore.deleteEntry(alias);
         }
 
+        for (AuthorityEntry authorityEntry : authorityEntries) {
+            javaKeyStore.setCertificateEntry(
+                    authorityEntry.getAlias(),
+                    authorityEntry.getCertificate()
+            );
+        }
+
         this.flush();
+    }
+
+    private boolean isIndexedAlias(final String alias, final String aliasPrefix) {
+        if (!alias.startsWith(aliasPrefix) || alias.length() == aliasPrefix.length()) {
+            return false;
+        }
+
+        for (int i = aliasPrefix.length(); i < alias.length(); i++) {
+            char character = alias.charAt(i);
+            if (character < '0' || character > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     // Flush KeyStore to disk, to the configured keyStoreFilePath
