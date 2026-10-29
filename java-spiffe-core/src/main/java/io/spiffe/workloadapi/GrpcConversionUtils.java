@@ -6,6 +6,7 @@ import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.JwtBundleException;
+import io.spiffe.exception.InvalidSpiffeIdException;
 import io.spiffe.exception.X509BundleException;
 import io.spiffe.exception.X509ContextException;
 import io.spiffe.exception.X509SvidException;
@@ -113,7 +114,12 @@ final class GrpcConversionUtils {
         // Process federated bundles
         Set<Map.Entry<String, ByteString>> federatedBundles = x509SvidResponse.getFederatedBundlesMap().entrySet();
         for (Map.Entry<String, ByteString> bundleEntry : federatedBundles) {
-            TrustDomain trustDomain = TrustDomain.parse(bundleEntry.getKey());
+            final TrustDomain trustDomain;
+            try {
+                trustDomain = TrustDomain.parse(bundleEntry.getKey());
+            } catch (InvalidSpiffeIdException | IllegalArgumentException e) {
+                throw new X509ContextException("X.509 federated bundle trust domain could not be processed", e);
+            }
             byte[] bundleBytes = bundleEntry.getValue().toByteArray();
             final X509Bundle bundle = parseX509Bundle(trustDomain, bundleBytes);
             x509BundleList.add(bundle);
@@ -176,13 +182,23 @@ final class GrpcConversionUtils {
     }
 
     private static JwtBundle createJwtBundle(Map.Entry<String, ByteString> entry) throws JwtBundleException {
-        TrustDomain trustDomain = TrustDomain.parse(entry.getKey());
+        final TrustDomain trustDomain;
+        try {
+            trustDomain = TrustDomain.parse(entry.getKey());
+        } catch (InvalidSpiffeIdException | IllegalArgumentException e) {
+            throw new JwtBundleException("JWT bundle trust domain could not be processed", e);
+        }
         byte[] bundleBytes = entry.getValue().toByteArray();
         return JwtBundle.parse(trustDomain, bundleBytes);
     }
 
     private static X509Bundle createX509Bundle(Map.Entry<String, ByteString> bundleEntry) throws X509BundleException {
-        TrustDomain trustDomain = TrustDomain.parse(bundleEntry.getKey());
+        final TrustDomain trustDomain;
+        try {
+            trustDomain = TrustDomain.parse(bundleEntry.getKey());
+        } catch (InvalidSpiffeIdException | IllegalArgumentException e) {
+            throw new X509BundleException("X.509 bundle trust domain could not be processed", e);
+        }
         byte[] bundleBytes = bundleEntry.getValue().toByteArray();
         return X509Bundle.parse(trustDomain, bundleBytes);
     }

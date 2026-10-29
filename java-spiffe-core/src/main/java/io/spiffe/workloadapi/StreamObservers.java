@@ -23,11 +23,11 @@ final class StreamObservers {
             Logger.getLogger(StreamObservers.class.getName());
 
     private static final String STREAM_IS_COMPLETED = "Workload API stream is completed";
-    // Retry only transient stream failures. Caller/client cancellation and terminal API errors fail the watch closed.
+    // PermissionDenied is retryable, but must be reported after an update has been delivered.
+    // Caller/client cancellation and terminal API errors fail the watch closed.
     private static final Set<Status.Code> NON_RETRYABLE_CODES = EnumSet.of(
             Status.Code.INVALID_ARGUMENT,
             Status.Code.CANCELLED,
-            Status.Code.PERMISSION_DENIED,
             Status.Code.UNAUTHENTICATED,
             Status.Code.UNIMPLEMENTED,
             Status.Code.FAILED_PRECONDITION);
@@ -42,11 +42,16 @@ final class StreamObservers {
             final SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadApiAsyncStub) {
 
         return new StreamObserver<Workload.X509SVIDResponse>() {
+            private boolean updateDelivered;
+            private boolean permissionDeniedReported;
+
             @Override
             public void onNext(final Workload.X509SVIDResponse value) {
                 try {
                     final X509Context x509Context = GrpcConversionUtils.toX509Context(value);
                     watcher.onUpdate(x509Context);
+                    updateDelivered = true;
+                    permissionDeniedReported = false;
                     retryHandler.reset();
                 } catch (X509ContextException e) {
                     watcher.onError(new X509ContextException("Error processing X.509 Context update", e));
@@ -65,6 +70,11 @@ final class StreamObservers {
                 if (isErrorNotRetryable(t)) {
                     watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
                 } else {
+                    if (updateDelivered && !permissionDeniedReported
+                            && Status.fromThrowable(t).getCode() == Status.Code.PERMISSION_DENIED) {
+                        permissionDeniedReported = true;
+                        watcher.onError(new X509ContextException("Permission denied for X.509 Context watch", t));
+                    }
                     handleX509ContextRetry(t);
                 }
             }
@@ -80,7 +90,9 @@ final class StreamObservers {
                         return;
                     }
                 }
-                watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
+                if (!permissionDeniedReported || Status.fromThrowable(t).getCode() != Status.Code.PERMISSION_DENIED) {
+                    watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
+                }
             }
 
             @Override
@@ -98,14 +110,19 @@ final class StreamObservers {
             final SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadApiAsyncStub) {
 
         return new StreamObserver<Workload.X509BundlesResponse>() {
+            private boolean updateDelivered;
+            private boolean permissionDeniedReported;
+
             @Override
             public void onNext(final Workload.X509BundlesResponse value) {
                 try {
                     final X509BundleSet x509Context = GrpcConversionUtils.toX509BundleSet(value);
                     watcher.onUpdate(x509Context);
+                    updateDelivered = true;
+                    permissionDeniedReported = false;
                     retryHandler.reset();
                 } catch (X509BundleException e) {
-                    watcher.onError(new X509ContextException("Error processing X.509 bundles update", e));
+                    watcher.onError(new X509BundleException("Error processing X.509 bundles update", e));
                 }
             }
 
@@ -119,8 +136,13 @@ final class StreamObservers {
 
             private void handleWatchX509BundlesError(final Throwable t) {
                 if (isErrorNotRetryable(t)) {
-                    watcher.onError(new X509ContextException("Cancelling X.509 bundles watch", t));
+                    watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
                 } else {
+                    if (updateDelivered && !permissionDeniedReported
+                            && Status.fromThrowable(t).getCode() == Status.Code.PERMISSION_DENIED) {
+                        permissionDeniedReported = true;
+                        watcher.onError(new X509BundleException("Permission denied for X.509 bundles watch", t));
+                    }
                     handleX509BundlesRetry(t);
                 }
             }
@@ -136,7 +158,9 @@ final class StreamObservers {
                         return;
                     }
                 }
-                watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
+                if (!permissionDeniedReported || Status.fromThrowable(t).getCode() != Status.Code.PERMISSION_DENIED) {
+                    watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
+                }
             }
 
             @Override
@@ -153,12 +177,16 @@ final class StreamObservers {
             final Context.CancellableContext cancellableContext,
             final SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIStub workloadApiAsyncStub) {
         return new StreamObserver<Workload.JWTBundlesResponse>() {
+            private boolean updateDelivered;
+            private boolean permissionDeniedReported;
 
             @Override
             public void onNext(final Workload.JWTBundlesResponse value) {
                 try {
                     final JwtBundleSet jwtBundleSet = GrpcConversionUtils.toJwtBundleSet(value);
                     watcher.onUpdate(jwtBundleSet);
+                    updateDelivered = true;
+                    permissionDeniedReported = false;
                     retryHandler.reset();
                 } catch (JwtBundleException e) {
                     watcher.onError(new JwtBundleException("Error processing JWT bundles update", e));
@@ -177,6 +205,11 @@ final class StreamObservers {
                 if (isErrorNotRetryable(t)) {
                     watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
                 } else {
+                    if (updateDelivered && !permissionDeniedReported
+                            && Status.fromThrowable(t).getCode() == Status.Code.PERMISSION_DENIED) {
+                        permissionDeniedReported = true;
+                        watcher.onError(new JwtBundleException("Permission denied for JWT Bundles watch", t));
+                    }
                     handleJwtBundleRetry(t);
                 }
             }
@@ -191,7 +224,9 @@ final class StreamObservers {
                         return;
                     }
                 }
-                watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
+                if (!permissionDeniedReported || Status.fromThrowable(t).getCode() != Status.Code.PERMISSION_DENIED) {
+                    watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
+                }
             }
 
             @Override
