@@ -39,6 +39,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
     int fetchJwtSvidCallCount = 0;
 
+    Watcher<JwtBundleSet> jwtBundlesWatcher;
+
     boolean closed;
 
     Clock clock = Clock.systemDefaultZone();
@@ -106,6 +108,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
     @Override
     public void watchJwtBundles(Watcher<JwtBundleSet> watcher) {
+        jwtBundlesWatcher = watcher;
         JwtBundleSet jwtBundleSet = generateJwtBundleSet();
         watcher.onUpdate(jwtBundleSet);
     }

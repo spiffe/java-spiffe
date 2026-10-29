@@ -1,25 +1,37 @@
 package io.spiffe.workloadapi;
 
 import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
+import io.grpc.stub.StreamObserver;
+import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
+import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSourceException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.jwtsvid.JwtSvid;
+import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
+import io.spiffe.workloadapi.grpc.Workload;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -77,6 +89,40 @@ class DefaultJwtSourceTest {
             assertTrue(workloadApiClient.closed);
         } catch (BundleNotFoundException e) {
             fail("not expected exception", e);
+        }
+    }
+
+    @Test
+    void testJwtBundlesWatcherError_afterInit_keepsBundlesAndAppliesLaterUpdates() throws BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        JwtBundle initialBundle = jwtSource.getBundleForTrustDomain(trustDomain);
+
+        workloadApiClient.jwtBundlesWatcher.onError(new JwtBundleException("Error processing JWT bundles update"));
+        assertSame(initialBundle, jwtSource.getBundleForTrustDomain(trustDomain));
+
+        JwtBundle updatedBundle = new JwtBundle(trustDomain);
+        workloadApiClient.jwtBundlesWatcher.onUpdate(JwtBundleSet.of(Collections.singleton(updatedBundle)));
+        assertSame(updatedBundle, jwtSource.getBundleForTrustDomain(trustDomain));
+    }
+
+    @Test
+    void testWatchJwtBundles_unsupportedKeyTypeUpdate_laterUpdatesAreApplied() throws Exception {
+        byte[] validBundle = Files.readAllBytes(Paths.get(toUri("testdata/workloadapi/bundle.json")));
+        byte[] unsupportedKeyTypeBundle = Files.readAllBytes(Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json")));
+        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase fakeWorkloadApi = new SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase() {
+            @Override
+            public void fetchJWTBundles(Workload.JWTBundlesRequest request, StreamObserver<Workload.JWTBundlesResponse> responseObserver) {
+                responseObserver.onNext(newJwtBundlesResponse("example.org", validBundle));
+                responseObserver.onNext(newJwtBundlesResponse("example.org", unsupportedKeyTypeBundle));
+                responseObserver.onNext(newJwtBundlesResponse("domain.test", validBundle));
+            }
+        };
+        DefaultWorkloadApiClient client = WorkloadApiClientTestUtil.create(fakeWorkloadApi, new GrpcCleanupRule());
+        JwtSourceOptions options = JwtSourceOptions.builder().workloadApiClient(client).build();
+
+        try (JwtSource source = DefaultJwtSource.newSource(options)) {
+            JwtBundle bundle = source.getBundleForTrustDomain(TrustDomain.parse("domain.test"));
+            assertEquals(TrustDomain.parse("domain.test"), bundle.getTrustDomain());
         }
     }
 
@@ -280,5 +326,12 @@ class DefaultJwtSourceTest {
                 assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
             }
         });
+    }
+
+    private static Workload.JWTBundlesResponse newJwtBundlesResponse(String trustDomain, byte[] bundle) {
+        return Workload.JWTBundlesResponse
+                .newBuilder()
+                .putBundles(trustDomain, ByteString.copyFrom(bundle))
+                .build();
     }
 }

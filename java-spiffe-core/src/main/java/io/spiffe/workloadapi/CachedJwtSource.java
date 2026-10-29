@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -284,7 +285,8 @@ public class CachedJwtSource implements JwtSource {
 
     private void init(final Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
-        setJwtBundlesWatcher(done);
+        AtomicReference<Throwable> initError = new AtomicReference<>();
+        setJwtBundlesWatcher(done, initError);
 
         boolean success;
         if (timeout.isZero()) {
@@ -296,9 +298,13 @@ public class CachedJwtSource implements JwtSource {
         if (!success) {
             throw new TimeoutException("Timeout waiting for JWT bundles update");
         }
+        Throwable error = initError.get();
+        if (error != null) {
+            throw new WatcherException("Error fetching JwtBundleSet", error);
+        }
     }
 
-    private void setJwtBundlesWatcher(final CountDownLatch done) {
+    private void setJwtBundlesWatcher(final CountDownLatch done, final AtomicReference<Throwable> initError) {
         workloadApiClient.watchJwtBundles(new Watcher<JwtBundleSet>() {
             @Override
             public void onUpdate(final JwtBundleSet update) {
@@ -310,8 +316,13 @@ public class CachedJwtSource implements JwtSource {
             @Override
             public void onError(final Throwable error) {
                 log.log(Level.SEVERE, "Error in JwtBundleSet watcher", error);
-                done.countDown();
-                throw new WatcherException("Error fetching JwtBundleSet", error);
+                // An error before the first update fails the initialization. After that, the current bundles
+                // are kept: throwing here would escape the gRPC stream observer and cancel the watch, so later
+                // bundle updates would never be applied.
+                if (done.getCount() > 0) {
+                    initError.compareAndSet(null, error);
+                    done.countDown();
+                }
             }
         });
     }

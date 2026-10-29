@@ -4,7 +4,9 @@ import com.google.common.collect.Sets;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jwt.JWTClaimsSet;
 import io.spiffe.bundle.jwtbundle.JwtBundle;
+import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.exception.BundleNotFoundException;
+import io.spiffe.exception.JwtBundleException;
 import io.spiffe.exception.JwtSourceException;
 import io.spiffe.exception.JwtSvidException;
 import io.spiffe.exception.SocketEndpointAddressException;
@@ -98,6 +100,19 @@ class CachedJwtSourceTest {
         } catch (BundleNotFoundException e) {
             fail("not expected exception", e);
         }
+    }
+
+    @Test
+    void testJwtBundlesWatcherError_afterInit_keepsBundlesAndAppliesLaterUpdates() throws BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        JwtBundle initialBundle = jwtSource.getBundleForTrustDomain(trustDomain);
+
+        workloadApiClient.jwtBundlesWatcher.onError(new JwtBundleException("Error processing JWT bundles update"));
+        assertSame(initialBundle, jwtSource.getBundleForTrustDomain(trustDomain));
+
+        JwtBundle updatedBundle = new JwtBundle(trustDomain);
+        workloadApiClient.jwtBundlesWatcher.onUpdate(JwtBundleSet.of(Collections.singleton(updatedBundle)));
+        assertSame(updatedBundle, jwtSource.getBundleForTrustDomain(trustDomain));
     }
 
     @Test
