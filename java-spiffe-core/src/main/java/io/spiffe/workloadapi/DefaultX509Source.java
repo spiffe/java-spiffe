@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -201,7 +202,8 @@ public final class DefaultX509Source implements X509Source {
 
     private void init(final Duration timeout) throws TimeoutException {
         CountDownLatch done = new CountDownLatch(1);
-        setX509ContextWatcher(done);
+        AtomicReference<Throwable> initError = new AtomicReference<>();
+        setX509ContextWatcher(done, initError);
 
         final boolean success;
         if (timeout.isZero()) {
@@ -213,9 +215,13 @@ public final class DefaultX509Source implements X509Source {
         if (!success) {
             throw new TimeoutException("Timeout waiting for X.509 Context update");
         }
+        Throwable error = initError.get();
+        if (error != null) {
+            throw new WatcherException("Error in X509Context watcher", error);
+        }
     }
 
-    private void setX509ContextWatcher(final CountDownLatch done) {
+    private void setX509ContextWatcher(final CountDownLatch done, final AtomicReference<Throwable> initError) {
         workloadApiClient.watchX509Context(new Watcher<X509Context>() {
             @Override
             public void onUpdate(final X509Context update) {
@@ -228,8 +234,13 @@ public final class DefaultX509Source implements X509Source {
             @Override
             public void onError(final Throwable error) {
                 log.log(Level.SEVERE, "Error in X509Context watcher", error);
-                done.countDown();
-                throw new WatcherException("Error in X509Context watcher", error);
+                // An error before the first update fails the initialization. After that, the current SVID and
+                // bundles are kept: throwing here would escape the gRPC stream observer and cancel the watch, so
+                // later X.509 context updates (SVID rotations) would never be applied.
+                if (done.getCount() > 0) {
+                    initError.compareAndSet(null, error);
+                    done.countDown();
+                }
             }
         });
     }
