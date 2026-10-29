@@ -39,6 +39,8 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
     int fetchJwtSvidCallCount = 0;
 
+    Watcher<X509Context> x509ContextWatcher;
+
     Watcher<JwtBundleSet> jwtBundlesWatcher;
 
     boolean closed;
@@ -52,6 +54,7 @@ public class WorkloadApiClientStub implements WorkloadApiClient {
 
     @Override
     public void watchX509Context(Watcher<X509Context> watcher) {
+        x509ContextWatcher = watcher;
         X509Context update = generateX509Context();
         watcher.onUpdate(update);
     }

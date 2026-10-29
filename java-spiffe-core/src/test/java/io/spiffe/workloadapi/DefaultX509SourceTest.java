@@ -1,21 +1,33 @@
 package io.spiffe.workloadapi;
 
+import com.google.protobuf.ByteString;
+import io.grpc.stub.StreamObserver;
+import io.grpc.testing.GrpcCleanupRule;
 import io.spiffe.bundle.x509bundle.X509Bundle;
+import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.X509ContextException;
 import io.spiffe.exception.X509SourceException;
 import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 import io.spiffe.svid.x509svid.X509Svid;
+import io.spiffe.workloadapi.grpc.SpiffeWorkloadAPIGrpc;
+import io.spiffe.workloadapi.grpc.Workload;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Collections;
 
+import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -97,6 +109,44 @@ class DefaultX509SourceTest {
     }
 
     @Test
+    void testX509ContextWatcherError_afterInit_keepsX509ContextAndAppliesLaterUpdates() throws BundleNotFoundException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        X509Svid initialSvid = x509Source.getX509Svid();
+        X509Bundle initialBundle = x509Source.getBundleForTrustDomain(trustDomain);
+
+        workloadApiClient.x509ContextWatcher.onError(new X509ContextException("Error processing X.509 Context update"));
+        assertSame(initialSvid, x509Source.getX509Svid());
+        assertSame(initialBundle, x509Source.getBundleForTrustDomain(trustDomain));
+
+        X509Bundle updatedBundle = new X509Bundle(trustDomain);
+        X509Context update = X509Context.of(Collections.singletonList(initialSvid), X509BundleSet.of(Collections.singleton(updatedBundle)));
+        workloadApiClient.x509ContextWatcher.onUpdate(update);
+        assertSame(updatedBundle, x509Source.getBundleForTrustDomain(trustDomain));
+    }
+
+    @Test
+    void testWatchX509Context_corruptedUpdate_laterUpdatesAreApplied() throws Exception {
+        byte[] svid = Files.readAllBytes(Paths.get(toUri("testdata/workloadapi/svid.der")));
+        byte[] key = Files.readAllBytes(Paths.get(toUri("testdata/workloadapi/svid.key.der")));
+        byte[] bundle = Files.readAllBytes(Paths.get(toUri("testdata/workloadapi/bundle.der")));
+        byte[] corrupted = Files.readAllBytes(Paths.get(toUri("testdata/workloadapi/corrupted")));
+        SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase fakeWorkloadApi = new SpiffeWorkloadAPIGrpc.SpiffeWorkloadAPIImplBase() {
+            @Override
+            public void fetchX509SVID(Workload.X509SVIDRequest request, StreamObserver<Workload.X509SVIDResponse> responseObserver) {
+                responseObserver.onNext(newX509SvidResponse(svid, key, bundle, "initial"));
+                responseObserver.onNext(newX509SvidResponse(corrupted, corrupted, corrupted, "corrupted"));
+                responseObserver.onNext(newX509SvidResponse(svid, key, bundle, "rotated"));
+            }
+        };
+        DefaultWorkloadApiClient client = WorkloadApiClientTestUtil.create(fakeWorkloadApi, new GrpcCleanupRule());
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions.builder().workloadApiClient(client).build();
+
+        try (DefaultX509Source source = DefaultX509Source.newSource(options)) {
+            assertEquals("rotated", source.getX509Svid().getHint());
+        }
+    }
+
+    @Test
     void newSource_success() {
         DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
                 .builder()
@@ -171,5 +221,20 @@ class DefaultX509SourceTest {
                 assertEquals("Endpoint Socket Address Environment Variable is not set: SPIFFE_ENDPOINT_SOCKET", e.getMessage());
             }
         });
+    }
+
+    private static Workload.X509SVIDResponse newX509SvidResponse(byte[] svid, byte[] key, byte[] bundle, String hint) {
+        Workload.X509SVID x509Svid = Workload.X509SVID
+                .newBuilder()
+                .setSpiffeId("spiffe://example.org/workload-server")
+                .setX509Svid(ByteString.copyFrom(svid))
+                .setX509SvidKey(ByteString.copyFrom(key))
+                .setBundle(ByteString.copyFrom(bundle))
+                .setHint(hint)
+                .build();
+        return Workload.X509SVIDResponse
+                .newBuilder()
+                .addSvids(x509Svid)
+                .build();
     }
 }
