@@ -3,6 +3,7 @@ package io.spiffe.helper.keystore;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.SocketEndpointAddressException;
+import io.spiffe.exception.X509ContextException;
 import io.spiffe.helper.exception.KeyStoreHelperException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.SpiffeId;
@@ -376,6 +377,30 @@ class KeyStoreHelperTest {
     }
 
     @Test
+    void testRun_errorReportedAsynchronously_throwsException() throws Exception {
+        KeyStoreHelper.KeyStoreOptions options = getKeyStoreValidOptions(newAsyncErrorClient());
+        try (KeyStoreHelper helper = KeyStoreHelper.create(options)) {
+            helper.run(false);
+            fail();
+        } catch (KeyStoreHelperException e) {
+            assertEquals("Error running KeyStoreHelper", e.getMessage());
+            assertEquals("Testing exception", e.getCause().getCause().getMessage());
+        }
+    }
+
+    @Test
+    void testRun_keepRunning_errorReportedAsynchronously_throwsException() throws Exception {
+        KeyStoreHelper.KeyStoreOptions options = getKeyStoreValidOptions(newAsyncErrorClient());
+        try (KeyStoreHelper helper = KeyStoreHelper.create(options)) {
+            helper.run(true);
+            fail();
+        } catch (KeyStoreHelperException e) {
+            assertEquals("Error running KeyStoreHelper", e.getMessage());
+            assertEquals("Testing exception", e.getCause().getCause().getMessage());
+        }
+    }
+
+    @Test
     void keyStoreHelperOptions_allNull() {
         try {
             KeyStoreHelper.KeyStoreOptions.builder().build();
@@ -438,6 +463,16 @@ class KeyStoreHelperTest {
         }
     }
 
+
+    // Reports the error from another thread, as the Workload API client does for watch errors.
+    private static WorkloadApiClient newAsyncErrorClient() {
+        return new WorkloadApiClientErrorStub() {
+            @Override
+            public void watchX509Context(Watcher<X509Context> watcher) {
+                new Thread(() -> watcher.onError(new X509ContextException("Testing exception"))).start();
+            }
+        };
+    }
 
     private KeyStoreHelper.KeyStoreOptions getKeyStoreValidOptions(WorkloadApiClient workloadApiClient) {
         String keyStorefileName = RandomStringUtils.randomAlphabetic(10);
