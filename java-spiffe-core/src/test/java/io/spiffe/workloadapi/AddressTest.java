@@ -48,6 +48,7 @@ public class AddressTest {
                 Arguments.of("tcp://127.0.0.1:8000", URI.create("tcp://127.0.0.1:8000")),
                 Arguments.of("tcp://[::1]:8000", URI.create("tcp://[::1]:8000")),
                 Arguments.of("tcp://[2001:db8::1]:8000", URI.create("tcp://[2001:db8::1]:8000")),
+                Arguments.of("tcp://[::ffff:127.0.0.1]:8000", URI.create("tcp://[::ffff:127.0.0.1]:8000")),
 
                 Arguments.of("", "Workload endpoint socket URI must have a tcp:// or unix:// scheme: "),
                 Arguments.of("\\t", "Workload endpoint socket is not a valid URI: \\t"),
@@ -72,6 +73,8 @@ public class AddressTest {
                 Arguments.of("tcp://john:doe@1.2.3.4:5/path", "Workload endpoint tcp socket URI must not include user info: tcp://john:doe@1.2.3.4:5/path"),
                 Arguments.of("tcp://foo:9000", "Workload endpoint tcp socket URI host component must be an IP:port: tcp://foo:9000"),
                 Arguments.of("tcp://[foo]:9000", "Workload endpoint socket is not a valid URI: tcp://[foo]:9000"),
+                Arguments.of("tcp://[fe80::1%eth0]:8000", "Workload endpoint tcp socket URI host component must be an IP:port: tcp://[fe80::1%eth0]:8000"),
+                Arguments.of("tcp://[fe80::1%25eth0]:8000", "Workload endpoint tcp socket URI host component must be an IP:port: tcp://[fe80::1%25eth0]:8000"),
                 Arguments.of("tcp://1.2.3.4", "Workload endpoint tcp socket URI host component must include a port: tcp://1.2.3.4"),
                 Arguments.of("tcp://[::1]", "Workload endpoint tcp socket URI host component must include a port: tcp://[::1]")
         );
