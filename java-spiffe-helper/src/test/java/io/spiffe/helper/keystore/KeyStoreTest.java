@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,10 +26,12 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
@@ -109,6 +112,40 @@ public class KeyStoreTest {
 
         checkBundleEntries(keyStoreFilePath, keyStorePassword, keyStoreType, authority1Alias);
         checkBundleEntries(keyStoreFilePath, keyStorePassword, keyStoreType, authority2Alias);
+    }
+
+    @Test
+    void testReplaceAuthorityEntries_doesNotDeleteAliasesForLongerTrustDomain() throws Exception {
+        String fileName = RandomStringUtils.randomAlphabetic(10);
+        keyStoreFilePath = Paths.get(fileName);
+
+        KeyStoreType keyStoreType = KeyStoreType.JKS;
+        String keyStorePassword = RandomStringUtils.randomAlphanumeric(12);
+        KeyStore keyStore = KeyStore.builder()
+                .keyStoreFilePath(keyStoreFilePath)
+                .keyStoreType(keyStoreType)
+                .keyStorePassword(keyStorePassword)
+                .build();
+
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(AuthorityEntry.builder()
+                .alias("example.org.0")
+                .certificate(authority)
+                .build());
+        keyStore.storeAuthorityEntry(AuthorityEntry.builder()
+                .alias("example.org.uk.0")
+                .certificate(authority)
+                .build());
+
+        keyStore.replaceAuthorityEntries("example.org.", Collections.emptyList());
+
+        java.security.KeyStore storedKeyStore = java.security.KeyStore.getInstance(keyStoreType.value());
+        try (InputStream inputStream = Files.newInputStream(keyStoreFilePath)) {
+            storedKeyStore.load(inputStream, keyStorePassword.toCharArray());
+        }
+        assertNull(storedKeyStore.getCertificate("example.org.0"));
+        assertNotNull(storedKeyStore.getCertificate("example.org.uk.0"));
+        assertEquals(1, storedKeyStore.size());
     }
 
     @Test
