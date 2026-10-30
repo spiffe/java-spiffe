@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+* Report terminal Workload API watch failures with other statuses after a permission denial, preserving the exception type and cause.
+
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.
