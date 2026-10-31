@@ -120,25 +120,25 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 ? options.spiffeSocketPath
                 : Address.getDefaultAddress();
 
-        if (options.exponentialBackoffPolicy == null) {
-            options.exponentialBackoffPolicy = ExponentialBackoffPolicy.DEFAULT;
-        }
+        final ExponentialBackoffPolicy exponentialBackoffPolicy = options.exponentialBackoffPolicy != null
+                ? options.exponentialBackoffPolicy
+                : ExponentialBackoffPolicy.DEFAULT;
 
-        if (options.executorService == null) {
-            options.executorService = Executors.newCachedThreadPool();
-        }
+        final ExecutorService executorService = options.executorService != null
+                ? options.executorService
+                : Executors.newCachedThreadPool();
 
         final URI socketEndpointAddress = Address.parseAddress(spiffeSocketPath);
-        final ManagedChannelWrapper managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress, options.executorService);
+        final ManagedChannelWrapper managedChannel = GrpcManagedChannelFactory.newChannel(socketEndpointAddress, executorService);
         final SecurityHeaderInterceptor securityHeaderInterceptor = new SecurityHeaderInterceptor();
         final SpiffeWorkloadAPIStub workloadAPIAsyncStub = SpiffeWorkloadAPIGrpc
                 .newStub(managedChannel.getChannel())
-                .withExecutor(options.executorService)
+                .withExecutor(executorService)
                 .withInterceptors(securityHeaderInterceptor);
 
         final SpiffeWorkloadAPIBlockingStub workloadAPIBlockingStub = SpiffeWorkloadAPIGrpc
                 .newBlockingStub(managedChannel.getChannel())
-                .withExecutor(options.executorService)
+                .withExecutor(executorService)
                 .withInterceptors(securityHeaderInterceptor);
 
         final ScheduledExecutorService retryExecutor = options.retryExecutorService != null
@@ -149,9 +149,9 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 workloadAPIAsyncStub,
                 workloadAPIBlockingStub,
                 managedChannel,
-                options.exponentialBackoffPolicy,
+                exponentialBackoffPolicy,
                 retryExecutor,
-                options.executorService);
+                executorService);
     }
 
     /**
