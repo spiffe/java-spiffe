@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -158,6 +159,27 @@ class DefaultWorkloadApiClientTest {
             assertNull(new DefaultWorkloadApiClient.ClientOptions(null, null, null).getRetryExecutorService());
         } finally {
             retryExecutorService.shutdown();
+        }
+    }
+
+    @Test
+    void testNewClient_reusedOptions_doesNotReuseDefaultExecutorOfClosedClient() throws Exception {
+        DefaultWorkloadApiClient.ClientOptions options =
+                DefaultWorkloadApiClient.ClientOptions
+                        .builder()
+                        .spiffeSocketPath("unix:/tmp/agent.sock")
+                        .build();
+
+        DefaultWorkloadApiClient firstClient = (DefaultWorkloadApiClient) DefaultWorkloadApiClient.newClient(options);
+        firstClient.close();
+
+        DefaultWorkloadApiClient secondClient = (DefaultWorkloadApiClient) DefaultWorkloadApiClient.newClient(options);
+        try {
+            assertFalse(getExecutorService(secondClient).isShutdown());
+            assertNull(options.getExecutorService());
+            assertNull(options.getExponentialBackoffPolicy());
+        } finally {
+            secondClient.close();
         }
     }
 
@@ -589,6 +611,12 @@ class DefaultWorkloadApiClientTest {
             public void onError(Throwable e) {
             }
         };
+    }
+
+    private static ExecutorService getExecutorService(DefaultWorkloadApiClient client) throws Exception {
+        Field field = DefaultWorkloadApiClient.class.getDeclaredField("executorService");
+        field.setAccessible(true);
+        return (ExecutorService) field.get(client);
     }
 
     private void replaceCancellableContexts(List<Context.CancellableContext> contexts) throws Exception {
