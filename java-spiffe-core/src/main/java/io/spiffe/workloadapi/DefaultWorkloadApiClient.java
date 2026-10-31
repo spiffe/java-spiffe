@@ -141,7 +141,9 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 .withExecutor(options.executorService)
                 .withInterceptors(securityHeaderInterceptor);
 
-        final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor();
+        final ScheduledExecutorService retryExecutor = options.retryExecutorService != null
+                ? options.retryExecutorService
+                : Executors.newSingleThreadScheduledExecutor();
 
         return new DefaultWorkloadApiClient(
                 workloadAPIAsyncStub,
@@ -501,19 +503,32 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
      * <code>executorService</code> A custom {@link ExecutorService} to configure the Grpc stubs and channels.
      * If it is not provided, an <code>Executors.newCachedThreadPool()</code> is used by default.
      * The executorService provided will be shutdown when the WorkloadApiClient instance is closed.
+     * <p>
+     * <code>retryExecutorService</code> A custom {@link ScheduledExecutorService} to schedule the retries to reconnect
+     * to the Workload API. If it is not provided, an <code>Executors.newSingleThreadScheduledExecutor()</code> is used
+     * by default. The retryExecutorService provided will be shutdown when the WorkloadApiClient instance is closed.
      */
     public final static class ClientOptions {
 
         private String spiffeSocketPath;
         private ExponentialBackoffPolicy exponentialBackoffPolicy;
         private ExecutorService executorService;
+        private ScheduledExecutorService retryExecutorService;
 
         public ClientOptions(String spiffeSocketPath,
                              ExponentialBackoffPolicy exponentialBackoffPolicy,
                              ExecutorService executorService) {
+            this(spiffeSocketPath, exponentialBackoffPolicy, executorService, null);
+        }
+
+        public ClientOptions(String spiffeSocketPath,
+                             ExponentialBackoffPolicy exponentialBackoffPolicy,
+                             ExecutorService executorService,
+                             ScheduledExecutorService retryExecutorService) {
             this.spiffeSocketPath = spiffeSocketPath;
             this.exponentialBackoffPolicy = exponentialBackoffPolicy;
             this.executorService = executorService;
+            this.retryExecutorService = retryExecutorService;
         }
 
         public String getSpiffeSocketPath() {
@@ -528,6 +543,10 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
             return executorService;
         }
 
+        public ScheduledExecutorService getRetryExecutorService() {
+            return retryExecutorService;
+        }
+
         public static Builder builder() {
             return new Builder();
         }
@@ -536,6 +555,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
             private String spiffeSocketPath;
             private ExponentialBackoffPolicy exponentialBackoffPolicy;
             private ExecutorService executorService;
+            private ScheduledExecutorService retryExecutorService;
 
             public Builder spiffeSocketPath(String spiffeSocketPath) {
                 this.spiffeSocketPath = spiffeSocketPath;
@@ -552,11 +572,17 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                 return this;
             }
 
+            public Builder retryExecutorService(ScheduledExecutorService retryExecutorService) {
+                this.retryExecutorService = retryExecutorService;
+                return this;
+            }
+
             public ClientOptions build() {
                 return new ClientOptions(
                         spiffeSocketPath,
                         exponentialBackoffPolicy,
-                        executorService
+                        executorService,
+                        retryExecutorService
                 );
             }
         }
@@ -568,12 +594,13 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
             ClientOptions that = (ClientOptions) o;
             return Objects.equals(spiffeSocketPath, that.spiffeSocketPath)
                     && Objects.equals(exponentialBackoffPolicy, that.exponentialBackoffPolicy)
-                    && Objects.equals(executorService, that.executorService);
+                    && Objects.equals(executorService, that.executorService)
+                    && Objects.equals(retryExecutorService, that.retryExecutorService);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(spiffeSocketPath, exponentialBackoffPolicy, executorService);
+            return Objects.hash(spiffeSocketPath, exponentialBackoffPolicy, executorService, retryExecutorService);
         }
 
         @Override
@@ -582,6 +609,7 @@ public final class DefaultWorkloadApiClient implements WorkloadApiClient {
                     "spiffeSocketPath='" + spiffeSocketPath + '\'' +
                     ", exponentialBackoffPolicy=" + exponentialBackoffPolicy +
                     ", executorService=" + executorService +
+                    ", retryExecutorService=" + retryExecutorService +
                     '}';
         }
     }

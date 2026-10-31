@@ -25,6 +25,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.ServerSocket;
 import java.security.KeyPair;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -36,9 +37,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -97,6 +104,60 @@ class DefaultWorkloadApiClientTest {
             assertNotNull(client);
         } catch (SocketEndpointAddressException e) {
             fail(e);
+        }
+    }
+
+    @Test
+    void testNewClient_customRetryExecutorService_schedulesRetriesAndIsShutdownOnClose() throws Exception {
+        CountDownLatch retryScheduled = new CountDownLatch(1);
+        ScheduledThreadPoolExecutor retryExecutorService = new ScheduledThreadPoolExecutor(1) {
+            @Override
+            public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+                retryScheduled.countDown();
+                return super.schedule(command, delay, unit);
+            }
+        };
+
+        int unusedPort;
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            unusedPort = serverSocket.getLocalPort();
+        }
+
+        DefaultWorkloadApiClient.ClientOptions options =
+                DefaultWorkloadApiClient.ClientOptions
+                        .builder()
+                        .spiffeSocketPath("tcp://127.0.0.1:" + unusedPort)
+                        .retryExecutorService(retryExecutorService)
+                        .build();
+
+        WorkloadApiClient client = DefaultWorkloadApiClient.newClient(options);
+        try {
+            client.watchX509Context(noopWatcher());
+            assertTrue(retryScheduled.await(10, TimeUnit.SECONDS));
+            assertFalse(retryExecutorService.isShutdown());
+        } finally {
+            client.close();
+        }
+
+        assertTrue(retryExecutorService.isShutdown());
+    }
+
+    @Test
+    void testClientOptions_retryExecutorService() {
+        ScheduledThreadPoolExecutor retryExecutorService = new ScheduledThreadPoolExecutor(1);
+        try {
+            DefaultWorkloadApiClient.ClientOptions options =
+                    DefaultWorkloadApiClient.ClientOptions
+                            .builder()
+                            .retryExecutorService(retryExecutorService)
+                            .build();
+
+            assertEquals(retryExecutorService, options.getRetryExecutorService());
+            assertEquals(new DefaultWorkloadApiClient.ClientOptions(null, null, null, retryExecutorService), options);
+            assertNotEquals(new DefaultWorkloadApiClient.ClientOptions(null, null, null), options);
+            assertNull(new DefaultWorkloadApiClient.ClientOptions(null, null, null).getRetryExecutorService());
+        } finally {
+            retryExecutorService.shutdown();
         }
     }
 
