@@ -113,18 +113,17 @@ public final class DefaultX509Source implements X509Source {
             throws SocketEndpointAddressException, X509SourceException {
         Objects.requireNonNull(options, "options must not be null");
 
-        if (options.workloadApiClient == null) {
-            options.workloadApiClient = createClient(options);
-        }
+        // The defaults are kept in local variables: storing them in the options would make a later
+        // newSource call with the same options reuse a client that the failed or closed source has closed.
+        final Duration initTimeout = options.initTimeout != null ? options.initTimeout : DEFAULT_TIMEOUT;
+        final WorkloadApiClient workloadApiClient = options.workloadApiClient != null
+                ? options.workloadApiClient
+                : createClient(options);
 
-        if (options.initTimeout == null) {
-            options.initTimeout = DEFAULT_TIMEOUT;
-        }
-
-        DefaultX509Source x509Source = new DefaultX509Source(options.svidPicker, options.workloadApiClient);
+        DefaultX509Source x509Source = new DefaultX509Source(options.svidPicker, workloadApiClient);
 
         try {
-            x509Source.init(options.initTimeout);
+            x509Source.init(initTimeout);
         } catch (Exception e) {
             x509Source.close();
             throw new X509SourceException("Error creating X.509 source", e);

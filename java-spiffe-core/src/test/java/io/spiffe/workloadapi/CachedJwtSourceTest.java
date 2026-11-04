@@ -536,6 +536,22 @@ class CachedJwtSourceTest {
     }
 
     @Test
+    void newSource_timeout_retryWithSameOptions_createsNewClient() {
+        JwtSourceOptions options = JwtSourceOptions
+                .builder()
+                .spiffeSocketPath("unix:/tmp/test")
+                .build();
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            JwtSourceException e = assertThrows(JwtSourceException.class, () -> CachedJwtSource.newSource(options));
+            assertEquals("Timeout waiting for JWT bundles update", e.getCause().getMessage());
+        }
+
+        assertNull(options.getWorkloadApiClient());
+        assertNull(options.getInitTimeout());
+    }
+
+    @Test
     void newSource_DefaultSocketAddress() throws Exception {
         new EnvironmentVariables(Address.SOCKET_ENV_VARIABLE, "unix:/tmp/test").execute(() -> {
             try {
