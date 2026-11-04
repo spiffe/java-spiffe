@@ -41,7 +41,7 @@ public final class TrustDomain {
             return SpiffeId.parse(idOrName).getTrustDomain();
         }
 
-        String normalizedName = idOrName.toLowerCase();
+        String normalizedName = toLowerAscii(idOrName);
         validateTrustDomainName(normalizedName);
         return new TrustDomain(normalizedName);
     }
@@ -82,6 +82,25 @@ public final class TrustDomain {
                 throw new InvalidSpiffeIdException(BAD_TRUST_DOMAIN_CHAR);
             }
         }
+    }
+
+    // Lowercases only the ASCII letters 'A' to 'Z' and leaves every other character unchanged.
+    // String#toLowerCase() depends on the default locale (in a Turkish locale 'I' becomes the dotless 'ı'),
+    // and both it and Character#toLowerCase map some non-ASCII characters to ASCII letters (e.g. the
+    // Kelvin sign U+212A to 'k'), which would let them pass trust domain validation.
+    static String toLowerAscii(final String s) {
+        StringBuilder sb = new StringBuilder(s.length());
+        for (char c : s.toCharArray()) {
+            sb.append(toLowerAscii(c));
+        }
+        return sb.toString();
+    }
+
+    static char toLowerAscii(final char c) {
+        if (c >= 'A' && c <= 'Z') {
+            return (char) (c + ('a' - 'A'));
+        }
+        return c;
     }
 
     static boolean isValidTrustDomainChar(char c) {
