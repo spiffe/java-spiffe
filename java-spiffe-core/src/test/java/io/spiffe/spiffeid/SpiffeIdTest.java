@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -276,6 +278,33 @@ class SpiffeIdTest {
         assertEquals(lowercase, uppercaseTrustDomain);
         assertEquals(lowercase, uppercaseBoth);
         assertEquals(lowercase.hashCode(), uppercaseBoth.hashCode());
+    }
+
+    @Test
+    void parseMixedCaseTrustDomain_turkishDefaultLocale_normalizesToAsciiLowercase() {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try {
+            SpiffeId spiffeId = SpiffeId.parse("SPIFFE://INFO.ORG/Service");
+
+            assertEquals("info.org", spiffeId.getTrustDomain().getName());
+            assertEquals("spiffe://info.org/Service", spiffeId.toString());
+            assertEquals(SpiffeId.parse("spiffe://info.org/Service"), spiffeId);
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            // KELVIN SIGN, lowercases to 'k'
+            "spiffe://\u212Aexample.org/service",
+            // LATIN CAPITAL LETTER I WITH DOT ABOVE, lowercases to 'i'
+            "spiffe://\u0130nfo.org/service"
+    })
+    void parseTrustDomainWithNonAsciiCharWithAsciiLowercase_throwsInvalidSpiffeIdException(String input) {
+        InvalidSpiffeIdException e = assertThrows(InvalidSpiffeIdException.class, () -> SpiffeId.parse(input));
+        assertEquals("Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores", e.getMessage());
     }
 
     @Test

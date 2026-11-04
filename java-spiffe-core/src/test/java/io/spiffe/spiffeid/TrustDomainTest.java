@@ -6,6 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -150,6 +151,36 @@ class TrustDomainTest {
     void testParseFromSpiffeIdWithPath_mixedCaseSchemeAndTrustDomain_normalizesTrustDomain() {
         TrustDomain trustDomain = TrustDomain.parse("SpIfFe://ExAmPlE.OrG/foo");
         assertEquals("example.org", trustDomain.getName());
+    }
+
+    @Test
+    void testParseMixedCase_turkishDefaultLocale_normalizesToAsciiLowercase() {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try {
+            assertEquals("example.io", TrustDomain.parse("EXAMPLE.IO").getName());
+            assertEquals("info.org", TrustDomain.parse("spiffe://INFO.ORG/service").getName());
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideNonAsciiCharsWithAsciiLowercase")
+    void testParseNonAsciiCharWithAsciiLowercase_throwsInvalidTrustDomain(String input) {
+        InvalidSpiffeIdException e = assertThrows(InvalidSpiffeIdException.class, () -> TrustDomain.parse(input));
+        assertEquals("Trust domain characters are limited to lowercase letters, numbers, dots, dashes, and underscores", e.getMessage());
+    }
+
+    static Stream<Arguments> provideNonAsciiCharsWithAsciiLowercase() {
+        return Stream.of(
+                // KELVIN SIGN, lowercases to 'k'
+                Arguments.of("\u212Aexample.org"),
+                Arguments.of("spiffe://\u212Aexample.org/service"),
+                // LATIN CAPITAL LETTER I WITH DOT ABOVE, lowercases to 'i'
+                Arguments.of("\u0130nfo.org"),
+                Arguments.of("spiffe://\u0130nfo.org/service")
+        );
     }
 
     @Test
