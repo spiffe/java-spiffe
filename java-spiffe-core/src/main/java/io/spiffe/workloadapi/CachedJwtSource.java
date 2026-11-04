@@ -95,18 +95,17 @@ public class CachedJwtSource implements JwtSource {
             throws SocketEndpointAddressException, JwtSourceException {
         Objects.requireNonNull(options, "options must not be null");
 
-        if (options.getWorkloadApiClient() == null) {
-            options.setWorkloadApiClient(createClient(options));
-        }
+        // The defaults are kept in local variables: storing them in the options would make a later
+        // newSource call with the same options reuse a client that the failed or closed source has closed.
+        final Duration initTimeout = options.getInitTimeout() != null ? options.getInitTimeout() : DEFAULT_TIMEOUT;
+        final WorkloadApiClient workloadApiClient = options.getWorkloadApiClient() != null
+                ? options.getWorkloadApiClient()
+                : createClient(options);
 
-        if (options.getInitTimeout() == null) {
-            options.setInitTimeout(DEFAULT_TIMEOUT);
-        }
-
-        CachedJwtSource jwtSource = new CachedJwtSource(options.getWorkloadApiClient());
+        CachedJwtSource jwtSource = new CachedJwtSource(workloadApiClient);
 
         try {
-            jwtSource.init(options.getInitTimeout());
+            jwtSource.init(initTimeout);
         } catch (Exception e) {
             jwtSource.close();
             throw new JwtSourceException("Error creating JWT source", e);

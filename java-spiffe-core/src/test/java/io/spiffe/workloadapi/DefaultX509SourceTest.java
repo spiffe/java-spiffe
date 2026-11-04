@@ -27,7 +27,9 @@ import java.util.Collections;
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -189,6 +191,22 @@ class DefaultX509SourceTest {
         } catch (SocketEndpointAddressException e) {
             fail();
         }
+    }
+
+    @Test
+    void newSource_timeout_retryWithSameOptions_createsNewClient() {
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
+                .builder()
+                .spiffeSocketPath("unix:/tmp/test")
+                .initTimeout(Duration.ofSeconds(1))
+                .build();
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            X509SourceException e = assertThrows(X509SourceException.class, () -> DefaultX509Source.newSource(options));
+            assertEquals("Timeout waiting for X.509 Context update", e.getCause().getMessage());
+        }
+
+        assertNull(options.getWorkloadApiClient());
     }
 
     @Test
