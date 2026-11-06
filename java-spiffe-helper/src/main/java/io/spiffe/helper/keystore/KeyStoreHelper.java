@@ -223,17 +223,18 @@ public class KeyStoreHelper implements Closeable {
 
     private void storeBundle(TrustDomain trustDomain, X509Bundle bundle) throws KeyStoreException {
         List<X509Certificate> authorities = sortedAuthorities(bundle);
-        trustStore.deleteEntriesByAliasPrefix(generateAliasPrefix(trustDomain));
+        List<AuthorityEntry> authorityEntries = new ArrayList<>();
 
         int index = 0;
         for (X509Certificate certificate : authorities) {
-            final AuthorityEntry authorityEntry = AuthorityEntry.builder()
+            authorityEntries.add(AuthorityEntry.builder()
                     .alias(generateAlias(trustDomain, index))
                     .certificate(certificate)
-                    .build();
-            trustStore.storeAuthorityEntry(authorityEntry);
+                    .build());
             index++;
         }
+
+        trustStore.replaceAuthorityEntries(generateAliasPrefix(trustDomain), authorityEntries);
     }
 
     private List<X509Certificate> sortedAuthorities(X509Bundle bundle) throws KeyStoreException {
