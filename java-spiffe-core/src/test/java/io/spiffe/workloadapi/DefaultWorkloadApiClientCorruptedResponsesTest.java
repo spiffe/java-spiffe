@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class DefaultWorkloadApiClientCorruptedResponsesTest {
@@ -85,6 +86,7 @@ class DefaultWorkloadApiClientCorruptedResponsesTest {
 
             @Override
             public void onError(Throwable e) {
+                assertInstanceOf(X509BundleException.class, e);
                 assertEquals("Error processing X.509 bundles update", e.getMessage());
                 done.countDown();
             }
