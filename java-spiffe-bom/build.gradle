@@ -1,0 +1,14 @@
+plugins {
+    id 'java-platform'
+}
+
+description = "Bill of Materials (BOM) that aligns the versions of the Java SPIFFE Library modules."
+
+dependencies {
+    constraints {
+        // Every other subproject is published, so add all of them to keep the BOM complete as modules are added.
+        (rootProject.subprojects - project).each { module ->
+            api(module)
+        }
+    }
+}

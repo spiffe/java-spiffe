@@ -12,6 +12,10 @@ allprojects {
     }
 }
 
+// The BOM is a java-platform project that only publishes version constraints: it shares the
+// publishing configuration of all subprojects, but not the Java library conventions.
+def libraryProjects = subprojects - project(':java-spiffe-bom')
+
 subprojects {
     group = 'io.spiffe'
     version = project.version
@@ -30,20 +34,7 @@ subprojects {
         nettyVersion = '4.2.17.Final'
     }
 
-    apply plugin: 'java-library'
-    apply plugin: 'jacoco'
     apply plugin: 'com.vanniktech.maven.publish'
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-        withSourcesJar()
-    }
-
-    javadoc {
-        exclude "**/grpc/**"
-        exclude "**/internal/**"
-    }
 
     // Central Portal + signing configuration
     mavenPublishing {
@@ -86,6 +77,22 @@ subprojects {
                 }
             }
         }
+    }
+}
+
+configure(libraryProjects) {
+    apply plugin: 'java-library'
+    apply plugin: 'jacoco'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        withSourcesJar()
+    }
+
+    javadoc {
+        exclude "**/grpc/**"
+        exclude "**/internal/**"
     }
 
     dependencies {
@@ -166,7 +173,7 @@ configure([project(':java-spiffe-core:grpc-netty-macos'), project(':java-spiffe-
 }
 
 tasks.register('jacocoTestReport', JacocoReport) {
-    dependsOn(subprojects.collect { it.tasks.named('test') })
+    dependsOn(libraryProjects.collect { it.tasks.named('test') })
 
     jacocoClasspath = configurations.jacocoAnt
 
@@ -175,8 +182,8 @@ tasks.register('jacocoTestReport', JacocoReport) {
         include '**/build/jacoco/*.ec'
     }
 
-    def mainSourceDirs = files(subprojects.collect { p -> p.sourceSets.main.allSource.srcDirs })
-    def mainClassDirs = files(subprojects.collect { p -> p.sourceSets.main.output })
+    def mainSourceDirs = files(libraryProjects.collect { p -> p.sourceSets.main.allSource.srcDirs })
+    def mainClassDirs = files(libraryProjects.collect { p -> p.sourceSets.main.output })
 
     sourceDirectories = mainSourceDirs
 

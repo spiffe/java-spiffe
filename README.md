@@ -61,6 +61,42 @@ Import `java-spiffe-core`:
 implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.8.17'
 ```
 
+### Bill of Materials (BOM)
+
+The `java-spiffe-bom` artifact manages the versions of all the java-spiffe modules (`java-spiffe-core`,
+`java-spiffe-provider`, `java-spiffe-helper`, `grpc-netty-linux`, `grpc-netty-macos` and `grpc-netty-macos-aarch64`),
+so they are declared without a version and always stay aligned with each other. This is especially useful for the
+platform-specific `grpc-netty-*` runtime modules described in [MacOS Support](#macos-support), whose version must match
+the version of `java-spiffe-core`.
+
+Import the BOM in the `dependencyManagement` section of the `pom.xml`:
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>io.spiffe</groupId>
+      <artifactId>java-spiffe-bom</artifactId>
+      <version>0.8.17</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+
+<dependencies>
+  <dependency>
+    <groupId>io.spiffe</groupId>
+    <artifactId>java-spiffe-provider</artifactId>
+  </dependency>
+</dependencies>
+```
+
+Using Gradle:
+```gradle
+implementation platform('io.spiffe:java-spiffe-bom:0.8.17')
+implementation 'io.spiffe:java-spiffe-provider'
+```
+
 ### MacOS Support
 
 #### x86 Architecture
