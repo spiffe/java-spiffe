@@ -9,6 +9,7 @@
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.
+* Bump `io.netty:netty-transport-native-kqueue` to 4.2.17.Final to match the Netty version used by gRPC, and fail `check` when the macOS transport modules drift from it.
 
 ## [0.8.17] - 2026-04-20
 

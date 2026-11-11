@@ -26,8 +26,8 @@ subprojects {
         nimbusVersion = '10.10'
         shadowVersion = '9.0.0'
 
-        //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.2.9.Final'
+        //IMPORTANT: This must match the Netty version used by grpc-netty (checked by verifyNettyVersions)
+        nettyVersion = '4.2.17.Final'
     }
 
     apply plugin: 'java-library'
@@ -131,6 +131,38 @@ configure([project(':java-spiffe-core'), project(':java-spiffe-provider')]) {
     apply plugin: 'me.champeau.gradle.japicmp'
     tasks.register('japicmp', me.champeau.gradle.japicmp.JapicmpTask)
     apply from: rootProject.file('gradle/binary-compatibility.gradle')
+}
+
+// The macOS modules add netty-transport-native-kqueue at nettyVersion next to grpc-netty, which brings its own
+// Netty version. Native transports must match the rest of Netty exactly, so fail if the two drift apart.
+configure([project(':java-spiffe-core:grpc-netty-macos'), project(':java-spiffe-core:grpc-netty-macos-aarch64')]) {
+    def verifyNettyVersions = tasks.register('verifyNettyVersions') {
+        group = 'verification'
+        description = 'Checks that all Netty modules on the runtime classpath resolve to nettyVersion.'
+
+        def expectedVersion = nettyVersion
+        def grpcNettyVersion = grpcVersion
+        def projectPath = project.path
+        def runtimeArtifacts = configurations.named('runtimeClasspath').flatMap { it.incoming.artifacts.resolvedArtifacts }
+
+        doLast {
+            def mismatches = runtimeArtifacts.get()
+                    .collect { it.id.componentIdentifier }
+                    .findAll { it instanceof ModuleComponentIdentifier && it.group == 'io.netty' && it.version != expectedVersion }
+                    .collect { it.displayName }
+                    .unique()
+                    .sort()
+            if (mismatches) {
+                throw new GradleException("Netty modules on the runtime classpath of ${projectPath} do not match " +
+                        "nettyVersion ${expectedVersion}: ${mismatches.join(', ')}. Set nettyVersion to the Netty " +
+                        "version used by io.grpc:grpc-netty:${grpcNettyVersion}.")
+            }
+        }
+    }
+
+    tasks.named('check') {
+        dependsOn(verifyNettyVersions)
+    }
 }
 
 tasks.register('jacocoTestReport', JacocoReport) {
