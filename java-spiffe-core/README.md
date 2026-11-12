@@ -107,3 +107,20 @@ using a System property:
 
 The `timeout` duration is expressed in `ISO-8601` format.
 
+## Marshal bundles
+
+An `X509Bundle` can be marshaled into PEM-encoded certificates, and a `JwtBundle` into a standard RFC 7517 JWKS
+document. These are the formats that `X509Bundle.parse` and `JwtBundle.parse` read, so a bundle obtained from a
+source can be stored or shared and loaded back later:
+
+```
+    X509Bundle x509Bundle = x509Source.getBundleForTrustDomain(TrustDomain.parse("example.org"));
+    Files.write(Paths.get("/tmp/bundle.pem"), x509Bundle.marshal());
+    X509Bundle loadedX509Bundle = X509Bundle.load(TrustDomain.parse("example.org"), Paths.get("/tmp/bundle.pem"));
+
+    JwtBundle jwtBundle = jwtSource.getBundleForTrustDomain(TrustDomain.parse("example.org"));
+    Files.write(Paths.get("/tmp/bundle.jwks"), jwtBundle.marshal());
+    JwtBundle loadedJwtBundle = JwtBundle.load(TrustDomain.parse("example.org"), Paths.get("/tmp/bundle.jwks"));
+```
+
+The bundles contain public material only. EC and RSA JWT authorities are supported.
