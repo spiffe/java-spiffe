@@ -1,6 +1,9 @@
 package io.spiffe.bundle.jwtbundle;
 
 import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.KeyType;
 import io.spiffe.exception.AuthorityNotFoundException;
 import io.spiffe.exception.BundleNotFoundException;
 import io.spiffe.exception.JwtBundleException;
@@ -10,6 +13,7 @@ import io.spiffe.utils.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,12 +22,21 @@ import java.nio.file.Paths;
 import java.security.KeyException;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
+import java.text.ParseException;
 import java.util.HashMap;
+import java.util.List;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -382,5 +395,127 @@ class JwtBundleTest {
         } catch (NullPointerException e) {
             assertEquals("jwtAuthority must not be null", e.getMessage());
         }
+    }
+
+    @Test
+    void testMarshal_RsaAndEcKeys_CanBeParsedBack() throws JwtBundleException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        jwtBundle.putJwtAuthority("ec-p256", TestUtils.generateECKeyPair(Curve.P_256).getPublic());
+        jwtBundle.putJwtAuthority("ec-p384", TestUtils.generateECKeyPair(Curve.P_384).getPublic());
+        jwtBundle.putJwtAuthority("ec-p521", TestUtils.generateECKeyPair(Curve.P_521).getPublic());
+        jwtBundle.putJwtAuthority("rsa", TestUtils.generateRSAKeyPair(2048).getPublic());
+
+        byte[] marshaled = jwtBundle.marshal();
+
+        assertEquals(jwtBundle, JwtBundle.parse(trustDomain, marshaled));
+    }
+
+    @Test
+    void testMarshal_ParsedJwks_CanBeParsedBack() throws URISyntaxException, IOException, JwtBundleException {
+        Path path = Paths.get(toUri("testdata/jwtbundle/jwks_valid_RSA_EC.json"));
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
+        JwtBundle jwtBundle = JwtBundle.parse(trustDomain, Files.readAllBytes(path));
+
+        byte[] marshaled = jwtBundle.marshal();
+
+        assertEquals(jwtBundle, JwtBundle.parse(trustDomain, marshaled));
+    }
+
+    @Test
+    void testMarshal_WritesPublicJwksOrderedByKeyId() throws JwtBundleException, ParseException {
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
+        jwtBundle.putJwtAuthority("key-c", TestUtils.generateRSAKeyPair(2048).getPublic());
+        jwtBundle.putJwtAuthority("key-a", TestUtils.generateECKeyPair(Curve.P_256).getPublic());
+        jwtBundle.putJwtAuthority("key-b", TestUtils.generateECKeyPair(Curve.P_384).getPublic());
+
+        JWKSet jwkSet = JWKSet.parse(new String(jwtBundle.marshal(), StandardCharsets.UTF_8));
+
+        List<JWK> keys = jwkSet.getKeys();
+        assertEquals(3, keys.size());
+        assertEquals("key-a", keys.get(0).getKeyID());
+        assertEquals(KeyType.EC, keys.get(0).getKeyType());
+        assertEquals(Curve.P_256, keys.get(0).toECKey().getCurve());
+        assertEquals("key-b", keys.get(1).getKeyID());
+        assertEquals(KeyType.EC, keys.get(1).getKeyType());
+        assertEquals(Curve.P_384, keys.get(1).toECKey().getCurve());
+        assertEquals("key-c", keys.get(2).getKeyID());
+        assertEquals(KeyType.RSA, keys.get(2).getKeyType());
+        for (JWK key : keys) {
+            assertFalse(key.isPrivate());
+            assertNull(key.getKeyUse());
+        }
+    }
+
+    @Test
+    void testMarshal_NonAsciiKeyId_CanBeParsedBack() throws JwtBundleException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+        jwtBundle.putJwtAuthority("cl\u00e9-\u03ba\u03bb\u03b5\u03b9\u03b4\u03af", TestUtils.generateECKeyPair(Curve.P_256).getPublic());
+
+        JwtBundle parsed = JwtBundle.parse(trustDomain, jwtBundle.marshal());
+
+        assertEquals(jwtBundle, parsed);
+    }
+
+    @Test
+    void testMarshal_EmptyBundle_WritesEmptyKeysArray() throws JwtBundleException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        JwtBundle jwtBundle = new JwtBundle(trustDomain);
+
+        byte[] marshaled = jwtBundle.marshal();
+
+        assertEquals("{\"keys\":[]}", new String(marshaled, StandardCharsets.UTF_8));
+        assertTrue(JwtBundle.parse(trustDomain, marshaled).getJwtAuthorities().isEmpty());
+    }
+
+    @Test
+    void testMarshal_UnsupportedKeyType_ThrowsJwtBundleException() {
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
+        jwtBundle.putJwtAuthority("key1", new DummyPublicKey());
+
+        JwtBundleException e = assertThrows(JwtBundleException.class, jwtBundle::marshal);
+        assertEquals("Could not marshal JWT authority key1: key type not supported: null", e.getMessage());
+    }
+
+    @Test
+    void testMarshal_UnsupportedCurve_ThrowsJwtBundleException() {
+        // A toy curve y^2 = x^3 + x + 1 over F_23, which has no JWK curve name
+        ECParameterSpec unsupportedCurve = new ECParameterSpec(
+                new EllipticCurve(new ECFieldFp(BigInteger.valueOf(23)), BigInteger.ONE, BigInteger.ONE),
+                new ECPoint(BigInteger.valueOf(3), BigInteger.valueOf(10)),
+                BigInteger.valueOf(7),
+                1);
+        ECPublicKey publicKey = new ECPublicKey() {
+            @Override
+            public ECPoint getW() {
+                return new ECPoint(BigInteger.valueOf(3), BigInteger.valueOf(10));
+            }
+
+            @Override
+            public ECParameterSpec getParams() {
+                return unsupportedCurve;
+            }
+
+            @Override
+            public String getAlgorithm() {
+                return "EC";
+            }
+
+            @Override
+            public String getFormat() {
+                return null;
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return new byte[0];
+            }
+        };
+        JwtBundle jwtBundle = new JwtBundle(TrustDomain.parse("example.org"));
+        jwtBundle.putJwtAuthority("key1", publicKey);
+
+        JwtBundleException e = assertThrows(JwtBundleException.class, jwtBundle::marshal);
+        assertEquals("Could not marshal JWT authority key1: elliptic curve not supported", e.getMessage());
     }
 }

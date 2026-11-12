@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+* Add `X509Bundle.marshal()` and `JwtBundle.marshal()` to serialize bundles as PEM certificates and as a JWKS document, the formats read by `parse`
+
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.

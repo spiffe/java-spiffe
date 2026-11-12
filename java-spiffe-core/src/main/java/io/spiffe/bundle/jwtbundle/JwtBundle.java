@@ -1,6 +1,7 @@
 package io.spiffe.bundle.jwtbundle;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -14,13 +15,19 @@ import io.spiffe.spiffeid.TrustDomain;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.KeyException;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -98,7 +105,7 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
         Objects.requireNonNull(bundleBytes, "bundleBytes must not be null");
 
         try {
-            JWKSet jwkSet = JWKSet.parse(new String(bundleBytes));
+            JWKSet jwkSet = JWKSet.parse(new String(bundleBytes, StandardCharsets.UTF_8));
             return toJwtBundle(trustDomain, jwkSet);
         } catch (IllegalArgumentException | ParseException | JOSEException | KeyException e) {
             throw new JwtBundleException("Could not parse bundle from bytes", e);
@@ -184,6 +191,42 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
     public void removeJwtAuthority(String keyId) {
         Objects.requireNonNull(keyId, "keyId must not be null");
         jwtAuthorities.remove(keyId);
+    }
+
+    /**
+     * Marshals the JWT bundle into a standard RFC 7517 JWKS document, encoded as UTF-8 JSON.
+     * The result can be parsed back into a bundle with {@link #parse(TrustDomain, byte[])}.
+     * <p>
+     * Each JWT authority is encoded as a JWK with its key ID. The keys are ordered by key ID.
+     * Key Types supported are EC and RSA.
+     *
+     * @return an array of bytes with the JWT authorities of the bundle encoded as a JWKS document
+     * @throws JwtBundleException if a JWT authority has a key type or elliptic curve that is not supported
+     */
+    public byte[] marshal() throws JwtBundleException {
+        List<JWK> keys = new ArrayList<>();
+        for (Map.Entry<String, PublicKey> jwtAuthority : new TreeMap<>(jwtAuthorities).entrySet()) {
+            keys.add(toJwk(jwtAuthority.getKey(), jwtAuthority.getValue()));
+        }
+        return new JWKSet(keys).toString(true).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static JWK toJwk(final String keyId, final PublicKey publicKey) throws JwtBundleException {
+        if (publicKey instanceof ECPublicKey) {
+            ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+            Curve curve = Curve.forECParameterSpec(ecPublicKey.getParams());
+            if (curve == null) {
+                throw new JwtBundleException(
+                        String.format("Could not marshal JWT authority %s: elliptic curve not supported", keyId));
+            }
+            return new ECKey.Builder(curve, ecPublicKey).keyID(keyId).build();
+        }
+        if (publicKey instanceof RSAPublicKey) {
+            return new RSAKey.Builder((RSAPublicKey) publicKey).keyID(keyId).build();
+        }
+        throw new JwtBundleException(
+                String.format("Could not marshal JWT authority %s: key type not supported: %s",
+                        keyId, publicKey.getAlgorithm()));
     }
 
     private static JwtBundle toJwtBundle(TrustDomain trustDomain,

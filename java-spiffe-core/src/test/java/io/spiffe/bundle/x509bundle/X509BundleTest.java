@@ -11,9 +11,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
 
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.stream.Stream;
@@ -22,6 +24,8 @@ import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -166,6 +170,54 @@ public class X509BundleTest {
         } catch (NullPointerException e) {
             assertEquals("bundleBytes must not be null", e.getMessage());
         }
+    }
+
+    @Test
+    void testMarshal_canBeParsedBack() throws URISyntaxException, X509BundleException {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        X509Bundle x509Bundle = X509Bundle.load(trustDomain, Paths.get(toUri("testdata/x509bundle/certs.pem")));
+
+        byte[] marshaled = x509Bundle.marshal();
+
+        assertEquals(x509Bundle, X509Bundle.parse(trustDomain, marshaled));
+    }
+
+    @Test
+    void testMarshal_writesOnePemBlockPerAuthority() throws URISyntaxException, X509BundleException {
+        X509Bundle x509Bundle = X509Bundle.load(TrustDomain.parse("example.org"), Paths.get(toUri("testdata/x509bundle/certs.pem")));
+
+        String pem = new String(x509Bundle.marshal(), StandardCharsets.US_ASCII);
+
+        assertEquals(2, pem.split("-----BEGIN CERTIFICATE-----\n", -1).length - 1);
+        assertEquals(2, pem.split("\n-----END CERTIFICATE-----\n", -1).length - 1);
+        assertTrue(pem.startsWith("-----BEGIN CERTIFICATE-----\n"));
+        assertTrue(pem.endsWith("\n-----END CERTIFICATE-----\n"));
+        for (String line : pem.split("\n")) {
+            assertTrue(line.length() <= 64, "PEM line longer than 64 characters: " + line);
+        }
+    }
+
+    @Test
+    void testMarshal_emptyBundle_returnsEmptyBytes() throws X509BundleException {
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
+        assertEquals(0, x509Bundle.marshal().length);
+    }
+
+    @Test
+    void testMarshal_authorityCannotBeEncoded_throwsX509BundleException() {
+        CertificateEncodingException encodingException = new CertificateEncodingException("encoding error");
+        X509Certificate x509Authority = new DummyX509Certificate() {
+            @Override
+            public byte[] getEncoded() throws CertificateEncodingException {
+                throw encodingException;
+            }
+        };
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"));
+        x509Bundle.addX509Authority(x509Authority);
+
+        X509BundleException e = assertThrows(X509BundleException.class, x509Bundle::marshal);
+        assertEquals("X.509 authority could not be encoded", e.getMessage());
+        assertSame(encodingException, e.getCause());
     }
 
     @Test
