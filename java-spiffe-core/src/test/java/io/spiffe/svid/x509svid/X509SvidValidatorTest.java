@@ -65,6 +65,20 @@ public class X509SvidValidatorTest {
     }
 
     @Test
+    void verifyChain_leafWithRootPath_throwsCertificateException() throws Exception {
+        CertAndKeyPair rootPathLeaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE", "spiffe://example.org", rootCa, false);
+        List<X509Certificate> rootPathChain = Arrays.asList(rootPathLeaf.getCertificate(), rootCa.getCertificate());
+
+        X509Bundle x509Bundle = new X509Bundle(TrustDomain.parse("example.org"), Collections.singleton(rootCa.getCertificate()));
+        try {
+            X509SvidValidator.verifyChain(rootPathChain, x509Bundle);
+            fail("exception is expected");
+        } catch (CertificateException e) {
+            assertEquals("Leaf certificate SPIFFE ID must have a non-root path", e.getMessage());
+        }
+    }
+
+    @Test
     void verifyChain_noBundleForTrustDomain_throwsBundleNotFoundException() throws Exception {
         HashSet<X509Certificate> x509Authorities = new HashSet<>();
         x509Authorities.add(otherRootCa.getCertificate());

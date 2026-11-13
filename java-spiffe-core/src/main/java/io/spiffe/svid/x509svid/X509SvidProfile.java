@@ -2,6 +2,7 @@ package io.spiffe.svid.x509svid;
 
 import io.spiffe.exception.X509SvidException;
 import io.spiffe.internal.CertificateUtils;
+import io.spiffe.spiffeid.SpiffeId;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -17,7 +18,15 @@ final class X509SvidProfile {
 
     static void validateLeaf(final X509Certificate leaf) throws CertificateException, X509SvidException {
         validateLeafHasSingleUriSan(leaf);
+        validateLeafSpiffeId(CertificateUtils.getSpiffeId(leaf));
         validateLeafCertificate(leaf);
+    }
+
+    static void validateLeafSpiffeId(final SpiffeId spiffeId) throws X509SvidException {
+        final String path = spiffeId.getPath();
+        if (path == null || path.isEmpty()) {
+            throw new X509SvidException("Leaf certificate SPIFFE ID must have a non-root path");
+        }
     }
 
     static void validateLeafHasSingleUriSan(final X509Certificate leaf)
