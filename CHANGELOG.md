@@ -7,6 +7,10 @@
 * Add `X509Bundle.marshal()` and `JwtBundle.marshal()` to serialize bundles as PEM certificates and as a JWKS document, the formats read by `parse`
 * Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
 
+### Fixed
+
+* Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
+
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.
