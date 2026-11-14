@@ -171,7 +171,7 @@ class JwtBundleTest {
     }
 
     @Test
-    void testLoadFile_UnsupportedKeyType_IsIgnored() throws URISyntaxException, JwtBundleException {
+    void testLoadFile_UnsupportedKeyType_IsIgnored() throws URISyntaxException, JwtBundleException, KeyException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
         TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
@@ -182,7 +182,7 @@ class JwtBundleTest {
     }
 
     @Test
-    void testLoadFile_UnsupportedKeyTypeNextToECKey_KeepsECKey() throws URISyntaxException, JwtBundleException {
+    void testLoadFile_UnsupportedKeyTypeNextToECKey_KeepsECKey() throws URISyntaxException, JwtBundleException, KeyException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_EC_and_OKP.json"));
         TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
