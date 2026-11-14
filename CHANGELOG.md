@@ -10,6 +10,7 @@
 ### Fixed
 
 * Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
+* Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
 
 ### Build
 
