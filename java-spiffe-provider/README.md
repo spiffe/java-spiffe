@@ -69,6 +69,18 @@ In the case of testing the provider in Mac OS, the name of the jar will be `java
 
 The `java-spiffe-provider` jar should be on the classpath.
 
+#### Class loading
+
+The JDK loads the providers listed in the security properties with the system class loader, and silently skips a
+provider that it cannot load. A `java-spiffe-provider` jar that is only visible to a class loader created by the
+application is therefore not found, for example when it is packaged inside a Spring Boot executable jar (`BOOT-INF/lib`)
+or a web application archive (`WEB-INF/lib`). Requesting a `Spiffe` algorithm then fails with errors such as
+`java.security.KeyStoreException: Spiffe not found`. In that case,
+[install the provider programmatically](#install-the-provider-programmatically).
+
+To check whether the provider was loaded, start the JVM with `-Djava.security.debug=jca`: the JDK logs an
+`Error loading` message for `io.spiffe.provider.SpiffeProvider` when it cannot load it.
+
 ### Extend `java.security` properties file
 
 The master security properties file can be extended. Create a file `java.security` with the following content:
@@ -87,6 +99,8 @@ ssl.spiffe.accept=spiffe://example.org/workload | spiffe://example.org/workload2
 In this `java.security` file: 
 
 * replace `<n>` following the order of the `# List of Providers` in the master file. 
+It must be the number that follows the last provider in that list: the JDK stops reading providers at the first
+missing number, so a provider declared after a gap is ignored.
 
 * replace the value of the custom property `ssl.spiffe.accept` with the SPIFFE IDs of the workloads that are 
 allowed to connect, separated by the pipe character.
@@ -135,6 +149,23 @@ The socket endpoint can be configured defining an environment variable named `SP
 export SPIFFE_ENDPOINT_SOCKET=/tmp/agent.sock
 ``` 
 
+### Install the provider programmatically
+
+The provider can also be registered at runtime, which works regardless of the class loader that loads the
+`java-spiffe-provider` jar:
+
+```
+    SpiffeProvider.install();
+```
+
+`SpiffeProvider.install()` adds the provider at the end of the list of providers, unless a provider named `Spiffe` is
+already registered, so it can also be used together with the `security.provider.<n>` entry.
+Call it during application startup, before any code requests a `Spiffe` `KeyStore`, `KeyManagerFactory` or
+`TrustManagerFactory`, for example before an embedded web server configured with the `Spiffe` KeyStore type starts.
+
+The properties described above, such as `ssl.KeyManagerFactory.algorithm`, `ssl.TrustManagerFactory.algorithm` and
+`ssl.spiffe.accept`, are still read when the provider is installed this way.
+
 ## Use Cases
 
 ### Connect to Postgres DB using TLS and the SPIFFE SslSocketFactory 
@@ -169,7 +200,8 @@ If this property is not configured, any SPIFFE ID will be accepted in a TLS conn
 
 ### Configure a Tomcat connector
 
-***Prerequisite***: Having the SPIFFE Provider configured through the `java.security`.
+***Prerequisite***: Having the SPIFFE Provider configured through the `java.security`, or
+[installed programmatically](#install-the-provider-programmatically).
 
 A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as follows: 
 
@@ -185,7 +217,8 @@ A Tomcat TLS connector that uses the `Spiffe` KeyStore can be configured as foll
 
 ### Create mTLS GRPC server and client
 
-Prerequisite: Having the SPIFFE Provider configured through the `java.security`.
+Prerequisite: Having the SPIFFE Provider configured through the `java.security`, or
+[installed programmatically](#install-the-provider-programmatically).
 
 A `GRPC Server` using an SSL context backed by the Workload API:
 

@@ -16,6 +16,10 @@
 * Check core and provider binary compatibility against the latest stable Maven Central release.
 * Bump `io.netty:netty-transport-native-kqueue` to 4.2.17.Final to match the Netty version used by gRPC, and fail `check` when the macOS transport modules drift from it.
 
+### Documentation
+
+* Document `SpiffeProvider.install()` in the provider README, and explain that the JDK loads the providers declared in `java.security` with the system class loader, so a provider packaged inside an application archive, such as a Spring Boot executable jar, must be installed programmatically
+
 ## [0.8.17] - 2026-04-20
 
 ### Fixed
