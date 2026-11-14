@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.KeyType;
 import com.nimbusds.jose.jwk.RSAKey;
 import io.spiffe.internal.JwtSignatureAlgorithm;
 import io.spiffe.bundle.BundleSource;
@@ -238,11 +239,21 @@ public final class JwtBundle implements BundleSource<JwtBundle> {
 
         final Map<String, PublicKey> authorities = new ConcurrentHashMap<>();
         for (JWK jwk : jwkSet.getKeys()) {
+            // The SPIFFE bundle spec says JWKs with a key type the client doesn't
+            // understand must be ignored, so they shouldn't fail the whole bundle.
+            if (!isSupportedKeyType(jwk)) {
+                continue;
+            }
             String keyId = getKeyId(jwk);
             PublicKey publicKey = getPublicKey(jwk);
             authorities.put(keyId, publicKey);
         }
         return new JwtBundle(trustDomain, authorities);
+    }
+
+    private static boolean isSupportedKeyType(final JWK jwk) {
+        KeyType keyType = jwk.getKeyType();
+        return KeyType.EC.equals(keyType) || KeyType.RSA.equals(keyType);
     }
 
     private static String getKeyId(final JWK jwk) throws JwtBundleException {
