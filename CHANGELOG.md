@@ -7,6 +7,10 @@
 * Add `X509Bundle.marshal()` and `JwtBundle.marshal()` to serialize bundles as PEM certificates and as a JWKS document, the formats read by `parse`
 * Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
 
+### Fixed
+
+* Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
+
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.
