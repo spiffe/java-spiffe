@@ -171,16 +171,26 @@ class JwtBundleTest {
     }
 
     @Test
-    void testLoadFile_InvalidKeyType_ThrowsKeyException() throws URISyntaxException, KeyException {
+    void testLoadFile_UnsupportedKeyType_IsIgnored() throws URISyntaxException, JwtBundleException {
         Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
         TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
-        try {
-            JwtBundle.load(trustDomain, path);
-            fail("should have thrown exception");
-        } catch (JwtBundleException e) {
-            assertEquals("Unsupported JWT family algorithm: OKP", e.getCause().getMessage());
-        }
+        JwtBundle jwtBundle = JwtBundle.load(trustDomain, path);
+
+        assertEquals(trustDomain, jwtBundle.getTrustDomain());
+        assertTrue(jwtBundle.getJwtAuthorities().isEmpty());
+    }
+
+    @Test
+    void testLoadFile_UnsupportedKeyTypeNextToECKey_KeepsECKey() throws URISyntaxException, JwtBundleException {
+        Path path = Paths.get(toUri("testdata/jwtbundle/jwks_EC_and_OKP.json"));
+        TrustDomain trustDomain = TrustDomain.parse("domain.test");
+
+        JwtBundle jwtBundle = JwtBundle.load(trustDomain, path);
+
+        assertEquals(1, jwtBundle.getJwtAuthorities().size());
+        assertNotNull(jwtBundle.getJwtAuthorities().get("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
+        assertFalse(jwtBundle.hasJwtAuthority("okp-key"));
     }
 
     @Test
@@ -267,18 +277,16 @@ class JwtBundleTest {
     }
 
     @Test
-    void testParse_InvalidKeyType_ThrowsJwtBundleException() throws URISyntaxException, IOException {
-        Path path = Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json"));
+    void testParse_UnsupportedKeyTypeNextToECKey_KeepsECKey() throws URISyntaxException, IOException, JwtBundleException {
+        Path path = Paths.get(toUri("testdata/jwtbundle/jwks_EC_and_OKP.json"));
         byte[] bundleBytes = Files.readAllBytes(path);
         TrustDomain trustDomain = TrustDomain.parse("domain.test");
 
-        try {
-            JwtBundle.parse(trustDomain, bundleBytes);
-            fail("should have thrown exception");
-        } catch (JwtBundleException e) {
-            assertEquals("Could not parse bundle from bytes", e.getMessage());
-            assertEquals("Unsupported JWT family algorithm: OKP", e.getCause().getMessage());
-        }
+        JwtBundle jwtBundle = JwtBundle.parse(trustDomain, bundleBytes);
+
+        assertEquals(1, jwtBundle.getJwtAuthorities().size());
+        assertTrue(jwtBundle.hasJwtAuthority("C6vs25welZOx6WksNYfbMfiw9l96pMnD"));
+        assertFalse(jwtBundle.hasJwtAuthority("okp-key"));
     }
 
     @Test

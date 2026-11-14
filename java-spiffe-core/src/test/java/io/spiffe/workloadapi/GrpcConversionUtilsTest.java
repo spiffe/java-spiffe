@@ -1,6 +1,8 @@
 package io.spiffe.workloadapi;
 
 import com.google.protobuf.ByteString;
+import io.spiffe.bundle.jwtbundle.JwtBundle;
+import io.spiffe.bundle.jwtbundle.JwtBundleSet;
 import io.spiffe.bundle.x509bundle.X509Bundle;
 import io.spiffe.bundle.x509bundle.X509BundleSet;
 import io.spiffe.exception.BundleNotFoundException;
@@ -26,6 +28,7 @@ import java.util.List;
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class GrpcConversionUtilsTest {
@@ -54,19 +57,16 @@ class GrpcConversionUtilsTest {
     }
 
     @Test
-    void test_toJwtBundleSet_unsupportedKeyType() throws URISyntaxException, IOException {
+    void test_toJwtBundleSet_unsupportedKeyType() throws Exception {
         byte[] bundleBytes = Files.readAllBytes(Paths.get(toUri("testdata/jwtbundle/jwks_invalid_keytype.json")));
         Workload.JWTBundlesResponse response = Workload.JWTBundlesResponse
                 .newBuilder()
                 .putBundles("example.org", ByteString.copyFrom(bundleBytes))
                 .build();
 
-        try {
-            GrpcConversionUtils.toJwtBundleSet(response);
-            fail("should have thrown exception");
-        } catch (JwtBundleException e) {
-            assertEquals("Could not parse bundle from bytes", e.getMessage());
-        }
+        JwtBundleSet bundleSet = GrpcConversionUtils.toJwtBundleSet(response);
+        JwtBundle bundle = bundleSet.getBundleForTrustDomain(TrustDomain.parse("example.org"));
+        assertTrue(bundle.getJwtAuthorities().isEmpty());
     }
 
     @Test
