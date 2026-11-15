@@ -6,12 +6,14 @@ import io.spiffe.internal.CertificateUtils;
 import io.spiffe.internal.KeyFileFormat;
 import io.spiffe.spiffeid.SpiffeId;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -26,6 +28,8 @@ import java.util.Objects;
  * Contains a SPIFFE ID, a private key and a chain of X.509 certificates.
  */
 public class X509Svid {
+
+    private static final String PKCS8_FORMAT = "PKCS#8";
 
     SpiffeId spiffeId;
 
@@ -206,6 +210,96 @@ public class X509Svid {
      */
     public X509Certificate[] getChainArray() {
         return chain.toArray(new X509Certificate[0]);
+    }
+
+    /**
+     * Marshals the certificate chain of the X.509-SVID into PEM-encoded certificate blocks, one block
+     * for each certificate, with the leaf certificate first.
+     * <p>
+     * Together with {@link #marshalPrivateKey()}, the result can be parsed back into an X.509-SVID with
+     * {@link #parse(byte[], byte[])} or {@link #load(Path, Path)}. The hint is not part of the marshaled
+     * material: pass it to {@link #parse(byte[], byte[], String)} to keep it.
+     *
+     * @return an array of bytes with the certificate chain encoded as PEM certificates
+     * @throws X509SvidException if a certificate of the chain cannot be encoded
+     */
+    public byte[] marshalCertificates() throws X509SvidException {
+        ByteArrayOutputStream pem = new ByteArrayOutputStream();
+        for (X509Certificate certificate : chain) {
+            byte[] der = encodeCertificate(certificate);
+            byte[] pemBlock = CertificateUtils.toPemBlock(CertificateUtils.PEM_CERTIFICATE_LABEL, der);
+            pem.write(pemBlock, 0, pemBlock.length);
+        }
+        return pem.toByteArray();
+    }
+
+    /**
+     * Marshals the private key of the X.509-SVID into a PEM-encoded PKCS#8 private key block
+     * ({@code PRIVATE KEY}).
+     * <p>
+     * Together with {@link #marshalCertificates()}, the result can be parsed back into an X.509-SVID with
+     * {@link #parse(byte[], byte[])} or {@link #load(Path, Path)}.
+     * <p>
+     * The result contains the unencrypted private key: protect it accordingly, for example by writing it
+     * to a file that only the workload can read.
+     *
+     * @return an array of bytes with the private key encoded as a PEM PKCS#8 private key
+     * @throws X509SvidException if the private key cannot be encoded as PKCS#8
+     */
+    public byte[] marshalPrivateKey() throws X509SvidException {
+        return CertificateUtils.toPemBlock(CertificateUtils.PEM_PRIVATE_KEY_LABEL, encodePrivateKey());
+    }
+
+    /**
+     * Marshals the certificate chain of the X.509-SVID into ASN.1 DER-encoded certificates,
+     * concatenated with no intermediate padding, with the leaf certificate first.
+     * <p>
+     * Together with {@link #marshalRawPrivateKey()}, the result can be parsed back into an X.509-SVID with
+     * {@link #parseRaw(byte[], byte[])}. The hint is not part of the marshaled material: pass it to
+     * {@link #parseRaw(byte[], byte[], String)} to keep it.
+     *
+     * @return an array of bytes with the certificate chain encoded as concatenated ASN.1 DER certificates
+     * @throws X509SvidException if a certificate of the chain cannot be encoded
+     */
+    public byte[] marshalRawCertificates() throws X509SvidException {
+        ByteArrayOutputStream der = new ByteArrayOutputStream();
+        for (X509Certificate certificate : chain) {
+            byte[] encoded = encodeCertificate(certificate);
+            der.write(encoded, 0, encoded.length);
+        }
+        return der.toByteArray();
+    }
+
+    /**
+     * Marshals the private key of the X.509-SVID into a PKCS#8 ASN.1 DER-encoded private key.
+     * <p>
+     * Together with {@link #marshalRawCertificates()}, the result can be parsed back into an X.509-SVID with
+     * {@link #parseRaw(byte[], byte[])}.
+     * <p>
+     * The result contains the unencrypted private key: protect it accordingly, for example by writing it
+     * to a file that only the workload can read.
+     *
+     * @return an array of bytes with the private key encoded as a PKCS#8 ASN.1 DER private key
+     * @throws X509SvidException if the private key cannot be encoded as PKCS#8
+     */
+    public byte[] marshalRawPrivateKey() throws X509SvidException {
+        return encodePrivateKey();
+    }
+
+    private static byte[] encodeCertificate(final X509Certificate certificate) throws X509SvidException {
+        try {
+            return certificate.getEncoded();
+        } catch (CertificateEncodingException e) {
+            throw new X509SvidException("Certificate could not be encoded", e);
+        }
+    }
+
+    private byte[] encodePrivateKey() throws X509SvidException {
+        final byte[] encoded = PKCS8_FORMAT.equals(privateKey.getFormat()) ? privateKey.getEncoded() : null;
+        if (encoded == null) {
+            throw new X509SvidException("Private key could not be encoded as PKCS#8");
+        }
+        return encoded;
     }
 
     private static X509Svid createX509Svid(final byte[] certsBytes,
