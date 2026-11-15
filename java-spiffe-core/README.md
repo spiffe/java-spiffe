@@ -107,6 +107,25 @@ using a System property:
 
 The `timeout` duration is expressed in `ISO-8601` format.
 
+## Marshal X.509-SVIDs
+
+An `X509Svid` can be marshaled into PEM-encoded certificates and a PEM-encoded PKCS#8 private key, the formats that
+`X509Svid.load` and `X509Svid.parse` read. This lets a workload hand its SVID to a process or tool that takes
+certificate and key files:
+
+```
+    X509Svid svid = x509Source.getX509Svid();
+    Files.write(Paths.get("/tmp/svid.pem"), svid.marshalCertificates());
+    Path keyPath = Files.createFile(Paths.get("/tmp/svid.key"),
+            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+    Files.write(keyPath, svid.marshalPrivateKey());
+    X509Svid loadedSvid = X509Svid.load(Paths.get("/tmp/svid.pem"), keyPath);
+```
+
+The certificate chain is written leaf first. The private key is not encrypted, so store it where only the workload
+can read it. The SVID hint is not marshaled; pass it to `X509Svid.parse` to keep it. `marshalRawCertificates` and `marshalRawPrivateKey` return the same material as ASN.1 DER, which
+`X509Svid.parseRaw` reads.
+
 ## Marshal bundles
 
 An `X509Bundle` can be marshaled into PEM-encoded certificates, and a `JwtBundle` into a standard RFC 7517 JWKS

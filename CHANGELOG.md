@@ -6,6 +6,7 @@
 
 * Add `X509Bundle.marshal()` and `JwtBundle.marshal()` to serialize bundles as PEM certificates and as a JWKS document, the formats read by `parse`
 * Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
+* Add `X509Svid.marshalCertificates()` and `X509Svid.marshalPrivateKey()` to serialize an X.509-SVID as PEM certificates and a PEM PKCS#8 private key, the formats read by `parse` and `load`, and `marshalRawCertificates()` and `marshalRawPrivateKey()` for the ASN.1 DER formats read by `parseRaw` (#515)
 
 ### Fixed
 

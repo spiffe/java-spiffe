@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +23,7 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -254,6 +256,23 @@ public class CertificateUtilsTest {
         assertFalse(CertificateUtils.hasKeyUsageDigitalSignature(certificate));
         assertFalse(CertificateUtils.hasKeyUsageCertSign(certificate));
         assertFalse(CertificateUtils.hasKeyUsageCRLSign(certificate));
+    }
+
+    @Test
+    void toPemBlock_wrapsBase64At64CharactersBetweenLabeledBoundaries() {
+        byte[] der = new byte[60];
+        for (int i = 0; i < der.length; i++) {
+            der[i] = (byte) i;
+        }
+        String base64 = Base64.getEncoder().encodeToString(der);
+
+        String pem = new String(CertificateUtils.toPemBlock("TEST LABEL", der), StandardCharsets.US_ASCII);
+
+        String expected = "-----BEGIN TEST LABEL-----\n"
+                + base64.substring(0, 64) + "\n"
+                + base64.substring(64) + "\n"
+                + "-----END TEST LABEL-----\n";
+        assertEquals(expected, pem);
     }
 
     private static class CertificateWithSubjectAlternativeNames extends DummyX509Certificate {

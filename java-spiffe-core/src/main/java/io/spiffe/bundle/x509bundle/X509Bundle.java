@@ -8,7 +8,6 @@ import io.spiffe.spiffeid.TrustDomain;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.CertificateEncodingException;
@@ -21,12 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Represents a collection of trusted X.509 authorities for a trust domain.
  */
 public final class X509Bundle implements BundleSource<X509Bundle> {
-
-    private static final byte[] PEM_CERTIFICATE_HEADER = "-----BEGIN CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
-    private static final byte[] PEM_CERTIFICATE_FOOTER = "\n-----END CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
-    // PEM (RFC 7468) wraps the base64 text at 64 characters per line
-    private static final Base64.Encoder PEM_ENCODER =
-            Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII));
 
     private final TrustDomain trustDomain;
     private final Set<X509Certificate> x509Authorities;
@@ -179,10 +172,8 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
             } catch (CertificateEncodingException e) {
                 throw new X509BundleException("X.509 authority could not be encoded", e);
             }
-            pem.write(PEM_CERTIFICATE_HEADER, 0, PEM_CERTIFICATE_HEADER.length);
-            byte[] base64 = PEM_ENCODER.encode(der);
-            pem.write(base64, 0, base64.length);
-            pem.write(PEM_CERTIFICATE_FOOTER, 0, PEM_CERTIFICATE_FOOTER.length);
+            byte[] pemBlock = CertificateUtils.toPemBlock(CertificateUtils.PEM_CERTIFICATE_LABEL, der);
+            pem.write(pemBlock, 0, pemBlock.length);
         }
         return pem.toByteArray();
     }
