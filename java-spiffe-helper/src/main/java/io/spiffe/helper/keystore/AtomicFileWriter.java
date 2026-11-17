@@ -6,6 +6,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -60,6 +61,11 @@ final class AtomicFileWriter {
      */
     static void write(final Path target, final ContentWriter contentWriter) throws IOException, GeneralSecurityException {
         final Path destination = Files.exists(target) ? target.toRealPath() : target.toAbsolutePath();
+        final Path parent = destination.getParent();
+        if (parent != null && !Files.isDirectory(parent)) {
+            // Fail the same way writing to the file directly would, naming the file rather than the temporary one.
+            throw new NoSuchFileException(target.toString());
+        }
         final Path tempFile = destination.resolveSibling("." + destination.getFileName() + "." + UUID.randomUUID() + ".tmp");
         final PosixFileAttributes destinationAttributes = readPosixAttributes(destination);
 

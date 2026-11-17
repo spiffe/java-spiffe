@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -51,6 +52,17 @@ class AtomicFileWriterTest {
 
         assertArrayEquals(NEW_CONTENT, Files.readAllBytes(target));
         assertEquals(Collections.singletonList(target), listFiles());
+    }
+
+    @Test
+    void write_missingParentDirectory_namesTheTarget() {
+        Path target = dir.resolve("missing").resolve("keystore.p12");
+
+        NoSuchFileException e = assertThrows(NoSuchFileException.class,
+                () -> AtomicFileWriter.write(target, out -> out.write(NEW_CONTENT)));
+
+        assertEquals(target.toString(), e.getMessage());
+        assertTrue(Files.notExists(dir.resolve("missing")));
     }
 
     @Test
