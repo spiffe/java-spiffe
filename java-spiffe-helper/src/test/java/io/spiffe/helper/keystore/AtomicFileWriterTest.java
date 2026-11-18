@@ -9,6 +9,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
@@ -148,6 +149,33 @@ class AtomicFileWriterTest {
 
         assertTrue(Files.isSymbolicLink(link));
         assertArrayEquals(NEW_CONTENT, Files.readAllBytes(realFile));
+    }
+
+    @Test
+    void write_danglingRelativeSymbolicLink_createsLinkTargetAndKeepsLink() throws Exception {
+        Path link = dir.resolve("link.p12");
+        try {
+            Files.createSymbolicLink(link, Paths.get("real.p12"));
+        } catch (IOException | UnsupportedOperationException e) {
+            assumeTrue(false, "symbolic links are not supported: " + e);
+        }
+
+        AtomicFileWriter.write(link, out -> out.write(NEW_CONTENT));
+
+        assertTrue(Files.isSymbolicLink(link));
+        assertArrayEquals(NEW_CONTENT, Files.readAllBytes(dir.resolve("real.p12")));
+    }
+
+    @Test
+    void write_newPosixFileDoesNotLeaveGroupOrOtherAccessOnTemporaryFile() throws Exception {
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+
+        Path target = Files.write(dir.resolve("keystore.p12"), OLD_CONTENT);
+        Files.setPosixFilePermissions(target, PosixFilePermissions.fromString("rw-------"));
+
+        AtomicFileWriter.write(target, out -> out.write(NEW_CONTENT));
+
+        assertEquals(PosixFilePermissions.fromString("rw-------"), Files.getPosixFilePermissions(target));
     }
 
     private List<Path> listFiles() throws IOException {
