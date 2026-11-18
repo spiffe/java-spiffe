@@ -30,11 +30,16 @@ public final class SpiffeSslContextFactory {
      * that are backed by the Workload API via an {@link DefaultX509Source}.
      *
      * @param options {@link SslContextOptions}. The option {@link DefaultX509Source} must be not null.
-     *                If the option <code>acceptedSpiffeIdsSupplier</code> is not provided, the Set of accepted SPIFFE IDs
-     *                is read from the Security or System Property <code>ssl.spiffe.accept</code>.
+     *                The SPIFFE IDs of the peers are verified with the <code>spiffeIdVerifier</code>, checked
+     *                against the <code>acceptedSpiffeIdsSupplier</code>, or accepted if <code>acceptAnySpiffeId</code>
+     *                is set. One of them must be configured.
      *                If the sslProtocol is not provided, the default TLSv1.2 is used.
      * @return an initialized {@link SSLContext}
-     * @throws IllegalArgumentException if the {@link DefaultX509Source} is not provided in the options
+     * @throws IllegalArgumentException if the {@link DefaultX509Source} is not provided in the options,
+     *                                  if neither a <code>spiffeIdVerifier</code>, an
+     *                                  <code>acceptedSpiffeIdsSupplier</code> nor <code>acceptAnySpiffeId</code>
+     *                                  is configured, or if a <code>spiffeIdVerifier</code> is configured together
+     *                                  with an <code>acceptedSpiffeIdsSupplier</code> or <code>acceptAnySpiffeId</code>
      * @throws NoSuchAlgorithmException if there is a problem creating the SSL context
      * @throws KeyManagementException   if there is a problem initializing the SSL context
      */
@@ -46,9 +51,16 @@ public final class SpiffeSslContextFactory {
             throw new IllegalArgumentException("x509Source option must not be null, an X.509 Source must be provided");
         }
 
-        if (!options.acceptAnySpiffeId && options.acceptedSpiffeIdsSupplier == null) {
-            throw new IllegalArgumentException("SSL context should be configured either with a Supplier " +
-                    "of accepted SPIFFE IDs or with acceptAnySpiffeId=true");
+        if (options.spiffeIdVerifier != null
+                && (options.acceptAnySpiffeId || options.acceptedSpiffeIdsSupplier != null)) {
+            throw new IllegalArgumentException("SSL context should not be configured with a SPIFFE ID verifier " +
+                    "together with a Supplier of accepted SPIFFE IDs or with acceptAnySpiffeId=true");
+        }
+
+        if (options.spiffeIdVerifier == null
+                && !options.acceptAnySpiffeId && options.acceptedSpiffeIdsSupplier == null) {
+            throw new IllegalArgumentException("SSL context should be configured either with a SPIFFE ID verifier, " +
+                    "with a Supplier of accepted SPIFFE IDs or with acceptAnySpiffeId=true");
         }
 
         final SSLContext sslContext = newSslContext(options);
@@ -60,6 +72,10 @@ public final class SpiffeSslContextFactory {
     }
 
     private static TrustManager[] newTrustManager(final SslContextOptions options) {
+        if (options.spiffeIdVerifier != null) {
+            return new TrustManager[]{new SpiffeTrustManager(options.x509Source, options.spiffeIdVerifier)};
+        }
+
         if (options.acceptAnySpiffeId) {
             return new SpiffeTrustManagerFactory().engineGetTrustManagersAcceptAnySpiffeId(options.x509Source);
         }
@@ -95,6 +111,10 @@ public final class SpiffeSslContextFactory {
      * <p>
      * <code>acceptAnySpiffeId</code> Flag that indicates that any {@link SpiffeId} will be accepted for a
      * secure socket connection. This config overrules the <code>acceptedSpiffeIdsSupplier</code> property.
+     * <p>
+     * <code>spiffeIdVerifier</code> A {@link SpiffeIdVerifier} that decides whether the {@link SpiffeId} of a peer
+     * is accepted for a secure socket connection. It cannot be combined with <code>acceptedSpiffeIdsSupplier</code>
+     * or <code>acceptAnySpiffeId</code>.
      */
     public static class SslContextOptions {
 
@@ -102,16 +122,27 @@ public final class SpiffeSslContextFactory {
         private X509Source x509Source;
         private Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
         private boolean acceptAnySpiffeId;
+        private SpiffeIdVerifier spiffeIdVerifier;
 
         public SslContextOptions(
                 final String sslProtocol,
                 final X509Source x509Source,
                 final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier,
                 final boolean acceptAnySpiffeId) {
+            this(sslProtocol, x509Source, acceptedSpiffeIdsSupplier, acceptAnySpiffeId, null);
+        }
+
+        public SslContextOptions(
+                final String sslProtocol,
+                final X509Source x509Source,
+                final Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier,
+                final boolean acceptAnySpiffeId,
+                final SpiffeIdVerifier spiffeIdVerifier) {
             this.x509Source = x509Source;
             this.acceptedSpiffeIdsSupplier = acceptedSpiffeIdsSupplier;
             this.sslProtocol = sslProtocol;
             this.acceptAnySpiffeId = acceptAnySpiffeId;
+            this.spiffeIdVerifier = spiffeIdVerifier;
         }
 
         public String getSslProtocol() {
@@ -130,6 +161,10 @@ public final class SpiffeSslContextFactory {
             return acceptAnySpiffeId;
         }
 
+        public SpiffeIdVerifier getSpiffeIdVerifier() {
+            return spiffeIdVerifier;
+        }
+
         public static SslContextOptionsBuilder builder() {
             return new SslContextOptionsBuilder();
         }
@@ -139,6 +174,7 @@ public final class SpiffeSslContextFactory {
             private X509Source x509Source;
             private Supplier<Set<SpiffeId>> acceptedSpiffeIdsSupplier;
             private boolean acceptAnySpiffeId;
+            private SpiffeIdVerifier spiffeIdVerifier;
 
             SslContextOptionsBuilder() {
             }
@@ -164,12 +200,18 @@ public final class SpiffeSslContextFactory {
                 return this;
             }
 
+            public SslContextOptionsBuilder spiffeIdVerifier(SpiffeIdVerifier spiffeIdVerifier) {
+                this.spiffeIdVerifier = spiffeIdVerifier;
+                return this;
+            }
+
             public SslContextOptions build() {
                 return new SslContextOptions(
                         sslProtocol,
                         x509Source,
                         acceptedSpiffeIdsSupplier,
-                        acceptAnySpiffeId
+                        acceptAnySpiffeId,
+                        spiffeIdVerifier
                 );
             }
         }
@@ -182,12 +224,13 @@ public final class SpiffeSslContextFactory {
             return acceptAnySpiffeId == that.acceptAnySpiffeId
                     && Objects.equals(sslProtocol, that.sslProtocol)
                     && Objects.equals(x509Source, that.x509Source)
-                    && Objects.equals(acceptedSpiffeIdsSupplier, that.acceptedSpiffeIdsSupplier);
+                    && Objects.equals(acceptedSpiffeIdsSupplier, that.acceptedSpiffeIdsSupplier)
+                    && Objects.equals(spiffeIdVerifier, that.spiffeIdVerifier);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(sslProtocol, x509Source, acceptedSpiffeIdsSupplier, acceptAnySpiffeId);
+            return Objects.hash(sslProtocol, x509Source, acceptedSpiffeIdsSupplier, acceptAnySpiffeId, spiffeIdVerifier);
         }
 
         @Override
@@ -197,6 +240,7 @@ public final class SpiffeSslContextFactory {
                     ", x509Source=" + x509Source +
                     ", acceptedSpiffeIdsSupplier=" + acceptedSpiffeIdsSupplier +
                     ", acceptAnySpiffeId=" + acceptAnySpiffeId +
+                    ", spiffeIdVerifier=" + spiffeIdVerifier +
                     ')';
         }
     }
