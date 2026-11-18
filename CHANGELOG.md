@@ -22,6 +22,7 @@
 ### Documentation
 
 * Document `SpiffeProvider.install()` in the provider README, and explain that the JDK loads the providers declared in `java.security` with the system class loader, so a provider packaged inside an application archive, such as a Spring Boot executable jar, must be installed programmatically
+* Fix the JWT source examples in the core README, which called methods and classes that don't exist, document how to configure the source initialization timeouts with `initTimeout`, and document `CachedJwtSource` and JWT-SVID validation with `JwtSvid.parseAndValidate`
 
 ## [0.8.17] - 2026-04-20
 
