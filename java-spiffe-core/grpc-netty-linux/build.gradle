@@ -23,7 +23,5 @@ jar {
 
 tasks.named('test') {
     inputs.files(configurations.modulePath)
-    doFirst {
-        systemProperty 'spiffe.modulepath', configurations.modulePath.files.join(File.pathSeparator)
-    }
+    systemProperty 'spiffe.modulepath', configurations.modulePath.asPath
 }

@@ -50,9 +50,9 @@ class ModulePathTest {
         Configuration configuration;
         try {
             configuration = ModuleLayer.boot().configuration()
-                    .resolve(finder, ModuleFinder.of(), roots);
+                    .resolve(finder, ModuleFinder.ofSystem(), roots);
         } catch (FindException e) {
-            // nimbus-jose-jwt still requires jdk.crypto.ec, which JDK 24 folded into java.base
+            // nimbus-jose-jwt still requires jdk.crypto.ec, which JDK 24 folded into java.base, so it is missing there
             Assumptions.assumeFalse(e.getMessage().contains("jdk.crypto.ec"), e.getMessage());
             throw e;
         }
