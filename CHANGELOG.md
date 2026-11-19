@@ -8,6 +8,7 @@
 * Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
 * Add `X509Svid.marshalCertificates()` and `X509Svid.marshalPrivateKey()` to serialize an X.509-SVID as PEM certificates and a PEM PKCS#8 private key, the formats read by `parse` and `load`, and `marshalRawCertificates()` and `marshalRawPrivateKey()` for the ASN.1 DER formats read by `parseRaw` (#515)
 * Add a `spiffeIdVerifier` option to `SpiffeSslContextFactory.SslContextOptions`, so an `SSLContext` can verify peer SPIFFE IDs with a custom `SpiffeIdVerifier` instead of a fixed set of accepted SPIFFE IDs
+* Add `SpiffeIdVerifier.acceptAny()`, `acceptId()`, `acceptOneOf()` and `acceptMemberOf()` factory methods for verifiers that accept any SPIFFE ID, a specific SPIFFE ID, one of a set of SPIFFE IDs, or any SPIFFE ID in a trust domain
 
 ### Fixed
 
