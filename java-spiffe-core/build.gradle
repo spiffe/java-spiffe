@@ -56,19 +56,17 @@ dependencies {
 
     def osArch = System.getProperty("os.arch")
 
+    // core finds the channel provider with ServiceLoader, so it only needs a grpc-netty module at test time
     if (osdetector.os.is('osx')) {
         if (osArch == "x86_64") {
-            compileOnly(project('grpc-netty-macos'))
-            testImplementation(project('grpc-netty-macos'))
+            testRuntimeOnly(project('grpc-netty-macos'))
         } else if (osArch == "aarch64") {
-            compileOnly(project('grpc-netty-macos-aarch64'))
-            testImplementation(project('grpc-netty-macos-aarch64'))
+            testRuntimeOnly(project('grpc-netty-macos-aarch64'))
         } else {
             throw new GradleException("Architecture not supported: ${osArch}")
         }
     } else {
-        compileOnly(project('grpc-netty-linux'))
-        testImplementation(project('grpc-netty-linux'))
+        testRuntimeOnly(project('grpc-netty-linux'))
     }
 
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"

@@ -1,6 +1,10 @@
 description = "Java SPIFFE Library GRPC-Netty Linux support module"
 
 dependencies {
+    // provided by the application, which always depends on java-spiffe-core
+    compileOnly(project(':java-spiffe-core'))
+    testImplementation(project(':java-spiffe-core'))
+
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
 }
 
