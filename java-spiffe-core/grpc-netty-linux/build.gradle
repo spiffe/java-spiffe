@@ -1,6 +1,15 @@
 description = "Java SPIFFE Library GRPC-Netty Linux support module"
 
+configurations {
+    // core, this module and their runtime dependencies, as an application would put them on the module path
+    modulePath
+}
+
 dependencies {
+    modulePath(project(':java-spiffe-core'))
+    modulePath(files(tasks.named('jar')))
+    modulePath "io.grpc:grpc-netty-shaded:${grpcVersion}"
+
     // provided by the application, which always depends on java-spiffe-core
     compileOnly(project(':java-spiffe-core'))
     testImplementation(project(':java-spiffe-core'))
@@ -10,4 +19,11 @@ dependencies {
 
 jar {
     archiveClassifier = ''
+}
+
+tasks.named('test') {
+    inputs.files(configurations.modulePath)
+    doFirst {
+        systemProperty 'spiffe.modulepath', configurations.modulePath.files.join(File.pathSeparator)
+    }
 }

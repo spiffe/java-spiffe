@@ -14,7 +14,7 @@
 * Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
 * Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
 * Serialize `java-spiffe-helper` KeyStore and TrustStore files to memory before writing them, so a store or encoding failure no longer leaves an empty or partial file (#490)
-* Stop splitting the `io.spiffe.workloadapi.internal` package between `java-spiffe-core` and the `grpc-netty-*` modules, which broke builds on the Java module path. Each `grpc-netty-*` module now registers a channel provider in its own package that core loads with `ServiceLoader`, picking the one for the current OS and architecture (#108)
+* Stop splitting the `io.spiffe.workloadapi.internal` package between `java-spiffe-core` and the `grpc-netty-*` modules, which broke builds on the Java module path. Each `grpc-netty-*` module now registers a channel provider in its own package that core loads with `ServiceLoader`, picking the one for the current OS and architecture (#108). Upgrade `java-spiffe-core` and the `grpc-netty-*` artifact together, since an older `grpc-netty-*` jar still contains the shared package
 
 ### Build
 
