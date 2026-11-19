@@ -26,9 +26,6 @@ import java.util.function.Supplier;
  */
 public final class SpiffeTrustManager extends X509ExtendedTrustManager {
 
-    private static final SpiffeIdVerifier ALLOW_ANY_SPIFFE_ID_VERIFIER = (spiffeId, verifiedChain) -> {
-    };
-
     private final BundleSource<X509Bundle> x509BundleSource;
     private final SpiffeIdVerifier spiffeIdVerifier;
 
@@ -80,7 +77,7 @@ public final class SpiffeTrustManager extends X509ExtendedTrustManager {
     public SpiffeTrustManager(BundleSource<X509Bundle> x509BundleSource) {
         Objects.requireNonNull(x509BundleSource, "x509BundleSource must not be null");
         this.x509BundleSource = x509BundleSource;
-        this.spiffeIdVerifier = ALLOW_ANY_SPIFFE_ID_VERIFIER;
+        this.spiffeIdVerifier = SpiffeIdVerifier.acceptAny();
     }
 
     /**
