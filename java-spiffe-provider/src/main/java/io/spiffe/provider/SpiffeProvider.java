@@ -24,19 +24,22 @@ import static io.spiffe.provider.SpiffeProviderConstants.PROVIDER_NAME;
  * <p>
  * To use this Provider, it is needed to add the following lines to the java.security file:
  * <pre>
- *      security.provider.n=io.spiffe.SpiffeProvider
+ *      security.provider.n=io.spiffe.provider.SpiffeProvider
  *      ssl.KeyManagerFactory.algorithm=Spiffe
  *      ssl.TrustManagerFactory.algorithm=Spiffe
  * </pre>
+ * The JDK loads the providers declared in the java.security file with the system class loader. If this class
+ * is not visible to it, for example because the application loads its libraries with its own class loader,
+ * register the provider by calling {@link #install()} instead.
  * <p>
  * Also, to configure the accepted SPIFFE IDs, add to the java.security the list of SPIFFE IDs
  * separated by the pipe character:
  * <pre>
- *      ssl.spiffe.accept=spiffe://example.org/workload1 | spiffe://example.org/workload2,
+ *      ssl.spiffe.accept=spiffe://example.org/workload1 | spiffe://example.org/workload2
  * </pre>
  * This property can also be defined as a System parameter passed through <code>-Dssl.spiffe.accept</code>:
  * <pre>
- *      -Dssl.spiffe.accept=ssl.spiffe.accept=spiffe://example.org/workload1 | spiffe://example.org/workload2
+ *      -Dssl.spiffe.accept=spiffe://example.org/workload1 | spiffe://example.org/workload2
  * </pre>
  * <p>
  * To configure the `TrustManager` to accept any SPIFFE ID presented by a peer,
@@ -69,7 +72,12 @@ public final class SpiffeProvider extends Provider {
 
 
     /**
-     * Installs this provider implementation.
+     * Installs this provider implementation, adding it at the end of the list of security providers,
+     * unless a provider named <code>Spiffe</code> is already registered.
+     * <p>
+     * Call this method before requesting any of the algorithms of this provider. Unlike the
+     * <code>security.provider.n</code> entry in the java.security file, it does not depend on this class
+     * being visible to the system class loader.
      */
     public static void install() {
         if (Security.getProvider(PROVIDER_NAME) == null) {

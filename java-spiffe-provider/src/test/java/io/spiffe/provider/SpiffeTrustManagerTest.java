@@ -401,6 +401,27 @@ public class SpiffeTrustManagerTest {
     }
 
     @Test
+    void checkTrusted_leafCertificateWithRootPathSpiffeId_acceptAnySpiffeId_throwsCertificateException() throws Exception {
+        PeerChain peerChain = createPeerChain((subject, issuerSubject, spiffeId, issuer) ->
+                createCertificate(subject, issuerSubject, "spiffe://example.org", issuer, false));
+        when(bundleSource.getBundleForTrustDomain(peerChain.trustDomain)).thenReturn(peerChain.bundle);
+
+        spiffeTrustManager = new SpiffeTrustManager(bundleSource);
+
+        CertificateException clientException = assertThrows(
+                CertificateException.class,
+                () -> spiffeTrustManager.checkClientTrusted(peerChain.chain, "")
+        );
+        assertEquals("Leaf certificate SPIFFE ID must have a non-root path", clientException.getMessage());
+
+        CertificateException serverException = assertThrows(
+                CertificateException.class,
+                () -> spiffeTrustManager.checkServerTrusted(peerChain.chain, "")
+        );
+        assertEquals("Leaf certificate SPIFFE ID must have a non-root path", serverException.getMessage());
+    }
+
+    @Test
     void checkServerTrusted_verifierResult_ThrowCertificateException() throws BundleNotFoundException {
         when(bundleSource.getBundleForTrustDomain(TrustDomain.parse("example.org"))).thenReturn(bundleKnown);
         final SpiffeId expected = SpiffeId.parse("spiffe://example.org/test");

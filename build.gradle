@@ -12,6 +12,10 @@ allprojects {
     }
 }
 
+// The BOM is a java-platform project that only publishes version constraints: it shares the
+// publishing configuration of all subprojects, but not the Java library conventions.
+def libraryProjects = subprojects - project(':java-spiffe-bom')
+
 subprojects {
     group = 'io.spiffe'
     version = project.version
@@ -19,31 +23,18 @@ subprojects {
     ext {
         grpcVersion = '1.85.1'
         //Keep at or above gRPC's guava version.
-        guavaVersion = '33.7.2-jre'
+        guavaVersion = '33.8.0-jre'
 
         jupiterVersion = '5.13.4'
         mockitoVersion = '4.11.0'
         nimbusVersion = '10.10'
         shadowVersion = '9.0.0'
 
-        //IMPORTANT: This must be in sync with the shaded netty version in gRPC
-        nettyVersion = '4.2.9.Final'
+        //IMPORTANT: This must match the Netty version used by grpc-netty (checked by verifyNettyVersions)
+        nettyVersion = '4.2.17.Final'
     }
 
-    apply plugin: 'java-library'
-    apply plugin: 'jacoco'
     apply plugin: 'com.vanniktech.maven.publish'
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-        withSourcesJar()
-    }
-
-    javadoc {
-        exclude "**/grpc/**"
-        exclude "**/internal/**"
-    }
 
     // Central Portal + signing configuration
     mavenPublishing {
@@ -87,9 +78,25 @@ subprojects {
             }
         }
     }
+}
+
+configure(libraryProjects) {
+    apply plugin: 'java-library'
+    apply plugin: 'jacoco'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        withSourcesJar()
+    }
+
+    javadoc {
+        exclude "**/grpc/**"
+        exclude "**/internal/**"
+    }
 
     dependencies {
-        implementation "org.apache.commons:commons-lang3:3.21.0"
+        implementation "org.apache.commons:commons-lang3:3.22.0"
 
         testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
         testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
@@ -133,8 +140,40 @@ configure([project(':java-spiffe-core'), project(':java-spiffe-provider')]) {
     apply from: rootProject.file('gradle/binary-compatibility.gradle')
 }
 
+// The macOS modules add netty-transport-native-kqueue at nettyVersion next to grpc-netty, which brings its own
+// Netty version. Native transports must match the rest of Netty exactly, so fail if the two drift apart.
+configure([project(':java-spiffe-core:grpc-netty-macos'), project(':java-spiffe-core:grpc-netty-macos-aarch64')]) {
+    def verifyNettyVersions = tasks.register('verifyNettyVersions') {
+        group = 'verification'
+        description = 'Checks that all Netty modules on the runtime classpath resolve to nettyVersion.'
+
+        def expectedVersion = nettyVersion
+        def grpcNettyVersion = grpcVersion
+        def projectPath = project.path
+        def runtimeArtifacts = configurations.named('runtimeClasspath').flatMap { it.incoming.artifacts.resolvedArtifacts }
+
+        doLast {
+            def mismatches = runtimeArtifacts.get()
+                    .collect { it.id.componentIdentifier }
+                    .findAll { it instanceof ModuleComponentIdentifier && it.group == 'io.netty' && it.version != expectedVersion }
+                    .collect { it.displayName }
+                    .unique()
+                    .sort()
+            if (mismatches) {
+                throw new GradleException("Netty modules on the runtime classpath of ${projectPath} do not match " +
+                        "nettyVersion ${expectedVersion}: ${mismatches.join(', ')}. Set nettyVersion to the Netty " +
+                        "version used by io.grpc:grpc-netty:${grpcNettyVersion}.")
+            }
+        }
+    }
+
+    tasks.named('check') {
+        dependsOn(verifyNettyVersions)
+    }
+}
+
 tasks.register('jacocoTestReport', JacocoReport) {
-    dependsOn(subprojects.collect { it.tasks.named('test') })
+    dependsOn(libraryProjects.collect { it.tasks.named('test') })
 
     jacocoClasspath = configurations.jacocoAnt
 
@@ -143,8 +182,8 @@ tasks.register('jacocoTestReport', JacocoReport) {
         include '**/build/jacoco/*.ec'
     }
 
-    def mainSourceDirs = files(subprojects.collect { p -> p.sourceSets.main.allSource.srcDirs })
-    def mainClassDirs = files(subprojects.collect { p -> p.sourceSets.main.output })
+    def mainSourceDirs = files(libraryProjects.collect { p -> p.sourceSets.main.allSource.srcDirs })
+    def mainClassDirs = files(libraryProjects.collect { p -> p.sourceSets.main.output })
 
     sourceDirectories = mainSourceDirs
 
