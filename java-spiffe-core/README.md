@@ -161,7 +161,8 @@ audiences:
 ```
 
 It throws a `JwtSvidException` if the token is not a valid JWT-SVID, has expired, has an invalid signature or its
-`aud` claim does not contain the expected audiences, a `BundleNotFoundException` if there is no JWT bundle for the
+`aud` claim does not contain the expected audiences, an `IllegalArgumentException` if the token is blank or cannot be
+parsed (or if the audience set is empty), a `BundleNotFoundException` if there is no JWT bundle for the
 trust domain of the subject, and an `AuthorityNotFoundException` if the bundle has no JWT authority with the key ID
 of the token. `JwtSvid.parseInsecure` parses and checks a token like `parseAndValidate`, but without verifying its
 signature.
