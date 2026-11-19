@@ -46,6 +46,37 @@ Alternatively, a different Workload API address can be used by passing it to the
 See [HttpsClient example](src/test/java/io/spiffe/provider/examples/mtls/HttpsClient.java) that defines a Supplier for providing
 the list of SPIFFE IDs from a file.
 
+### Verify peer SPIFFE IDs with a custom verifier
+
+When the accepted SPIFFE IDs are not known in advance as a fixed set, configure a `SpiffeIdVerifier` instead of a
+Supplier of SPIFFE IDs. The verifier is called during each TLS handshake, after the peer's certificate chain has been
+verified against the X.509 bundles, with the peer's SPIFFE ID and certificate chain. Throwing a
+`SpiffeVerificationException` rejects the peer and fails the handshake. For example, to accept any workload in the
+`example.org` trust domain:
+
+```
+    TrustDomain trustDomain = TrustDomain.parse("example.org");
+    SpiffeIdVerifier memberOfTrustDomain = (spiffeId, verifiedChain) -> {
+        if (!spiffeId.memberOf(trustDomain)) {
+            throw new SpiffeVerificationException(
+                    String.format("SPIFFE ID %s is not a member of trust domain %s", spiffeId, trustDomain));
+        }
+    };
+
+    SslContextOptions options = SslContextOptions
+            .builder()
+            .x509Source(source)
+            .spiffeIdVerifier(memberOfTrustDomain)
+            .build();
+
+    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
+```
+
+A `spiffeIdVerifier` cannot be combined with `acceptedSpiffeIdsSupplier` or `acceptAnySpiffeId`: `getSslContext`
+throws an `IllegalArgumentException` if the options configure either of them together with a verifier. A
+`SpiffeTrustManager` can also be created directly with a `SpiffeIdVerifier`, see
+[Configure it programmatically](#configure-it-programmatically).
+
 ## Plug Java SPIFFE Provider into Java Security architecture
 
 Java Security Providers are configured in the master security properties file `<java-home>/jre/lib/security/java.security`. 
