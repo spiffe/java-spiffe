@@ -61,6 +61,18 @@ class GrpcManagedChannelFactoryTest {
     }
 
     @Test
+    void selectProvider_reportsTheLoadErrorWhenNoProviderCanBeLoaded() {
+        ServiceConfigurationError loadError = new ServiceConfigurationError("broken provider");
+        List<Object> entries = new ArrayList<>();
+        entries.add(loadError);
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> GrpcManagedChannelFactory.selectProvider(new FailingIterator(entries)));
+
+        assertSame(loadError, e.getCause());
+    }
+
+    @Test
     void selectProvider_failsWhenNoProviderIsOnTheClasspath() {
         Iterator<GrpcChannelProvider> none = Collections.<GrpcChannelProvider>emptyList().iterator();
 

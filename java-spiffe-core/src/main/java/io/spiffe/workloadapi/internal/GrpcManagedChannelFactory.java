@@ -48,16 +48,29 @@ public final class GrpcManagedChannelFactory {
     /**
      * Picks the first provider that supports the current platform. If none does, the first provider
      * found is used, so TCP addresses keep working and Unix socket addresses fail with the provider's
-     * own error, as they did before providers were looked up.
+     * own error, as they did before providers were looked up. A provider that fails to load doesn't
+     * hide the others, but its error is reported if no provider could be loaded at all.
      */
     static GrpcChannelProvider selectProvider(Iterator<GrpcChannelProvider> providers) {
         GrpcChannelProvider first = null;
-        while (hasNext(providers)) {
+        ServiceConfigurationError loadError = null;
+        while (true) {
+            try {
+                if (!providers.hasNext()) {
+                    break;
+                }
+            } catch (ServiceConfigurationError e) {
+                // a malformed provider configuration file, the iterator can't move past it
+                loadError = loadError != null ? loadError : e;
+                break;
+            }
+
             GrpcChannelProvider candidate;
             try {
                 candidate = providers.next();
             } catch (ServiceConfigurationError e) {
-                // a provider that can't be loaded (e.g. a broken jar) shouldn't hide the others
+                // a provider that can't be instantiated, the iterator has already moved past it
+                loadError = loadError != null ? loadError : e;
                 continue;
             }
             if (candidate.isSupported()) {
@@ -71,16 +84,8 @@ public final class GrpcManagedChannelFactory {
         if (first == null) {
             throw new IllegalStateException("No gRPC channel provider found on the classpath. Add one of the "
                     + "io.spiffe:grpc-netty-linux, io.spiffe:grpc-netty-macos or io.spiffe:grpc-netty-macos-aarch64 "
-                    + "modules as a runtime dependency.");
+                    + "modules as a runtime dependency.", loadError);
         }
         return first;
-    }
-
-    private static boolean hasNext(Iterator<GrpcChannelProvider> providers) {
-        try {
-            return providers.hasNext();
-        } catch (ServiceConfigurationError e) {
-            return false;
-        }
     }
 }
