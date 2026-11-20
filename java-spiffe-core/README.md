@@ -47,7 +47,8 @@ It allows to configure another SVID picker. By default, the first SVID is used.
 
 The `X509Source newSource()` method blocks waiting until an X.509 context is fetched. The X.509 context fetch is retried
 using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
-It retries indefinitely unless a timeout is configured. 
+It retries indefinitely unless a timeout is configured. This includes `PERMISSION_DENIED`, so an unregistered
+workload waits for registration instead of failing immediately. Set a nonzero `initTimeout` to bound this wait.
 
 This timeout can be configured either with the `initTimeout` option of the `X509SourceOptions` passed to the
 `newSource(X509SourceOptions options)` method:
@@ -125,7 +126,8 @@ the cached JWT-SVIDs have passed half of their lifetime.
 
 The `JwtSource newSource()` method blocks until the JWT materials are fetched. The fetching process is retried
 using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
-It retries indefinitely unless a timeout is configured. 
+It retries indefinitely unless a timeout is configured. This includes `PERMISSION_DENIED`, so an unregistered
+workload waits for registration instead of failing immediately. Set a nonzero `initTimeout` to bound this wait.
 
 This timeout can be configured either with the `initTimeout` option of the `JwtSourceOptions` passed to the
 `newSource(JwtSourceOptions options)` method:

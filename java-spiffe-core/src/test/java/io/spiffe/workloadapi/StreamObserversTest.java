@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -103,8 +104,8 @@ class StreamObserversTest {
 
     @ParameterizedTest
     @MethodSource("permissionDeniedRetryFailureCases")
-    @SuppressWarnings("rawtypes")
-    void permissionDeniedRetryFailureDoesNotDuplicateNotification(WatchType watchType, boolean shouldRetry) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void permissionDeniedRetryFailureReportsDenialAndTerminalError(WatchType watchType, boolean shouldRetry) {
         Watcher watcher = mock(Watcher.class);
         RetryHandler retryHandler = mock(RetryHandler.class);
         when(retryHandler.shouldRetry()).thenReturn(shouldRetry);
@@ -119,13 +120,69 @@ class StreamObserversTest {
             deliverUpdate(watchType, observer);
             observer.onError(denial);
 
-            assertWatcherError(watcher, watchType, denial);
-            verify(retryHandler).shouldRetry();
+            ArgumentCaptor<Throwable> errors = ArgumentCaptor.forClass(Throwable.class);
+            verify(watcher, times(2)).onError(errors.capture());
+            assertInstanceOf(watchType.errorType, errors.getAllValues().get(0));
+            assertSame(denial, errors.getAllValues().get(0).getCause());
+            assertTrue(errors.getAllValues().get(0).getMessage().startsWith("Permission denied for "));
+            assertInstanceOf(watchType.errorType, errors.getAllValues().get(1));
+            assertSame(denial, errors.getAllValues().get(1).getCause());
+            assertTrue(errors.getAllValues().get(1).getMessage().startsWith("Cancelling "));
+            InOrder order = inOrder(watcher, retryHandler);
+            order.verify(watcher).onUpdate(any());
+            order.verify(retryHandler).reset();
+            order.verify(watcher).onError(errors.getAllValues().get(0));
+            order.verify(retryHandler).shouldRetry();
             if (shouldRetry) {
-                verify(retryHandler).tryScheduleRetry(any(Runnable.class));
+                order.verify(retryHandler).tryScheduleRetry(any(Runnable.class));
             } else {
                 verify(retryHandler, never()).tryScheduleRetry(any(Runnable.class));
             }
+            order.verify(watcher).onError(errors.getAllValues().get(1));
+            order.verifyNoMoreInteractions();
+        } finally {
+            context.close();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("permissionDeniedRetryFailureCases")
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void repeatedDenialRetryFailureReportsTerminalError(WatchType watchType, boolean shouldRetry) {
+        Watcher watcher = mock(Watcher.class);
+        RetryHandler retryHandler = mock(RetryHandler.class);
+        when(retryHandler.shouldRetry()).thenReturn(true, shouldRetry);
+        when(retryHandler.tryScheduleRetry(any(Runnable.class))).thenReturn(true, false);
+        Throwable denial = Status.PERMISSION_DENIED.asRuntimeException();
+        Throwable terminalDenial = Status.PERMISSION_DENIED.asRuntimeException();
+
+        Context.CancellableContext context = Context.current().withCancellation();
+        try {
+            StreamObserver<?> observer = newStreamObserver(watchType, watcher, retryHandler, context);
+            deliverUpdate(watchType, observer);
+            observer.onError(denial);
+            observer.onError(terminalDenial);
+
+            ArgumentCaptor<Throwable> errors = ArgumentCaptor.forClass(Throwable.class);
+            verify(watcher, times(2)).onError(errors.capture());
+            assertInstanceOf(watchType.errorType, errors.getAllValues().get(0));
+            assertSame(denial, errors.getAllValues().get(0).getCause());
+            assertTrue(errors.getAllValues().get(0).getMessage().startsWith("Permission denied for "));
+            assertInstanceOf(watchType.errorType, errors.getAllValues().get(1));
+            assertSame(terminalDenial, errors.getAllValues().get(1).getCause());
+            assertTrue(errors.getAllValues().get(1).getMessage().startsWith("Cancelling "));
+            InOrder order = inOrder(watcher, retryHandler);
+            order.verify(watcher).onUpdate(any());
+            order.verify(retryHandler).reset();
+            order.verify(watcher).onError(errors.getAllValues().get(0));
+            order.verify(retryHandler).shouldRetry();
+            order.verify(retryHandler).tryScheduleRetry(any(Runnable.class));
+            order.verify(retryHandler).shouldRetry();
+            if (shouldRetry) {
+                order.verify(retryHandler).tryScheduleRetry(any(Runnable.class));
+            }
+            order.verify(watcher).onError(errors.getAllValues().get(1));
+            order.verifyNoMoreInteractions();
         } finally {
             context.close();
         }
@@ -134,23 +191,34 @@ class StreamObserversTest {
     @ParameterizedTest
     @MethodSource("permissionDeniedRetryFailureCases")
     @SuppressWarnings("rawtypes")
-    void repeatedDenialRetryFailureDoesNotNotifyAgain(WatchType watchType, boolean shouldRetry) {
+    void permissionDeniedBeforeUpdateReportsOnlyTerminalError(WatchType watchType, boolean shouldRetry) {
         Watcher watcher = mock(Watcher.class);
         RetryHandler retryHandler = mock(RetryHandler.class);
-        when(retryHandler.shouldRetry()).thenReturn(true, shouldRetry);
-        when(retryHandler.tryScheduleRetry(any(Runnable.class))).thenReturn(true, false);
+        when(retryHandler.shouldRetry()).thenReturn(shouldRetry);
+        if (shouldRetry) {
+            when(retryHandler.tryScheduleRetry(any(Runnable.class))).thenReturn(false);
+        }
         Throwable denial = Status.PERMISSION_DENIED.asRuntimeException();
 
         Context.CancellableContext context = Context.current().withCancellation();
         try {
             StreamObserver<?> observer = newStreamObserver(watchType, watcher, retryHandler, context);
-            deliverUpdate(watchType, observer);
             observer.onError(denial);
-            observer.onError(Status.PERMISSION_DENIED.asRuntimeException());
 
-            assertWatcherError(watcher, watchType, denial);
-            verify(retryHandler, times(2)).shouldRetry();
-            verify(retryHandler, times(shouldRetry ? 2 : 1)).tryScheduleRetry(any(Runnable.class));
+            ArgumentCaptor<Throwable> errors = ArgumentCaptor.forClass(Throwable.class);
+            verify(watcher).onError(errors.capture());
+            assertInstanceOf(watchType.errorType, errors.getValue());
+            assertSame(denial, errors.getValue().getCause());
+            assertTrue(errors.getValue().getMessage().startsWith("Cancelling "));
+            InOrder order = inOrder(watcher, retryHandler);
+            order.verify(retryHandler).shouldRetry();
+            if (shouldRetry) {
+                order.verify(retryHandler).tryScheduleRetry(any(Runnable.class));
+            } else {
+                verify(retryHandler, never()).tryScheduleRetry(any(Runnable.class));
+            }
+            order.verify(watcher).onError(errors.getValue());
+            order.verifyNoMoreInteractions();
         } finally {
             context.close();
         }

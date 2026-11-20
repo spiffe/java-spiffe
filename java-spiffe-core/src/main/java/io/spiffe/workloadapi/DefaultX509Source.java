@@ -76,6 +76,10 @@ public final class DefaultX509Source implements X509Source {
      * through the system property `spiffe.newX509Source.timeout` expires.
      * If no timeout is configured, it blocks until it gets an X.509 update from the Workload API.
      * <p>
+     * With the default client, {@code PERMISSION_DENIED} is retried with backoff, so an unregistered
+     * workload can wait indefinitely. To bound this wait, use {@link #newSource(X509SourceOptions)}
+     * with a nonzero {@code initTimeout}, or set the timeout system property.
+     * <p>
      * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      * <p>
      * It uses the default X.509 SVID (picks the first SVID that comes in the Workload API response).
@@ -97,6 +101,9 @@ public final class DefaultX509Source implements X509Source {
      * If the timeout is not provided in the options, the default timeout is read from the
      * system property `spiffe.newX509Source.timeout`. If none is configured, this method will
      * block until the X.509 materials can be retrieved from the Workload API.
+     * <p>
+     * With the default client, {@code PERMISSION_DENIED} is retried with backoff. Set a nonzero
+     * {@code initTimeout} to bound the wait for an unregistered workload.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
