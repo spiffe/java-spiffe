@@ -90,9 +90,7 @@ final class StreamObservers {
                         return;
                     }
                 }
-                if (!permissionDeniedReported || Status.fromThrowable(t).getCode() != Status.Code.PERMISSION_DENIED) {
-                    watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
-                }
+                watcher.onError(new X509ContextException("Cancelling X.509 Context watch", t));
             }
 
             @Override
@@ -158,9 +156,7 @@ final class StreamObservers {
                         return;
                     }
                 }
-                if (!permissionDeniedReported || Status.fromThrowable(t).getCode() != Status.Code.PERMISSION_DENIED) {
-                    watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
-                }
+                watcher.onError(new X509BundleException("Cancelling X.509 bundles watch", t));
             }
 
             @Override
@@ -224,9 +220,7 @@ final class StreamObservers {
                         return;
                     }
                 }
-                if (!permissionDeniedReported || Status.fromThrowable(t).getCode() != Status.Code.PERMISSION_DENIED) {
-                    watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
-                }
+                watcher.onError(new JwtBundleException("Cancelling JWT Bundles watch", t));
             }
 
             @Override
