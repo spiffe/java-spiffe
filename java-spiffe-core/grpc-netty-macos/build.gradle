@@ -1,6 +1,10 @@
 description = "Java SPIFFE Library GRPC-Netty MacOS module"
 
 dependencies {
+    // provided by the application, which always depends on java-spiffe-core
+    compileOnly(project(':java-spiffe-core'))
+    testImplementation(project(':java-spiffe-core'))
+
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.netty:netty-transport-native-kqueue:${nettyVersion}:osx-x86_64"
 }
