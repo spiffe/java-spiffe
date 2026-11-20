@@ -40,8 +40,18 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * <p>
  * Supports one-shot calls and watch updates for X.509 and JWT SVIDs and bundles.
  * <p>
- * The watch for updates methods support retries using an exponential backoff policy to reestablish
- * the stream connection to the Workload API.
+ * The watch methods retry eligible errors with exponential backoff. Before the first successfully
+ * delivered update, {@code PERMISSION_DENIED} is not reported while retries can be scheduled.
+ * After an update, the first denial is reported immediately to {@link Watcher#onError(Throwable)};
+ * retries continue if the callback returns normally and the retry policy permits them.
+ * Repeated denials are not reported again until another update is successfully delivered.
+ * <p>
+ * Retry exhaustion or scheduling failure always reports a terminal error with a {@code Cancelling}
+ * message, including when a permission denial has already been reported. A denial can therefore
+ * produce both an immediate withdrawal notification and a terminal error if no retry can be scheduled.
+ * <p>
+ * Rejected updates are reported to {@code onError}; if that callback returns normally, the watch
+ * remains active. An exception thrown by {@code onError} escapes the callback and prevents further retries.
  */
 public final class DefaultWorkloadApiClient implements WorkloadApiClient {
 

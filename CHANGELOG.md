@@ -10,8 +10,13 @@
 * Add a `spiffeIdVerifier` option to `SpiffeSslContextFactory.SslContextOptions`, so an `SSLContext` can verify peer SPIFFE IDs with a custom `SpiffeIdVerifier` instead of a fixed set of accepted SPIFFE IDs
 * Add `SpiffeIdVerifier.acceptAny()`, `acceptId()`, `acceptOneOf()` and `acceptMemberOf()` factory methods for verifiers that accept any SPIFFE ID, a specific SPIFFE ID, one of a set of SPIFFE IDs, or any SPIFFE ID in a trust domain
 
+### Changed
+
+* Retry Workload API `PERMISSION_DENIED` responses with backoff. With the default client and no initialization timeout, `DefaultX509Source.newSource()`, `DefaultJwtSource.newSource()` and `CachedJwtSource.newSource()` now wait indefinitely for an unregistered workload instead of failing immediately. Set a nonzero `initTimeout` or the `spiffe.newX509Source.timeout` / `spiffe.newJwtSource.timeout` system property to bound the wait.
+
 ### Fixed
 
+* Always report terminal Workload API watch failures after a permission denial, including repeated denials, preserving the exception type and cause.
 * Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
 * Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
 * Serialize `java-spiffe-helper` KeyStore and TrustStore files to memory before writing them, so a store or encoding failure no longer leaves an empty or partial file (#490)
