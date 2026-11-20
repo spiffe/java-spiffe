@@ -17,6 +17,10 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.MockedStatic;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.InputStream;
@@ -32,14 +36,22 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.withSettings;
 
 class KeyStoreHelperTest {
 
@@ -47,6 +59,9 @@ class KeyStoreHelperTest {
     private WorkloadApiClient workloadApiClientErrorStub;
     private Path keyStoreFilePath;
     private Path trustStoreFilePath;
+
+    @TempDir
+    Path tempDirectory;
 
     @BeforeEach
     void setUp() {
@@ -259,6 +274,65 @@ class KeyStoreHelperTest {
         assertEquals(authority1, trustStore.getCertificate("example.org.0"));
         assertNull(trustStore.getCertificate("example.org.1"));
         assertEquals(1, trustStore.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testRun_replacesCompleteBundleSetWithOneWritePerUpdate(KeyStoreType type) throws Exception {
+        keyStoreFilePath = tempDirectory.resolve("keystore");
+        trustStoreFilePath = tempDirectory.resolve("truststore");
+        String password = "truststore123";
+        X509Context context = workloadApiClient.fetchX509Context();
+        X509Bundle localBundle = context.getX509BundleSet().getBundleForTrustDomain(TrustDomain.parse("example.org"));
+        X509Certificate federatedAuthority = X509CertificateTestUtils
+                .createRootCA("CN=Federated CA", "spiffe://example.org.uk").getCertificate();
+        X509Bundle federatedBundle = new X509Bundle(TrustDomain.parse("example.org.uk"),
+                Collections.singleton(federatedAuthority));
+        AtomicReference<X509BundleSet> bundles = new AtomicReference<>(
+                X509BundleSet.of(Arrays.asList(localBundle, federatedBundle)));
+        WorkloadApiClient client = new WorkloadApiClientStub() {
+            @Override
+            public void watchX509Context(Watcher<X509Context> watcher) {
+                watcher.onUpdate(X509Context.of(context.getX509Svids(), bundles.get()));
+            }
+        };
+        KeyStoreHelper.KeyStoreOptions options = KeyStoreHelper.KeyStoreOptions.builder()
+                .keyStoreType(type).keyStorePath(keyStoreFilePath).keyStorePass(password)
+                .trustStorePath(trustStoreFilePath).trustStorePass(password).keyPass(password)
+                .workloadApiClient(client).build();
+
+        try (MockedStatic<KeyStoreFileWriter> writes = mockStatic(KeyStoreFileWriter.class,
+                withSettings().defaultAnswer(CALLS_REAL_METHODS).mockMaker("mock-maker-inline"));
+             KeyStoreHelper helper = KeyStoreHelper.create(options)) {
+            helper.run(false);
+            KeyStore stored = loadTrustStore(type, password);
+            assertEquals(localBundle.getX509Authorities().iterator().next(), stored.getCertificate("example.org.0"));
+            assertEquals(federatedAuthority, stored.getCertificate("example.org.uk.0"));
+            assertEquals(2, stored.size());
+            writes.verify(() -> KeyStoreFileWriter.write(eq(trustStoreFilePath), any()), times(1));
+
+            // Removing the shorter trust domain must preserve the longer trust domain's authorities.
+            bundles.set(X509BundleSet.of(Collections.singleton(federatedBundle)));
+            helper.run(false);
+            stored = loadTrustStore(type, password);
+            assertNull(stored.getCertificate("example.org.0"));
+            assertEquals(federatedAuthority, stored.getCertificate("example.org.uk.0"));
+            assertEquals(1, stored.size());
+            writes.verify(() -> KeyStoreFileWriter.write(eq(trustStoreFilePath), any()), times(2));
+
+            bundles.set(X509BundleSet.emptySet());
+            helper.run(false);
+            assertEquals(0, loadTrustStore(type, password).size());
+            writes.verify(() -> KeyStoreFileWriter.write(eq(trustStoreFilePath), any()), times(3));
+        }
+    }
+
+    private KeyStore loadTrustStore(KeyStoreType type, String password) throws Exception {
+        KeyStore stored = KeyStore.getInstance(type.value());
+        try (InputStream input = Files.newInputStream(trustStoreFilePath)) {
+            stored.load(input, password.toCharArray());
+        }
+        return stored;
     }
 
     @Test

@@ -1,7 +1,11 @@
 package io.spiffe.helper.keystore;
 
+import io.spiffe.exception.InvalidSpiffeIdException;
+import io.spiffe.spiffeid.TrustDomain;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -25,7 +29,7 @@ class KeyStore {
     private final Path keyStoreFilePath;
     private final KeyStoreType keyStoreType;
     private final String keyStorePassword;
-    private final java.security.KeyStore javaKeyStore;
+    private java.security.KeyStore javaKeyStore;
 
     KeyStore(
             Path keyStoreFilePath,
@@ -126,29 +130,79 @@ class KeyStore {
         this.flush();
     }
 
-    void deleteEntriesByAliasPrefix(final String aliasPrefix) throws KeyStoreException {
+    /**
+     * Replaces all helper-managed authorities with the complete bundle set, including removing absent trust domains.
+     * Changes are staged in a separate KeyStore and flushed once before becoming the live in-memory store.
+     * File writes remain in place, so an I/O failure can still leave a partial file.
+     */
+    void replaceAuthorityEntries(final List<AuthorityEntry> authorityEntries) throws KeyStoreException {
+        java.security.KeyStore replacement = copyKeyStore();
         List<String> aliasesToDelete = new ArrayList<>();
-        Enumeration<String> aliases = javaKeyStore.aliases();
+        Enumeration<String> aliases = replacement.aliases();
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
-            if (alias.startsWith(aliasPrefix)) {
+            if (replacement.isCertificateEntry(alias) && isAuthorityAlias(alias)) {
                 aliasesToDelete.add(alias);
             }
         }
 
         for (String alias : aliasesToDelete) {
-            javaKeyStore.deleteEntry(alias);
+            replacement.deleteEntry(alias);
         }
 
-        this.flush();
+        for (AuthorityEntry authorityEntry : authorityEntries) {
+            replacement.setCertificateEntry(
+                    authorityEntry.getAlias(),
+                    authorityEntry.getCertificate()
+            );
+        }
+
+        flush(replacement);
+        javaKeyStore = replacement;
+    }
+
+    private java.security.KeyStore copyKeyStore() throws KeyStoreException {
+        try {
+            ByteArrayOutputStream content = new ByteArrayOutputStream();
+            javaKeyStore.store(content, keyStorePassword.toCharArray());
+            java.security.KeyStore copy = java.security.KeyStore.getInstance(javaKeyStore.getType(), javaKeyStore.getProvider());
+            copy.load(new ByteArrayInputStream(content.toByteArray()), keyStorePassword.toCharArray());
+            return copy;
+        } catch (IOException | GeneralSecurityException e) {
+            throw new KeyStoreException("KeyStore cannot be copied", e);
+        }
+    }
+
+    private boolean isAuthorityAlias(final String alias) {
+        int separator = alias.lastIndexOf('.');
+        if (separator <= 0 || separator == alias.length() - 1) {
+            return false;
+        }
+
+        for (int i = separator + 1; i < alias.length(); i++) {
+            char character = alias.charAt(i);
+            if (character < '0' || character > '9') {
+                return false;
+            }
+        }
+        try {
+            String trustDomain = alias.substring(0, separator);
+            return TrustDomain.parse(trustDomain).getName().equals(trustDomain);
+        } catch (InvalidSpiffeIdException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     // Flush KeyStore to disk, to the configured keyStoreFilePath. The KeyStore is serialized to memory before the file
     // is opened, so a store or encoding failure leaves the existing file as it was. An I/O failure while writing the
     // bytes can still leave a partial file.
     private void flush() throws KeyStoreException {
+        flush(javaKeyStore);
+    }
+
+    private void flush(final java.security.KeyStore keyStore) throws KeyStoreException {
         try {
-            KeyStoreFileWriter.write(keyStoreFilePath, outputStream -> javaKeyStore.store(outputStream, keyStorePassword.toCharArray()));
+            KeyStoreFileWriter.write(keyStoreFilePath, outputStream -> keyStore.store(outputStream, keyStorePassword.toCharArray()));
         } catch (KeyStoreException e) {
             throw e;
         } catch (IOException | GeneralSecurityException e) {

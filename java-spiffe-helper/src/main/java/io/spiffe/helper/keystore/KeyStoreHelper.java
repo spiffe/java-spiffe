@@ -212,28 +212,24 @@ public class KeyStoreHelper implements Closeable {
 
         keyStore.storePrivateKeyEntry(privateKeyEntry);
 
+        List<AuthorityEntry> authorityEntries = new ArrayList<>();
         for (final Map.Entry<TrustDomain, X509Bundle> entry : update.getX509BundleSet().getBundles().entrySet()) {
             TrustDomain trustDomain = entry.getKey();
             X509Bundle bundle = entry.getValue();
-            storeBundle(trustDomain, bundle);
+            List<X509Certificate> authorities = sortedAuthorities(bundle);
+            int index = 0;
+            for (X509Certificate certificate : authorities) {
+                authorityEntries.add(AuthorityEntry.builder()
+                        .alias(generateAlias(trustDomain, index))
+                        .certificate(certificate)
+                        .build());
+                index++;
+            }
         }
+
+        trustStore.replaceAuthorityEntries(authorityEntries);
 
         log.log(Level.INFO, "Stored X.509 context update in Java KeyStore");
-    }
-
-    private void storeBundle(TrustDomain trustDomain, X509Bundle bundle) throws KeyStoreException {
-        List<X509Certificate> authorities = sortedAuthorities(bundle);
-        trustStore.deleteEntriesByAliasPrefix(generateAliasPrefix(trustDomain));
-
-        int index = 0;
-        for (X509Certificate certificate : authorities) {
-            final AuthorityEntry authorityEntry = AuthorityEntry.builder()
-                    .alias(generateAlias(trustDomain, index))
-                    .certificate(certificate)
-                    .build();
-            trustStore.storeAuthorityEntry(authorityEntry);
-            index++;
-        }
     }
 
     private List<X509Certificate> sortedAuthorities(X509Bundle bundle) throws KeyStoreException {
