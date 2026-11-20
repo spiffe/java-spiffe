@@ -31,7 +31,9 @@ import java.util.List;
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -298,6 +300,22 @@ class DefaultJwtSourceTest {
         } catch (SocketEndpointAddressException e) {
             fail();
         }
+    }
+
+    @Test
+    void newSource_timeout_retryWithSameOptions_createsNewClient() {
+        JwtSourceOptions options = JwtSourceOptions
+                .builder()
+                .spiffeSocketPath("unix:/tmp/test")
+                .build();
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            JwtSourceException e = assertThrows(JwtSourceException.class, () -> DefaultJwtSource.newSource(options));
+            assertEquals("Timeout waiting for JWT bundles update", e.getCause().getMessage());
+        }
+
+        assertNull(options.getWorkloadApiClient());
+        assertNull(options.getInitTimeout());
     }
 
     @Test

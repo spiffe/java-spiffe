@@ -5,6 +5,7 @@ import io.spiffe.spiffeid.SpiffeId;
 import io.spiffe.spiffeid.TrustDomain;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -30,6 +31,20 @@ import static io.spiffe.internal.KeyUsage.KEY_CERT_SIGN;
  * Common certificate utility methods.
  */
 public class CertificateUtils {
+
+    /**
+     * PEM label of an X.509 certificate (RFC 7468, section 5).
+     */
+    public static final String PEM_CERTIFICATE_LABEL = "CERTIFICATE";
+
+    /**
+     * PEM label of an unencrypted PKCS#8 private key (RFC 7468, section 10).
+     */
+    public static final String PEM_PRIVATE_KEY_LABEL = "PRIVATE KEY";
+
+    // PEM (RFC 7468) wraps the base64 text at 64 characters per line
+    private static final Base64.Encoder PEM_ENCODER =
+            Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII));
 
     private static final String SPIFFE_PREFIX = "spiffe://";
     private static final int SAN_TYPE_INDEX = 0;
@@ -64,6 +79,21 @@ public class CertificateUtils {
         return certificates.stream()
                 .map(X509Certificate.class::cast)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Encodes DER bytes as a PEM block (RFC 7468) with the given label. The base64 text is wrapped
+     * at 64 characters per line and the block ends with a line break.
+     *
+     * @param label the label of the PEM block, for example {@link #PEM_CERTIFICATE_LABEL}
+     * @param der   the DER bytes to encode
+     * @return the PEM block as US-ASCII bytes
+     */
+    public static byte[] toPemBlock(final String label, final byte[] der) {
+        String pem = "-----BEGIN " + label + "-----\n"
+                + PEM_ENCODER.encodeToString(der)
+                + "\n-----END " + label + "-----\n";
+        return pem.getBytes(StandardCharsets.US_ASCII);
     }
 
     /**

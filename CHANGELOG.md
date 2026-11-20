@@ -2,13 +2,31 @@
 
 ## [Unreleased]
 
+### Added
+
+* Add `X509Bundle.marshal()` and `JwtBundle.marshal()` to serialize bundles as PEM certificates and as a JWKS document, the formats read by `parse`
+* Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
+* Add `X509Svid.marshalCertificates()` and `X509Svid.marshalPrivateKey()` to serialize an X.509-SVID as PEM certificates and a PEM PKCS#8 private key, the formats read by `parse` and `load`, and `marshalRawCertificates()` and `marshalRawPrivateKey()` for the ASN.1 DER formats read by `parseRaw` (#515)
+* Add a `spiffeIdVerifier` option to `SpiffeSslContextFactory.SslContextOptions`, so an `SSLContext` can verify peer SPIFFE IDs with a custom `SpiffeIdVerifier` instead of a fixed set of accepted SPIFFE IDs
+* Add `SpiffeIdVerifier.acceptAny()`, `acceptId()`, `acceptOneOf()` and `acceptMemberOf()` factory methods for verifiers that accept any SPIFFE ID, a specific SPIFFE ID, one of a set of SPIFFE IDs, or any SPIFFE ID in a trust domain
+
 ### Fixed
 
 * Report terminal Workload API watch failures with other statuses after a permission denial, preserving the exception type and cause.
+* Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
+* Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
+* Serialize `java-spiffe-helper` KeyStore and TrustStore files to memory before writing them, so a store or encoding failure no longer leaves an empty or partial file (#490)
+* Stop splitting the `io.spiffe.workloadapi.internal` package between `java-spiffe-core` and the `grpc-netty-*` modules, which broke builds on the Java module path. Each `grpc-netty-*` module now registers a channel provider in its own package that core loads with `ServiceLoader`, picking the one for the current OS and architecture (#108). Upgrade `java-spiffe-core` and the `grpc-netty-*` artifact together, since an older `grpc-netty-*` jar still contains the shared package
 
 ### Build
 
 * Check core and provider binary compatibility against the latest stable Maven Central release.
+* Bump `io.netty:netty-transport-native-kqueue` to 4.2.17.Final to match the Netty version used by gRPC, and fail `check` when the macOS transport modules drift from it.
+
+### Documentation
+
+* Document `SpiffeProvider.install()` in the provider README, and explain that the JDK loads the providers declared in `java.security` with the system class loader, so a provider packaged inside an application archive, such as a Spring Boot executable jar, must be installed programmatically
+* Fix the JWT source examples in the core README, which called methods and classes that don't exist, document how to configure the source initialization timeouts with `initTimeout`, and document `CachedJwtSource` and JWT-SVID validation with `JwtSvid.parseAndValidate`
 
 ## [0.8.17] - 2026-04-20
 

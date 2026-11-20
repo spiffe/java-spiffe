@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 
 import static io.spiffe.spiffeid.TrustDomain.isValidTrustDomainChar;
+import static io.spiffe.spiffeid.TrustDomain.toLowerAscii;
 
 /**
  * Represents a SPIFFE ID as defined in the SPIFFE standard.
@@ -90,7 +91,7 @@ public final class SpiffeId {
             if (c == '/') {
                 break;
             }
-            char normalized = Character.toLowerCase(c);
+            char normalized = toLowerAscii(c);
             if (!isValidTrustDomainChar(normalized)) {
                 throw new InvalidSpiffeIdException(BAD_TRUST_DOMAIN_CHAR);
             }
@@ -108,7 +109,7 @@ public final class SpiffeId {
             validatePath(path);
         }
 
-        String normalizedTrustDomain = td.toLowerCase();
+        String normalizedTrustDomain = toLowerAscii(td);
         return new SpiffeId(new TrustDomain(normalizedTrustDomain), path);
     }
 

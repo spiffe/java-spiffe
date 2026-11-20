@@ -6,9 +6,11 @@ import io.spiffe.exception.X509BundleException;
 import io.spiffe.internal.CertificateUtils;
 import io.spiffe.spiffeid.TrustDomain;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -149,6 +151,31 @@ public final class X509Bundle implements BundleSource<X509Bundle> {
     public void removeX509Authority(X509Certificate x509Authority) {
         Objects.requireNonNull(x509Authority, "x509Authority must not be null");
         x509Authorities.remove(x509Authority);
+    }
+
+    /**
+     * Marshals the X.509 bundle into PEM-encoded certificate blocks, one block for each
+     * X.509 authority. The result can be parsed back into a bundle with {@link #parse(TrustDomain, byte[])}.
+     * <p>
+     * The order of the certificate blocks is not significant. A bundle without X.509 authorities
+     * is marshaled into an empty array of bytes, which {@link #parse(TrustDomain, byte[])} rejects.
+     *
+     * @return an array of bytes with the X.509 authorities of the bundle encoded as PEM certificates
+     * @throws X509BundleException if an X.509 authority cannot be encoded
+     */
+    public byte[] marshal() throws X509BundleException {
+        ByteArrayOutputStream pem = new ByteArrayOutputStream();
+        for (X509Certificate x509Authority : x509Authorities) {
+            byte[] der;
+            try {
+                der = x509Authority.getEncoded();
+            } catch (CertificateEncodingException e) {
+                throw new X509BundleException("X.509 authority could not be encoded", e);
+            }
+            byte[] pemBlock = CertificateUtils.toPemBlock(CertificateUtils.PEM_CERTIFICATE_LABEL, der);
+            pem.write(pemBlock, 0, pemBlock.length);
+        }
+        return pem.toByteArray();
     }
 
     private static List<X509Certificate> generateX509Certificates(byte[] bundleBytes)

@@ -4,9 +4,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -143,11 +143,15 @@ class KeyStore {
         this.flush();
     }
 
-    // Flush KeyStore to disk, to the configured keyStoreFilePath
+    // Flush KeyStore to disk, to the configured keyStoreFilePath. The KeyStore is serialized to memory before the file
+    // is opened, so a store or encoding failure leaves the existing file as it was. An I/O failure while writing the
+    // bytes can still leave a partial file.
     private void flush() throws KeyStoreException {
-        try (OutputStream outputStream = Files.newOutputStream(keyStoreFilePath)) {
-            javaKeyStore.store(outputStream, keyStorePassword.toCharArray());
-        } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
+        try {
+            KeyStoreFileWriter.write(keyStoreFilePath, outputStream -> javaKeyStore.store(outputStream, keyStorePassword.toCharArray()));
+        } catch (KeyStoreException e) {
+            throw e;
+        } catch (IOException | GeneralSecurityException e) {
             throw new KeyStoreException(e);
         }
     }

@@ -1,5 +1,5 @@
 plugins {
-    id 'com.google.protobuf' version '0.10.0'
+    id 'com.google.protobuf' version '0.10.1'
     id 'java-library'
     id 'java-test-fixtures'
 }
@@ -56,19 +56,17 @@ dependencies {
 
     def osArch = System.getProperty("os.arch")
 
+    // core finds the channel provider with ServiceLoader, so it only needs a grpc-netty module at test time
     if (osdetector.os.is('osx')) {
         if (osArch == "x86_64") {
-            compileOnly(project('grpc-netty-macos'))
-            testImplementation(project('grpc-netty-macos'))
+            testRuntimeOnly(project('grpc-netty-macos'))
         } else if (osArch == "aarch64") {
-            compileOnly(project('grpc-netty-macos-aarch64'))
-            testImplementation(project('grpc-netty-macos-aarch64'))
+            testRuntimeOnly(project('grpc-netty-macos-aarch64'))
         } else {
             throw new GradleException("Architecture not supported: ${osArch}")
         }
     } else {
-        compileOnly(project('grpc-netty-linux'))
-        testImplementation(project('grpc-netty-linux'))
+        testRuntimeOnly(project('grpc-netty-linux'))
     }
 
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -83,7 +81,7 @@ dependencies {
     testFixturesImplementation "com.nimbusds:nimbus-jose-jwt:${nimbusVersion}"
 
     testFixturesImplementation "org.bouncycastle:bcpkix-jdk15on:1.70"
-    testFixturesImplementation "org.apache.commons:commons-lang3:3.21.0"
+    testFixturesImplementation "org.apache.commons:commons-lang3:3.22.0"
 }
 
 protobuf {
