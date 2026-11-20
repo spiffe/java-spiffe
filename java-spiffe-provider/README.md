@@ -48,28 +48,46 @@ the list of SPIFFE IDs from a file.
 
 ### Verify peer SPIFFE IDs with a custom verifier
 
-When the accepted SPIFFE IDs are not known in advance as a fixed set, configure a `SpiffeIdVerifier` instead of a
-Supplier of SPIFFE IDs. The verifier is called during each TLS handshake, after the peer's certificate chain has been
-verified against the X.509 bundles, with the peer's SPIFFE ID and certificate chain. Throwing a
-`SpiffeVerificationException` rejects the peer and fails the handshake. For example, to accept any workload in the
+To accept peers by rule instead of from a Supplier of SPIFFE IDs, configure a `SpiffeIdVerifier`. The verifier is
+called during each TLS handshake, after the peer's certificate chain has been verified against the X.509 bundles, with
+the peer's SPIFFE ID and certificate chain. Throwing a `SpiffeVerificationException` rejects the peer and fails the
+handshake.
+
+`SpiffeIdVerifier` has factory methods for the common cases:
+
+| Factory method                                 | Accepts                                                  |
+|------------------------------------------------|----------------------------------------------------------|
+| `SpiffeIdVerifier.acceptAny()`                 | any SPIFFE ID                                            |
+| `SpiffeIdVerifier.acceptId(spiffeId)`          | only the given SPIFFE ID                                 |
+| `SpiffeIdVerifier.acceptOneOf(spiffeIds)`      | any of the given SPIFFE IDs (varargs or a `Collection`)  |
+| `SpiffeIdVerifier.acceptMemberOf(trustDomain)` | any SPIFFE ID in the given trust domain                  |
+
+For example, to accept any workload in the `example.org` trust domain:
+
+```
+    SslContextOptions options = SslContextOptions
+            .builder()
+            .x509Source(source)
+            .spiffeIdVerifier(SpiffeIdVerifier.acceptMemberOf(TrustDomain.parse("example.org")))
+            .build();
+
+    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
+```
+
+`acceptOneOf` copies the SPIFFE IDs when it is called. To accept a set of SPIFFE IDs that changes over time, use
+`acceptedSpiffeIdsSupplier` instead.
+
+For other rules, implement `SpiffeIdVerifier`. For example, to accept only workloads under the `/backend` path of the
 `example.org` trust domain:
 
 ```
     TrustDomain trustDomain = TrustDomain.parse("example.org");
-    SpiffeIdVerifier memberOfTrustDomain = (spiffeId, verifiedChain) -> {
-        if (!spiffeId.memberOf(trustDomain)) {
+    SpiffeIdVerifier backendWorkloads = (spiffeId, verifiedChain) -> {
+        if (!spiffeId.memberOf(trustDomain) || !spiffeId.getPath().startsWith("/backend/")) {
             throw new SpiffeVerificationException(
-                    String.format("SPIFFE ID %s is not a member of trust domain %s", spiffeId, trustDomain));
+                    String.format("SPIFFE ID %s is not a backend workload of trust domain %s", spiffeId, trustDomain));
         }
     };
-
-    SslContextOptions options = SslContextOptions
-            .builder()
-            .x509Source(source)
-            .spiffeIdVerifier(memberOfTrustDomain)
-            .build();
-
-    SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
 ```
 
 A `spiffeIdVerifier` cannot be combined with `acceptedSpiffeIdsSupplier` or `acceptAnySpiffeId`: `getSslContext`

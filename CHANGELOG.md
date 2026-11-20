@@ -8,6 +8,7 @@
 * Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
 * Add `X509Svid.marshalCertificates()` and `X509Svid.marshalPrivateKey()` to serialize an X.509-SVID as PEM certificates and a PEM PKCS#8 private key, the formats read by `parse` and `load`, and `marshalRawCertificates()` and `marshalRawPrivateKey()` for the ASN.1 DER formats read by `parseRaw` (#515)
 * Add a `spiffeIdVerifier` option to `SpiffeSslContextFactory.SslContextOptions`, so an `SSLContext` can verify peer SPIFFE IDs with a custom `SpiffeIdVerifier` instead of a fixed set of accepted SPIFFE IDs
+* Add `SpiffeIdVerifier.acceptAny()`, `acceptId()`, `acceptOneOf()` and `acceptMemberOf()` factory methods for verifiers that accept any SPIFFE ID, a specific SPIFFE ID, one of a set of SPIFFE IDs, or any SPIFFE ID in a trust domain
 
 ### Fixed
 
@@ -15,6 +16,7 @@
 * Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
 * Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
 * Serialize `java-spiffe-helper` KeyStore and TrustStore files to memory before writing them, so a store or encoding failure no longer leaves an empty or partial file (#490)
+* Stop splitting the `io.spiffe.workloadapi.internal` package between `java-spiffe-core` and the `grpc-netty-*` modules, which broke builds on the Java module path. Each `grpc-netty-*` module now registers a channel provider in its own package that core loads with `ServiceLoader`, picking the one for the current OS and architecture (#108). Upgrade `java-spiffe-core` and the `grpc-netty-*` artifact together, since an older `grpc-netty-*` jar still contains the shared package
 
 ### Build
 
