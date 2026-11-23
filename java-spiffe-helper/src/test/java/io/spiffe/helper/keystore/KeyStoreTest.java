@@ -11,9 +11,13 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,10 +29,16 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static io.spiffe.utils.TestUtils.toUri;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
@@ -40,6 +50,11 @@ public class KeyStoreTest {
 
     private X509Bundle x509Bundle;
     private Path keyStoreFilePath;
+
+    @TempDir
+    Path tempDirectory;
+
+    private static final String STORE_PASSWORD = "truststore123";
 
     @BeforeEach
     void setup() throws X509SvidException, URISyntaxException, X509BundleException {
@@ -109,6 +124,160 @@ public class KeyStoreTest {
 
         checkBundleEntries(keyStoreFilePath, keyStorePassword, keyStoreType, authority1Alias);
         checkBundleEntries(keyStoreFilePath, keyStorePassword, keyStoreType, authority2Alias);
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testReplaceAuthorityEntries_preservesUnmanagedAliasesAndReplacesEntries(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        String[] managedAliases = {"example.org.0", "example.org.01", "example.org.12", "removed.org.0"};
+        String[] unmanagedAliases = {"example.org.1x", "example.org.", "example.org.-1", "example.org.+1",
+                "example.org.\u0661", "example.org.\uff11", "manual", ".0", "invalid/domain.0"};
+        for (String alias : managedAliases) {
+            keyStore.storeAuthorityEntry(authorityEntry(alias, authority));
+        }
+        for (String alias : unmanagedAliases) {
+            keyStore.storeAuthorityEntry(authorityEntry(alias, authority));
+        }
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.uk.0", authority));
+
+        keyStore.replaceAuthorityEntries(Arrays.asList(
+                authorityEntry("example.org.0", x509Svid.getLeaf()),
+                authorityEntry("example.org.1", authority),
+                authorityEntry("example.org.uk.0", authority)));
+
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertEquals(x509Svid.getLeaf(), stored.getCertificate("example.org.0"));
+        assertEquals(authority, stored.getCertificate("example.org.1"));
+        assertEquals(authority, stored.getCertificate("example.org.uk.0"));
+        for (String alias : unmanagedAliases) {
+            assertEquals(authority, stored.getCertificate(alias), alias);
+        }
+        assertNull(stored.getCertificate("example.org.01"));
+        assertNull(stored.getCertificate("example.org.12"));
+        assertNull(stored.getCertificate("removed.org.0"));
+        assertEquals(unmanagedAliases.length + 3, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testReplaceAuthorityEntries_successfulReplacementSurvivesLaterFlush(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        X509Certificate[] privateKeyChain = {x509Svid.getLeaf(), authority};
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("removed.org.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.1x", authority));
+        keyStore.storePrivateKeyEntry(PrivateKeyEntry.builder().alias("private.org.0")
+                .privateKey(x509Svid.getPrivateKey()).certificateChain(privateKeyChain)
+                .password("privatekey123").build());
+
+        keyStore.replaceAuthorityEntries(Arrays.asList(
+                authorityEntry("example.org.0", x509Svid.getLeaf()),
+                authorityEntry("other.org.0", authority)));
+        keyStore.storeAuthorityEntry(authorityEntry("manual", authority));
+
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertEquals(x509Svid.getLeaf(), stored.getCertificate("example.org.0"));
+        assertEquals(authority, stored.getCertificate("other.org.0"));
+        assertNull(stored.getCertificate("removed.org.0"));
+        assertEquals(authority, stored.getCertificate("example.org.1x"));
+        assertEquals(authority, stored.getCertificate("manual"));
+        assertEquals(x509Svid.getPrivateKey(), stored.getKey("private.org.0", "privatekey123".toCharArray()));
+        assertArrayEquals(privateKeyChain, stored.getCertificateChain("private.org.0"));
+        assertEquals(5, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testReplaceAuthorityEntries_emptySetRemovesAllManagedAuthorities(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.uk.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.1x", authority));
+        // Even an indexed alias is not helper-managed when it contains a private key.
+        keyStore.storePrivateKeyEntry(PrivateKeyEntry.builder().alias("private.org.0")
+                .privateKey(x509Svid.getPrivateKey()).certificateChain(x509Svid.getChainArray())
+                .password("privatekey123").build());
+
+        keyStore.replaceAuthorityEntries(Collections.emptyList());
+
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertNull(stored.getCertificate("example.org.0"));
+        assertNull(stored.getCertificate("example.org.uk.0"));
+        assertEquals(authority, stored.getCertificate("example.org.1x"));
+        assertEquals(x509Svid.getPrivateKey(), stored.getKey("private.org.0", "privatekey123".toCharArray()));
+        assertEquals(2, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testReplaceAuthorityEntries_failedInsertionDoesNotChangeLiveStore(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        keyStore.storePrivateKeyEntry(PrivateKeyEntry.builder().alias("private.org.0")
+                .privateKey(x509Svid.getPrivateKey()).certificateChain(x509Svid.getChainArray())
+                .password("privatekey123").build());
+        byte[] original = Files.readAllBytes(keyStoreFilePath);
+
+        assertThrows(KeyStoreException.class, () -> keyStore.replaceAuthorityEntries(Arrays.asList(
+                authorityEntry("example.org.1", authority),
+                authorityEntry("private.org.0", authority))));
+
+        assertArrayEquals(original, Files.readAllBytes(keyStoreFilePath));
+        // A later successful flush must not persist the failed replacement's deletions or insertions.
+        keyStore.storeAuthorityEntry(authorityEntry("manual", authority));
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertEquals(authority, stored.getCertificate("example.org.0"));
+        assertFalse(stored.containsAlias("example.org.1"));
+        assertEquals(x509Svid.getPrivateKey(), stored.getKey("private.org.0", "privatekey123".toCharArray()));
+        assertEquals(3, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testReplaceAuthorityEntries_failedWriteDoesNotChangeLiveStore(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        byte[] original = Files.readAllBytes(keyStoreFilePath);
+        Files.delete(keyStoreFilePath);
+        Files.createDirectory(keyStoreFilePath);
+
+        try {
+            assertThrows(KeyStoreException.class, () -> keyStore.replaceAuthorityEntries(
+                    Collections.singletonList(authorityEntry("other.org.0", authority))));
+        } finally {
+            Files.delete(keyStoreFilePath);
+            Files.write(keyStoreFilePath, original);
+        }
+
+        keyStore.storeAuthorityEntry(authorityEntry("manual", authority));
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertEquals(authority, stored.getCertificate("example.org.0"));
+        assertFalse(stored.containsAlias("other.org.0"));
+        assertEquals(2, stored.size());
+    }
+
+    private KeyStore newTestKeyStore(KeyStoreType type) throws KeyStoreException {
+        keyStoreFilePath = tempDirectory.resolve("truststore");
+        return KeyStore.builder().keyStoreFilePath(keyStoreFilePath).keyStoreType(type)
+                .keyStorePassword(STORE_PASSWORD).build();
+    }
+
+    private java.security.KeyStore loadTestKeyStore(KeyStoreType type) throws Exception {
+        java.security.KeyStore stored = java.security.KeyStore.getInstance(type.value());
+        try (InputStream input = Files.newInputStream(keyStoreFilePath)) {
+            stored.load(input, STORE_PASSWORD.toCharArray());
+        }
+        return stored;
+    }
+
+    private AuthorityEntry authorityEntry(String alias, X509Certificate certificate) {
+        return AuthorityEntry.builder().alias(alias).certificate(certificate).build();
     }
 
     @Test

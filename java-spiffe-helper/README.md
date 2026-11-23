@@ -101,5 +101,16 @@ Issuer: O=SPIFFE, C=US
 ...
 ```
 
-The aliases for the trusted certs are generated using the Trust Domain of the SPIFFE ID in the SAN URI, and adding a 
-correlative number suffix.
+Trusted certificate aliases have the form `<trust-domain>.<numeric-index>`, for example `example.org.0`.
+The index consists entirely of ASCII digits. Certificate entries matching this format are managed by the Helper;
+reserve these aliases for Workload API bundles. Other aliases and private key entries are preserved.
+If a private-key entry uses an alias needed by a bundle, the trust update fails and preserves the key. The identity
+KeyStore may already have been written when this failure occurs.
+
+Each X.509 context update replaces all Helper-managed authorities with the complete bundle set, removing stale indexes
+and authorities for trust domains no longer present. The replacement is prepared in a separate in-memory KeyStore and
+the TrustStore is written once per update. If preparing or serializing the replacement fails, the live in-memory
+TrustStore and existing file remain unchanged. The replacement becomes the live store only after the write succeeds.
+
+Files are still written in place, so an I/O failure or crash during writing can leave a partial file. The KeyStore and
+TrustStore are written separately; the two files are not updated atomically together.
