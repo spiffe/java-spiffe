@@ -33,6 +33,7 @@ public interface WorkloadApiClient extends Closeable {
      * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update based on the SVIDs TTL.
+     * See {@link DefaultWorkloadApiClient} for retry and error callback behavior.
      *
      * @param watcher an instance that implements a {@link Watcher}.
      */
@@ -52,6 +53,7 @@ public interface WorkloadApiClient extends Closeable {
      * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update.
+     * See {@link DefaultWorkloadApiClient} for retry and error callback behavior.
      *
      * @param watcher an instance that implements a {@link Watcher} for {@link X509BundleSet}.
      */
@@ -123,6 +125,7 @@ public interface WorkloadApiClient extends Closeable {
      * A new Stream to the Workload API is opened for each call to this method, so that the client starts getting
      * updates immediately after the Stream is ready and doesn't have to wait until the Workload API dispatches
      * the next update based on the SVIDs TTL.
+     * See {@link DefaultWorkloadApiClient} for retry and error callback behavior.
      *
      * @param watcher receives the update for JwtBundles.
      */

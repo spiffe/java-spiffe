@@ -63,6 +63,10 @@ public class CachedJwtSource implements JwtSource {
      * through the system property `spiffe.newJwtSource.timeout` expires.
      * If no timeout is configured, it blocks until it gets a JWT update from the Workload API.
      * <p>
+     * With the default client, {@code PERMISSION_DENIED} is retried with backoff, so an unregistered
+     * workload can wait indefinitely. To bound this wait, use {@link #newSource(JwtSourceOptions)}
+     * with a nonzero {@code initTimeout}, or set the timeout system property.
+     * <p>
      * It uses the default address socket endpoint from the environment variable to get the Workload API address.
      *
      * @return an instance of {@link DefaultJwtSource}, with the JWT bundles initialized
@@ -82,6 +86,9 @@ public class CachedJwtSource implements JwtSource {
      * If the timeout is not provided in the options, the default timeout is read from the
      * system property `spiffe.newJwtSource.timeout`. If none is configured, this method will
      * block until the JWT bundles can be retrieved from the Workload API.
+     * <p>
+     * With the default client, {@code PERMISSION_DENIED} is retried with backoff. Set a nonzero
+     * {@code initTimeout} to bound the wait for an unregistered workload.
      * <p>
      * The {@link WorkloadApiClient} can be provided in the options, if it is not,
      * a new client is created.
