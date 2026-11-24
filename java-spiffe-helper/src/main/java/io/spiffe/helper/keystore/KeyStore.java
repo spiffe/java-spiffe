@@ -172,8 +172,9 @@ class KeyStore {
      * Applies a change to a copy of the live KeyStore, writes the copy to disk and only then makes it the live
      * in-memory store. If applying the change or writing the file fails, the live store keeps its previous entries, so
      * a later successful write never persists a failed update.
+     * Updates of the same KeyStore run one at a time, so the file and the live store always end up with the same content.
      */
-    private void update(final Change change) throws KeyStoreException {
+    private synchronized void update(final Change change) throws KeyStoreException {
         java.security.KeyStore candidate = copyKeyStore();
         change.applyTo(candidate);
         flush(candidate);

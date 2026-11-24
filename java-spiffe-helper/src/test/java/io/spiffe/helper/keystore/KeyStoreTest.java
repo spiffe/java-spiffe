@@ -29,8 +29,15 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -284,6 +291,39 @@ public class KeyStoreTest {
         assertEquals(authority, stored.getCertificate("federated.org.0"));
         assertEquals(authority, stored.getCertificate("manual"));
         assertEquals(4, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testStoreAuthorityEntry_overlappingUpdatesKeepEveryEntry(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        int updates = 8;
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(updates);
+        try {
+            List<Future<?>> results = new ArrayList<>();
+            for (int i = 0; i < updates; i++) {
+                String alias = "domain" + i + ".org.0";
+                results.add(executor.submit(() -> {
+                    start.await();
+                    keyStore.storeAuthorityEntry(authorityEntry(alias, authority));
+                    return null;
+                }));
+            }
+            start.countDown();
+            for (Future<?> result : results) {
+                result.get(30, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        // The file holds the same entries as the live store, so one more write keeps all of them.
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertEquals(updates, stored.size());
+        keyStore.storeAuthorityEntry(authorityEntry("last.org.0", authority));
+        assertEquals(updates + 1, loadTestKeyStore(type).size());
     }
 
     @ParameterizedTest
