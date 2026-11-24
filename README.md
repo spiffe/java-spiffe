@@ -23,10 +23,12 @@ X.509 and JWT SVIDs and bundles.
 
 **Supports Java 8+**
 
+See the [changelog](CHANGELOG.md) for release notes and upgrade considerations.
+
 Download
 --------
 
-The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.8.17). 
+The JARs can be downloaded from [Maven Central](https://search.maven.org/search?q=g:io.spiffe%20AND%20v:0.9.0).
 
 The dependencies can be added to `pom.xml`
 
@@ -35,7 +37,7 @@ To import the `java-spiffe-provider` component:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-provider</artifactId>
-  <version>0.8.17</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 The `java-spiffe-provider` component imports the `java-spiffe-core` component.
@@ -45,7 +47,7 @@ To just import the `java-spiffe-core` component:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>java-spiffe-core</artifactId>
-  <version>0.8.17</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
@@ -53,12 +55,12 @@ Using Gradle:
 
 Import `java-spiffe-provider`:
 ```gradle
-implementation group: 'io.spiffe', name: 'java-spiffe-provider', version: '0.8.17'
+implementation group: 'io.spiffe', name: 'java-spiffe-provider', version: '0.9.0'
 ```
 
 Import `java-spiffe-core`:
 ```gradle
-implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.8.17'
+implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.9.0'
 ```
 
 ### Bill of Materials (BOM)
@@ -66,7 +68,7 @@ implementation group: 'io.spiffe', name: 'java-spiffe-core', version: '0.8.17'
 The `java-spiffe-bom` artifact manages the versions of all the java-spiffe modules (`java-spiffe-core`,
 `java-spiffe-provider`, `java-spiffe-helper`, `grpc-netty-linux`, `grpc-netty-macos` and `grpc-netty-macos-aarch64`),
 so they are declared without a version and always stay aligned with each other. This is especially useful for the
-platform-specific `grpc-netty-*` runtime modules described in [MacOS Support](#macos-support), whose version must match
+platform-specific `grpc-netty-*` runtime modules described in [Native transport modules](#native-transport-modules), whose version must match
 the version of `java-spiffe-core`.
 
 Import the BOM in the `dependencyManagement` section of the `pom.xml`:
@@ -76,7 +78,7 @@ Import the BOM in the `dependencyManagement` section of the `pom.xml`:
     <dependency>
       <groupId>io.spiffe</groupId>
       <artifactId>java-spiffe-bom</artifactId>
-      <version>0.8.17</version>
+      <version>0.9.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -93,9 +95,31 @@ Import the BOM in the `dependencyManagement` section of the `pom.xml`:
 
 Using Gradle:
 ```gradle
-implementation platform('io.spiffe:java-spiffe-bom:0.8.17')
+implementation platform('io.spiffe:java-spiffe-bom:0.9.0')
 implementation 'io.spiffe:java-spiffe-provider'
 ```
+
+### Native transport modules
+
+When using the regular JARs, add the transport module for the runtime platform. If its version is pinned separately,
+upgrade it with `java-spiffe-core`. The supplied platform-specific fat JARs already include their transport and
+service registration. Core discovers the transport through `ServiceLoader`.
+
+| Platform      | Runtime artifact                           |
+|---------------|--------------------------------------------|
+| Linux         | `io.spiffe:grpc-netty-linux:0.9.0`         |
+| macOS x86_64  | `io.spiffe:grpc-netty-macos:0.9.0`         |
+| macOS aarch64 | `io.spiffe:grpc-netty-macos-aarch64:0.9.0` |
+
+For example, on Linux with Gradle:
+
+```gradle
+runtimeOnly 'io.spiffe:grpc-netty-linux:0.9.0'
+```
+
+Applications building their own shaded JAR must preserve and merge
+`META-INF/services/io.spiffe.workloadapi.internal.GrpcChannelProvider` registrations. For Gradle Shadow, configure
+`mergeServiceFiles()`.
 
 ### MacOS Support
 
@@ -108,14 +132,14 @@ In case run on a osx-x86 architecture, add to your `pom.xml`:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos</artifactId>
-  <version>0.8.17</version>
+  <version>0.9.0</version>
   <scope>runtime</scope>
 </dependency>
 ```
 
 Using Gradle:
 ```gradle
-runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.8.17'
+runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos', version: '0.9.0'
 ```
 
 #### Aarch64 (M1) Architecture
@@ -127,7 +151,7 @@ If you are running the aarch64 architecture (M1 CPUs), add to your `pom.xml`:
 <dependency>
   <groupId>io.spiffe</groupId>
   <artifactId>grpc-netty-macos-aarch64</artifactId>
-  <version>0.8.17</version>
+  <version>0.9.0</version>
   <scope>runtime</scope>
 </dependency>
 ```
@@ -135,7 +159,7 @@ If you are running the aarch64 architecture (M1 CPUs), add to your `pom.xml`:
 Using Gradle:
 
 ```gradle
-runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos-aarch64', version: '0.8.17'
+runtimeOnly group: 'io.spiffe', name: 'grpc-netty-macos-aarch64', version: '0.9.0'
 ```
 
 *Caveat: not all OpenJDK distributions are aarch64 native, make sure your JDK is also running
@@ -148,7 +172,7 @@ The `java-spiffe-helper` module manages X.509 SVIDs and Bundles in Java Keystore
 
 ### Docker Image
 
-Pull the `java-spiffe-helper` image from `ghcr.io/spiffe/java-spiffe-helper:0.8.17`.
+Pull the `java-spiffe-helper` image from `ghcr.io/spiffe/java-spiffe-helper:0.9.0`.
 
 For more details, see [java-spiffe-helper/README.md](java-spiffe-helper/README.md).
 
@@ -246,4 +270,4 @@ Based on the OS where the build is run, the `[os-classifier]` will be:
 
 * `-linux-x86_64` for Linux
 * `-osx-x86_64` for MacOS with x86_64 architecture
-* `-osx-aarch64` for MacOS with aarch64 architecture (M1)
+* `-osx-aarch_64` for MacOS with aarch64 architecture (M1)
