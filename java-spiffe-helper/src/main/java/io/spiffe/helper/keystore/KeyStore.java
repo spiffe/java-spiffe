@@ -110,24 +110,22 @@ class KeyStore {
      * @param keyEntry contains the alias, privateKey, chain, privateKey password
      */
     void storePrivateKeyEntry(final PrivateKeyEntry keyEntry) throws KeyStoreException {
-        javaKeyStore.setKeyEntry(
+        update(candidate -> candidate.setKeyEntry(
                 keyEntry.getAlias(),
                 keyEntry.getPrivateKey(),
                 keyEntry.getPassword().toCharArray(),
                 keyEntry.getCertificateChain()
-        );
-        this.flush();
+        ));
     }
 
     /**
      * Store an Authority Entry in the KeyStore.
      */
     void storeAuthorityEntry(final AuthorityEntry authorityEntry) throws KeyStoreException {
-        this.javaKeyStore.setCertificateEntry(
+        update(candidate -> candidate.setCertificateEntry(
                 authorityEntry.getAlias(),
                 authorityEntry.getCertificate()
-        );
-        this.flush();
+        ));
     }
 
     /**
@@ -136,7 +134,11 @@ class KeyStore {
      * File writes remain in place, so an I/O failure can still leave a partial file.
      */
     void replaceAuthorityEntries(final List<AuthorityEntry> authorityEntries) throws KeyStoreException {
-        java.security.KeyStore replacement = copyKeyStore();
+        update(replacement -> setAuthorityEntries(replacement, authorityEntries));
+    }
+
+    private void setAuthorityEntries(final java.security.KeyStore replacement,
+                                     final List<AuthorityEntry> authorityEntries) throws KeyStoreException {
         List<String> aliasesToDelete = new ArrayList<>();
         Enumeration<String> aliases = replacement.aliases();
         while (aliases.hasMoreElements()) {
@@ -156,9 +158,27 @@ class KeyStore {
                     authorityEntry.getCertificate()
             );
         }
+    }
 
-        flush(replacement);
-        javaKeyStore = replacement;
+    /**
+     * A change applied to a candidate copy of the live KeyStore.
+     */
+    @FunctionalInterface
+    private interface Change {
+        void applyTo(java.security.KeyStore candidate) throws KeyStoreException;
+    }
+
+    /**
+     * Applies a change to a copy of the live KeyStore, writes the copy to disk and only then makes it the live
+     * in-memory store. If applying the change or writing the file fails, the live store keeps its previous entries, so
+     * a later successful write never persists a failed update.
+     * Updates of the same KeyStore run one at a time, so the file and the live store always end up with the same content.
+     */
+    private synchronized void update(final Change change) throws KeyStoreException {
+        java.security.KeyStore candidate = copyKeyStore();
+        change.applyTo(candidate);
+        flush(candidate);
+        javaKeyStore = candidate;
     }
 
     private java.security.KeyStore copyKeyStore() throws KeyStoreException {
@@ -196,10 +216,6 @@ class KeyStore {
     // Flush KeyStore to disk, to the configured keyStoreFilePath. The KeyStore is serialized to memory before the file
     // is opened, so a store or encoding failure leaves the existing file as it was. An I/O failure while writing the
     // bytes can still leave a partial file.
-    private void flush() throws KeyStoreException {
-        flush(javaKeyStore);
-    }
-
     private void flush(final java.security.KeyStore keyStore) throws KeyStoreException {
         try {
             KeyStoreFileWriter.write(keyStoreFilePath, outputStream -> keyStore.store(outputStream, keyStorePassword.toCharArray()));

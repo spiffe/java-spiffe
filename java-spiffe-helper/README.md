@@ -111,6 +111,9 @@ Each X.509 context update replaces all Helper-managed authorities with the compl
 and authorities for trust domains no longer present. The replacement is prepared in a separate in-memory KeyStore and
 the TrustStore is written once per update. If preparing or serializing the replacement fails, the live in-memory
 TrustStore and existing file remain unchanged. The replacement becomes the live store only after the write succeeds.
+The private key entry in the KeyStore is updated the same way. If any update fails, including an I/O failure while
+writing the file, the live in-memory store keeps its previous entries, so a later successful write does not persist
+the failed update.
 
 Files are still written in place, so an I/O failure or crash during writing can leave a partial file. The KeyStore and
 TrustStore are written separately; the two files are not updated atomically together.
