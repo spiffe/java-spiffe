@@ -3,6 +3,9 @@
 This module provides a Java Security Provider implementation supporting X.509-SVIDs and methods for
 creating `SSLContext` that are backed by the Workload API.
 
+Before upgrading from 0.8.17, review the [0.9.0 upgrade instructions](../CHANGELOG.md#upgrade-considerations), especially the stricter TLS peer
+validation and the order in which `SpiffeIdVerifier` is called.
+
 ## Create an SSL Context backed by the Workload API
 
 To create an `javax.net.ssl.SSLContext` that is backed by the Workload API through a `X509Source`, having the environment variable

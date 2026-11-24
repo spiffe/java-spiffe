@@ -6,15 +6,37 @@ in a separated TrustStore in disk.
 
 The Helper automatically gets the SVID updates and stores them in the KeyStore and TrustStore.
 
+Before upgrading from 0.8.17, move manually installed trusted certificates that must be retained to aliases outside
+`<trust-domain>.<ASCII numeric index>`. Matching entries can be deleted on the first Helper update even if the
+Helper did not create them. See the [0.9.0 upgrade instructions](../CHANGELOG.md#upgrade-considerations) for this risk, stale authority cleanup
+and failure exit handling.
+
 ## Usage
 
 On Linux:
 
-`java -jar java-spiffe-helper-0.8.17-linux-x86_64.jar`
+`java -jar java-spiffe-helper-0.9.0-linux-x86_64.jar`
 
-On Mac OS:
+For macOS, build the Helper locally from the repository root on the target architecture. The tag release workflow
+builds the published Helper JAR on Ubuntu; the macOS examples below use locally built JARs.
 
-`java -jar java-spiffe-helper-0.8.17-osx-x86_64.jar`
+```sh
+./gradlew :java-spiffe-helper:shadowJar
+```
+
+The output is written to `java-spiffe-helper/build/libs/` with a classifier for the build host.
+
+On macOS x86_64, run the locally built JAR:
+
+```sh
+java -jar java-spiffe-helper/build/libs/java-spiffe-helper-0.9.0-osx-x86_64.jar
+```
+
+On macOS aarch64, run the locally built JAR:
+
+```sh
+java -jar java-spiffe-helper/build/libs/java-spiffe-helper-0.9.0-osx-aarch_64.jar
+```
 
 You can run the utility with the `-c` or `--config` option to specify the path to the configuration file. By default, it
 will look for a configuration file named `conf/java-spiffe-helper.properties` in the current working directory.

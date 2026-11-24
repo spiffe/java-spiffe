@@ -1,38 +1,57 @@
 # Changelog
 
-## [Unreleased]
+## [0.9.0] - 2026-11-24
+
+### Breaking changes
+
+* **JWT audiences:** Empty expected-audience sets could succeed in 0.8.17. All `JwtSvid.parseAndValidate` and `parseInsecure` overloads now throw `IllegalArgumentException`; supply the audience the application expects (#431).
+* **Watch retries:** `CANCELLED`, `UNAUTHENTICATED`, `UNIMPLEMENTED` and `FAILED_PRECONDITION` now terminate watches instead of retrying, stopping automatic reconnection and further rotations. Handle termination and restore the watch after resolving the cause. `INVALID_ARGUMENT` was already terminal; initial `PERMISSION_DENIED` still retries with backoff.
+
+### Upgrade considerations
+
+* **Helper truststores:** Before the first 0.9.0 update, move manually installed certificates that must be retained outside the `<trust-domain>.<ASCII numeric index>` alias pattern. Matching certificates can be deleted even if the Helper did not create them. This risk is separate from stale-authority cleanup (#492).
+* **TLS peers:** Previously accepted peer certificates can now fail verification, including with `SpiffeIdVerifier.acceptAny()`. Ensure peers meet the X.509-SVID profile and chain to trusted authorities; custom verifiers now run only after chain validation (#510, #511).
+* **Helper failures:** `KeyStoreHelper.run(true)` fails on the first watcher error, including `PERMISSION_DENIED` after startup. The CLI closes its client and exits 1, ending retries; resolve the cause and restart the Helper. Initial `PERMISSION_DENIED` before any update still retries with backoff under the default policy (#488, #491).
+* **Native transports:** Upgrade separately pinned `grpc-netty-*` artifacts with core. Custom shaded JARs must preserve `META-INF/services/io.spiffe.workloadapi.internal.GrpcChannelProvider`; supplied platform-specific fat JARs already include it (#108, #523).
+* **Recovery:** Direct `WorkloadApiClient.watch*` callers can register a new watch after resolving a terminal failure. Built-in sources log the failure and can keep serving cached material after rotations stop; recreate the source and switch its consumers to resume rotations. Closing the old source closes its client, so use a fresh client for the replacement. Permission denial does not automatically invalidate built-in source caches.
 
 ### Added
 
-* Add `X509Bundle.marshal()` and `JwtBundle.marshal()` to serialize bundles as PEM certificates and as a JWKS document, the formats read by `parse`
-* Publish a `java-spiffe-bom` Bill of Materials to align the versions of the java-spiffe modules.
-* Add `X509Svid.marshalCertificates()` and `X509Svid.marshalPrivateKey()` to serialize an X.509-SVID as PEM certificates and a PEM PKCS#8 private key, the formats read by `parse` and `load`, and `marshalRawCertificates()` and `marshalRawPrivateKey()` for the ASN.1 DER formats read by `parseRaw` (#515)
-* Add a `spiffeIdVerifier` option to `SpiffeSslContextFactory.SslContextOptions`, so an `SSLContext` can verify peer SPIFFE IDs with a custom `SpiffeIdVerifier` instead of a fixed set of accepted SPIFFE IDs
-* Add `SpiffeIdVerifier.acceptAny()`, `acceptId()`, `acceptOneOf()` and `acceptMemberOf()` factory methods for verifiers that accept any SPIFFE ID, a specific SPIFFE ID, one of a set of SPIFFE IDs, or any SPIFFE ID in a trust domain
+* Add PEM/JWKS bundle serialization and PEM/DER X.509-SVID serialization (#515).
+* Publish `java-spiffe-bom` to align library and transport versions.
+* Add `SslContextOptions.spiffeIdVerifier` and `SpiffeIdVerifier.acceptAny()`, `acceptId()`, `acceptOneOf()` and `acceptMemberOf()` factories.
+* Add `ClientOptions.retryExecutorService` and `RetryHandler.tryScheduleRetry(Runnable)`, retaining `void scheduleRetry(Runnable)`. Clients close supplied retry executors (#79).
 
 ### Changed
 
-* Retry Workload API `PERMISSION_DENIED` responses with backoff. With the default client and no initialization timeout, `DefaultX509Source.newSource()`, `DefaultJwtSource.newSource()` and `CachedJwtSource.newSource()` now wait indefinitely for an unregistered workload instead of failing immediately. Set a nonzero `initTimeout` or the `spiffe.newX509Source.timeout` / `spiffe.newJwtSource.timeout` system property to bound the wait.
+* Report post-update `PERMISSION_DENIED` immediately, suppress repeated withdrawal notifications until recovery, and report terminal failures when retries cannot continue (#491).
+* Consistently report `X509BundleException` for X.509 bundle watches and wrap invalid trust-domain keys in watch-specific exceptions with their causes preserved. Adjust handlers relying on earlier exception types (#491).
+* `DefaultWorkloadApiClient.newClient`, `DefaultX509Source.newSource`, `DefaultJwtSource.newSource` and `CachedJwtSource.newSource` no longer write automatically created clients, executors or defaults into supplied options. Getters may remain `null`; reusing options creates independent default clients and executors. Explicitly configure and retain resources to inspect or share them. `KeyStoreHelper.create` still fills in `keyStoreType`, `keyAlias` and `workloadApiClient` on its options; reusing those options shares the client, which Helper `close()` shuts down (#497).
 
 ### Fixed
 
-* Always report terminal Workload API watch failures after a permission denial, including repeated denials, preserving the exception type and cause.
-* Replace the Helper's complete trust bundle set with one TrustStore write per update, remove authorities for absent trust domains, and preserve the live store when preparing a replacement fails. Only certificate aliases of the form `<trust-domain>.<ASCII numeric index>` are Helper-managed (#492)
-* Reject X.509-SVID leaf certificates with a root SPIFFE ID path in `X509SvidValidator.verifyChain`, which `SpiffeTrustManager` uses for peer certificates (#510)
-* Ignore JWKs with an unsupported key type when parsing a JWT bundle instead of rejecting the whole bundle, per the SPIFFE bundle spec (#512)
-* Serialize `java-spiffe-helper` KeyStore and TrustStore files to memory before writing them, so a store or encoding failure no longer leaves an empty or partial file (#490)
-* Stage every `java-spiffe-helper` KeyStore and TrustStore update in a copy and adopt it in memory only after the file write succeeds, so a failed private key or authority update is no longer persisted by a later write, and an entry that cannot be serialized no longer makes every later write fail (#490)
-* Stop splitting the `io.spiffe.workloadapi.internal` package between `java-spiffe-core` and the `grpc-netty-*` modules, which broke builds on the Java module path. Each `grpc-netty-*` module now registers a channel provider in its own package that core loads with `ServiceLoader`, picking the one for the current OS and architecture (#108). Upgrade `java-spiffe-core` and the `grpc-netty-*` artifact together, since an older `grpc-netty-*` jar still contains the shared package
+* Enforce X.509-SVID peer leaf requirements for URI SANs, non-root SPIFFE ID paths, CA flags and key usages. Extract SPIFFE IDs only from URI SANs (#510, #511).
+* Validate certificate chains before invoking `SpiffeIdVerifier`; invalid chains no longer reach the callback.
+* Validate and normalize trust-domain names using ASCII rules independently of the JVM locale (#496).
+* Reject watches on closed clients with `IllegalStateException`.
+* Propagate asynchronous source initialization errors; preserve watches after rejected post-initialization updates so later rotations can apply (#486).
+* Propagate Helper watch failures through `run`, giving CLI failures exit status 1 (#488).
+* Safely publish JWT bundle updates across threads; refresh cached JWT-SVIDs without `iat`, and return `null` from `getIssuedAt()` when absent (#429).
+* Preserve sub-second retry delays and report failed retry scheduling.
+* Accept bracketed IPv6 Workload API addresses; ignore unsupported JWK types while retaining supported bundle authorities (#512).
+* Preserve all current Helper bundle authorities and remove stale indexes and absent trust domains. Prepare replacements in memory and write once per update; serialization failures preserve existing files. In-place I/O failures can still leave partial files, and KeyStore/TrustStore writes remain separate (#490, #492).
+* Adopt Helper KeyStore/TrustStore changes in memory only after successful writes, and serialize updates per store. Failed updates no longer leak into later writes or block subsequent updates (#490, #525).
+* Remove core/native split packages to support the Java module path (#108, #523).
 
-### Build
+### Dependencies and build
 
-* Check core and provider binary compatibility against the latest stable Maven Central release.
-* Bump `io.netty:netty-transport-native-kqueue` to 4.2.17.Final to match the Netty version used by gRPC, and fail `check` when the macOS transport modules drift from it.
+* Update gRPC 1.80.0 → 1.85.1, Netty 4.2.9.Final → 4.2.17.Final, Nimbus JOSE JWT 10.9 → 10.10 and Commons Lang 3.20.0 → 3.22.0. Use Guava 33.8.0-jre and remove Commons Validator.
+* Update Gradle 9.4.1 → 9.9.1, the Protobuf plugin 0.9.6 → 0.10.1 and the Maven publishing plugin 0.35.0 → 0.37.0.
+* Add japicmp checks for public/protected core and provider APIs, excluding internal and generated gRPC packages, and verify native Netty version alignment. Java 8 source/target compatibility is unchanged.
 
 ### Documentation
 
-* Document `SpiffeProvider.install()` in the provider README, and explain that the JDK loads the providers declared in `java.security` with the system class loader, so a provider packaged inside an application archive, such as a Spring Boot executable jar, must be installed programmatically
-* Fix the JWT source examples in the core README, which called methods and classes that don't exist, document how to configure the source initialization timeouts with `initTimeout`, and document `CachedJwtSource` and JWT-SVID validation with `JwtSvid.parseAndValidate`
+* Correct source and JWT examples; document initialization timeouts, serialization, verifier configuration and programmatic provider installation.
 
 ## [0.8.17] - 2026-04-20
 

@@ -2,6 +2,8 @@
 
 Core functionality to fetch, process and validate X.509 and JWT SVIDs and Bundles from the Workload API.
 
+For changes affecting existing callers, see [Upgrading to 0.9.0](../CHANGELOG.md#upgrade-considerations).
+
 It uses the [JWT and JOSE Nimbus Library](https://connect2id.com/products/nimbus-jose-jwt) to parse and process the JWT tokens 
 and JSON Web Key (JWK) set bundles. 
 
@@ -23,10 +25,11 @@ To create a new X.509 Source:
     X509Bundle bundle = x509Source.getBundleForTrustDomain(TrustDomain.parse("example.org"));
 ```
 
-The `newSource()` method blocks until the X.509 materials can be retrieved from the Workload API and the `X509Source` is 
-initialized with the X.509 SVIDs and Bundles. A `X.509 context watcher` is configured on the `X509Source` to automatically get 
-the updates from the Workload API. This watcher performs retries if at any time the connection to the Workload API 
-reports an error.
+The `newSource()` method waits for the initial X.509 SVIDs and bundles, or fails on an initialization error or a
+configured timeout. An X.509 context watcher maintains subsequent updates.
+Under the default client policy, retryable errors reconnect with backoff; terminal statuses such as
+`FAILED_PRECONDITION` end the watch. See the [watch retry changes](../CHANGELOG.md#breaking-changes)
+and [source recovery instructions](../CHANGELOG.md#upgrade-considerations).
 
 The socket endpoint address is configured through the environment variable `SPIFFE_ENDPOINT_SOCKET`. Another way to
 configure it is by providing an `X509SourceOptions` instance to the `newSource` method:
@@ -45,10 +48,12 @@ It allows to configure another SVID picker. By default, the first SVID is used.
 
 ### Configure a timeout for X509Source initialization 
 
-The `X509Source newSource()` method blocks waiting until an X.509 context is fetched. The X.509 context fetch is retried
-using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
-It retries indefinitely unless a timeout is configured. This includes `PERMISSION_DENIED`, so an unregistered
-workload waits for registration instead of failing immediately. Set a nonzero `initTimeout` to bound this wait.
+The `newSource()` method waits for the initial X.509 context. A zero initialization timeout means there is no
+deadline; it does not make terminal errors retryable. Under the default policy, retryable errors use exponential
+backoff with delays of 1, 2, 4, 8, 16, 32, then 60 seconds between attempts. An initial `PERMISSION_DENIED` can retry
+indefinitely while an unregistered workload waits for registration. A terminal status such as `FAILED_PRECONDITION`
+can fail initialization immediately with `X509SourceException`, even with a zero timeout. Set a nonzero `initTimeout`
+to bound the wait for retryable failures.
 
 This timeout can be configured either with the `initTimeout` option of the `X509SourceOptions` passed to the
 `newSource(X509SourceOptions options)` method:
@@ -91,10 +96,12 @@ To create a new JWT Source:
     JwtBundle bundle = jwtSource.getBundleForTrustDomain(TrustDomain.parse("example.org"));
 ```
 
-The `newSource()` method blocks until the JWT materials can be retrieved from the Workload API and the `JwtSource` is 
-initialized with the JWT Bundles. A `JWT context watcher` is configured on the JwtSource to automatically get 
-the updates from the Workload API. This watcher performs retries if at any time the connection to the Workload API 
-reports an error.
+The `newSource()` method waits for the initial JWT bundles, or fails on an initialization error or a configured
+timeout. A JWT bundle watcher maintains subsequent updates.
+Under the default client policy, retryable errors reconnect with backoff; terminal statuses such as
+`FAILED_PRECONDITION` end the watch. The same initialization and watch behavior applies to `CachedJwtSource`.
+See the [watch retry changes](../CHANGELOG.md#breaking-changes)
+and [source recovery instructions](../CHANGELOG.md#upgrade-considerations).
 
 The socket endpoint address is configured through the environment variable `SPIFFE_ENDPOINT_SOCKET`. 
 
@@ -124,10 +131,12 @@ the cached JWT-SVIDs have passed half of their lifetime.
 
 ### Configure a timeout for JwtSource initialization 
 
-The `JwtSource newSource()` method blocks until the JWT materials are fetched. The fetching process is retried
-using an exponential backoff policy with this progression of delays between retries: 1 second, 2 seconds, 4, 8, 16, 32, 60, 60, 60...
-It retries indefinitely unless a timeout is configured. This includes `PERMISSION_DENIED`, so an unregistered
-workload waits for registration instead of failing immediately. Set a nonzero `initTimeout` to bound this wait.
+`DefaultJwtSource.newSource()` and `CachedJwtSource.newSource()` wait for the initial JWT bundles. A zero
+initialization timeout means there is no deadline; it does not make terminal errors retryable. Under the default
+policy, retryable errors use exponential backoff with delays of 1, 2, 4, 8, 16, 32, then 60 seconds between attempts.
+An initial `PERMISSION_DENIED` can retry indefinitely while an unregistered workload waits for registration.
+A terminal status such as `FAILED_PRECONDITION` can fail initialization immediately with `JwtSourceException`,
+even with a zero timeout. Set a nonzero `initTimeout` to bound the wait for retryable failures.
 
 This timeout can be configured either with the `initTimeout` option of the `JwtSourceOptions` passed to the
 `newSource(JwtSourceOptions options)` method:
