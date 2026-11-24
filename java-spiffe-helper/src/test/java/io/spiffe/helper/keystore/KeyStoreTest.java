@@ -55,6 +55,7 @@ public class KeyStoreTest {
     Path tempDirectory;
 
     private static final String STORE_PASSWORD = "truststore123";
+    private static final String PRIVATE_KEY_PASSWORD = "privatekey123";
 
     @BeforeEach
     void setup() throws X509SvidException, URISyntaxException, X509BundleException {
@@ -260,6 +261,92 @@ public class KeyStoreTest {
         assertEquals(authority, stored.getCertificate("example.org.0"));
         assertFalse(stored.containsAlias("other.org.0"));
         assertEquals(2, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testStorePrivateKeyEntry_failedWriteDoesNotChangeLiveStore(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("federated.org.0", authority));
+        keyStore.storePrivateKeyEntry(privateKeyEntry(ENTRY_ALIAS));
+
+        failWritesDuring(() -> assertThrows(KeyStoreException.class,
+                () -> keyStore.storePrivateKeyEntry(privateKeyEntry("rejected"))));
+
+        // A later successful write must not persist the failed update.
+        keyStore.storeAuthorityEntry(authorityEntry("manual", authority));
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertFalse(stored.containsAlias("rejected"));
+        assertEquals(x509Svid.getPrivateKey(), stored.getKey(ENTRY_ALIAS, PRIVATE_KEY_PASSWORD.toCharArray()));
+        assertEquals(authority, stored.getCertificate("example.org.0"));
+        assertEquals(authority, stored.getCertificate("federated.org.0"));
+        assertEquals(authority, stored.getCertificate("manual"));
+        assertEquals(4, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testStoreAuthorityEntry_failedWriteDoesNotChangeLiveStore(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("federated.org.0", authority));
+        keyStore.storePrivateKeyEntry(privateKeyEntry(ENTRY_ALIAS));
+
+        failWritesDuring(() -> assertThrows(KeyStoreException.class,
+                () -> keyStore.storeAuthorityEntry(authorityEntry("example.org.0", x509Svid.getLeaf()))));
+
+        // A later successful write must not persist the failed update.
+        keyStore.storeAuthorityEntry(authorityEntry("other.org.0", authority));
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertEquals(authority, stored.getCertificate("example.org.0"));
+        assertEquals(authority, stored.getCertificate("federated.org.0"));
+        assertEquals(authority, stored.getCertificate("other.org.0"));
+        assertEquals(x509Svid.getPrivateKey(), stored.getKey(ENTRY_ALIAS, PRIVATE_KEY_PASSWORD.toCharArray()));
+        assertEquals(4, stored.size());
+    }
+
+    @ParameterizedTest
+    @EnumSource(KeyStoreType.class)
+    void testStoreAuthorityEntry_serializationFailureDoesNotChangeLiveStore(KeyStoreType type) throws Exception {
+        KeyStore keyStore = newTestKeyStore(type);
+        X509Certificate authority = x509Bundle.getX509Authorities().iterator().next();
+        keyStore.storeAuthorityEntry(authorityEntry("example.org.0", authority));
+        keyStore.storeAuthorityEntry(authorityEntry("federated.org.0", authority));
+        byte[] original = Files.readAllBytes(keyStoreFilePath);
+
+        assertThrows(KeyStoreException.class, () -> keyStore.storeAuthorityEntry(
+                authorityEntry("broken.org.0", new UnencodableCertificate(authority))));
+
+        assertArrayEquals(original, Files.readAllBytes(keyStoreFilePath));
+        // If the unencodable entry stayed in the live store, every later write would fail too.
+        keyStore.storeAuthorityEntry(authorityEntry("other.org.0", authority));
+        java.security.KeyStore stored = loadTestKeyStore(type);
+        assertFalse(stored.containsAlias("broken.org.0"));
+        assertEquals(authority, stored.getCertificate("example.org.0"));
+        assertEquals(authority, stored.getCertificate("federated.org.0"));
+        assertEquals(authority, stored.getCertificate("other.org.0"));
+        assertEquals(3, stored.size());
+    }
+
+    // Swaps the store file for a directory so opening it for writing fails, then puts the original file back.
+    private void failWritesDuring(Runnable action) throws IOException {
+        byte[] original = Files.readAllBytes(keyStoreFilePath);
+        Files.delete(keyStoreFilePath);
+        Files.createDirectory(keyStoreFilePath);
+        try {
+            action.run();
+        } finally {
+            Files.delete(keyStoreFilePath);
+            Files.write(keyStoreFilePath, original);
+        }
+    }
+
+    private PrivateKeyEntry privateKeyEntry(String alias) {
+        return PrivateKeyEntry.builder().alias(alias).privateKey(x509Svid.getPrivateKey())
+                .certificateChain(x509Svid.getChainArray()).password(PRIVATE_KEY_PASSWORD).build();
     }
 
     private KeyStore newTestKeyStore(KeyStoreType type) throws KeyStoreException {
