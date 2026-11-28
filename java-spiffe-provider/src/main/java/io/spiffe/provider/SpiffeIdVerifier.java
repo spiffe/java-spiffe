@@ -15,7 +15,8 @@ import java.util.Set;
  * <p>
  * A verifier is called after the peer's certificate chain has been verified against the X.509 bundles, and decides
  * whether the peer is authorized. The static factory methods return verifiers for the common cases: accepting any
- * SPIFFE ID, a specific SPIFFE ID, one of a set of SPIFFE IDs, or any SPIFFE ID in a trust domain.
+ * SPIFFE ID, a specific SPIFFE ID, any SPIFFE ID under a SPIFFE ID prefix, one of a set of SPIFFE IDs, or any SPIFFE
+ * ID in a trust domain.
  */
 public interface SpiffeIdVerifier {
     /**
@@ -51,6 +52,41 @@ public interface SpiffeIdVerifier {
             if (!allowedSpiffeId.equals(spiffeId)) {
                 throw new SpiffeVerificationException(
                         String.format("SPIFFE ID %s in X.509 certificate is not accepted", spiffeId));
+            }
+        };
+    }
+
+    /**
+     * Returns a verifier that accepts any SPIFFE ID under the given SPIFFE ID prefix.
+     * <p>
+     * A SPIFFE ID is accepted if it is in the trust domain of the prefix and its path is either the path of the prefix
+     * or extends it with more segments. The prefix is matched on segment boundaries, so the prefix
+     * {@code spiffe://example.org/backend} accepts {@code spiffe://example.org/backend} and
+     * {@code spiffe://example.org/backend/api}, but not {@code spiffe://example.org/backend-admin}. Paths are compared
+     * case-sensitively.
+     * <p>
+     * The prefix must have a path. To accept any SPIFFE ID in a trust domain, use {@link #acceptMemberOf(TrustDomain)}.
+     *
+     * @param prefix the SPIFFE ID prefix whose SPIFFE IDs are accepted
+     * @return a {@link SpiffeIdVerifier} that accepts only {@code prefix} and the SPIFFE IDs under it
+     * @throws NullPointerException     if {@code prefix} is null
+     * @throws IllegalArgumentException if {@code prefix} has no path
+     */
+    static SpiffeIdVerifier acceptIdPrefix(final SpiffeId prefix) {
+        Objects.requireNonNull(prefix, "prefix must not be null");
+        final String prefixPath = prefix.getPath();
+        if (prefixPath.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "prefix must have a path, use acceptMemberOf to accept any SPIFFE ID in a trust domain");
+        }
+        final TrustDomain trustDomain = prefix.getTrustDomain();
+        final String childPathPrefix = prefixPath + "/";
+        return (spiffeId, verifiedChain) -> {
+            final boolean accepted = spiffeId != null && spiffeId.memberOf(trustDomain)
+                    && (spiffeId.getPath().equals(prefixPath) || spiffeId.getPath().startsWith(childPathPrefix));
+            if (!accepted) {
+                throw new SpiffeVerificationException(String.format(
+                        "SPIFFE ID %s in X.509 certificate does not match the prefix %s", spiffeId, prefix));
             }
         };
     }

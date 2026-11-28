@@ -62,6 +62,7 @@ handshake.
 |------------------------------------------------|----------------------------------------------------------|
 | `SpiffeIdVerifier.acceptAny()`                 | any SPIFFE ID                                            |
 | `SpiffeIdVerifier.acceptId(spiffeId)`          | only the given SPIFFE ID                                 |
+| `SpiffeIdVerifier.acceptIdPrefix(prefix)`      | the given SPIFFE ID and any SPIFFE ID under its path     |
 | `SpiffeIdVerifier.acceptOneOf(spiffeIds)`      | any of the given SPIFFE IDs (varargs or a `Collection`)  |
 | `SpiffeIdVerifier.acceptMemberOf(trustDomain)` | any SPIFFE ID in the given trust domain                  |
 
@@ -77,16 +78,23 @@ For example, to accept any workload in the `example.org` trust domain:
     SSLContext sslContext = SpiffeSslContextFactory.getSslContext(options);
 ```
 
+`acceptIdPrefix` matches the prefix on path segment boundaries, in the trust domain of the prefix. For example,
+`acceptIdPrefix(SpiffeId.parse("spiffe://example.org/backend"))` accepts `spiffe://example.org/backend` and
+`spiffe://example.org/backend/api`, but not `spiffe://example.org/backend-admin` or `spiffe://other.org/backend/api`.
+The prefix must have a path; to accept any SPIFFE ID in a trust domain, use `acceptMemberOf`.
+
 `acceptOneOf` copies the SPIFFE IDs when it is called. To accept a set of SPIFFE IDs that changes over time, use
 `acceptedSpiffeIdsSupplier` instead.
 
-For other rules, implement `SpiffeIdVerifier`. For example, to accept only workloads under the `/backend` path of the
-`example.org` trust domain:
+For other rules, implement `SpiffeIdVerifier`. For example, to accept the workloads that run as a Kubernetes service
+account named `backend`, in any namespace, when the `example.org` trust domain issues SPIFFE IDs in the
+`/ns/<namespace>/sa/<service-account>` format:
 
 ```
     TrustDomain trustDomain = TrustDomain.parse("example.org");
+    Pattern backendServiceAccount = Pattern.compile("/ns/[^/]+/sa/backend");
     SpiffeIdVerifier backendWorkloads = (spiffeId, verifiedChain) -> {
-        if (!spiffeId.memberOf(trustDomain) || !spiffeId.getPath().startsWith("/backend/")) {
+        if (!spiffeId.memberOf(trustDomain) || !backendServiceAccount.matcher(spiffeId.getPath()).matches()) {
             throw new SpiffeVerificationException(
                     String.format("SPIFFE ID %s is not a backend workload of trust domain %s", spiffeId, trustDomain));
         }
