@@ -293,6 +293,48 @@ class SpiffeSslContextFactoryTest {
         assertEquals("SPIFFE ID spiffe://example.org/server in X.509 certificate is not accepted", cause.getMessage());
     }
 
+    @Test
+    void getSslContext_spiffeIdVerifierIdPrefix() throws Exception {
+        TrustDomain trustDomain = TrustDomain.parse("example.org");
+        CertAndKeyPair rootCa = createRootCA("C = US, O = SPIFFE", trustDomain.toIdString());
+        X509Source clientSource = newX509Source(trustDomain, rootCa, "client");
+        X509Source serverSource = newX509Source(trustDomain, rootCa, "server");
+
+        SpiffeId serverPrefix = SpiffeId.parse("spiffe://example.org/server");
+        SpiffeId clientPrefix = SpiffeId.parse("spiffe://example.org/client");
+        // "serv" is a prefix of the server's path as a string, but not on a segment boundary
+        SpiffeId partialSegmentPrefix = SpiffeId.parse("spiffe://example.org/serv");
+
+        SSLContext clientContext = SpiffeSslContextFactory.getSslContext(
+                SpiffeSslContextFactory.SslContextOptions.builder()
+                        .x509Source(clientSource)
+                        .spiffeIdVerifier(SpiffeIdVerifier.acceptIdPrefix(serverPrefix))
+                        .build());
+        SSLContext serverContext = SpiffeSslContextFactory.getSslContext(
+                SpiffeSslContextFactory.SslContextOptions.builder()
+                        .x509Source(serverSource)
+                        .spiffeIdVerifier(SpiffeIdVerifier.acceptIdPrefix(clientPrefix))
+                        .build());
+
+        handshake(clientContext, serverContext);
+
+        SSLContext rejectingClientContext = SpiffeSslContextFactory.getSslContext(
+                SpiffeSslContextFactory.SslContextOptions.builder()
+                        .x509Source(clientSource)
+                        .spiffeIdVerifier(SpiffeIdVerifier.acceptIdPrefix(partialSegmentPrefix))
+                        .build());
+
+        SSLHandshakeException e = assertThrows(SSLHandshakeException.class,
+                () -> handshake(rejectingClientContext, serverContext));
+        Throwable cause = e;
+        while (cause != null && !(cause instanceof SpiffeVerificationException)) {
+            cause = cause.getCause();
+        }
+        assertNotNull(cause, "the handshake should fail because the SPIFFE ID verifier rejects the server");
+        assertEquals("SPIFFE ID spiffe://example.org/server in X.509 certificate does not match the prefix " +
+                "spiffe://example.org/serv", cause.getMessage());
+    }
+
     private static X509Source newX509Source(TrustDomain trustDomain, CertAndKeyPair rootCa, String path)
             throws Exception {
         CertAndKeyPair leaf = createCertificate("C = US, O = SPIRE", "C = US, O = SPIFFE",

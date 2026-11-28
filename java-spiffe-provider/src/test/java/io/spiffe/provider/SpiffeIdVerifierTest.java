@@ -59,6 +59,75 @@ class SpiffeIdVerifierTest {
     }
 
     @Test
+    void acceptIdPrefix_acceptsThePrefixAndSpiffeIdsUnderIt() {
+        SpiffeIdVerifier verifier = SpiffeIdVerifier.acceptIdPrefix(SpiffeId.parse("spiffe://example.org/backend"));
+
+        assertDoesNotThrow(() -> verifier.verify(SpiffeId.parse("spiffe://example.org/backend"), CHAIN));
+        assertDoesNotThrow(() -> verifier.verify(SpiffeId.parse("spiffe://example.org/backend/api"), CHAIN));
+        assertDoesNotThrow(() -> verifier.verify(SpiffeId.parse("spiffe://EXAMPLE.org/backend/api/v1"), CHAIN));
+    }
+
+    @Test
+    void acceptIdPrefix_multiSegmentPrefix_matchesOnSegmentBoundaries() {
+        SpiffeIdVerifier verifier = SpiffeIdVerifier.acceptIdPrefix(SpiffeId.parse("spiffe://example.org/ns/prod"));
+
+        assertDoesNotThrow(() -> verifier.verify(SpiffeId.parse("spiffe://example.org/ns/prod"), CHAIN));
+        assertDoesNotThrow(() -> verifier.verify(SpiffeId.parse("spiffe://example.org/ns/prod/sa/web"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/ns/production/sa/web"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/ns"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/prod"), CHAIN));
+    }
+
+    @Test
+    void acceptIdPrefix_rejectsSpiffeIdsNotUnderThePrefix() {
+        SpiffeIdVerifier verifier = SpiffeIdVerifier.acceptIdPrefix(SpiffeId.parse("spiffe://example.org/backend"));
+
+        SpiffeVerificationException e = assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/backend-admin"), CHAIN));
+        assertEquals("SPIFFE ID spiffe://example.org/backend-admin in X.509 certificate does not match the prefix " +
+                "spiffe://example.org/backend", e.getMessage());
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/backendapi"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/Backend/api"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org/frontend/backend"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(TRUST_DOMAIN.newSpiffeId(), CHAIN));
+    }
+
+    @Test
+    void acceptIdPrefix_rejectsSpiffeIdsInOtherTrustDomains() {
+        SpiffeIdVerifier verifier = SpiffeIdVerifier.acceptIdPrefix(SpiffeId.parse("spiffe://example.org/backend"));
+
+        SpiffeVerificationException e = assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://other.org/backend/api"), CHAIN));
+        assertEquals("SPIFFE ID spiffe://other.org/backend/api in X.509 certificate does not match the prefix " +
+                "spiffe://example.org/backend", e.getMessage());
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://other.org/backend"), CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> verifier.verify(SpiffeId.parse("spiffe://example.org.other/backend"), CHAIN));
+    }
+
+    @Test
+    void acceptIdPrefix_prefixWithoutPath() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> SpiffeIdVerifier.acceptIdPrefix(TRUST_DOMAIN.newSpiffeId()));
+        assertEquals("prefix must have a path, use acceptMemberOf to accept any SPIFFE ID in a trust domain",
+                e.getMessage());
+    }
+
+    @Test
+    void acceptIdPrefix_nullPrefix() {
+        NullPointerException e = assertThrows(NullPointerException.class, () -> SpiffeIdVerifier.acceptIdPrefix(null));
+        assertEquals("prefix must not be null", e.getMessage());
+    }
+
+    @Test
     void acceptOneOf_array_acceptsTheGivenSpiffeIds() {
         SpiffeIdVerifier verifier = SpiffeIdVerifier.acceptOneOf(SPIFFE_ID_1, SPIFFE_ID_2);
 
@@ -159,6 +228,8 @@ class SpiffeIdVerifierTest {
     void verifiers_rejectNullSpiffeId() {
         assertThrows(SpiffeVerificationException.class,
                 () -> SpiffeIdVerifier.acceptId(SPIFFE_ID_1).verify(null, CHAIN));
+        assertThrows(SpiffeVerificationException.class,
+                () -> SpiffeIdVerifier.acceptIdPrefix(SPIFFE_ID_1).verify(null, CHAIN));
         assertThrows(SpiffeVerificationException.class,
                 () -> SpiffeIdVerifier.acceptOneOf(SPIFFE_ID_1).verify(null, CHAIN));
         assertThrows(SpiffeVerificationException.class,

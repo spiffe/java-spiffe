@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+* Add `SpiffeIdVerifier.acceptIdPrefix()`, a factory method for verifiers that accept a SPIFFE ID and any SPIFFE ID under its path, matching on path segment boundaries in the same trust domain
+
 ## [0.9.0] - 2026-11-24
 
 ### Breaking changes
