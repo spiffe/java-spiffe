@@ -214,3 +214,31 @@ source can be stored or shared and loaded back later:
 ```
 
 The bundles contain public material only. EC and RSA JWT authorities are supported.
+
+## SPIFFE IDs
+
+A `SpiffeId` can be parsed from a string, or built from a trust domain and either a path or path segments. The path
+and the segments are validated according to the [SPIFFE ID specification](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path),
+and an `InvalidSpiffeIdException` is thrown if they are not valid:
+
+```
+    TrustDomain trustDomain = TrustDomain.parse("example.org");
+
+    SpiffeId backend = SpiffeId.parse("spiffe://example.org/backend");
+    SpiffeId sameBackend = SpiffeId.fromPath(trustDomain, "/backend");
+    SpiffeId alsoBackend = SpiffeId.fromSegments(trustDomain, "backend");
+```
+
+A `SpiffeId` is immutable. `appendPath` and `appendSegments` return a new SPIFFE ID with the path extended, and
+`replacePath` and `replaceSegments` return a new SPIFFE ID in the same trust domain with a different path:
+
+```
+    SpiffeId api = backend.appendPath("/api/v1");               // spiffe://example.org/backend/api/v1
+    SpiffeId sameApi = backend.appendSegments("api", "v1");     // spiffe://example.org/backend/api/v1
+    SpiffeId frontend = api.replacePath("/frontend");           // spiffe://example.org/frontend
+    SpiffeId sameFrontend = api.replaceSegments("frontend");    // spiffe://example.org/frontend
+```
+
+A path must start with `/` and cannot have a trailing slash, while path segments must not contain `/`. `fromPath` and
+`replacePath` with an empty path, and `fromSegments` and `replaceSegments` with no segments, return the SPIFFE ID of
+the trust domain itself, `spiffe://example.org`.

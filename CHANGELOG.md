@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+* Add `SpiffeId.fromPath()` to build a SPIFFE ID from a trust domain and a path, and `appendPath()`, `appendSegments()`, `replacePath()` and `replaceSegments()` to derive a SPIFFE ID with an extended or different path in the same trust domain
+
 ## [0.9.0] - 2026-11-24
 
 ### Breaking changes
