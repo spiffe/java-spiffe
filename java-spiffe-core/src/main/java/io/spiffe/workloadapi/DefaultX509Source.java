@@ -17,7 +17,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -86,7 +85,9 @@ public final class DefaultX509Source implements X509Source {
      *
      * @return an instance of {@link DefaultX509Source}, with the SVID and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws X509SourceException            if the source could not be initialized
+     * @throws X509SourceException            if the source could not be initialized, the timeout expired, or the
+     *                                        calling thread was interrupted while waiting, in which case its interrupt
+     *                                        status is set
      */
     public static DefaultX509Source newSource() throws SocketEndpointAddressException, X509SourceException {
         X509SourceOptions x509SourceOptions = X509SourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
@@ -114,7 +115,9 @@ public final class DefaultX509Source implements X509Source {
      * @param options {@link X509SourceOptions}
      * @return an instance of {@link DefaultX509Source}, with the SVID and bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws X509SourceException            if the source could not be initialized
+     * @throws X509SourceException            if the source could not be initialized, the timeout expired, or the
+     *                                        calling thread was interrupted while waiting, in which case its interrupt
+     *                                        status is set
      */
     public static DefaultX509Source newSource(X509SourceOptions options)
             throws SocketEndpointAddressException, X509SourceException {
@@ -133,6 +136,9 @@ public final class DefaultX509Source implements X509Source {
             x509Source.init(initTimeout);
         } catch (Exception e) {
             x509Source.close();
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             throw new X509SourceException("Error creating X.509 source", e);
         }
 
@@ -206,19 +212,12 @@ public final class DefaultX509Source implements X509Source {
         return DefaultWorkloadApiClient.newClient(clientOptions);
     }
 
-    private void init(final Duration timeout) throws TimeoutException {
+    private void init(final Duration timeout) throws TimeoutException, InterruptedException {
         CountDownLatch done = new CountDownLatch(1);
         AtomicReference<Throwable> initError = new AtomicReference<>();
         setX509ContextWatcher(done, initError);
 
-        final boolean success;
-        if (timeout.isZero()) {
-            await(done);
-            success = true;
-        } else {
-            success = await(done, timeout.getSeconds(), TimeUnit.SECONDS);
-        }
-        if (!success) {
+        if (!await(done, timeout)) {
             throw new TimeoutException("Timeout waiting for X.509 Context update");
         }
         Throwable error = initError.get();

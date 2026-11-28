@@ -19,6 +19,8 @@ import io.spiffe.workloadapi.grpc.Workload;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.io.IOException;
@@ -27,6 +29,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -316,6 +319,49 @@ class DefaultJwtSourceTest {
 
         assertNull(options.getWorkloadApiClient());
         assertNull(options.getInitTimeout());
+    }
+
+    @Test
+    void newSource_subSecondTimeout_waitsForTheWholeTimeout() {
+        JwtSourceOptions options = JwtSourceOptions
+                .builder()
+                .spiffeSocketPath("unix:/tmp/test")
+                .initTimeout(Duration.ofMillis(500))
+                .build();
+
+        long start = System.nanoTime();
+        JwtSourceException e = assertThrows(JwtSourceException.class, () -> DefaultJwtSource.newSource(options));
+        long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        assertEquals("Timeout waiting for JWT bundles update", e.getCause().getMessage());
+        assertTrue(elapsedMillis >= 500, "newSource gave up after " + elapsedMillis + " ms, before the 500 ms timeout");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "PT5S"})
+    void newSource_interruptedWhileWaiting_failsAndKeepsTheInterruptStatus(String initTimeout) {
+        WorkloadApiClientStub silentClient = new WorkloadApiClientStub() {
+            @Override
+            public void watchJwtBundles(Watcher<JwtBundleSet> watcher) {
+                // never sends an update
+            }
+        };
+        JwtSourceOptions options = JwtSourceOptions
+                .builder()
+                .workloadApiClient(silentClient)
+                .initTimeout(Duration.parse(initTimeout))
+                .build();
+
+        Thread.currentThread().interrupt();
+        try {
+            JwtSourceException e = assertThrows(JwtSourceException.class, () -> DefaultJwtSource.newSource(options));
+            assertEquals("Error creating JWT source", e.getMessage());
+            assertTrue(e.getCause() instanceof InterruptedException);
+            assertTrue(Thread.currentThread().isInterrupted());
+            assertTrue(silentClient.closed);
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test

@@ -17,12 +17,15 @@ import io.spiffe.workloadapi.grpc.Workload;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import static io.spiffe.utils.TestUtils.toUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -207,6 +210,49 @@ class DefaultX509SourceTest {
         }
 
         assertNull(options.getWorkloadApiClient());
+    }
+
+    @Test
+    void newSource_subSecondTimeout_waitsForTheWholeTimeout() {
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
+                .builder()
+                .spiffeSocketPath("unix:/tmp/test")
+                .initTimeout(Duration.ofMillis(500))
+                .build();
+
+        long start = System.nanoTime();
+        X509SourceException e = assertThrows(X509SourceException.class, () -> DefaultX509Source.newSource(options));
+        long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        assertEquals("Timeout waiting for X.509 Context update", e.getCause().getMessage());
+        assertTrue(elapsedMillis >= 500, "newSource gave up after " + elapsedMillis + " ms, before the 500 ms timeout");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PT0S", "PT5S"})
+    void newSource_interruptedWhileWaiting_failsAndKeepsTheInterruptStatus(String initTimeout) {
+        WorkloadApiClientStub silentClient = new WorkloadApiClientStub() {
+            @Override
+            public void watchX509Context(Watcher<X509Context> watcher) {
+                // never sends an update
+            }
+        };
+        DefaultX509Source.X509SourceOptions options = DefaultX509Source.X509SourceOptions
+                .builder()
+                .workloadApiClient(silentClient)
+                .initTimeout(Duration.parse(initTimeout))
+                .build();
+
+        Thread.currentThread().interrupt();
+        try {
+            X509SourceException e = assertThrows(X509SourceException.class, () -> DefaultX509Source.newSource(options));
+            assertEquals("Error creating X.509 source", e.getMessage());
+            assertTrue(e.getCause() instanceof InterruptedException);
+            assertTrue(Thread.currentThread().isInterrupted());
+            assertTrue(silentClient.closed);
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test

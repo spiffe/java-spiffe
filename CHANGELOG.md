@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+* Honor sub-second initialization timeouts in `DefaultX509Source`, `DefaultJwtSource` and `CachedJwtSource`. The `initTimeout` option and the `spiffe.newX509Source.timeout` and `spiffe.newJwtSource.timeout` system properties were truncated to whole seconds, so a timeout below one second failed `newSource` immediately
+* Fail `newSource` with `X509SourceException` or `JwtSourceException`, and keep the thread's interrupt status, when the calling thread is interrupted while waiting for the initial update. Without a timeout, `newSource` used to return a source that had no SVID or bundles yet
+
 ## [0.9.0] - 2026-11-24
 
 ### Breaking changes
