@@ -50,15 +50,29 @@ public final class SpiffeId {
      */
     public static SpiffeId fromSegments(TrustDomain trustDomain, String... segments) {
         Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        return new SpiffeId(trustDomain, joinPathSegments(segments));
+    }
 
-        StringBuilder path = new StringBuilder();
-        for (String p : segments) {
-            validatePathSegment(p);
-            path.append('/');
-            path.append(p);
+    /**
+     * Returns a new SPIFFE ID in the given trust domain with the given path (e.g. '/ns/default/sa/backend').
+     * The path must be a valid absolute path according to the SPIFFE specification. An empty path
+     * returns the SPIFFE ID of the trust domain, which has no path (e.g. 'spiffe://example.org').
+     * See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
+     *
+     * @param trustDomain an instance of a {@link TrustDomain}
+     * @param path        the path of the SPIFFE ID
+     * @return a {@link SpiffeId}
+     * @throws NullPointerException     if the trust domain or the path is null
+     * @throws InvalidSpiffeIdException if the path doesn't start with '/', has a trailing slash, contains an invalid
+     *                                  char or an empty or dot segment
+     */
+    public static SpiffeId fromPath(TrustDomain trustDomain, String path) {
+        Objects.requireNonNull(trustDomain, "trustDomain must not be null");
+        Objects.requireNonNull(path, "path must not be null");
+        if (!path.isEmpty()) {
+            validatePath(path);
         }
-
-        return new SpiffeId(trustDomain, path.toString());
+        return new SpiffeId(trustDomain, path);
     }
 
     /**
@@ -125,6 +139,77 @@ public final class SpiffeId {
     }
 
     /**
+     * Returns a new SPIFFE ID in the same trust domain, with the given path appended to the path of this SPIFFE ID
+     * (e.g. appending '/api' to 'spiffe://example.org/backend' returns 'spiffe://example.org/backend/api').
+     * The path to append must be a valid absolute path according to the SPIFFE specification. Appending an
+     * empty path returns this SPIFFE ID.
+     * See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
+     *
+     * @param path the path to append
+     * @return a {@link SpiffeId} with the appended path
+     * @throws NullPointerException     if the path is null
+     * @throws InvalidSpiffeIdException if the path doesn't start with '/', has a trailing slash, contains an invalid
+     *                                  char or an empty or dot segment
+     */
+    public SpiffeId appendPath(final String path) {
+        Objects.requireNonNull(path, "path must not be null");
+        if (path.isEmpty()) {
+            return this;
+        }
+        validatePath(path);
+        return new SpiffeId(this.trustDomain, this.path + path);
+    }
+
+    /**
+     * Returns a new SPIFFE ID in the same trust domain, with the given path segments appended to the path of this
+     * SPIFFE ID (e.g. appending 'api' and 'v1' to 'spiffe://example.org/backend' returns
+     * 'spiffe://example.org/backend/api/v1'). The path segments must be valid according to the SPIFFE
+     * specification and must not contain path separators.
+     * See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
+     *
+     * @param segments the path segments to append
+     * @return a {@link SpiffeId} with the appended path segments
+     * @throws NullPointerException     if the segments array is null
+     * @throws InvalidSpiffeIdException if a given path segment contains an invalid char or empty or dot segment
+     */
+    public SpiffeId appendSegments(final String... segments) {
+        return new SpiffeId(this.trustDomain, this.path + joinPathSegments(segments));
+    }
+
+    /**
+     * Returns a new SPIFFE ID in the same trust domain with the given path, replacing the path of this SPIFFE ID.
+     * The path must be a valid absolute path according to the SPIFFE specification. An empty path returns
+     * the SPIFFE ID of the trust domain.
+     * See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
+     *
+     * @param path the new path
+     * @return a {@link SpiffeId} in the same trust domain with the given path
+     * @throws NullPointerException     if the path is null
+     * @throws InvalidSpiffeIdException if the path doesn't start with '/', has a trailing slash, contains an invalid
+     *                                  char or an empty or dot segment
+     * @see #fromPath(TrustDomain, String)
+     */
+    public SpiffeId replacePath(final String path) {
+        return fromPath(this.trustDomain, path);
+    }
+
+    /**
+     * Returns a new SPIFFE ID in the same trust domain with the given joined path segments, replacing the path of this
+     * SPIFFE ID. The path segments must be valid according to the SPIFFE specification and must not contain path
+     * separators.
+     * See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
+     *
+     * @param segments the path segments of the new path
+     * @return a {@link SpiffeId} in the same trust domain with the given path segments
+     * @throws NullPointerException     if the segments array is null
+     * @throws InvalidSpiffeIdException if a given path segment contains an invalid char or empty or dot segment
+     * @see #fromSegments(TrustDomain, String...)
+     */
+    public SpiffeId replaceSegments(final String... segments) {
+        return fromSegments(this.trustDomain, segments);
+    }
+
+    /**
      * Returns the string representation of the SPIFFE ID, concatenating schema, trust domain,
      * and path segments (e.g. 'spiffe://example.org/path1/path2')
      */
@@ -158,6 +243,18 @@ public final class SpiffeId {
 
             validatePathSegment(segment);
         }
+    }
+
+    private static String joinPathSegments(final String... segments) {
+        Objects.requireNonNull(segments, "segments must not be null");
+
+        StringBuilder path = new StringBuilder();
+        for (String segment : segments) {
+            validatePathSegment(segment);
+            path.append('/');
+            path.append(segment);
+        }
+        return path.toString();
     }
 
     private static void validatePathSegment(String segment) {

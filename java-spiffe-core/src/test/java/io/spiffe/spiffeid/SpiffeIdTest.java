@@ -355,6 +355,179 @@ class SpiffeIdTest {
     }
 
     @ParameterizedTest
+    @MethodSource("provideValidPathsForFromPath")
+    void fromPath_validPath_returnsSpiffeIdWithThePath(String path, String expectedSpiffeId) {
+        SpiffeId spiffeId = SpiffeId.fromPath(TrustDomain.parse("trustdomain"), path);
+
+        assertEquals(SpiffeId.parse(expectedSpiffeId), spiffeId);
+        assertEquals(TrustDomain.parse("trustdomain"), spiffeId.getTrustDomain());
+        assertEquals(path, spiffeId.getPath());
+        assertEquals(expectedSpiffeId, spiffeId.toString());
+    }
+
+    static Stream<Arguments> provideValidPathsForFromPath() {
+        return Stream.of(
+                Arguments.of("/path", "spiffe://trustdomain/path"),
+                Arguments.of("/path1/path2", "spiffe://trustdomain/path1/path2"),
+                Arguments.of("/PATH1/path2", "spiffe://trustdomain/PATH1/path2"),
+                Arguments.of("/.../svc", "spiffe://trustdomain/.../svc"),
+                Arguments.of("/9eebccd2-12bf-40a6-b262-65fe0487d453", "spiffe://trustdomain/9eebccd2-12bf-40a6-b262-65fe0487d453"),
+                Arguments.of("", "spiffe://trustdomain")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidPathsForValidatePath")
+    void fromPath_invalidPath_throwsInvalidSpiffeIdException(String path, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.fromPath(TrustDomain.parse("example.org"), path));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    void fromPath_nullArguments_throwNullPointerException() {
+        NullPointerException ex = assertThrows(NullPointerException.class, () -> SpiffeId.fromPath(null, "/path"));
+        assertEquals("trustDomain must not be null", ex.getMessage());
+
+        ex = assertThrows(NullPointerException.class, () -> SpiffeId.fromPath(TrustDomain.parse("example.org"), null));
+        assertEquals("path must not be null", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"spiffe://example.org", "spiffe://example.org/path", "spiffe://example.org/path1/PATH2"})
+    void fromPath_trustDomainAndPathOfASpiffeId_returnsAnEqualSpiffeId(String id) {
+        SpiffeId spiffeId = SpiffeId.parse(id);
+
+        assertEquals(spiffeId, SpiffeId.fromPath(spiffeId.getTrustDomain(), spiffeId.getPath()));
+    }
+
+    @Test
+    void appendPath_validPath_returnsSpiffeIdWithTheAppendedPath() {
+        SpiffeId spiffeId = SpiffeId.parse("spiffe://example.org/backend");
+
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend/api"), spiffeId.appendPath("/api"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend/api/V1"), spiffeId.appendPath("/api/V1"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/api"), SpiffeId.parse("spiffe://example.org").appendPath("/api"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend"), spiffeId);
+    }
+
+    @Test
+    void appendPath_emptyPath_returnsTheSameSpiffeId() {
+        SpiffeId spiffeId = SpiffeId.parse("spiffe://example.org/backend");
+
+        assertEquals(spiffeId, spiffeId.appendPath(""));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidPathsForValidatePath")
+    void appendPath_invalidPath_throwsInvalidSpiffeIdException(String path, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").appendPath(path));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    void appendPath_nullPath_throwsNullPointerException() {
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").appendPath(null));
+        assertEquals("path must not be null", ex.getMessage());
+    }
+
+    @Test
+    void appendSegments_validSegments_returnsSpiffeIdWithTheAppendedSegments() {
+        SpiffeId spiffeId = SpiffeId.parse("spiffe://example.org/backend");
+
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend/api"), spiffeId.appendSegments("api"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend/api/V1"), spiffeId.appendSegments("api", "V1"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/api"), SpiffeId.parse("spiffe://example.org").appendSegments("api"));
+        assertEquals(spiffeId, spiffeId.appendSegments());
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend"), spiffeId);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidSegments")
+    void appendSegments_invalidSegment_throwsInvalidSpiffeIdException(String segment, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").appendSegments("api", segment));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    void appendSegments_nullSegments_throwsNullPointerException() {
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").appendSegments((String[]) null));
+        assertEquals("segments must not be null", ex.getMessage());
+    }
+
+    @Test
+    void replacePath_validPath_returnsSpiffeIdInTheSameTrustDomainWithThePath() {
+        SpiffeId spiffeId = SpiffeId.parse("spiffe://example.org/backend/api");
+
+        assertEquals(SpiffeId.parse("spiffe://example.org/frontend"), spiffeId.replacePath("/frontend"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/frontend/WEB"), spiffeId.replacePath("/frontend/WEB"));
+        assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId.replacePath(""));
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend/api"), spiffeId);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidPathsForValidatePath")
+    void replacePath_invalidPath_throwsInvalidSpiffeIdException(String path, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").replacePath(path));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    void replacePath_nullPath_throwsNullPointerException() {
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").replacePath(null));
+        assertEquals("path must not be null", ex.getMessage());
+    }
+
+    @Test
+    void replaceSegments_validSegments_returnsSpiffeIdInTheSameTrustDomainWithTheSegments() {
+        SpiffeId spiffeId = SpiffeId.parse("spiffe://example.org/backend/api");
+
+        assertEquals(SpiffeId.parse("spiffe://example.org/frontend"), spiffeId.replaceSegments("frontend"));
+        assertEquals(SpiffeId.parse("spiffe://example.org/frontend/WEB"), spiffeId.replaceSegments("frontend", "WEB"));
+        assertEquals(SpiffeId.parse("spiffe://example.org"), spiffeId.replaceSegments());
+        assertEquals(SpiffeId.parse("spiffe://example.org/backend/api"), spiffeId);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidSegments")
+    void replaceSegments_invalidSegment_throwsInvalidSpiffeIdException(String segment, String expectedMessage) {
+        InvalidSpiffeIdException ex = assertThrows(
+                InvalidSpiffeIdException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").replaceSegments("frontend", segment));
+        assertEquals(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    void replaceSegments_nullSegments_throwsNullPointerException() {
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> SpiffeId.parse("spiffe://example.org/backend").replaceSegments((String[]) null));
+        assertEquals("segments must not be null", ex.getMessage());
+    }
+
+    static Stream<Arguments> provideInvalidSegments() {
+        return Stream.of(
+                Arguments.of(null, SpiffeId.EMPTY),
+                Arguments.of("", SpiffeId.EMPTY),
+                Arguments.of(" ", SpiffeId.BAD_PATH_SEGMENT_CHAR),
+                Arguments.of("foo/bar", SpiffeId.BAD_PATH_SEGMENT_CHAR),
+                Arguments.of("/foo", SpiffeId.BAD_PATH_SEGMENT_CHAR),
+                Arguments.of("foo%5Cbar", SpiffeId.BAD_PATH_SEGMENT_CHAR),
+                Arguments.of(".", SpiffeId.DOT_SEGMENT),
+                Arguments.of("..", SpiffeId.DOT_SEGMENT)
+        );
+    }
+
+    @ParameterizedTest
     @MethodSource("provideInvalidPathsForValidatePath")
     void validatePath_invalidPath_throwsInvalidSpiffeIdException(String path, String expectedMessage) {
         InvalidSpiffeIdException ex = assertThrows(
