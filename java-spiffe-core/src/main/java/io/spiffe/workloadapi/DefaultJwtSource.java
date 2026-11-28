@@ -13,7 +13,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -58,7 +57,9 @@ public class DefaultJwtSource implements JwtSource {
      *
      * @return an instance of {@link DefaultJwtSource}, with the JWT bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws JwtSourceException            if the source could not be initialized
+     * @throws JwtSourceException            if the source could not be initialized, the timeout expired, or the calling
+     *                                       thread was interrupted while waiting, in which case its interrupt status is
+     *                                       set
      */
     public static JwtSource newSource() throws JwtSourceException, SocketEndpointAddressException {
         JwtSourceOptions options = JwtSourceOptions.builder().initTimeout(DEFAULT_TIMEOUT).build();
@@ -83,7 +84,8 @@ public class DefaultJwtSource implements JwtSource {
      * @param options {@link JwtSourceOptions}
      * @return an instance of {@link DefaultJwtSource}, with the JWT bundles initialized
      * @throws SocketEndpointAddressException if the address to the Workload API is not valid
-     * @throws JwtSourceException if the source could not be initialized
+     * @throws JwtSourceException if the source could not be initialized, the timeout expired, or the calling thread was
+     *                            interrupted while waiting, in which case its interrupt status is set
      */
     public static JwtSource newSource(JwtSourceOptions options)
             throws SocketEndpointAddressException, JwtSourceException {
@@ -102,6 +104,9 @@ public class DefaultJwtSource implements JwtSource {
             jwtSource.init(initTimeout);
         } catch (Exception e) {
             jwtSource.close();
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             throw new JwtSourceException("Error creating JWT source", e);
         }
 
@@ -193,19 +198,12 @@ public class DefaultJwtSource implements JwtSource {
         }
     }
 
-    private void init(final Duration timeout) throws TimeoutException {
+    private void init(final Duration timeout) throws TimeoutException, InterruptedException {
         CountDownLatch done = new CountDownLatch(1);
         AtomicReference<Throwable> initError = new AtomicReference<>();
         setJwtBundlesWatcher(done, initError);
 
-        boolean success;
-        if (timeout.isZero()) {
-            await(done);
-            success = true;
-        } else {
-            success = await(done, timeout.getSeconds(), TimeUnit.SECONDS);
-        }
-        if (!success) {
+        if (!await(done, timeout)) {
             throw new TimeoutException("Timeout waiting for JWT bundles update");
         }
         Throwable error = initError.get();
